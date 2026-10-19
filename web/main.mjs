@@ -1,4 +1,5 @@
 import { goodIcon } from "./icons.mjs";
+import { newCamera, zoomAt, panBy, viewBox } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
@@ -27,6 +28,31 @@ const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
 const sc = 800 / (x1 - x0), VH = Math.round((y1 - y0) * sc * 1.25);
 $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
+// Pan and zoom: the wheel zooms at the cursor, dragging pans, two fingers pinch, double click resets.
+const cam = newCamera(800, VH), mapEl = $("map");
+const applyCam = () => mapEl.setAttribute("viewBox", viewBox(cam).join(" "));
+const frac = (e) => { const r = mapEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+mapEl.style.touchAction = "none";
+mapEl.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(cam, e.deltaY < 0 ? 1.25 : 0.8, ...frac(e)); applyCam(); }, { passive: false });
+mapEl.addEventListener("dblclick", () => { cam.zoom = 1; cam.x = cam.y = 0; applyCam(); });
+const ptrs = new Map(); let moved = 0, pinch = 0;
+mapEl.addEventListener("pointerdown", (e) => { ptrs.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; pinch = 0; });
+mapEl.addEventListener("pointermove", (e) => {
+  const prev = ptrs.get(e.pointerId); if (!prev) return;
+  const r = mapEl.getBoundingClientRect();
+  if (ptrs.size === 2) {
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (pinch) { zoomAt(cam, d / pinch, ((a[0] + b[0]) / 2 - r.left) / r.width, ((a[1] + b[1]) / 2 - r.top) / r.height); applyCam(); }
+    pinch = d; moved = 99; return;
+  }
+  const dx = e.clientX - prev[0], dy = e.clientY - prev[1]; moved += Math.abs(dx) + Math.abs(dy);
+  if (moved > 6) { panBy(cam, dx / r.width, dy / r.height); applyCam(); ptrs.set(e.pointerId, [e.clientX, e.clientY]); }
+});
+const endPtr = (e) => { ptrs.delete(e.pointerId); pinch = 0; };
+mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercancel", endPtr);
+// a drag must not count as a click on a port
+mapEl.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
 const X = (lon) => (lon - x0) * sc, Y = (lat) => (y1 - lat) * sc * 1.25;
 const cityName = (id) => world.nodes[id].name ?? id;
 
