@@ -1,1 +1,1 @@
-{ "name": "almojarife", "license": "MIT", "private": true, "type": "module", "scripts": { "test": "node --test test/world.test.mjs test/engine.test.mjs", "map": "node tools/render_map.mjs" } }
+{ "name": "almojarife", "license": "MIT", "private": true, "type": "module", "scripts": { "test": "node --test test/world.test.mjs test/engine.test.mjs test/trade.test.mjs", "map": "node tools/render_map.mjs" } }
