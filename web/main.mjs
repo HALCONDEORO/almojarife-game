@@ -10,20 +10,21 @@ import { citySceneSvg } from "../src/view/cityscene.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
+import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairCost, sellShip, shipValue, buyRumor, RUMOR_PRICE, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
   es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", resume: "Seguir jugando", saveNow: "Guardar ahora", quit: "Salir al título", lang2: "Idioma", speedDef: "Velocidad", paused: "Juego en pausa", tabMarket: "Mercado", tabYard: "Astillero", tabStore: "Almacén", warehouse: "Almacén", yardInfo: "Encarga barcos (se entregan tras el plazo; sin límite de flota: el mantenimiento diario es el freno), repara el casco o vende.", order: "Encargar {type} ({p}, {d} días, carga {c})", repair: "Reparar casco {h}% ({p})", sellShip: "Vender barco ({p})", orders: "En construcción", ready: "{type} en {city}, listo el día {day}", buyWh: "Comprar almacén ({p})", whInfo: "Guarda bienes en este puerto (hasta 300 unidades).", whEmpty: "Vacío", store: "Guardar", take: "Sacar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida", create: "Crea tu casa mercantil", character: "Tu nombre", portrait: "Retrato", crest: "Escudo", shield: "Forma", division: "División", charge: "Emblema", c1: "Color principal", c2: "Color secundario", home: "Puerto de origen", background: "Origen", back: "Atrás", sh: { heater: "Clásico", round: "Redondo" }, dv: { plain: "Liso", pale: "Partido", fess: "Cortado", chevron: "Cheurón", cross: "Cruz" }, ch: { star: "Estrella", tower: "Torre", ship: "Nave", anchor: "Ancla", sun: "Sol", wheat: "Trigo" }, bgInfo: { merchant: "+300 monedas", seafarer: "Barcos 15% más baratos de mantener", scholar: "+150 monedas y 5% menos de mantenimiento" },
-    hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Pulsa un puerto del mapa para zarpar.",
+    hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Clic en un puerto para elegir destino y clic derecho para zarpar.",
     hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega", holdValue: "Valor de la bodega aquí (aprox.)", cheap: "Barato: buen momento para comprar", dear: "Caro: buen momento para vender",
-    buy: "Comprar", sell: "Vender", sellAll: "Todo", seasons: { winter: "Invierno", spring: "Primavera", summer: "Verano", autumn: "Otoño" }, bestLbl: "Mejor puerto según lo que sabes", noInfo: "No conoces los precios de otros puertos. Visita uno, ten almacén o pregunta en la taberna.", tabTavern: "Taberna", tavernInfo: "Entre jarras y humo, marineros y mercaderes cuentan lo que saben de otros puertos. Un trago y una moneda compran un rumor: viejo y con algo de exageración.", tavernNone: "Aquí ya lo sabes todo: tienes barco o almacén en todos los puertos.", rumorBtn: "Pagar una ronda por un rumor ({p})", rumorPick: "Puerto", ageNow: "hoy", ageDays: "hace {n} d", rumorTag: "rumor, impreciso", bestRow: "{city}: ≈ {r} monedas ({p} de ganancia), {d} días", trend7: "Cambio en 7 días", dealBuy: "Compras {q}: {c} (media {a}, precio pasa a {n})", dealSell: "Vendes {q}: {c} (media {a}, precio pasa a {n})", profit: "ganancia", loss: "pérdida", capCash: "limitado por tus monedas", capStock: "limitado por el stock", capRoom: "limitado por la bodega", qtyLbl: "Cantidad", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
+    buy: "Comprar", sell: "Vender", sellAll: "Todo", seasons: { winter: "Invierno", spring: "Primavera", summer: "Verano", autumn: "Otoño" }, target: "Destino", sailGo: "Zarpar", ctxSail: "Zarpar a {city} ({d} días)", ctxSelect: "Elegir {city} como destino", hint: "Clic: elegir · Clic derecho o pulsación larga: menú · Arrastrar: mover · Rueda: zoom · Espacio: pausa · Intro: zarpar · 1-9: barco", daysLbl: "días", bestLbl: "Mejor puerto según lo que sabes", noInfo: "No conoces los precios de otros puertos. Visita uno, ten almacén o pregunta en la taberna.", tabTavern: "Taberna", tavernInfo: "Entre jarras y humo, marineros y mercaderes cuentan lo que saben de otros puertos. Un trago y una moneda compran un rumor: viejo y con algo de exageración.", tavernNone: "Aquí ya lo sabes todo: tienes barco o almacén en todos los puertos.", rumorBtn: "Pagar una ronda por un rumor ({p})", rumorPick: "Puerto", ageNow: "hoy", ageDays: "hace {n} d", rumorTag: "rumor, impreciso", bestRow: "{city}: ≈ {r} monedas ({p} de ganancia), {d} días", trend7: "Cambio en 7 días", dealBuy: "Compras {q}: {c} (media {a}, precio pasa a {n})", dealSell: "Vendes {q}: {c} (media {a}, precio pasa a {n})", profit: "ganancia", loss: "pérdida", capCash: "limitado por tus monedas", capStock: "limitado por el stock", capRoom: "limitado por la bodega", qtyLbl: "Cantidad", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
     caravel: "Comprar carabela ({p})", at: "En", sea: "En el mar hacia", win: "¡Victoria! Alcanzaste la meta.", lose: "Se acabó el tiempo. Patrimonio final:",
     cap: "Carga", log: { warehouse: "Día {day}: compras un almacén en {city}", arrive: "Día {day}: el barco {ship} llega a {city}", buy: "Día {day}: compras {qty} {good} por {sum}", sell: "Día {day}: vendes {qty} {good} por {sum}", sail: "Día {day}: el barco {ship} zarpa a {city} ({days} días)", caravel: "Día {day}: compras una carabela en {city}", ordered: "Día {day}: encargas un barco en {city}", built: "Día {day}: tu barco {ship} está listo en {city}" }, goods: { grain: "Trigo", dried_fish: "Pescado seco", salt: "Sal", wool: "Lana", iron: "Hierro", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta" },
     types: { barca: "Barca", cog: "Coca", caravel: "Carabela", nao: "Nao" } },
   en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game", cont: "Continue", resume: "Resume", saveNow: "Save now", quit: "Quit to title", lang2: "Language", speedDef: "Speed", paused: "Game paused", tabMarket: "Market", tabYard: "Shipyard", tabStore: "Warehouse", warehouse: "Stored", yardInfo: "Order ships (delivered after the build time; no fleet limit: daily upkeep is the brake), repair the hull or sell.", order: "Order {type} ({p}, {d} days, cargo {c})", repair: "Repair hull {h}% ({p})", sellShip: "Sell ship ({p})", orders: "Under construction", ready: "{type} at {city}, ready day {day}", buyWh: "Buy warehouse ({p})", whInfo: "Store goods in this port (up to 300 units).", whEmpty: "Empty", store: "Store", take: "Take", start: "Start", company: "Name of your trading house", defCo: "My Trading House", tagline: "Sea trading on the Iberian coast, 15th-16th century", menu: "Menu", saved: "Game saved", noSave: "No saved game", exportS: "Export", importS: "Import", badSave: "That file is not a valid save", create: "Create your trading house", character: "Your name", portrait: "Portrait", crest: "Coat of arms", shield: "Shape", division: "Division", charge: "Emblem", c1: "Main colour", c2: "Second colour", home: "Home port", background: "Background", back: "Back", sh: { heater: "Classic", round: "Round" }, dv: { plain: "Plain", pale: "Split", fess: "Cut", chevron: "Chevron", cross: "Cross" }, ch: { star: "Star", tower: "Tower", ship: "Ship", anchor: "Anchor", sun: "Sun", wheat: "Wheat" }, bgInfo: { merchant: "+300 coins", seafarer: "Ships cost 15% less to keep", scholar: "+150 coins and 5% lower upkeep" },
-    hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port on the map to sail.",
+    hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port to choose a destination, right-click to sail.",
     hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold", holdValue: "Hold value here (approx.)", cheap: "Cheap: good time to buy", dear: "Dear: good time to sell",
-    buy: "Buy", sell: "Sell", sellAll: "All", seasons: { winter: "Winter", spring: "Spring", summer: "Summer", autumn: "Autumn" }, bestLbl: "Best port from what you know", noInfo: "You do not know other ports' prices. Visit one, own a warehouse or ask at the tavern.", tabTavern: "Tavern", tavernInfo: "Between mugs and smoke, sailors and merchants tell what they know of other ports. A drink and a coin buy a rumour: old, and a little exaggerated.", tavernNone: "You already know it all: you have a ship or warehouse in every port.", rumorBtn: "Buy a round for a rumour ({p})", rumorPick: "Port", ageNow: "today", ageDays: "{n} d ago", rumorTag: "rumour, inexact", bestRow: "{city}: ≈ {r} coins ({p} profit), {d} days", trend7: "Change over 7 days", dealBuy: "Buy {q}: {c} (avg {a}, price moves to {n})", dealSell: "Sell {q}: {c} (avg {a}, price moves to {n})", profit: "profit", loss: "loss", capCash: "limited by your coins", capStock: "limited by stock", capRoom: "limited by hold space", qtyLbl: "Quantity", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
+    buy: "Buy", sell: "Sell", sellAll: "All", seasons: { winter: "Winter", spring: "Spring", summer: "Summer", autumn: "Autumn" }, target: "Destination", sailGo: "Sail", ctxSail: "Sail to {city} ({d} days)", ctxSelect: "Choose {city} as destination", hint: "Click: choose · Right-click or long press: menu · Drag: pan · Wheel: zoom · Space: pause · Enter: sail · 1-9: ship", daysLbl: "days", bestLbl: "Best port from what you know", noInfo: "You do not know other ports' prices. Visit one, own a warehouse or ask at the tavern.", tabTavern: "Tavern", tavernInfo: "Between mugs and smoke, sailors and merchants tell what they know of other ports. A drink and a coin buy a rumour: old, and a little exaggerated.", tavernNone: "You already know it all: you have a ship or warehouse in every port.", rumorBtn: "Buy a round for a rumour ({p})", rumorPick: "Port", ageNow: "today", ageDays: "{n} d ago", rumorTag: "rumour, inexact", bestRow: "{city}: ≈ {r} coins ({p} profit), {d} days", trend7: "Change over 7 days", dealBuy: "Buy {q}: {c} (avg {a}, price moves to {n})", dealSell: "Sell {q}: {c} (avg {a}, price moves to {n})", profit: "profit", loss: "loss", capCash: "limited by your coins", capStock: "limited by stock", capRoom: "limited by hold space", qtyLbl: "Quantity", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
     caravel: "Buy a caravel ({p})", at: "At", sea: "At sea to", win: "Victory! You reached the goal.", lose: "Time is up. Final net worth:",
     cap: "Cargo", log: { warehouse: "Day {day}: you buy a warehouse in {city}", arrive: "Day {day}: ship {ship} arrives at {city}", buy: "Day {day}: you buy {qty} {good} for {sum}", sell: "Day {day}: you sell {qty} {good} for {sum}", sail: "Day {day}: ship {ship} sails to {city} ({days} days)", caravel: "Day {day}: you buy a caravel at {city}" }, goods: { grain: "Grain", dried_fish: "Dried fish", salt: "Salt", wool: "Wool", iron: "Iron", timber: "Timber", cloth: "Cloth", olive_oil: "Olive oil", wine: "Wine", silk: "Silk", sugar: "Sugar", pepper: "Pepper" },
     types: { barca: "Barque", cog: "Cog", caravel: "Caravel", nao: "Nao" } },
@@ -37,6 +38,7 @@ const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min
 const sc = 800 / (x1 - x0), VH = Math.round((y1 - y0) * sc * 1.25);
 $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
 // Pan and zoom: the wheel zooms at the cursor, dragging pans, two fingers pinch, double click resets.
+let target = null, lp = 0; // destination chosen on the map; long-press timer
 const cam = newCamera(800, VH), mapEl = $("map");
 const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); };
 function scaleMarkers() {
@@ -150,13 +152,23 @@ function render() {
   // map
   let m = "";
   for (const [a, b] of world.lanes) m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  const est = target && !s.voyage ? travelEstimate(world, s, target) : null;
+  if (est?.ok) {
+    const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
+    m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(last.lon) + 10}" y="${Y(last.lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${est.days} ${t.daysLbl}</text>`;
+  }
   for (const c of world.cities) {
-    const canSail = !s.voyage && c.id !== s.at && !g.over;
-    m += `<g class="city" data-c="${canSail ? c.id : ""}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><circle cx="0" cy="0" r="7" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
+    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ${e.days} ${t.daysLbl}, ${e.km} km` : "");
+    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
   }
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
-  $("map").querySelectorAll("g.city").forEach((el) => el.onclick = () => { const c = el.dataset.c; if (c) act(() => doSail(g, ship(), c)); });
+  $("map").querySelectorAll("g.city").forEach((el) => {
+    el.onclick = () => { target = el.dataset.c; closeMenu(); render(); };
+    el.oncontextmenu = (ev) => { ev.preventDefault(); openMenu(el.dataset.c, ev.clientX, ev.clientY); };
+    el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
+    el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
+  });
   const logLine = (l) => l.key === "event" ? `${t.day} ${l.day}: ${l.txt?.[lang] ?? ""}` : t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
   $("log").innerHTML = g.log.map((l) => `<div>${logLine(l)}</div>`).join("");
   // panel
@@ -171,7 +183,7 @@ function render() {
     const nd = world.nodes[s.at];
     h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).length, day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
     const bp = bestPorts(g, s).slice(0, 3);
-    if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-sail="${r.city}">${t.sailTo}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
+    if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
     const wh = warehouseOf(g, s.at);
     h += `<div class="tabs">` + [["market", t.tabMarket], ["yard", t.tabYard], ["tavern", t.tabTavern], ["store", t.tabStore]].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;
@@ -203,7 +215,8 @@ function render() {
         h += `</table>${Object.keys(wh.goods).length || Object.keys(s.cargo).length ? "" : `<p>${t.whEmpty}</p>`}`;
       }
     }
-    h += `<div>${t.sailTo}: ` + world.cities.filter((c) => c.id !== s.at).map((c) => `<button data-sail="${c.id}">${c.name}</button>`).join("") + `</div>`;
+    { const te = target ? travelEstimate(world, s, target) : null;
+      h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ${te.days} ${t.daysLbl}, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (!g.over) h += `<div><button data-wait="1">${t.wait}</button>${s.voyage ? `<button data-arrive="1">${t.arrive}</button>` : ""}</div>`;
   $("panel").innerHTML = h;
@@ -218,7 +231,8 @@ function render() {
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
   P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); act(() => doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v)); });
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => act(() => buyRumor(g, P.querySelector("#rum").value, s.at));
-  P.querySelectorAll("[data-sail]").forEach((e) => e.onclick = () => act(() => doSail(g, s, e.dataset.sail)));
+  P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
+  P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
   P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; render(); });
   P.querySelectorAll("[data-wh]").forEach((e) => e.onclick = () => act(() => buyWarehouse(g, s.at)));
   P.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
@@ -230,6 +244,26 @@ function render() {
   P.querySelectorAll("[data-wait]").forEach((e) => e.onclick = () => act(() => advanceDay(g)));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
 }
+
+function sailToTarget() { if (!target) return; const to = target; act(() => doSail(g, ship(), to)); target = null; render(); }
+function closeMenu() { document.getElementById("ctx")?.remove(); }
+function openMenu(city, x, y) {
+  closeMenu(); target = city; const s0 = ship(), items = cityMenu(world, s0, city), est = travelEstimate(world, s0, city);
+  const d = document.createElement("div"); d.id = "ctx"; d.setAttribute("role", "menu"); d.style.cssText = `left:${Math.min(x, innerWidth - 230)}px;top:${Math.min(y, innerHeight - 90)}px`;
+  d.innerHTML = items.map((it) => `<button role="menuitem" data-m="${it.id}" ${it.enabled ? "" : "disabled"}>${(it.id === "sail" ? t.ctxSail.replace("{d}", est.days ?? "-") : t.ctxSelect).replace("{city}", cityName(city))}</button>`).join("");
+  document.body.appendChild(d);
+  d.querySelectorAll("button").forEach((b) => b.onclick = () => { closeMenu(); if (b.dataset.m === "sail") sailToTarget(); else render(); });
+  render();
+}
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx")) closeMenu(); });
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("title") && !$("title").hidden) return;
+  if (e.key === "Escape") { closeMenu(); target = null; render(); }
+  else if (e.key === "Enter" && target) { e.preventDefault(); sailToTarget(); }
+  else if (e.key === " ") { e.preventDefault(); playing = !playing; render(); }
+  else { const i = shipForKey(g, e.key); if (i !== null) { sel = i; target = null; render(); } }
+});
 $("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
 $("new").onclick = () => showMenu();

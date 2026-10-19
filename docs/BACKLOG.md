@@ -81,3 +81,4 @@ Priority by impact, one small PR each with tests and ES screenshots:
 6. auctions: lots of goods/ships, rival bids
 7. rivals: stronger AI with strategies and personalities
 Graphics engine in parallel: waves, day/night, animated port, performance, mobile; 3D study after.
+- crew and guns (Marco 21:23): crew (sailors, soldiers with light arms) and artillery (bombards/cannons by era and class) with cost, cargo weight taken, upkeep, effect on pirate events and naval combat; data in JSON. Next after the illustrated shipyard.
