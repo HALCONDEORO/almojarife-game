@@ -9,7 +9,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
   const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
   const market = makeMarket(world);
-  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } } // so prices differ from day 0
+  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } } // so prices differ from day 0
   return { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null };
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
@@ -23,7 +23,7 @@ export function netWorth(g) {
 export function advanceDay(g) {
   if (g.over) return;
   g.day++;
-  tickMarket(g.market);
+  tickMarket(g.market, g.day);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
   for (const s of g.ships) {
     const was = s.voyage;
