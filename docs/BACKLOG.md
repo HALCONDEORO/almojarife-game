@@ -96,3 +96,4 @@ Priority order (impact first, small PRs with tests):
 9. sandbox mode, scenarios and achievements
 10. family and heirs, marriages and alliances (fictional characters; the game continues after the player's death)
 Also queued: crew and guns, illustrated shipyard, buildings and factories, guilds, auctions, calendar from 1470 with milestones (approved 21:08, after navigation and map).
+- more building types per city (owner 21:33), each with its own function and its own goods (workshop, mill, brewery, rope walk, smithy, bakery, market hall, customs house, chapel...), data in JSON; fits "buildings and factories"
