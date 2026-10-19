@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld, route } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, GOAL_CASH } from "../src/game/game.mjs";
+import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, quote, GOAL_CASH } from "../src/game/game.mjs";
 const world = loadWorld();
 
 test("a new game starts with 2000, one cog, day 0", () => {
@@ -63,4 +63,23 @@ test("selling to the goal wins at once, before any upkeep, and ends the game", (
   assert.equal(g.over, "win"); assert.ok(g.cash >= GOAL_CASH);
   const cash = g.cash; advanceDay(g); assert.equal(g.cash, cash, "no upkeep after the game is over");
   assert.equal(doBuy(g, s, "salt", 1).ok, false, "no actions after game over");
+});
+import { priceHistory, trendPct, HISTORY_DAYS } from "../src/game/game.mjs";
+test("price history starts filled, rolls daily and stays bounded", () => {
+  const g = newGame(loadWorld()), city = g.world.cities[0].id, good = Object.keys(g.world.goods)[0];
+  const a0 = priceHistory(g, city, good);
+  assert.equal(a0.length, HISTORY_DAYS);
+  advanceDay(g); advanceDay(g);
+  const a = priceHistory(g, city, good);
+  assert.equal(a.length, HISTORY_DAYS);
+  assert.equal(a[a.length - 1], quote(g, city, good));
+  assert.equal(a[0], a0[2]);
+  assert.equal(typeof trendPct(g, city, good), "number");
+});
+test("a game saved before history existed still works", () => {
+  const g = newGame(loadWorld()); delete g.hist;
+  assert.deepEqual(priceHistory(g, "cadiz", "grain"), []);
+  assert.equal(trendPct(g, "cadiz", "grain"), null);
+  advanceDay(g);
+  assert.equal(priceHistory(g, "cadiz", "grain").length, 1);
 });
