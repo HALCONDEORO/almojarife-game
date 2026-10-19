@@ -2,7 +2,7 @@
 
 Two acts, six missions each, 10 to 20 minutes per mission. Setup: the player starts with 500 coins and a debt of 1,000 coins (m06 clears it; m02 explains interest in a plain hint). Time is counted in days from the start of each mission. One ladder: standing ranks run Forastero, Mercader, Maestro, Almojarife (the royal customs post is the top rank).
 
-Fail never deletes the save. Fail vocabulary: **retry** (restart the mission, no penalty) or **skip** (move on: all unlocks are still granted, coins and standing rewards are halved). The player picks either after any fail. Characters (invented): Harbour Master, Old Rival, Guild Clerk, Corsair Captain.
+Fail never deletes the save. Fail vocabulary: **retry** (restart the mission, no penalty) or **skip** (move on: all unlocks are still granted, coins and standing rewards are halved; ranks count as unlocks and are granted in full; skipping m06 clears the debt). The player picks either after any fail. Characters (invented): Harbour Master, Old Rival, Guild Clerk, Corsair Captain.
 
 ## Act 1: La primera nao (tutorial, Alpha)
 
@@ -23,7 +23,7 @@ Fail never deletes the save. Fail vocabulary: **retry** (restart the mission, no
 | 8 | m08 | Keep the Cádiz to Lisboa lane safe through storm season (lose no more than 1 ship; assign an escort ship from your fleet of 3 or more) | risk, escort | convoy unlock | retry or skip |
 | 9 | m09 | Feed Barcelona through a bad harvest | supply under shortage | standing in Barcelona | retry or skip |
 | 10 | m10 | Open a cloth workshop chain (wool to cloth) | production chains | chain bonus | retry or skip |
-| 11 | m11 | Win standing in four ports | politics | port rights | retry or skip |
+| 11 | m11 | Win standing in four ports | politics | port rights, rank: Maestro | retry or skip |
 | 12 | m12 | Deliver a royal order (20 cloth, 20 iron) to Cádiz harbour by day 60, then renew the charter | final test | Rank: Almojarife; free play unlocked | retry or skip |
 
 Act 2 starts with three ships (granted at its start if the player has fewer). Alpha holds Act 1 only; Act 2 ships in the beta (M4).

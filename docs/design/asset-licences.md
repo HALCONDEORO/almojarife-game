@@ -9,6 +9,7 @@ Rules:
 2. Only assets with a row can be merged. A pull request check lists new files under `assets/` and `data/` without a row.
 3. Fonts must cover Spanish characters (á é í ó ú ñ ü ¿ ¡).
 4. Third-party map data (Natural Earth, public domain) is downloaded by script at a pinned commit with a checksum check, not copied, and still has a CREDITS row.
-   Attribution required by a licence (CC BY) also appears in the shipped game on a credits screen.
-5. No real trademarks, logos or real people's likenesses.
-6. When in doubt, leave it out and open an issue.
+5. Attribution required by a licence (CC BY) also appears in the shipped game on a credits screen.
+6. No real trademarks, logos or real people's likenesses.
+7. Third-party code libraries (MIT, BSD, Apache 2.0) are allowed and listed in CREDITS.md; copyleft code is not added without an issue and owner approval.
+8. When in doubt, leave it out and open an issue.
