@@ -4,7 +4,7 @@ Ideas, bug reports and pull requests are welcome.
 
 1. Open an issue first for anything big (new city, new good, new mechanic) so we can agree on scope.
 2. Fork, make a branch, keep changes small and focused.
-3. Run `sh tools/fetch_data.sh` once, then `npm test` (Node 20 or newer). Tests must pass.
+3. Run `sh tools/fetch_data.sh` once, then `npm test` (`fetch_data.sh` downloads a pinned Natural Earth map dataset over HTTPS, no credentials) (Node 20 or newer). Tests must pass.
 4. Open a pull request describing what changed and why.
 
 Rules:
