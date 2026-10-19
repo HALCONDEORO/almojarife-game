@@ -2,17 +2,18 @@ import { goodIcon } from "./icons.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
+import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
-  es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida",
+  es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida",
     hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Pulsa un puerto del mapa para zarpar.",
     hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega", holdValue: "Valor de la bodega aquí (aprox.)", cheap: "Barato: buen momento para comprar", dear: "Caro: buen momento para vender",
     buy: "Comprar", sell: "Vender", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
     caravel: "Comprar carabela ({p})", at: "En", sea: "En el mar hacia", win: "¡Victoria! Alcanzaste la meta.", lose: "Se acabó el tiempo. Patrimonio final:",
     cap: "Carga", log: { arrive: "Día {day}: el barco {ship} llega a {city}", buy: "Día {day}: compras {qty} {good} por {sum}", sell: "Día {day}: vendes {qty} {good} por {sum}", sail: "Día {day}: el barco {ship} zarpa a {city} ({days} días)", caravel: "Día {day}: compras una carabela en {city}" }, goods: { grain: "Trigo", dried_fish: "Pescado seco", salt: "Sal", wool: "Lana", iron: "Hierro", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta" },
     types: { cog: "Coca", caravel: "Carabela" } },
-  en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game",
+  en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game", cont: "Continue", start: "Start", company: "Name of your trading house", defCo: "My Trading House", tagline: "Sea trading on the Iberian coast, 15th-16th century", menu: "Menu", saved: "Game saved", noSave: "No saved game", exportS: "Export", importS: "Import", badSave: "That file is not a valid save",
     hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port on the map to sail.",
     hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold", holdValue: "Hold value here (approx.)", cheap: "Cheap: good time to buy", dear: "Dear: good time to sell",
     buy: "Buy", sell: "Sell", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
@@ -77,7 +78,7 @@ function drawShips() {
 }
 function tickDay() {
   const before = g.ships.map((x) => !!x.voyage);
-  advanceDay(g); progress = 0; departed.clear();
+  advanceDay(g); progress = 0; departed.clear(); autosave();
   if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
   render();
 }
@@ -90,18 +91,23 @@ function frame(now) {
   drawShips();
   requestAnimationFrame(frame);
 }
-function start() { g = newGame(world); sel = 0; render(); }
+const SAVE_KEY = "almojarife.save.v1";
+let company = "";
+function autosave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
+function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
+function start(name, save = true) { g = newGame(world); sel = 0; company = cleanCompany(name) || T[lang].defCo; if (save) autosave(); render(); }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const was = new Set(g.ships.filter((x) => x.voyage).map((x) => x.id));
   const day = g.day; fn();
   if (g.day !== day) { progress = 0; departed.clear(); } // wait buttons advance whole days
   else for (const x of g.ships) if (x.voyage && !was.has(x.id)) departed.set(x.id, progress); // left port mid-day
-  render();
+  autosave(); render();
 }
 
 function render() {
   t = T[lang]; const s = ship();
+  $("co").textContent = company ? `· ${company}` : "";
   $("day").textContent = `${t.day} ${g.day}/${DEADLINE_DAYS}`;
   $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`;
   $("goal").textContent = `${t.goal}: ${fmt(GOAL_CASH)}`;
@@ -150,7 +156,23 @@ function render() {
 }
 $("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
-$("new").onclick = () => { playing = false; progress = 0; departed.clear(); start(); };
+$("new").onclick = () => { playing = false; showTitle(); };
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
-start();
+function showTitle() {
+  t = T[lang]; const saved = loadSaved(), el = $("title");
+  el.innerHTML = `<div class="box"><h1>El Almojarife</h1><p>${t.tagline}</p>` +
+    `<label>${t.company}<br><input id="co-in" maxlength="30" value="${t.defCo}"></label><br>` +
+    `<button id="t-start">${t.start}</button> <button id="t-cont" ${saved ? "" : "disabled"} title="${saved ? "" : t.noSave}">${t.cont}</button> ` +
+    `<button id="t-exp" ${saved ? "" : "disabled"}>${t.exportS}</button> <button id="t-imp">${t.importS}</button> <button id="t-lang">${lang === "es" ? "EN" : "ES"}</button>` +
+    `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
+  el.hidden = false;
+  $("t-start").onclick = () => { playing = false; progress = 0; departed.clear(); start($("co-in").value); el.hidden = true; };
+  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; departed.clear(); render(); el.hidden = true; };
+  $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
+  $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
+  $("t-imp").onclick = () => $("t-file").click();
+  $("t-file").onchange = async (e) => { try { const f = e.target.files[0]; const r = unpackGame(JSON.parse(await f.text()), world); g = r.g; company = r.company; autosave(); sel = 0; render(); el.hidden = true; } catch { $("t-msg").textContent = t.badSave; } };
+}
+start("", false); // background game behind the title screen; it never overwrites a save
+showTitle();
 requestAnimationFrame(frame);
