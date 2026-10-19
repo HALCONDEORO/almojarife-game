@@ -29,3 +29,7 @@ Map, menus and market stay 2D (SVG/HTML). A separate canvas shows a 3D port or s
 
 ## Recommendation
 Do not rewrite the game in 3D. Build an optional 3D port/shipyard scene (desktop first) with vendored three.js, loaded on demand, 2D fallback kept. Decide after the prototype is seen by the owner.
+
+## Decision (owner delegated the engine choice, 21:56)
+Engine: three.js (MIT). Why: smallest effort for a desktop target, plain ES modules (the project has no bundler), 170 KB gzip first load, large documentation, clean licence. Babylon.js adds weight we do not need; raw WebGL adds own code we cannot afford.
+Approach: optional 3D port scene on a separate canvas, procedural assets, loaded on demand, 2D scene as fallback. Game logic stays untouched. Steps: (1) vendored prototype under web/proto3d; (2) port scene reading real game state; (3) shipyard with ships on the slipway; (4) day/night and water. Each step is a small PR with tests where logic exists and a screenshot.
