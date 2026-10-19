@@ -45,3 +45,6 @@ M1b economy prototype: trade between ports (stock refills), fleet and travel alo
 
 ## Model rule (set by the owner, 19 Oct 2026)
 Sonnet by default for all reviews and drafting. Opus only for very hard problems. Codex as a second opinion case by case. Any verdict is an opinion, not a gate.
+
+## M1b clamp-share gate (19 Oct 2026)
+M1b requires that no good is pinned at a price clamp more than 30% of the time. Before the retune: 74% of samples pinned with 6 AI traders over 20 simulated years, because goods a town does not make drained to zero and sat at the 3x ceiling. Fix in src/sim/market.mjs: every town gets a small local trickle of each good, and consumption falls as stock gets scarce (demand follows price). After: 0.6% pinned with 6 traders and 0.5% with 12 (20 simulated years, test/ai.test.mjs now asserts under 30%). `npm run sim1000` runs 1,000 simulated years in about 55 seconds on this workspace (0.6% pinned, exit code fails above 30%); it is not yet wired into CI. Not yet done: a check that profitable routes fade with use. Open worry: total trader cash grows without bound (about 930 million after 1,000 years with 6 traders), so profit per trip does not fade enough; that needs a trade-volume or fee tune next.

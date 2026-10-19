@@ -1,0 +1,22 @@
+// M1b check: 1,000 simulated years with AI traders. Prints the clamp-pinned share and total trader cash.
+// Run: npm run sim1000   (takes about a minute). Fails if more than 30% of price samples are at a clamp.
+import { loadWorld } from "../src/sim/world.mjs";
+import { makeMarket, tickMarket, price } from "../src/sim/market.mjs";
+import { makeShip, tickShip } from "../src/sim/trade.mjs";
+import { aiStep } from "../src/sim/ai.mjs";
+const years = Number(process.argv[2] ?? 1000), traders = Number(process.argv[3] ?? 6);
+const world = loadWorld(), m = makeMarket(world), ids = world.cities.map((c) => c.id), goods = Object.keys(world.goods);
+const ts = Array.from({ length: traders }, (_, i) => ({ cash: 2000, ship: makeShip(i, i % 2 ? "caravel" : "cog", ids[i % ids.length]) }));
+let pinned = 0, samples = 0;
+const t0 = Date.now();
+for (let d = 0; d < years * 365; d++) {
+  tickMarket(m);
+  for (const t of ts) { tickShip(t.ship); aiStep(world, m, t, t.ship); }
+  if (d % 30 === 0) for (const c of ids) for (const g of goods) {
+    const p = price(world, m[c][g], g), b = world.goods[g].base;
+    samples++; if (p >= b * 3 || p <= b * 0.4) pinned++;
+  }
+}
+const share = pinned / samples;
+console.log(JSON.stringify({ years, traders, pinnedShare: +share.toFixed(4), totalCash: ts.reduce((a, t) => a + t.cash, 0), seconds: (Date.now() - t0) / 1000 }));
+process.exit(share < 0.3 ? 0 : 1);
