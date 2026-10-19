@@ -5,7 +5,8 @@ export const SAVE_VERSION = 1;
 export const MIGRATIONS = {};
 
 export function makeSave({ seed, rngState, day, market, player = {} }) {
-  return { version: SAVE_VERSION, seed, rngState, day, market, player };
+  // Deep copy: later ticks must not change the saved object.
+  return structuredClone({ version: SAVE_VERSION, seed, rngState, day, market, player });
 }
 
 export function serialize(save) {
@@ -13,26 +14,42 @@ export function serialize(save) {
 }
 
 /** Parse, migrate to the current version, validate. Throws a clear Error on any problem. */
-export function deserialize(text) {
+export function deserialize(text, { migrations = MIGRATIONS, version = SAVE_VERSION } = {}) {
   let s;
   try { s = JSON.parse(text); } catch { throw new Error("save: not valid JSON"); }
   if (!s || typeof s !== "object" || !Number.isInteger(s.version)) throw new Error("save: missing version");
-  if (s.version > SAVE_VERSION) throw new Error(`save: version ${s.version} is newer than this game (${SAVE_VERSION})`);
-  while (s.version < SAVE_VERSION) {
-    const up = MIGRATIONS[s.version];
-    if (!up) throw new Error(`save: no migration from version ${s.version}`);
+  if (s.version > version) throw new Error(`save: version ${s.version} is newer than this game (${version})`);
+  while (s.version < version) {
+    const prev = s.version;
+    const up = migrations[prev];
+    if (!up) throw new Error(`save: no migration from version ${prev}`);
     s = up(s);
+    if (!s || typeof s !== "object" || s.version !== prev + 1) throw new Error(`save: migration from ${prev} must return version ${prev + 1}`);
   }
   validate(s);
   return s;
 }
 
+const isU32 = (n) => Number.isInteger(n) && n >= 0 && n <= 0xffffffff;
+const isObj = (o) => o !== null && typeof o === "object" && !Array.isArray(o);
+
+/** Rebuild a running game from a save: the RNG state is restored. */
+export function loadGame(text, makeRng, opts) {
+  const save = deserialize(text, opts);
+  const rng = makeRng(save.seed);
+  rng.setState(save.rngState);
+  return { ...save, rng };
+}
+
 function validate(s) {
-  if (!Number.isInteger(s.seed)) throw new Error("save: bad seed");
-  if (!Number.isInteger(s.rngState)) throw new Error("save: bad rngState");
+  if (!isU32(s.seed)) throw new Error("save: bad seed");
+  if (!isU32(s.rngState)) throw new Error("save: bad rngState");
+  if (!isObj(s.player)) throw new Error("save: bad player");
   if (!Number.isInteger(s.day) || s.day < 0) throw new Error("save: bad day");
-  if (!s.market || typeof s.market !== "object") throw new Error("save: bad market");
-  for (const [city, goods] of Object.entries(s.market))
+  if (!isObj(s.market)) throw new Error("save: bad market");
+  for (const [city, goods] of Object.entries(s.market)) {
+    if (!isObj(goods)) throw new Error(`save: bad market entry ${city}`);
     for (const [g, e] of Object.entries(goods))
-      if (!Number.isFinite(e.stock) || e.stock < 0) throw new Error(`save: bad stock ${city}/${g}`);
+      if (!isObj(e) || !Number.isFinite(e.stock) || e.stock < 0) throw new Error(`save: bad stock ${city}/${g}`);
+  }
 }

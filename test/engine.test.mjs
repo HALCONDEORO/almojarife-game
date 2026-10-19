@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { makeRng } from "../src/sim/rng.mjs";
 import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket, tickMarket } from "../src/sim/market.mjs";
-import { makeSave, serialize, deserialize, SAVE_VERSION, MIGRATIONS } from "../src/sim/save.mjs";
+import { makeSave, serialize, deserialize, loadGame, SAVE_VERSION } from "../src/sim/save.mjs";
 const world = loadWorld();
+const KNOWN42 = [601103752, 448290559, 852465793];
 
 test("same seed gives the same sequence; different seed differs", () => {
   const a = makeRng(42), b = makeRng(42), c = makeRng(43);
@@ -47,13 +48,47 @@ test("bad saves are rejected with a clear error", () => {
   bad.market[c][g].stock = -5;
   assert.throws(() => deserialize(JSON.stringify(bad)), /bad stock/);
 });
-test("migration corpus: an older save is upgraded in order", () => {
-  MIGRATIONS[0] = (s) => ({ ...s, version: 1, player: {} });
-  try {
-    const old = { version: 0, seed: 1, rngState: 5, day: 2, market: {} };
-    const up = deserialize(JSON.stringify(old));
-    assert.equal(up.version, SAVE_VERSION);
-    assert.deepEqual(up.player, {});
-  } finally { delete MIGRATIONS[0]; }
-  assert.throws(() => deserialize(JSON.stringify({ version: 0, seed: 1, rngState: 5, day: 2, market: {} })), /no migration/);
+
+test("known answer: mulberry32 seed 42 never changes (saves depend on it)", () => {
+  const r = makeRng(42);
+  assert.deepEqual(Array.from({ length: 3 }, () => Math.round(r.next() * 1e9)), KNOWN42);
+});
+test("int and pick stay in bounds and reject bad input", () => {
+  const r = makeRng(3);
+  for (let i = 0; i < 500; i++) { const n = r.int(2, 5); assert.ok(n >= 2 && n <= 5 && Number.isInteger(n)); }
+  assert.ok(["a", "b"].includes(r.pick(["a", "b"])));
+  assert.throws(() => r.int(5, 2), RangeError);
+  assert.throws(() => r.pick([]), RangeError);
+});
+test("save is plain data and a copy: ticking after saving does not change it", () => {
+  const st = run(4, 10), save = makeSave(st);
+  assert.deepEqual(JSON.parse(serialize(save)), save);
+  const before = serialize(save);
+  tickMarket(st.market);
+  assert.equal(serialize(save), before);
+});
+test("malformed saves give clear errors, not TypeErrors", () => {
+  const ok = makeSave(run(1, 2)); const c = Object.keys(ok.market)[0]; const g = Object.keys(ok.market[c])[0];
+  const mut = (f) => { const x = structuredClone(ok); f(x); return JSON.stringify(x); };
+  assert.throws(() => deserialize(mut((x) => { x.market[c] = null; })), /bad market entry/);
+  assert.throws(() => deserialize(mut((x) => { x.market[c][g] = null; })), /bad stock/);
+  assert.throws(() => deserialize(mut((x) => { x.market = []; })), /bad market/);
+  assert.throws(() => deserialize(mut((x) => { x.rngState = -1; })), /bad rngState/);
+  assert.throws(() => deserialize(mut((x) => { x.rngState = 2 ** 32; })), /bad rngState/);
+  assert.throws(() => deserialize(mut((x) => { x.player = []; })), /bad player/);
+});
+test("migrations chain in order and a bad migration is rejected", () => {
+  const m = { 0: (s) => ({ ...s, version: 1, player: {} }), 1: (s) => ({ ...s, version: 2, extra: true }) };
+  const old = JSON.stringify({ version: 0, seed: 1, rngState: 5, day: 2, market: {} });
+  const up = deserialize(old, { migrations: m, version: 2 });
+  assert.equal(up.version, 2); assert.equal(up.extra, true);
+  assert.throws(() => deserialize(old, { migrations: { 0: (s) => s }, version: 1 }), /must return version 1/);
+  assert.throws(() => deserialize(old, { migrations: {}, version: 1 }), /no migration/);
+});
+test("loadGame restores the RNG so a resumed run matches an uninterrupted one", () => {
+  const a = makeRng(11); for (let i = 0; i < 17; i++) a.next();
+  const expected = Array.from({ length: 5 }, () => a.next());
+  const b = makeRng(11); for (let i = 0; i < 17; i++) b.next();
+  const g = loadGame(serialize(makeSave({ seed: 11, rngState: b.getState(), day: 17, market: {} })), makeRng);
+  assert.deepEqual(Array.from({ length: 5 }, () => g.rng.next()), expected);
 });
