@@ -22,7 +22,8 @@ export function sail(world, ship, to) {
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
   const days = Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay));
-  ship.voyage = { to, daysLeft: days };
+  // Keep the route and total days so the position at sea is known and survives a save.
+  ship.voyage = { from: ship.at, to, daysLeft: days, totalDays: days, path: r.path, km: r.km };
   return { ok: true, days, km: Math.round(r.km) };
 }
 /** One day at sea; arrives when daysLeft reaches 0. */
