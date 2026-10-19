@@ -7,7 +7,7 @@
 
 ## Prizes from pirates
 - Source: Patrician IV manual, "Capturing Ships": you can take a pirate ship only when you were attacked, the opponent is a pirate, and you sank all of their ships but one and reduced its cannons to 0.
-- Our version: after an won encounter against pirates, the player may keep the pirate ship (resold to the shipyard at a lower price), once per encounter. No capture of civil ships.
+- Our version: after a won encounter against pirates, the player may keep the pirate ship (resold to the shipyard at a lower price), once per encounter. No capture of civil ships.
 - Cost: small after D.
 
 ## Regional events (shocks)
