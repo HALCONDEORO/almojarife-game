@@ -34,7 +34,7 @@ Pillars:
 
 **Characters (invented):** the harbour master, an old rival merchant, a guild clerk who keeps the books, a corsair captain who used to be a trader.
 
-**1.0 map (8 to 10 ports, see ROADMAP options):** Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, and in the larger option also Málaga and Marseille. Canary Islands, Genoa and Orán are the first expansion. Coastlines from Natural Earth; cities, lanes and numbers are ours.
+**1.0 map (8 ports):** Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger. Málaga, Marseille, Canary Islands, Genoa and Orán are the first expansion candidates. Coastlines from Natural Earth; cities, lanes and numbers are ours.
 
 ## 3. Core loop
 
@@ -47,7 +47,7 @@ Check market -> load goods -> pick a route -> sail (events) -> sell -> reinvest 
 - Season = 90 days, year = 360 days. Winter lanes are slower and riskier.
 
 ### 4.2 Goods
-Start with 16 goods in 4 groups: **staples** (grain, fish, salt, timber), **craft inputs** (iron, wool, hemp, clay), **crafted** (cloth, tools, beer, rope), **luxury** (furs, amber, wine, spice). Each has base price, bulk (cargo units per item), and perishability.
+Start with 12 goods in 4 groups: **staples** (grain, dried fish, salt), **craft inputs** (wool, iron, timber), **crafted** (cloth, olive oil, wine), **luxury** (silk, sugar, pepper). Each has base price, bulk (cargo units per item), and perishability.
 
 ### 4.3 Market model
 - Each city has stock S and target stock T for each good. Price = base x clamp((T / max(S,1))^0.6, 0.4, 2.5).
@@ -58,7 +58,7 @@ Start with 16 goods in 4 groups: **staples** (grain, fish, salt, timber), **craf
 - AI traders move stock along the lanes, so the world is never static.
 
 ### 4.4 Ships
-- Cog: 40 cargo, speed 4, crew 12, cost 3,000. Hulk: 80 cargo, speed 3, crew 20. Caravel: 60 cargo, speed 6, crew 16. Numbers are placeholders and will be tuned.
+- Nao (small merchant ship): 40 cargo, speed 4, crew 12, cost 3,000. Carraca (large, slow): 80 cargo, speed 3, crew 20. Carabela (fast): 60 cargo, speed 6, crew 16. Numbers are placeholders and will be tuned.
 - Wear grows with distance and storms; repair at shipyard. Crew wages are paid daily.
 
 ### 4.5 Production
@@ -82,16 +82,16 @@ Campaign (1.0): finish the Act 2 goal; Act 3 arrives in 1.1. Bankruptcy ends a r
 
 Options:
 - **A. Medium (Iberia plus western Mediterranean and Atlantic, 20 cities).**
-- **B. Small (8 to 10 ports around Spain).** Fastest to a polished build; it is where the name and first audience are.
+- **B. Small (8 ports around Spain).** Fastest to a polished build; it is where the name and first audience are.
 - **C. Wider world (rest of the Mediterranean, Atlantic, Africa, Asia).** Long-term goal.
 
 Criteria: (1) finishing in months, not years; (2) economy needs enough cities and goods to have real arbitrage, about 8 to 12 cities minimum; (3) cost of art, balancing and events per city; (4) testability, all runs must stay fast in a headless simulation.
 
-Decision (proposed): **1.0 ships with B (8 to 10 ports around Spain, 12 to 16 goods, 3 ship types), then A (20 cities) and Act 3 as update 1.1, then regions as free expansions toward C.** Each later region is a data pack plus a few events, so the engine does not change.
+Decision (proposed): **1.0 ships with B (8 ports around Spain, 12 goods, 3 ship types), then A (20 cities) and Act 3 as update 1.1, then regions as free expansions toward C.** Each later region is a data pack plus a few events, so the engine does not change.
 
 ## 6. Roadmap
 
-The roadmap lives in `ROADMAP.md` (v4). Two options with dates are in the roadmap (full: 1.0 on 30 Apr 2028; reduced: 1.0 on 28 Feb 2028). Both have 2 acts at 1.0. More cities, Act 3 and regions come after 1.0.
+The roadmap lives in `ROADMAP.md` (v5). Official plan (Option 2, owner decision 19 Oct 2026): engine base 15 Jan 2027, economy prototype 12 Feb, vertical slice 9 Apr, Alpha 14 Jul 2027, public web beta 30 Nov 2027, 1.0 on 28 Feb 2028; 8 ports, 12 goods, 2 acts, web only. Everything else comes after 1.0.
 
 ## 7. Where it will be playable
 

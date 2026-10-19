@@ -16,7 +16,18 @@ Navegador primero (gratis, sin instalar). Descargas de escritorio después del 1
 
 ## Hoja de ruta / Roadmap
 
-Mapa inicial: la costa de España y su entorno (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger y más). Two options, 1.0 web only: reduced (1.0 on 28 Feb 2028, Alpha 14 Jul 2027) or full (1.0 on 30 Apr 2028, Alpha 31 Aug 2027). After 1.0: Act 3, Canary Islands, Genoa, more cities, desktop builds. Details: `docs/ROADMAP.md`. Design and story: `docs/DESIGN.md`. Other games in this space: `docs/COMPETITION.md`.
+Mapa inicial: la costa de España (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger). 8 ports, 12 goods, 2 acts, web only.
+
+| Hito / Milestone | Fecha / Date |
+|---|---|
+| Engine base | 15 Jan 2027 |
+| Economy prototype | 12 Feb 2027 |
+| Vertical slice (browser) | 9 Apr 2027 |
+| Alpha | 14 Jul 2027 |
+| Public web beta | 30 Nov 2027 |
+| 1.0 | 28 Feb 2028 |
+
+Después / After 1.0: Act 3, more ports (Canarias, Génova, Marsella, Málaga, Orán), desktop builds. Details: `docs/ROADMAP.md`; design: `docs/DESIGN.md`; other games: `docs/COMPETITION.md`.
 
 ## Qué hay aquí / What is here
 
