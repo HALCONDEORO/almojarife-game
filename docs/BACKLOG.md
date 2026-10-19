@@ -82,3 +82,17 @@ Priority by impact, one small PR each with tests and ES screenshots:
 7. rivals: stronger AI with strategies and personalities
 Graphics engine in parallel: waves, day/night, animated port, performance, mobile; 3D study after.
 - crew and guns (Marco 21:23): crew (sailors, soldiers with light arms) and artillery (bombards/cannons by era and class) with cost, cargo weight taken, upkeep, effect on pirate events and naval combat; data in JSON. Next after the illustrated shipyard.
+
+## Ten ideas from the owner (21:29), all accepted. Fictional characters only; own mechanics, no copied content.
+Priority order (impact first, small PRs with tests):
+1. tutorial and easy mode (guided first voyage, hints, softer upkeep)
+2. contracts and commissions from nobles and guilds (deadline, reward, penalty)
+3. loans and insurance with interest (credit limit by net worth)
+4. reputation and honour per city (affects prices, contracts, offices)
+5. rivals with personality (AI strategies: trader, pirate-friendly, monopolist)
+6. black market and smuggling (customs, fines, seizure risk)
+7. spies and contacts per port (paid info with risk of false information; extends the tavern rumours)
+8. captain's log and yearly chronicle (generated from the game log)
+9. sandbox mode, scenarios and achievements
+10. family and heirs, marriages and alliances (fictional characters; the game continues after the player's death)
+Also queued: crew and guns, illustrated shipyard, buildings and factories, guilds, auctions, calendar from 1470 with milestones (approved 21:08, after navigation and map).
