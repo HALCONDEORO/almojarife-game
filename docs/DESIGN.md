@@ -22,17 +22,19 @@ Pillars:
 
 ## 2. Setting and story (original)
 
-The world is a loose, historical-feeling trading coast, not tied to exact real events. Years run from a fictional "Year 1" onward and the calendar is our own.
+**Where:** Spain and its surroundings in the late Middle Ages: the Crown of Castile and the Crown of Aragon, the Iberian Atlantic, the Canary Islands, nearby North Africa and the western Mediterranean (Marseille, Genoa). Dates and events are historically flavoured but our own; the calendar is "Year 1" onward.
 
-Story frame: the player's house is one of the **Lantern Houses**, trading families who keep the harbour lights in return for the right to trade. An old charter (the **Tide Charter**) lets Lantern Houses sail under the city's protection, but the charter is up for renewal every generation. Rivals, storms, pirates and the city council all push on it.
+**Story frame:** the player's house starts in a harbour town. Kings farm out the right to collect port duties (the *almojarifazgo*), and the one who holds it is the **almojarife**, treasurer of the trade. Our **Carta de Almojarifazgo** is a royal charter that gives one house the customs of a coast for a term. It comes up for renewal; rivals, storms, pirates and the Crown's needs all push on it.
 
-Campaign arc (acts):
-- **Act 1, The Single Cog.** Learn buying, selling, routes. Goal: pay off your starting debt and win a seat in the guild.
-- **Act 2, The Season of Salt.** Build workshops, fight a price war, survive a bad year (famine, plague, storm season). Goal: become a Lantern House.
-- **Act 3, The Charter.** Politics and convoys against a pirate league. Goal: secure the Tide Charter for your house.
-- **Epilogue, sandbox.** Continue as long as you like.
+**Acts:**
+- **Acto 1, La primera nao.** Learn buy, sell, route. Goal: clear the starting debt, join the town's merchant guild.
+- **Acto 2, El año de la sal.** Workshops, a price war with an old rival, a bad year (hunger, storm season). Goal: win standing in several ports. (Plague is not in 1.0; the bad year is hunger and a storm season.)
+- **Acto 3, La Carta** (update 1.1, not in 1.0). Politics, convoys, a pirate league. Goal: hold the Carta.
+- **Epilogue, sandbox.** Continue freely.
 
-Characters (all invented): the harbour master, an old rival merchant, a guild clerk who keeps the books, a pirate captain who used to be a trader. Each has a few short event chains.
+**Characters (invented):** the harbour master, an old rival merchant, a guild clerk who keeps the books, a corsair captain who used to be a trader.
+
+**1.0 map (8 to 10 ports, see ROADMAP options):** Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, and in the larger option also Málaga and Marseille. Canary Islands, Genoa and Orán are the first expansion. Coastlines from Natural Earth; cities, lanes and numbers are ours.
 
 ## 3. Core loop
 
@@ -67,45 +69,46 @@ Workshops turn inputs into goods on fixed recipes (our own recipes, for example 
 - Council votes on taxes, port fees and convoy law. Standing lets you propose and vote.
 
 ### 4.7 Risk
-- Storms: chance per leg by season and lane. Pirates: chance by lane and cargo value, reduced by armed escorts or convoys. Insurance (from Alpha 2) pays a share of a lost cargo for a daily premium.
-- Events: bad harvest, plague, festival demand, blockade. Each changes consumption or lane access for a limited time.
+- Storms: chance per leg by season and lane. Pirates: chance by lane and cargo value, reduced by armed escorts or convoys. Insurance is not in 1.0 (post-1.0 update).
+- Events: bad harvest, festival demand (plague and blockade come after 1.0). Each changes consumption or lane access for a limited time.
 
 ### 4.8 AI traders
 Rule-based: each picks the best expected margin among routes in range, with noise and caps. Simple, fast, deterministic with a seed.
 
 ### 4.9 Win and lose
-Campaign: finish the Act 3 goal. Bankruptcy ends a run. Sandbox: score by net worth and city standing.
+Campaign (1.0): finish the Act 2 goal; Act 3 arrives in 1.1. Bankruptcy ends a run. Sandbox: score by net worth and city standing.
 
 ## 5. Map size decision
 
 Options:
-- **A. Medium (Baltic and North Sea, 20 cities).** Similar scale to classic hanseatic trade games.
-- **B. Small (10 cities, current prototype).** Fastest to a polished build.
-- **C. World (Europe, Africa, Asia).** The owner's long-term goal.
+- **A. Medium (Iberia plus western Mediterranean and Atlantic, 20 cities).**
+- **B. Small (8 to 10 ports around Spain).** Fastest to a polished build; it is where the name and first audience are.
+- **C. Wider world (rest of the Mediterranean, Atlantic, Africa, Asia).** Long-term goal.
 
 Criteria: (1) finishing in months, not years; (2) economy needs enough cities and goods to have real arbitrage, about 8 to 12 cities minimum; (3) cost of art, balancing and events per city; (4) testability, all runs must stay fast in a headless simulation.
 
-Decision (proposed): **1.0 ships with B (10 cities, 16 goods, 3 ship types), then A (20 cities) as update 1.1, then regions as free expansions toward C.** Each later region is a data pack plus a few events, so the engine does not change.
+Decision (proposed): **1.0 ships with B (8 to 10 ports around Spain, 12 to 16 goods, 3 ship types), then A (20 cities) and Act 3 as update 1.1, then regions as free expansions toward C.** Each later region is a data pack plus a few events, so the engine does not change.
 
 ## 6. Roadmap
 
-The roadmap lives in `ROADMAP.md` and is the working reference (three audit passes). Summary: engine base 18 Dec 2026, economy prototype 29 Jan 2027, vertical slice 16 Apr 2027, Alpha 31 Aug 2027, public web beta 31 Jan 2028, 1.0 on 30 Apr 2028, with 10 cities. More cities and regions come after 1.0.
+The roadmap lives in `ROADMAP.md` (v4). Two options with dates are in the roadmap (full: 1.0 on 30 Apr 2028; reduced: 1.0 on 28 Feb 2028). Both have 2 acts at 1.0. More cities, Act 3 and regions come after 1.0.
 
 ## 7. Where it will be playable
 
 1. **Web (browser), free, first.** Static site, runs on any device, no install. Alpha and Beta ship here.
-2. **Desktop builds** (Windows, Mac, Linux) as downloads at 1.0.
+2. **Desktop builds** (Windows, Mac, Linux) after 1.0. 1.0 is web only.
 3. **Steam** only if the owner decides to. It needs a paid developer registration and store review, so nothing is done until the owner says so.
 
 ## 8. Tech and process
 
 JavaScript, simulation in plain modules with no engine dependency, rendering in the browser (canvas). Seeded deterministic simulation, headless tests, balance by running thousands of simulated years. All code on GitHub by pull request with review. Open source (MIT code, CC BY 4.0 art and docs).
 
-Roadmap: see `ROADMAP.md` (audited v3.1). Competition study: see `COMPETITION.md`.
+Roadmap: see `ROADMAP.md` (audited v4). Competition study: see `COMPETITION.md`.
 
 ## 9. Risks
 
 - Scope creep: mitigated by the phased map plan.
+- Review: PR review is the owner reviewing work made with AI help (self-review); outside testers and external reviewers are the independent check.
 - Economy that is boring or breaks: mitigated by simulation tests and tuning gates.
 - Name or trademark clash: no registry clearance (EUIPO, USPTO) could be checked; record it before any public release.
 - Art workload: start with a clean, simple map style and icons, upgrade later.

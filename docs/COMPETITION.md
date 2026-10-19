@@ -37,6 +37,9 @@ Hanse, The Hanseatic League (1986, Atari ST): https://www.mobygames.com/game/530
 ## Is there a Patrician successor?
 Patrician IV is still sold (2010) with a "Mixed" Steam score. A discussion thread asks for a successor: https://www.reddit.com/r/tycoon/comments/1rmpl5g/a_successor_to_the_patrician_series/ . No announced Patrician V was found in these searches.
 
+## Spain angle
+With Spain and its surroundings as the first map, the nearest rival on setting is Dominus Orbis Maris 1400: Mare Nostrum (Mediterranean, Q2 2027, announced). No Steam title found in these searches centres on the Spanish coast and Canary Islands. Patrician IV has no Spanish and sold well in Spain in its earlier edition (60,000 units for Patrician II according to Wikipedia).
+
 ## What the gaps look like (opinion, from the data above)
 
 1. There are living rivals, so the honest claim is not "nothing exists". The market is small-indie crowded in 2025-2027: High Seas High Profits, Argosy, Mare Nostrum, Trade Empire, Sail the Seas.
