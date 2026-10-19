@@ -12,21 +12,37 @@ export function portLayout(id, pop = 8000) {
   return { houses, tower: { x: houses[Math.floor(n / 2)].x, z: -11 }, quayZ: -2 };
 }
 
-export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1 } = {}) {
+/** Sky, light and fog colours for a time of day t in 0..1 (0 dawn, .5 noon, 1 dusk). Pure, testable. */
+export function skyFor(t) {
+  const k = Math.sin(Math.max(0, Math.min(1, t)) * Math.PI); // 0 at the edges, 1 at noon
+  const mix = (a, b) => [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * k));
+  return { sky: mix([0xe0, 0x8a, 0x5e], [0x9e, 0xc3, 0xd6]), sun: mix([0xff, 0x9a, 0x50], [0xff, 0xe8, 0xc0]), sunPower: 1 + 1.4 * k, sunHeight: 4 + 12 * k };
+}
+const hex = ([r, g, b]) => (r << 16) | (g << 8) | b;
+
+export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5 } = {}) {
   const scene = new THREE.Scene(), L = portLayout(id, pop);
-  scene.background = new THREE.Color(0x9ec3d6); scene.fog = new THREE.Fog(0x9ec3d6, 30, 80);
+  const sk = skyFor(tod); scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(hex(sk.sky), 30, 80);
   scene.add(new THREE.HemisphereLight(0xfff4d6, 0x4a6b7a, 1.1));
-  const sun = new THREE.DirectionalLight(0xffe2b0, 2.2); sun.position.set(-10, 14, 8); scene.add(sun);
+  const sun = new THREE.DirectionalLight(hex(sk.sun), sk.sunPower); sun.position.set(-10, sk.sunHeight, 8); scene.add(sun);
   const water = new THREE.Mesh(new THREE.PlaneGeometry(120, 120, 60, 60), new THREE.MeshStandardMaterial({ color: 0x2f6f8f, roughness: 0.35, metalness: 0.1, flatShading: true }));
   water.rotation.x = -Math.PI / 2; water.position.y = -0.2; water.name = "water"; scene.add(water);
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 1, 24), new THREE.MeshStandardMaterial({ color: 0xb89b6a, roughness: 1 }));
   ground.position.set(0, -0.3, -14); scene.add(ground);
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2b2118, roughness: 1 }), wood0 = new THREE.MeshStandardMaterial({ color: 0x6a4325, roughness: 0.8 });
   const wall = new THREE.MeshStandardMaterial({ color: 0xe7d9b9, roughness: 0.9 }), roof = new THREE.MeshStandardMaterial({ color: 0x9b4a2b, roughness: 0.8 });
   for (const h of L.houses) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(h.w, h.h, h.d), wall); b.position.set(h.x, h.h / 2 + 0.2, h.z);
     const r = new THREE.Mesh(new THREE.ConeGeometry(Math.max(h.w, h.d) * 0.78, 1, 4), roof); r.rotation.y = Math.PI / 4; r.position.set(h.x, h.h + 0.7, h.z);
     scene.add(b, r);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.45, 0.05), dark); win.position.set(h.x - h.w * 0.22, h.h * 0.6 + 0.2, h.z + h.d / 2 + 0.03); const w2 = win.clone(); w2.position.x = h.x + h.w * 0.22; scene.add(win, w2);
   }
+  if (warehouse) { // the player's warehouse: a long timber-framed hall on the quay
+    const hall = new THREE.Mesh(new THREE.BoxGeometry(5, 2.2, 2.4), new THREE.MeshStandardMaterial({ color: 0xc9a66b, roughness: 0.9 })); hall.position.set(9, 1.3, -4.2); hall.name = "warehouse";
+    const hr = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.3, 2.8), roof); hr.position.set(9, 2.6, -4.2); hr.rotation.z = 0.0; scene.add(hall, hr);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.6), new THREE.MeshStandardMaterial({ color: 0xb33a2a, side: THREE.DoubleSide })); flag.position.set(11.2, 3.6, -4.2); const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2, 5), wood0); pole.position.set(10.75, 3.3, -4.2); scene.add(flag, pole);
+  }
+  const crane = new THREE.Group(); { const m = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4, 0.3), wood0); m.position.y = 2; const a = new THREE.Mesh(new THREE.BoxGeometry(3, 0.25, 0.25), wood0); a.position.set(1.2, 4, 0); crane.add(m, a); crane.position.set(-9, 0.4, -1.8); crane.name = "crane"; scene.add(crane); }
   const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 8, 8), wall); tw.position.set(L.tower.x, 4.2, L.tower.z); scene.add(tw);
   const tr = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2, 8), roof); tr.position.set(L.tower.x, 9.2, L.tower.z); scene.add(tr);
   const quay = new THREE.Mesh(new THREE.BoxGeometry(60, 0.5, 2.2), new THREE.MeshStandardMaterial({ color: 0x6b5233, roughness: 1 })); quay.position.set(0, 0.1, L.quayZ); scene.add(quay);
@@ -36,9 +52,11 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1 } = 
 
 export function makeShip(THREE, x, z, k = 0) {
   const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x6a4325, roughness: 0.8 }), sailM = new THREE.MeshStandardMaterial({ color: 0xf1e8cf, side: THREE.DoubleSide, roughness: 1 });
-  const hull = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 1.6), wood); hull.position.y = 0.2; g.add(hull);
-  const bow = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.6, 4), wood); bow.rotation.z = -Math.PI / 2; bow.position.set(3.2, 0.2, 0); bow.scale.set(1, 1, 1); g.add(bow);
+  const prof = new THREE.Shape(); prof.moveTo(-2.6, 0.9); prof.quadraticCurveTo(-2.4, -0.3, -1.2, -0.45); prof.lineTo(1.6, -0.45); prof.quadraticCurveTo(3.0, -0.2, 3.5, 1.0); prof.lineTo(-2.6, 0.9);
+  const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(prof, { depth: 1.5, bevelEnabled: true, bevelSize: 0.12, bevelThickness: 0.12, bevelSegments: 2 }), wood); hull.position.set(0, 0.2, -0.75); g.add(hull);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.12, 1.75), new THREE.MeshStandardMaterial({ color: 0xc9962a, roughness: 0.7 })); stripe.position.set(0.4, 1.0, 0); g.add(stripe);
   const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 5, 6), wood); mast.position.set(0, 3, 0); g.add(mast);
+  const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3, 5), wood); yard.rotation.x = Math.PI / 2; yard.position.set(0, 4.5, 0); g.add(yard);
   const sail = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 3), sailM); sail.position.set(0, 3.2, 0); sail.rotation.y = Math.PI / 2 + 0.15 * (k % 2 ? 1 : -1); g.add(sail);
   g.position.set(x, 0.3, z); g.name = "ship"; return g;
 }
