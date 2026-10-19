@@ -47,3 +47,21 @@ With Spain and its surroundings as the first map, the nearest rival on setting i
 3. Free and open source: none of the Steam titles above is open source. A free, browser-playable, moddable trading game is a real gap.
 4. Scope discipline wins: reviews are strongest for compact, finished games (High Seas High Profits $8.99, Merchant of the Skies).
 5. Risk: Argosy (online, rivals, mayor career) is aiming at the same fantasy as our rank ladder. We must differ on openness, language, readable economy and web play.
+
+## What we learn from the genre (our own summary, ideas only)
+
+Studied on 19 Oct 2026 from public store pages, wikis and repository structure. Nothing here copies names, numbers, formulas, art or text from another game.
+
+Ideas we adopt, in our own form:
+1. A rank ladder driven by wealth plus civic reputation (our Forastero to Almojarife ladder, with original ranks).
+2. A town needs loop: unmet demand shrinks the town, which feeds back into the market (planned for v1.1).
+3. Production chains, AI traders and pirates, already in the design.
+4. A tutorial that teaches through tasks (milestone M4).
+5. A free mode next to campaigns, plus optional side missions with small rewards. Players of the genre report that free play is what they replay most.
+6. Event variety and seeded worlds, so runs differ. A compact game with many events can review well.
+
+Weak points reviewers name in the genre, which we want to avoid: dry presentation, low replay value, no moddability, no multiplayer in the newest entry. Our answer: readable price feedback, seeded variety, open data files, a map editor later.
+
+Open source game repositories we read for structure only (OpenTTD, Mindustry, Unciv, Wesnoth, OpenRCT2, Cataclysm-DDA) share: README, CONTRIBUTING, Code of Conduct, changelog and credits. We follow the same layout.
+
+Not studied yet: UI screens, mission scripting formats and difficulty curves, because they need screenshots or video and our tools read text only.
