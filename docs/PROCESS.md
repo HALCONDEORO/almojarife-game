@@ -41,3 +41,7 @@ M1b economy prototype: trade between ports (stock refills), fleet and travel alo
 ## Known gaps
 - CI results are not checked by the agent that merges (its token cannot read checks). Look at the Actions tab.
 - `makeMarket` ignores randomness; stock does not balance without trade.
+
+
+## Model rule (set by the owner, 19 Oct 2026)
+Sonnet by default for all reviews and drafting. Opus only for very hard problems. Codex as a second opinion case by case. Any verdict is an opinion, not a gate.
