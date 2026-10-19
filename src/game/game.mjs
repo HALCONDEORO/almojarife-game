@@ -1,6 +1,7 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
+import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
-import { makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
+import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { aiStep } from "../sim/ai.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -121,3 +122,25 @@ export function takeGoods(g, ship, good, qty) {
 }
 export function quote(g, city, good) { return price(g.world, g.market[city][good], good); }
 export { cargoUsed, SHIP_TYPES };
+
+/**
+ * Where would the whole hold sell best at today's prices? One row per other port, best first:
+ * {city, revenue, profit, days}. Prices at arrival will differ; this is a guide, not a promise.
+ */
+export function bestPorts(g, ship) {
+  if (ship.voyage || Object.keys(ship.cargo).length === 0) return [];
+  const rows = [];
+  for (const c of g.world.cities) {
+    if (c.id === ship.at) continue;
+    const r = route(g.world, ship.at, c.id);
+    if (!r) continue;
+    const there = { ...ship, at: c.id, voyage: null };
+    let revenue = 0, profit = 0, any = false;
+    for (const [good, q] of Object.entries(ship.cargo)) {
+      const p = previewSell(g.world, g.market, there, good, q);
+      if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
+    }
+    if (any) rows.push({ city: c.id, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
+  }
+  return rows.sort((a, b) => b.revenue - a.revenue);
+}

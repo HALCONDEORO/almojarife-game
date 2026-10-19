@@ -83,3 +83,16 @@ test("a game saved before history existed still works", () => {
   advanceDay(g);
   assert.equal(priceHistory(g, "cadiz", "grain").length, 1);
 });
+import { bestPorts } from "../src/game/game.mjs";
+test("bestPorts ranks other ports for the hold, best first, and is empty for an empty hold or at sea", () => {
+  const g = newGame(loadWorld()), s = g.ships[0];
+  assert.deepEqual(bestPorts(g, s), []);
+  const good = Object.keys(g.world.goods)[0];
+  doBuy(g, s, good, 20);
+  const rows = bestPorts(g, s), snap = JSON.stringify(g);
+  assert.ok(rows.length > 0 && rows.every((r, i) => i === 0 || rows[i - 1].revenue >= r.revenue));
+  assert.ok(rows.every((r) => r.city !== s.at && r.days >= 1));
+  assert.equal(JSON.stringify(g), snap, "must not change the game");
+  doSail(g, s, rows[0].city);
+  assert.deepEqual(bestPorts(g, s), []);
+});
