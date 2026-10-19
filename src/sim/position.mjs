@@ -3,6 +3,7 @@
 // day already elapsed (0 to 1); it is only for smooth drawing.
 import { haversineKm } from "../../tools/geo.mjs";
 import { route } from "./world.mjs";
+import { SHIP_TYPES } from "./trade.mjs";
 
 export function shipPosition(world, ship, frac = 0) {
   const v = ship.voyage;
@@ -13,7 +14,9 @@ export function shipPosition(world, ship, frac = 0) {
     if (!r) return pointOf(world, ship.at);
     path = r.path; total = r.km;
   }
-  const days = v.totalDays ?? v.daysLeft;
+  // Old saves have no totalDays: rebuild the original duration from distance and ship speed
+  // (the same formula sail() uses), so progress is right on every day of the voyage.
+  const days = v.totalDays ?? Math.max(v.daysLeft, Math.max(1, Math.ceil(total / (SHIP_TYPES[ship.type]?.kmPerDay ?? 90))));
   const done = Math.min(1, Math.max(0, (days - v.daysLeft + Math.min(1, Math.max(0, frac))) / days));
   let want = total * done;
   for (let i = 0; i + 1 < path.length; i++) {

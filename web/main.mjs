@@ -31,31 +31,42 @@ const cityName = (id) => world.nodes[id].name ?? id;
 
 document.documentElement.lang = lang;
 // Moving ships. The view only reads sim state; the sim advances on the daily tick below.
-let playing = false, speed = 1, lastTick = 0;
-const MS_PER_DAY = 1500;
+// `progress` is how much of the current day has elapsed (0 to 1). It is kept across pause,
+// resume and speed changes, so ships never move backwards or jump.
+let playing = false, speed = 1, progress = 0, lastFrame = 0;
+const MS_PER_DAY = 1500, departed = new Map(); // ship id -> progress when it left port (view only)
+const shipFrac = (id) => { const d = departed.get(id); return d === undefined ? progress : Math.max(0, (progress - d) / (1 - d || 1)); };
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
-  const frac = playing ? Math.min(1, (performance.now() - lastTick) / (MS_PER_DAY / speed)) : 0;
   let h = "";
-  for (const a of g.ai) { const p = shipPosition(world, a.ship, frac); h += `<text x="${X(p.lon) - 6}" y="${Y(p.lat) + 5}" font-size="13" fill="#555" opacity="0.8">⛵</text>`; }
-  g.ships.forEach((sh, i) => { const p = shipPosition(world, sh, frac); h += `<text x="${X(p.lon) - 8}" y="${Y(p.lat) + 6}" font-size="18" fill="${i === sel ? "#a00" : "#036"}">⛵</text><text x="${X(p.lon) + 8}" y="${Y(p.lat) - 6}" font-size="11" fill="#300">${sh.id}</text>`; });
+  for (const a of g.ai) { const p = shipPosition(world, a.ship, progress); h += `<text x="${X(p.lon) - 6}" y="${Y(p.lat) + 5}" font-size="13" fill="#555" opacity="0.8">⛵</text>`; }
+  g.ships.forEach((sh, i) => { const p = shipPosition(world, sh, shipFrac(sh.id)); h += `<text x="${X(p.lon) - 8}" y="${Y(p.lat) + 6}" font-size="18" fill="${i === sel ? "#a00" : "#036"}">⛵</text><text x="${X(p.lon) + 8}" y="${Y(p.lat) - 6}" font-size="11" fill="#300">${sh.id}</text>`; });
   layer.innerHTML = h;
 }
+function tickDay() {
+  const before = g.ships.map((x) => !!x.voyage);
+  advanceDay(g); progress = 0; departed.clear();
+  if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
+  render();
+}
 function frame(now) {
+  const dt = lastFrame ? Math.min(250, now - lastFrame) : 0; lastFrame = now;
   if (playing && !g.over) {
-    if (now - lastTick >= MS_PER_DAY / speed) {
-      const before = g.ships.map((x) => !!x.voyage);
-      advanceDay(g); lastTick = now;
-      if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
-      render();
-    }
+    progress += (dt * speed) / MS_PER_DAY;
+    if (progress >= 1) tickDay();
   }
   drawShips();
   requestAnimationFrame(frame);
 }
 function start() { g = newGame(world); sel = 0; render(); }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
-function act(fn) { fn(); lastTick = performance.now(); render(); }
+function act(fn) {
+  const was = new Set(g.ships.filter((x) => x.voyage).map((x) => x.id));
+  const day = g.day; fn();
+  if (g.day !== day) { progress = 0; departed.clear(); } // wait buttons advance whole days
+  else for (const x of g.ships) if (x.voyage && !was.has(x.id)) departed.set(x.id, progress); // left port mid-day
+  render();
+}
 
 function render() {
   t = T[lang]; const s = ship();
@@ -103,9 +114,9 @@ function render() {
   P.querySelectorAll("[data-wait]").forEach((e) => e.onclick = () => act(() => advanceDay(g)));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
 }
-$("play").onclick = () => { playing = !playing; lastTick = performance.now(); render(); };
+$("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
-$("new").onclick = () => { playing = false; start(); };
+$("new").onclick = () => { playing = false; progress = 0; departed.clear(); start(); };
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
 start();
 requestAnimationFrame(frame);
