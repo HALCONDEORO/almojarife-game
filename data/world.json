@@ -1,449 +1,391 @@
 {
  "cities": [
   {
-   "id": "luebeck",
-   "name": "Lübeck",
-   "lat": 53.87,
-   "lon": 10.69,
-   "pop": 25000,
-   "makes": [
-    "beer",
-    "timber"
-   ],
-   "needs": [
-    "salt",
-    "cloth",
-    "fish"
-   ]
-  },
-  {
-   "id": "hamburg",
-   "name": "Hamburg",
-   "lat": 53.55,
-   "lon": 9.99,
-   "pop": 22000,
-   "makes": [
-    "beer",
-    "cloth"
-   ],
-   "needs": [
-    "fish",
-    "timber",
-    "grain"
-   ],
-   "river": true
-  },
-  {
-   "id": "bremen",
-   "name": "Bremen",
-   "lat": 53.08,
-   "lon": 8.8,
-   "pop": 15000,
-   "makes": [
-    "beer",
-    "grain"
-   ],
-   "needs": [
-    "fish",
-    "salt",
-    "timber"
-   ],
-   "river": true
-  },
-  {
-   "id": "gdansk",
-   "name": "Gdańsk",
-   "lat": 54.35,
-   "lon": 18.65,
-   "pop": 18000,
-   "makes": [
-    "grain",
-    "timber"
-   ],
-   "needs": [
-    "cloth",
-    "beer",
-    "salt"
-   ]
-  },
-  {
-   "id": "riga",
-   "name": "Riga",
-   "lat": 56.95,
-   "lon": 24.11,
+   "id": "cadiz",
+   "name": "Cádiz",
+   "lat": 36.53,
+   "lon": -6.29,
    "pop": 12000,
    "makes": [
-    "timber",
-    "furs"
-   ],
-   "needs": [
-    "cloth",
     "salt",
-    "beer"
-   ]
-  },
-  {
-   "id": "visby",
-   "name": "Visby",
-   "lat": 57.64,
-   "lon": 18.3,
-   "pop": 6000,
-   "makes": [
-    "fish"
+    "dried_fish"
    ],
    "needs": [
-    "grain",
-    "cloth",
-    "beer"
-   ]
-  },
-  {
-   "id": "stockholm",
-   "name": "Stockholm",
-   "lat": 59.33,
-   "lon": 18.07,
-   "pop": 9000,
-   "makes": [
-    "iron",
-    "furs"
-   ],
-   "needs": [
-    "grain",
-    "cloth",
-    "salt"
-   ]
-  },
-  {
-   "id": "bergen",
-   "name": "Bergen",
-   "lat": 60.39,
-   "lon": 5.32,
-   "pop": 10000,
-   "makes": [
-    "fish"
-   ],
-   "needs": [
-    "grain",
-    "beer",
+    "wool",
     "cloth"
    ]
   },
   {
-   "id": "bruges",
-   "name": "Bruges",
-   "lat": 51.21,
-   "lon": 3.22,
+   "id": "sevilla",
+   "name": "Sevilla",
+   "lat": 37.39,
+   "lon": -5.99,
    "pop": 40000,
    "makes": [
-    "cloth",
-    "salt"
+    "olive_oil",
+    "wine"
    ],
    "needs": [
-    "furs",
+    "iron",
     "timber",
-    "grain",
-    "fish"
+    "silk"
    ],
    "river": true
   },
   {
-   "id": "london",
-   "name": "London",
-   "lat": 51.51,
-   "lon": -0.13,
-   "pop": 45000,
+   "id": "lisboa",
+   "name": "Lisboa",
+   "lat": 38.71,
+   "lon": -9.14,
+   "pop": 50000,
    "makes": [
-    "cloth"
+    "sugar",
+    "dried_fish",
+    "pepper"
    ],
    "needs": [
-    "furs",
-    "timber",
-    "fish",
+    "grain",
     "iron"
    ],
    "river": true
+  },
+  {
+   "id": "valencia",
+   "name": "Valencia",
+   "lat": 39.47,
+   "lon": -0.38,
+   "pop": 30000,
+   "makes": [
+    "grain",
+    "silk"
+   ],
+   "needs": [
+    "timber",
+    "wool",
+    "dried_fish"
+   ]
+  },
+  {
+   "id": "barcelona",
+   "name": "Barcelona",
+   "lat": 41.38,
+   "lon": 2.17,
+   "pop": 35000,
+   "makes": [
+    "cloth",
+    "iron"
+   ],
+   "needs": [
+    "grain",
+    "salt",
+    "pepper",
+    "dried_fish",
+    "sugar"
+   ]
+  },
+  {
+   "id": "palma",
+   "name": "Palma",
+   "lat": 39.57,
+   "lon": 2.65,
+   "pop": 12000,
+   "makes": [
+    "salt",
+    "olive_oil"
+   ],
+   "needs": [
+    "grain",
+    "cloth",
+    "pepper"
+   ]
+  },
+  {
+   "id": "bilbao",
+   "name": "Bilbao",
+   "lat": 43.26,
+   "lon": -2.93,
+   "pop": 9000,
+   "makes": [
+    "iron",
+    "wool",
+    "timber"
+   ],
+   "needs": [
+    "wine",
+    "olive_oil",
+    "sugar",
+    "salt"
+   ],
+   "river": true
+  },
+  {
+   "id": "tanger",
+   "name": "Tánger",
+   "lat": 35.78,
+   "lon": -5.81,
+   "pop": 10000,
+   "makes": [
+    "salt",
+    "sugar"
+   ],
+   "needs": [
+    "cloth",
+    "iron"
+   ]
   }
  ],
  "goods": {
-  "beer": {
-   "base": 30
+  "grain": {
+   "base": 22
   },
-  "timber": {
-   "base": 25
+  "dried_fish": {
+   "base": 20
   },
   "salt": {
    "base": 40
   },
-  "cloth": {
-   "base": 90
-  },
-  "fish": {
-   "base": 20
-  },
-  "grain": {
-   "base": 22
-  },
-  "furs": {
-   "base": 160
+  "wool": {
+   "base": 60
   },
   "iron": {
    "base": 70
+  },
+  "timber": {
+   "base": 25
+  },
+  "cloth": {
+   "base": 90
+  },
+  "olive_oil": {
+   "base": 50
+  },
+  "wine": {
+   "base": 45
+  },
+  "silk": {
+   "base": 220
+  },
+  "sugar": {
+   "base": 110
+  },
+  "pepper": {
+   "base": 200
   }
  },
  "waypoints": {
-  "w_trave": {
-   "lat": 54.2,
-   "lon": 11.2
+  "w_cadiz_off": {
+   "lat": 36.4,
+   "lon": -6.6
   },
-  "w_fehmarn": {
-   "lat": 54.6,
-   "lon": 11.4
+  "w_gibraltar": {
+   "lat": 35.95,
+   "lon": -5.6
   },
-  "w_bornholm": {
-   "lat": 55.4,
-   "lon": 15.0
+  "w_stvincent": {
+   "lat": 36.8,
+   "lon": -9.5
   },
-  "w_gotland_s": {
-   "lat": 56.6,
-   "lon": 18.9
+  "w_lisboa_off": {
+   "lat": 38.6,
+   "lon": -9.6
   },
-  "w_gdansk": {
-   "lat": 54.8,
-   "lon": 19.0
+  "w_finisterre": {
+   "lat": 43,
+   "lon": -9.6
   },
-  "w_riga": {
-   "lat": 57.5,
-   "lon": 23.0
+  "w_biscay": {
+   "lat": 44,
+   "lon": -6
   },
-  "w_skagen": {
-   "lat": 57.9,
-   "lon": 10.9
+  "w_bilbao_off": {
+   "lat": 43.7,
+   "lon": -3
   },
-  "w_kattegat": {
-   "lat": 56.5,
-   "lon": 11.5
+  "w_alboran": {
+   "lat": 36,
+   "lon": -3.5
   },
-  "w_baltic_s": {
-   "lat": 55.0,
-   "lon": 13.6
+  "w_gata": {
+   "lat": 36.5,
+   "lon": -2
   },
-  "w_stock": {
-   "lat": 58.9,
-   "lon": 19.5
+  "w_palos": {
+   "lat": 37.4,
+   "lon": -0.4
   },
-  "w_northsea": {
-   "lat": 55.0,
-   "lon": 6.0
+  "w_nao": {
+   "lat": 38.6,
+   "lon": 0.6
   },
-  "w_elbe": {
-   "lat": 54.0,
-   "lon": 8.0
+  "w_valencia_off": {
+   "lat": 39.45,
+   "lon": -0.2
   },
-  "w_dover": {
-   "lat": 51.0,
-   "lon": 1.5
+  "w_ibiza_n": {
+   "lat": 39.6,
+   "lon": 1.3
   },
-  "w_flanders": {
-   "lat": 51.6,
+  "w_palma_sw": {
+   "lat": 39.2,
+   "lon": 2.2
+  },
+  "w_palma_bay": {
+   "lat": 39.4,
    "lon": 2.7
   },
-  "w_bergen": {
-   "lat": 60.0,
-   "lon": 4.0
+  "w_bcn_off": {
+   "lat": 41.25,
+   "lon": 2.4
   },
-  "w_norway_s": {
-   "lat": 58.0,
-   "lon": 6.0
+  "w_mallorca_ne": {
+   "lat": 40.2,
+   "lon": 3.8
   },
-  "w_thames": {
-   "lat": 51.5,
-   "lon": 1.5
+  "w_mallorca_e": {
+   "lat": 39.4,
+   "lon": 3.8
   },
-  "w_courland": {
-   "lat": 57.95,
-   "lon": 20.6
+  "w_mallorca_se": {
+   "lat": 39.1,
+   "lon": 3.4
   },
-  "w_irbe": {
-   "lat": 57.85,
-   "lon": 21.8
+  "w_mallorca_s": {
+   "lat": 39,
+   "lon": 3
   },
-  "w_sound1": {
-   "lat": 55.3,
-   "lon": 12.7
+  "w_galicia_nw": {
+   "lat": 44,
+   "lon": -9.6
   },
-  "w_sound2": {
-   "lat": 55.7,
-   "lon": 12.75
-  },
-  "w_sound3": {
-   "lat": 56.0,
-   "lon": 12.65
-  },
-  "w_sound4": {
-   "lat": 56.25,
-   "lon": 12.3
-  },
-  "w_jutland": {
-   "lat": 57.6,
-   "lon": 7.5
-  },
-  "w_kolka": {
-   "lat": 57.95,
-   "lon": 22.8
-  },
-  "w_gulf": {
-   "lat": 57.3,
-   "lon": 23.6
-  },
-  "w_sound3b": {
-   "lat": 56.1,
-   "lon": 12.55
+  "w_sanlucar": {
+   "lat": 36.72,
+   "lon": -6.45
   }
  },
  "lanes": [
   [
-   "luebeck",
-   "w_trave"
+   "cadiz",
+   "w_cadiz_off"
   ],
   [
-   "w_trave",
-   "w_fehmarn"
+   "w_cadiz_off",
+   "w_gibraltar"
   ],
   [
-   "w_fehmarn",
-   "w_baltic_s"
+   "w_gibraltar",
+   "tanger"
   ],
   [
-   "w_baltic_s",
-   "w_bornholm"
+   "sevilla",
+   "w_sanlucar"
   ],
   [
-   "w_bornholm",
-   "w_gdansk"
+   "w_sanlucar",
+   "w_cadiz_off"
   ],
   [
-   "w_gdansk",
-   "gdansk"
+   "w_cadiz_off",
+   "w_stvincent"
   ],
   [
-   "w_bornholm",
-   "w_gotland_s"
+   "w_stvincent",
+   "w_lisboa_off"
   ],
   [
-   "w_gotland_s",
-   "visby"
+   "lisboa",
+   "w_lisboa_off"
   ],
   [
-   "w_riga",
-   "riga"
+   "w_lisboa_off",
+   "w_finisterre"
   ],
   [
-   "visby",
-   "w_stock"
+   "w_finisterre",
+   "w_galicia_nw"
   ],
   [
-   "w_stock",
-   "stockholm"
+   "w_galicia_nw",
+   "w_biscay"
   ],
   [
-   "w_kattegat",
-   "w_skagen"
+   "w_biscay",
+   "w_bilbao_off"
   ],
   [
-   "w_skagen",
-   "w_norway_s"
+   "bilbao",
+   "w_bilbao_off"
   ],
   [
-   "w_norway_s",
-   "w_bergen"
+   "w_gibraltar",
+   "w_alboran"
   ],
   [
-   "w_bergen",
-   "bergen"
+   "w_alboran",
+   "w_gata"
   ],
   [
-   "w_northsea",
-   "w_elbe"
+   "w_gata",
+   "w_palos"
   ],
   [
-   "w_elbe",
-   "hamburg"
+   "w_palos",
+   "w_nao"
   ],
   [
-   "w_elbe",
-   "bremen"
+   "w_nao",
+   "w_valencia_off"
   ],
   [
-   "w_northsea",
-   "w_flanders"
+   "valencia",
+   "w_valencia_off"
   ],
   [
-   "w_flanders",
-   "bruges"
+   "w_valencia_off",
+   "w_ibiza_n"
   ],
   [
-   "w_flanders",
-   "w_dover"
+   "w_ibiza_n",
+   "w_palma_sw"
   ],
   [
-   "w_dover",
-   "w_thames"
+   "w_palma_sw",
+   "w_palma_bay"
   ],
   [
-   "w_thames",
-   "london"
+   "palma",
+   "w_palma_bay"
   ],
   [
-   "w_gotland_s",
-   "w_courland"
+   "w_bcn_off",
+   "w_mallorca_ne"
   ],
   [
-   "w_courland",
-   "w_irbe"
+   "w_mallorca_ne",
+   "w_mallorca_e"
   ],
   [
-   "w_baltic_s",
-   "w_sound1"
+   "w_mallorca_e",
+   "w_mallorca_se"
   ],
   [
-   "w_sound1",
-   "w_sound2"
+   "w_mallorca_se",
+   "w_mallorca_s"
   ],
   [
-   "w_sound2",
-   "w_sound3"
+   "w_mallorca_s",
+   "w_palma_sw"
   ],
   [
-   "w_sound4",
-   "w_kattegat"
+   "barcelona",
+   "w_bcn_off"
   ],
   [
-   "w_skagen",
-   "w_jutland"
+   "w_ibiza_n",
+   "w_bcn_off"
   ],
   [
-   "w_jutland",
-   "w_northsea"
-  ],
-  [
-   "w_irbe",
-   "w_kolka"
-  ],
-  [
-   "w_kolka",
-   "w_gulf"
-  ],
-  [
-   "w_gulf",
-   "w_riga"
-  ],
-  [
-   "w_sound3",
-   "w_sound3b"
-  ],
-  [
-   "w_sound3b",
-   "w_sound4"
+   "w_nao",
+   "w_ibiza_n"
   ]
  ]
 }
