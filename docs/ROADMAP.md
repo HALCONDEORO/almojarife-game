@@ -44,7 +44,7 @@ Rules: the owner's weekly review budget is set in hours; PRs stay small; an M3 s
 
 ## Risks
 - PR review is the owner reviewing work made with AI help, so it is self-review. Independent checks are outside testers and external model or human reviewers.
-- The name and trademark gate is open: EUIPO, USPTO and OEPM could not be checked by tools.
+- The name and trademark gate is partly closed: a free TMview search (EUIPO, OEPM, WIPO, US) found no hits on 19 Oct 2026. Not legal advice; no paid clearance yet.
 - Content stance for Canary Islands and North Africa trade (slavery, colonial history) is an M0 item; the game does not trade in people. Tánger is in 1.0, so the stance is needed for it too.
 
 ## Dependencies

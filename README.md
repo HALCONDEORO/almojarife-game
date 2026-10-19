@@ -4,7 +4,7 @@ An open-source sea-trading game set on the Iberian and western Mediterranean coa
 
 You start with one cog and a few coins in a medieval harbour. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, add ships, and aim for the top rank: the **almojarife**, the royal treasurer who ran a port's trade. Pronounced al-mo-ha-REE-fay.
 
-The name "Almojarife" is provisional (a trademark check is still pending).
+The name "Almojarife" is provisional. A free TMview search on 19 Oct 2026 found no matching trademark (see docs/DECISIONS.md); this is not legal advice.
 
 Playable in **English and Spanish**. Spanish is the primary language of the project.
 

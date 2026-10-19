@@ -5,6 +5,7 @@ Every decision that shapes the game, with date, who decided and where it lives. 
 | Date | Decision | Decided by | Where |
 |---|---|---|---|
 | 19 Oct | Name is Almojarife (top rank). Public release stays gated by a manual trademark check (OEPM, EUIPO, USPTO), the owner seeing the draft, an external review and a fresh secrets scan | Owner | ROADMAP.md, Risks |
+| 19 Oct | Name check "Almojarife", free tools only, not legal advice. TMview (EUIPO, OEPM, WIPO, US, GB, IE offices; all classes): 0 hits for almojarife, almojarifes, almojarifa, almoxarife, almojarif*; a control search worked (patrician: 71 hits, almorávide: 3). Steam store search and itch.io search: 0 results. Domains almojarife.com/.net/.org: RDAP says not registered. Limits: TMview data can lag national offices; USPTO TESS and WIPO Global Brand DB were not queried directly; sound-alike and visual-similarity review not done; common word in Spanish history, so a descriptive-term objection is possible. Gate: name stays provisional, not cleared | Task agent, owner asked for the check | this file |
 | 19 Oct | Map is the Iberian coast: 8 ports (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger), 12 goods. Lisboa and Tánger are not Spanish, so call the world Iberian | Owner, then tests | ROADMAP.md, data/world.json |
 | 19 Oct 11:06 | Official plan is Option 2 (scope cut, dates kept). Option 1 removed | Owner | ROADMAP.md v5 |
 | 19 Oct 11:17 | Free play and campaign with missions. Act 1 in Alpha, Act 2 in the beta | Owner | ROADMAP.md v5.1 |
@@ -23,6 +24,6 @@ Every decision that shapes the game, with date, who decided and where it lives. 
 | 19 Oct 14:15 | Cartagena added as port 9 (37.60 N, 0.98 W; makes salt and dried fish, needs grain, wine and cloth; 33 lanes). Alpha map is 9 ports. No new goods, no arsenal or silver (wrong era) | Owner (request relayed by the project lead) | data/world.json, docs/design/era-goods-ports.md |
 
 ## Open
-- Trademark check (owner, by hand).
+- Name check: first pass done, see the 19 Oct row. Still open: a lawyer or paid clearance before any commercial release.
 - Code of Conduct needs a real contact address before going public.
 - Lane-crossing test skips city-to-waypoint lanes beyond the 10 km rule; revisit when ports move.
