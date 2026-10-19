@@ -28,6 +28,9 @@ Rule from two audits: shorten the plan by cutting scope, not by squeezing dates 
 
 Not in 1.0: Act 3, 20 cities, council voting, insurance, plague, blockade, a 4th ship type, desktop builds, Marseille, Málaga, Canary Islands, Genoa and Orán (first expansion candidates), regions beyond. Zero-capacity weeks: 21 Dec 2026 to 3 Jan 2027; 22 to 28 Mar 2027; 20 Dec 2027 to 2 Jan 2028 (August is normal capacity). 25% buffer per milestone. All dates assume gates pass; a failed gate shifts later dates by the overrun beyond the buffer.
 
+## Quality bar: Patrician III parity
+The owner's minimum before inviting the public is a game with the depth of a classic Hanse trading game, then continuous improvement. The checklist and build order are in [research/parity-gap.md](research/parity-gap.md); the mechanics notes (clean-room, sources listed) are in [research/patrician3-mechanics.md](research/patrician3-mechanics.md). Dates stay conservative: scope is cut before dates move.
+
 ## Milestone exit criteria and gates
 
 | # | Milestone | Exit criteria | Gate and fail rule |
