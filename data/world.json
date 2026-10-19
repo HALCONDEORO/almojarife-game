@@ -1,0 +1,449 @@
+{
+ "cities": [
+  {
+   "id": "luebeck",
+   "name": "Lübeck",
+   "lat": 53.87,
+   "lon": 10.69,
+   "pop": 25000,
+   "makes": [
+    "beer",
+    "timber"
+   ],
+   "needs": [
+    "salt",
+    "cloth",
+    "fish"
+   ]
+  },
+  {
+   "id": "hamburg",
+   "name": "Hamburg",
+   "lat": 53.55,
+   "lon": 9.99,
+   "pop": 22000,
+   "makes": [
+    "beer",
+    "cloth"
+   ],
+   "needs": [
+    "fish",
+    "timber",
+    "grain"
+   ],
+   "river": true
+  },
+  {
+   "id": "bremen",
+   "name": "Bremen",
+   "lat": 53.08,
+   "lon": 8.8,
+   "pop": 15000,
+   "makes": [
+    "beer",
+    "grain"
+   ],
+   "needs": [
+    "fish",
+    "salt",
+    "timber"
+   ],
+   "river": true
+  },
+  {
+   "id": "gdansk",
+   "name": "Gdańsk",
+   "lat": 54.35,
+   "lon": 18.65,
+   "pop": 18000,
+   "makes": [
+    "grain",
+    "timber"
+   ],
+   "needs": [
+    "cloth",
+    "beer",
+    "salt"
+   ]
+  },
+  {
+   "id": "riga",
+   "name": "Riga",
+   "lat": 56.95,
+   "lon": 24.11,
+   "pop": 12000,
+   "makes": [
+    "timber",
+    "furs"
+   ],
+   "needs": [
+    "cloth",
+    "salt",
+    "beer"
+   ]
+  },
+  {
+   "id": "visby",
+   "name": "Visby",
+   "lat": 57.64,
+   "lon": 18.3,
+   "pop": 6000,
+   "makes": [
+    "fish"
+   ],
+   "needs": [
+    "grain",
+    "cloth",
+    "beer"
+   ]
+  },
+  {
+   "id": "stockholm",
+   "name": "Stockholm",
+   "lat": 59.33,
+   "lon": 18.07,
+   "pop": 9000,
+   "makes": [
+    "iron",
+    "furs"
+   ],
+   "needs": [
+    "grain",
+    "cloth",
+    "salt"
+   ]
+  },
+  {
+   "id": "bergen",
+   "name": "Bergen",
+   "lat": 60.39,
+   "lon": 5.32,
+   "pop": 10000,
+   "makes": [
+    "fish"
+   ],
+   "needs": [
+    "grain",
+    "beer",
+    "cloth"
+   ]
+  },
+  {
+   "id": "bruges",
+   "name": "Bruges",
+   "lat": 51.21,
+   "lon": 3.22,
+   "pop": 40000,
+   "makes": [
+    "cloth",
+    "salt"
+   ],
+   "needs": [
+    "furs",
+    "timber",
+    "grain",
+    "fish"
+   ],
+   "river": true
+  },
+  {
+   "id": "london",
+   "name": "London",
+   "lat": 51.51,
+   "lon": -0.13,
+   "pop": 45000,
+   "makes": [
+    "cloth"
+   ],
+   "needs": [
+    "furs",
+    "timber",
+    "fish",
+    "iron"
+   ],
+   "river": true
+  }
+ ],
+ "goods": {
+  "beer": {
+   "base": 30
+  },
+  "timber": {
+   "base": 25
+  },
+  "salt": {
+   "base": 40
+  },
+  "cloth": {
+   "base": 90
+  },
+  "fish": {
+   "base": 20
+  },
+  "grain": {
+   "base": 22
+  },
+  "furs": {
+   "base": 160
+  },
+  "iron": {
+   "base": 70
+  }
+ },
+ "waypoints": {
+  "w_trave": {
+   "lat": 54.2,
+   "lon": 11.2
+  },
+  "w_fehmarn": {
+   "lat": 54.6,
+   "lon": 11.4
+  },
+  "w_bornholm": {
+   "lat": 55.4,
+   "lon": 15.0
+  },
+  "w_gotland_s": {
+   "lat": 56.6,
+   "lon": 18.9
+  },
+  "w_gdansk": {
+   "lat": 54.8,
+   "lon": 19.0
+  },
+  "w_riga": {
+   "lat": 57.5,
+   "lon": 23.0
+  },
+  "w_skagen": {
+   "lat": 57.9,
+   "lon": 10.9
+  },
+  "w_kattegat": {
+   "lat": 56.5,
+   "lon": 11.5
+  },
+  "w_baltic_s": {
+   "lat": 55.0,
+   "lon": 13.6
+  },
+  "w_stock": {
+   "lat": 58.9,
+   "lon": 19.5
+  },
+  "w_northsea": {
+   "lat": 55.0,
+   "lon": 6.0
+  },
+  "w_elbe": {
+   "lat": 54.0,
+   "lon": 8.0
+  },
+  "w_dover": {
+   "lat": 51.0,
+   "lon": 1.5
+  },
+  "w_flanders": {
+   "lat": 51.6,
+   "lon": 2.7
+  },
+  "w_bergen": {
+   "lat": 60.0,
+   "lon": 4.0
+  },
+  "w_norway_s": {
+   "lat": 58.0,
+   "lon": 6.0
+  },
+  "w_thames": {
+   "lat": 51.5,
+   "lon": 1.5
+  },
+  "w_courland": {
+   "lat": 57.95,
+   "lon": 20.6
+  },
+  "w_irbe": {
+   "lat": 57.85,
+   "lon": 21.8
+  },
+  "w_sound1": {
+   "lat": 55.3,
+   "lon": 12.7
+  },
+  "w_sound2": {
+   "lat": 55.7,
+   "lon": 12.75
+  },
+  "w_sound3": {
+   "lat": 56.0,
+   "lon": 12.65
+  },
+  "w_sound4": {
+   "lat": 56.25,
+   "lon": 12.3
+  },
+  "w_jutland": {
+   "lat": 57.6,
+   "lon": 7.5
+  },
+  "w_kolka": {
+   "lat": 57.95,
+   "lon": 22.8
+  },
+  "w_gulf": {
+   "lat": 57.3,
+   "lon": 23.6
+  },
+  "w_sound3b": {
+   "lat": 56.1,
+   "lon": 12.55
+  }
+ },
+ "lanes": [
+  [
+   "luebeck",
+   "w_trave"
+  ],
+  [
+   "w_trave",
+   "w_fehmarn"
+  ],
+  [
+   "w_fehmarn",
+   "w_baltic_s"
+  ],
+  [
+   "w_baltic_s",
+   "w_bornholm"
+  ],
+  [
+   "w_bornholm",
+   "w_gdansk"
+  ],
+  [
+   "w_gdansk",
+   "gdansk"
+  ],
+  [
+   "w_bornholm",
+   "w_gotland_s"
+  ],
+  [
+   "w_gotland_s",
+   "visby"
+  ],
+  [
+   "w_riga",
+   "riga"
+  ],
+  [
+   "visby",
+   "w_stock"
+  ],
+  [
+   "w_stock",
+   "stockholm"
+  ],
+  [
+   "w_kattegat",
+   "w_skagen"
+  ],
+  [
+   "w_skagen",
+   "w_norway_s"
+  ],
+  [
+   "w_norway_s",
+   "w_bergen"
+  ],
+  [
+   "w_bergen",
+   "bergen"
+  ],
+  [
+   "w_northsea",
+   "w_elbe"
+  ],
+  [
+   "w_elbe",
+   "hamburg"
+  ],
+  [
+   "w_elbe",
+   "bremen"
+  ],
+  [
+   "w_northsea",
+   "w_flanders"
+  ],
+  [
+   "w_flanders",
+   "bruges"
+  ],
+  [
+   "w_flanders",
+   "w_dover"
+  ],
+  [
+   "w_dover",
+   "w_thames"
+  ],
+  [
+   "w_thames",
+   "london"
+  ],
+  [
+   "w_gotland_s",
+   "w_courland"
+  ],
+  [
+   "w_courland",
+   "w_irbe"
+  ],
+  [
+   "w_baltic_s",
+   "w_sound1"
+  ],
+  [
+   "w_sound1",
+   "w_sound2"
+  ],
+  [
+   "w_sound2",
+   "w_sound3"
+  ],
+  [
+   "w_sound4",
+   "w_kattegat"
+  ],
+  [
+   "w_skagen",
+   "w_jutland"
+  ],
+  [
+   "w_jutland",
+   "w_northsea"
+  ],
+  [
+   "w_irbe",
+   "w_kolka"
+  ],
+  [
+   "w_kolka",
+   "w_gulf"
+  ],
+  [
+   "w_gulf",
+   "w_riga"
+  ],
+  [
+   "w_sound3",
+   "w_sound3b"
+  ],
+  [
+   "w_sound3b",
+   "w_sound4"
+  ]
+ ]
+}
