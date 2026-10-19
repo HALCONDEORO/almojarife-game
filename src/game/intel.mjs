@@ -12,9 +12,10 @@ export function refreshIntel(g) {
   for (const c of g.world.cities) if (isLive(g, c.id)) intel[c.id] = { day: g.day, exact: true, cells: clone(g.market[c.id]) };
 }
 /** Buy a rumour about a port: a snapshot of today's stock with up to +-25% error. */
-export function buyRumor(g, city) {
+export function buyRumor(g, city, at) {
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === city)) return { ok: false, reason: "unknown city" };
+  if (at !== undefined && !g.ships.some((x) => !x.voyage && x.at === at)) return { ok: false, reason: "no ship here" };
   if (isLive(g, city)) return { ok: false, reason: "already known" };
   if (g.cash < RUMOR_PRICE) return { ok: false, reason: "no cash" };
   g.cash -= RUMOR_PRICE;
