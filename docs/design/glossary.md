@@ -30,6 +30,18 @@ Spanish is the source language. One term, one translation. Add terms here before
 | precio | price | |
 | oferta / demanda | supply / demand | |
 | partida | saved game | not "game" |
+| trigo | grain | good |
+| pescado seco | dried fish | good |
+| sal | salt | good |
+| lana | wool | good |
+| hierro | iron | good |
+| madera | timber | good |
+| paño | cloth | good |
+| aceite | olive oil | good |
+| vino | wine | good |
+| seda | silk | good |
+| azúcar | sugar | good |
+| pimienta | pepper | good |
 | misión | mission | |
 | modo libre | free play | |
 | campaña | campaign | |
