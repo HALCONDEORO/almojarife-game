@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doSail, orderShip, repairShip, repairCost, sellShip, shipValue, MAX_FLEET, SHIP_TYPES } from "../src/game/game.mjs";
+import { newGame, advanceDay, doSail, orderShip, repairShip, repairCost, sellShip, shipValue, SHIP_TYPES } from "../src/game/game.mjs";
 const world = loadWorld();
 const game = (cash = 20000) => { const g = newGame(world, "cadiz", {}); g.cash = cash; return g; };
 test("an order costs coins now and the ship arrives only after its build time", () => {
@@ -12,12 +12,11 @@ test("an order costs coins now and the ship arrives only after its build time", 
   advanceDay(g);
   assert.equal(g.ships.length, 2); assert.equal(g.ships[1].type, "nao"); assert.equal(g.ships[1].hull, 100);
 });
-test("orders are refused without cash, without a docked ship, for unknown types, or over the fleet limit", () => {
+test("orders are refused without cash, without a docked ship, for unknown types, (there is no fleet limit)", () => {
   assert.equal(orderShip(game(10), "cog", "cadiz").reason, "no cash");
   assert.equal(orderShip(game(), "cog", "lisboa").reason, "no ship here");
   assert.equal(orderShip(game(), "toString", "cadiz").ok, false);
-  const g = game(1e6); for (let i = 1; i < MAX_FLEET; i++) assert.equal(orderShip(g, "barca", "cadiz").ok, true);
-  assert.equal(orderShip(g, "barca", "cadiz").reason, "fleet full");
+  const g = game(1e6); for (let i = 0; i < 9; i++) assert.equal(orderShip(g, "barca", "cadiz").ok, true); // no fleet limit: upkeep is the brake
 });
 test("sea wear lowers hull, repair costs by damage and restores it", () => {
   const g = game(), s = g.ships[0]; doSail(g, s, "lisboa");

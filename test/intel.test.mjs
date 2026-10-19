@@ -50,3 +50,8 @@ test("sailing away keeps the last seen data, which grows old", () => {
   assert.equal(isLive(g, home), false);
   assert.ok(knownMarket(g).age[home].days >= 3);
 });
+test("a rumour bought through the tavern needs one of your ships docked in that port", () => {
+  const { g, s } = fresh(); const other = world.cities.find((c) => c.id !== s.at).id;
+  assert.equal(buyRumor(g, other, other).reason, "no ship here");
+  assert.equal(buyRumor(g, other, s.at).ok, true);
+});

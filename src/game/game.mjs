@@ -89,20 +89,18 @@ export function doSail(g, ship, to) {
 export function buyCaravel(g, at) {
   if (g.over) return { ok: false, reason: "game over" };
   if (g.cash < CARAVEL_PRICE) return { ok: false, reason: "no cash" };
-  if (g.ships.length >= 3) return { ok: false, reason: "fleet full" };
   g.cash -= CARAVEL_PRICE;
   const s = makeShip(g.nextId++, "caravel", at);
   g.ships.push(s); say(g, "caravel", { city: at });
   return { ok: true, ship: s };
 }
-export const MAX_FLEET = 5, SELL_RATE = 0.6, REPAIR_PER_POINT = 4;
+export const SELL_RATE = 0.6, REPAIR_PER_POINT = 4;
 /** Order a new ship at the shipyard of the port where a ship of yours is docked. It is delivered after buildDays. */
 export function orderShip(g, type, at) {
   const t = SHIP_TYPES[type];
   if (g.over) return { ok: false, reason: "game over" };
   if (!t || !Object.hasOwn(SHIP_TYPES, type)) return { ok: false, reason: "unknown type" };
   if (!g.ships.some((s) => !s.voyage && s.at === at)) return { ok: false, reason: "no ship here" };
-  if (g.ships.length + (g.orders?.length ?? 0) >= MAX_FLEET) return { ok: false, reason: "fleet full" };
   if (g.cash < t.price) return { ok: false, reason: "no cash" };
   g.cash -= t.price;
   (g.orders ??= []).push({ type, at, readyDay: g.day + t.buildDays });
