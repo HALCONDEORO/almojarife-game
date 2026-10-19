@@ -4,14 +4,16 @@ import { route } from "./world.mjs";
 import { price } from "./market.mjs";
 
 export const SHIP_TYPES = {
-  cog: { capacity: 60, kmPerDay: 90, upkeepPerDay: 2 },
-  caravel: { capacity: 40, kmPerDay: 140, upkeepPerDay: 3 },
+  barca: { capacity: 25, kmPerDay: 100, upkeepPerDay: 1, price: 900, buildDays: 8 },
+  cog: { capacity: 60, kmPerDay: 90, upkeepPerDay: 2, price: 2200, buildDays: 14 },
+  caravel: { capacity: 40, kmPerDay: 140, upkeepPerDay: 3, price: 3000, buildDays: 12 },
+  nao: { capacity: 110, kmPerDay: 80, upkeepPerDay: 5, price: 5200, buildDays: 25 },
 };
 export const FEE = 0.02; // market fee on every deal, both sides
 
 export function makeShip(id, type, at) {
   if (!Object.hasOwn(SHIP_TYPES, type)) throw new Error("unknown ship type " + type);
-  return { id, type, at, cargo: {}, voyage: null };
+  return { id, type, at, cargo: {}, voyage: null, hull: 100 };
 }
 export function cargoUsed(ship) {
   return Object.values(ship.cargo).reduce((a, b) => a + b, 0);
@@ -29,6 +31,7 @@ export function sail(world, ship, to) {
 /** One day at sea; arrives when daysLeft reaches 0. */
 export function tickShip(ship) {
   if (!ship.voyage) return;
+  ship.hull = Math.max(10, (ship.hull ?? 100) - 0.5); // sea wear
   if (--ship.voyage.daysLeft <= 0) { ship.at = ship.voyage.to; ship.voyage = null; }
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the

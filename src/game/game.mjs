@@ -58,6 +58,7 @@ export function advanceDay(g) {
   }
   if (g.cash < 0) g.cash = 0;
   rollEvent(g);
+  deliverOrders(g);
   refreshIntel(g);
   if (g.cash >= GOAL_CASH) g.over = "win";
   else if (g.day >= DEADLINE_DAYS) g.over = "lose";
@@ -93,6 +94,44 @@ export function buyCaravel(g, at) {
   const s = makeShip(g.nextId++, "caravel", at);
   g.ships.push(s); say(g, "caravel", { city: at });
   return { ok: true, ship: s };
+}
+export const MAX_FLEET = 5, SELL_RATE = 0.6, REPAIR_PER_POINT = 4;
+/** Order a new ship at the shipyard of the port where a ship of yours is docked. It is delivered after buildDays. */
+export function orderShip(g, type, at) {
+  const t = SHIP_TYPES[type];
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!t || !Object.hasOwn(SHIP_TYPES, type)) return { ok: false, reason: "unknown type" };
+  if (!g.ships.some((s) => !s.voyage && s.at === at)) return { ok: false, reason: "no ship here" };
+  if (g.ships.length + (g.orders?.length ?? 0) >= MAX_FLEET) return { ok: false, reason: "fleet full" };
+  if (g.cash < t.price) return { ok: false, reason: "no cash" };
+  g.cash -= t.price;
+  (g.orders ??= []).push({ type, at, readyDay: g.day + t.buildDays });
+  say(g, "ordered", { city: at, type });
+  return { ok: true, readyDay: g.day + t.buildDays };
+}
+/** Deliver finished orders (called every day). */
+export function deliverOrders(g) {
+  for (const o of [...(g.orders ?? [])]) {
+    if (o.readyDay > g.day) continue;
+    g.orders.splice(g.orders.indexOf(o), 1);
+    const s = makeShip(g.nextId++, o.type, o.at); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id });
+  }
+}
+export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
+export function repairShip(g, ship) {
+  if (ship.voyage) return { ok: false, reason: "at sea" };
+  const c = repairCost(ship);
+  if (c <= 0) return { ok: false, reason: "no damage" };
+  if (g.cash < c) return { ok: false, reason: "no cash" };
+  g.cash -= c; ship.hull = 100; return { ok: true, cost: c };
+}
+export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * SELL_RATE * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
+export function sellShip(g, ship) {
+  if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (g.ships.length <= 1) return { ok: false, reason: "last ship" };
+  if (cargoUsed(ship) > 0) return { ok: false, reason: "hold not empty" };
+  const v = shipValue(ship); g.cash += v; g.ships.splice(g.ships.indexOf(ship), 1);
+  return { ok: true, value: v };
 }
 export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);

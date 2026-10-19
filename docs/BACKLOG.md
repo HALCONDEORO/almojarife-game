@@ -70,3 +70,14 @@ Start year 1470 (Iberia, Mediterranean, Atlantic coast). The map opens by dated 
 - phase 5: base map from Natural Earth (public domain), split into regional tiles loaded on demand so GitHub Pages download stays small; simplified coast geometry per region
 - phase 6: yearly variation: fixed historical events + seeded random ones (harvests, epidemics, wars, fairs, piracy)
 - market info (shipped basic): live in port, last seen with age, rumours. Next: agents/contacts per port, information from passing ships
+
+## Scope 21:15 (Marco): Patrician-style mechanics inside the current map (own mechanics, no copied content)
+Priority by impact, one small PR each with tests and ES screenshots:
+1. shipyard: ship classes as data, build with delay, repair, upgrades, sell
+2. buildings and factories: production chains per port (data), upkeep, levels
+3. credit and debt: loans with interest, limits by net worth
+4. city rank and offices: reputation, rank titles, privileges
+5. guilds: membership fee, benefits, rules
+6. auctions: lots of goods/ships, rival bids
+7. rivals: stronger AI with strategies and personalities
+Graphics engine in parallel: waves, day/night, animated port, performance, mobile; 3D study after.
