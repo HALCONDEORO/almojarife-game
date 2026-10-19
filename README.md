@@ -1,8 +1,19 @@
 # Kontor Tides
 
-An open-source Hanseatic sea-trading game, early prototype. You run a merchant house in the medieval Baltic and North Sea: buy cheap, sail the lanes, sell dear, grow a fleet.
+An open-source sea-trading game, early prototype. You run a merchant house: buy cheap, sail the lanes, sell dear, grow a fleet. The goal is the whole world: Europe, Africa and Asia, with historical sea routes. The game starts in the Baltic and North Sea (the Hanseatic world) and grows outward.
 
 Status: prototype. A 10-city world, a sea-lane graph, a market model and an SVG map renderer exist. No playable game yet.
+
+## Roadmap (world scope, in phases)
+
+1. Baltic and North Sea (10 cities, current prototype)
+2. Mediterranean
+3. Atlantic coast and islands
+4. West and East Africa
+5. Indian Ocean
+6. Asia and the spice routes
+
+Coastlines come from Natural Earth. Cities, lanes, goods and all numbers are our own.
 
 ## What is here
 
