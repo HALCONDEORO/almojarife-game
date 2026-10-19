@@ -56,3 +56,7 @@ All game rules and numbers are our own design. Other games inspire ideas only; s
 - next: glossary and architecture decision records
 - next: AI levels (careful, balanced, bold) with a long-run balance test
 - later: mission conditions store, replays, mod loading
+
+## Added 20:52 (Marco)
+- shipyard: today only "buy a caravel" (fixed price, max 3 ships, no building, repair or upgrade, one shipyard action in any port). Next: ship classes as data, shipyard only in some ports, build orders with delay, repair, upgrades, selling ships, named fleets/convoys
+- real calendar: months, dates, seasons and feasts; a game year with real historical events per era (fairs, wars, epidemics, bad harvests, milestones), data in JSON, public-domain/verified sources noted in docs (English), tests; yearly variation by seeded random events on top of the fixed historical ones
