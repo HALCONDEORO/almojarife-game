@@ -4,6 +4,8 @@ An open-source sea-trading game set on the Iberian and western Mediterranean coa
 
 You start with one cog and a few coins in a medieval harbour. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, add ships, and aim for the top rank: the **almojarife**, the royal treasurer who ran a port's trade. Pronounced al-mo-ha-REE-fay.
 
+The name "Almojarife" is provisional (a trademark check is still pending).
+
 Playable in **English and Spanish**. Spanish is the primary language of the project.
 
 ## Status (honest version)
@@ -13,6 +15,8 @@ Playable in **English and Spanish**. Spanish is the primary language of the proj
 - Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See `docs/ROADMAP.md`.
 
 ## Play the prototype
+
+Online: https://halcondeoro.github.io/almojarife-game/ (once GitHub Pages is live). Or locally:
 
 You need Node 20 or newer (for the tests and tools) and any static web server. From the repository root:
 
