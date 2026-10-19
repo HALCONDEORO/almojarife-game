@@ -69,3 +69,4 @@ Start year 1470 (Iberia, Mediterranean, Atlantic coast). The map opens by dated 
 - phase 4: Africa, Indian Ocean, Asia, rest of world by later milestones
 - phase 5: base map from Natural Earth (public domain), split into regional tiles loaded on demand so GitHub Pages download stays small; simplified coast geometry per region
 - phase 6: yearly variation: fixed historical events + seeded random ones (harvests, epidemics, wars, fairs, piracy)
+- market info (shipped basic): live in port, last seen with age, rumours. Next: agents/contacts per port, information from passing ships

@@ -3,6 +3,7 @@ import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { rollEvent } from "./events.mjs";
+import { refreshIntel, knownMarket } from "./intel.mjs";
 import { aiStep } from "../sim/ai.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -31,7 +32,9 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  return { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null, eventsOn: !!opts.events, pending: null };
+  const g = { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null, eventsOn: !!opts.events, pending: null };
+  refreshIntel(g);
+  return g;
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
@@ -55,6 +58,7 @@ export function advanceDay(g) {
   }
   if (g.cash < 0) g.cash = 0;
   rollEvent(g);
+  refreshIntel(g);
   if (g.cash >= GOAL_CASH) g.over = "win";
   else if (g.day >= DEADLINE_DAYS) g.over = "lose";
 }
@@ -99,7 +103,7 @@ export function buyWarehouse(g, city) {
   g.warehouses ??= {};
   if (g.warehouses[city]) return { ok: false, reason: "already owned" };
   if (g.cash < WAREHOUSE_PRICE) return { ok: false, reason: "no cash" };
-  g.cash -= WAREHOUSE_PRICE; g.warehouses[city] = { goods: {} }; say(g, "warehouse", { city });
+  g.cash -= WAREHOUSE_PRICE; g.warehouses[city] = { goods: {} }; refreshIntel(g); say(g, "warehouse", { city });
   return { ok: true };
 }
 /** Move goods from the ship's hold into the warehouse of the port where it is docked. */
@@ -124,6 +128,7 @@ export function takeGoods(g, ship, good, qty) {
 }
 export function quote(g, city, good) { return price(g.world, g.market[city][good], good); }
 export { cargoUsed, SHIP_TYPES };
+export { buyRumor, RUMOR_PRICE, isLive } from "./intel.mjs";
 
 /**
  * Where would the whole hold sell best at today's prices? One row per other port, best first:
@@ -131,18 +136,18 @@ export { cargoUsed, SHIP_TYPES };
  */
 export function bestPorts(g, ship) {
   if (ship.voyage || Object.keys(ship.cargo).length === 0) return [];
-  const rows = [];
+  const rows = [], { market: km, age } = knownMarket(g);
   for (const c of g.world.cities) {
-    if (c.id === ship.at) continue;
+    if (c.id === ship.at || !km[c.id]) continue; // unknown port: no price
     const r = route(g.world, ship.at, c.id);
     if (!r) continue;
     const there = { ...ship, at: c.id, voyage: null };
     let revenue = 0, profit = 0, any = false;
     for (const [good, q] of Object.entries(ship.cargo)) {
-      const p = previewSell(g.world, g.market, there, good, q);
+      const p = previewSell(g.world, km, there, good, q);
       if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
     }
-    if (any) rows.push({ city: c.id, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
+    if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
   }
   return rows.sort((a, b) => b.revenue - a.revenue);
 }
