@@ -415,5 +415,271 @@
    "cartagena",
    "w_cartagena_off"
   ]
+ ],
+ "events": [
+  {
+   "id": "storm",
+   "weight": 3,
+   "minDay": 3,
+   "title": {
+    "es": "Tormenta",
+    "en": "Storm"
+   },
+   "text": {
+    "es": "Una tormenta se echa encima de tu barco.",
+    "en": "A storm bears down on your ship."
+   },
+   "choices": [
+    {
+     "id": "shelter",
+     "label": {
+      "es": "Buscar abrigo (un día más)",
+      "en": "Shelter (one day lost)"
+     },
+     "outcomes": [
+      {
+       "p": 1,
+       "effects": {
+        "days": 1
+       },
+       "text": {
+        "es": "Esperas a que pase la tormenta. Un día perdido.",
+        "en": "You ride it out. One day lost."
+       }
+      }
+     ]
+    },
+    {
+     "id": "press",
+     "label": {
+      "es": "Seguir adelante",
+      "en": "Press on"
+     },
+     "outcomes": [
+      {
+       "p": 0.65,
+       "effects": {},
+       "text": {
+        "es": "Cruzáis la tormenta sin daños.",
+        "en": "You cross the storm unharmed."
+       }
+      },
+      {
+       "p": 0.35,
+       "effects": {
+        "cargoLossPct": 15
+       },
+       "text": {
+        "es": "El mar se lleva parte de la carga.",
+        "en": "The sea takes part of the cargo."
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pirates",
+   "weight": 2,
+   "minDay": 10,
+   "title": {
+    "es": "Piratas",
+    "en": "Pirates"
+   },
+   "text": {
+    "es": "Una vela sospechosa os da caza.",
+    "en": "A suspicious sail gives chase."
+   },
+   "choices": [
+    {
+     "id": "flee",
+     "label": {
+      "es": "Huir",
+      "en": "Flee"
+     },
+     "outcomes": [
+      {
+       "p": 0.55,
+       "effects": {},
+       "text": {
+        "es": "Los despistáis con el viento a favor.",
+        "en": "You lose them in the wind."
+       }
+      },
+      {
+       "p": 0.45,
+       "effects": {
+        "cargoLossPct": 25
+       },
+       "text": {
+        "es": "Os alcanzan y se llevan parte de la carga.",
+        "en": "They catch you and take part of the cargo."
+       }
+      }
+     ]
+    },
+    {
+     "id": "pay",
+     "label": {
+      "es": "Pagar rescate (150 monedas)",
+      "en": "Pay a ransom (150 coins)"
+     },
+     "outcomes": [
+      {
+       "p": 1,
+       "effects": {
+        "cash": -150
+       },
+       "text": {
+        "es": "Pagas y os dejan pasar.",
+        "en": "You pay and they let you pass."
+       }
+      }
+     ]
+    },
+    {
+     "id": "fight",
+     "label": {
+      "es": "Plantar cara",
+      "en": "Fight"
+     },
+     "outcomes": [
+      {
+       "p": 0.4,
+       "effects": {
+        "cash": 200
+       },
+       "text": {
+        "es": "Los rechazáis y os quedáis con su botín (200 monedas).",
+        "en": "You drive them off and keep their loot (200 coins)."
+       }
+      },
+      {
+       "p": 0.6,
+       "effects": {
+        "cargoLossPct": 35,
+        "cash": -50
+       },
+       "text": {
+        "es": "Pierdes el combate: carga y monedas perdidas.",
+        "en": "You lose the fight: cargo and coins lost."
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fair_wind",
+   "weight": 2,
+   "minDay": 1,
+   "title": {
+    "es": "Viento favorable",
+    "en": "Fair wind"
+   },
+   "text": {
+    "es": "Sopla un viento de popa excelente.",
+    "en": "An excellent following wind rises."
+   },
+   "choices": [
+    {
+     "id": "sail",
+     "label": {
+      "es": "Largar todo el aparejo",
+      "en": "Crowd on sail"
+     },
+     "outcomes": [
+      {
+       "p": 0.8,
+       "effects": {
+        "days": -1
+       },
+       "text": {
+        "es": "Ganas un día de viaje.",
+        "en": "You gain a day."
+       }
+      },
+      {
+       "p": 0.2,
+       "effects": {
+        "cash": -40
+       },
+       "text": {
+        "es": "El mástil cruje y toca repararlo (40 monedas).",
+        "en": "The mast cracks; repairs cost 40 coins."
+       }
+      }
+     ]
+    },
+    {
+     "id": "steady",
+     "label": {
+      "es": "Mantener rumbo",
+      "en": "Hold steady"
+     },
+     "outcomes": [
+      {
+       "p": 1,
+       "effects": {},
+       "text": {
+        "es": "Sigues sin novedad.",
+        "en": "You carry on as before."
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "drifting_cargo",
+   "weight": 1,
+   "minDay": 5,
+   "title": {
+    "es": "Mercancía a la deriva",
+    "en": "Drifting cargo"
+   },
+   "text": {
+    "es": "Ves cajas flotando tras el naufragio de otro barco.",
+    "en": "You see crates floating after another ship's wreck."
+   },
+   "choices": [
+    {
+     "id": "salvage",
+     "label": {
+      "es": "Recuperarlas",
+      "en": "Salvage them"
+     },
+     "outcomes": [
+      {
+       "p": 1,
+       "effects": {
+        "cash": 120
+       },
+       "text": {
+        "es": "Vendes lo recuperado por 120 monedas.",
+        "en": "You sell the salvage for 120 coins."
+       }
+      }
+     ]
+    },
+    {
+     "id": "ignore",
+     "label": {
+      "es": "Seguir de largo",
+      "en": "Sail on"
+     },
+     "outcomes": [
+      {
+       "p": 1,
+       "effects": {},
+       "text": {
+        "es": "Sigues tu camino.",
+        "en": "You sail on."
+       }
+      }
+     ]
+    }
+   ]
+  }
  ]
 }
