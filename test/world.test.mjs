@@ -102,3 +102,32 @@ test("Cadiz to Palma route is plausible (1050-1200 km)", () => {
   const r = route(world, "cadiz", "palma");
   assert.ok(r.km > 1050 && r.km < 1200, String(r.km));
 });
+test("after a year producers sell at or below base, consumers at or above base, nobody is pinned at the floor", () => {
+  const m = makeMarket(world);
+  for (let d = 0; d < 365; d++) tickMarket(m);
+  for (const [cid, c] of Object.entries(m)) for (const [g, e] of Object.entries(c)) {
+    const p = price(world, e, g), base = world.goods[g].base;
+    if (e.makes) assert.ok(p <= base, `${cid} ${g} producer price ${p} > base ${base}`);
+    if (e.needs) assert.ok(p >= base, `${cid} ${g} consumer price ${p} < base ${base}`);
+    if (e.makes) assert.ok(e.stock <= e.target * 4, `${cid} ${g} stock unbounded`);
+    assert.ok(p > Math.round(base * 0.4), `${cid} ${g} price ${p} pinned at floor`);
+  }
+});
+test("no drift: day 365 and day 730 give the same stocks and prices", () => {
+  const m = makeMarket(world);
+  for (let d = 0; d < 365; d++) tickMarket(m);
+  const snap = JSON.parse(JSON.stringify(m));
+  for (let d = 0; d < 365; d++) tickMarket(m);
+  for (const [cid, c] of Object.entries(m)) for (const [g, e] of Object.entries(c)) {
+    assert.equal(e.stock, snap[cid][g].stock, `${cid} ${g} stock drifts`);
+    assert.equal(price(world, e, g), price(world, snap[cid][g], g), `${cid} ${g} price drifts`);
+  }
+});
+test("a producer already at the cap stays at the cap after one tick", () => {
+  const m = makeMarket(world);
+  const e = Object.values(m).flatMap((c) => Object.values(c)).find((x) => x.makes && !x.needs);
+  e.stock = e.target * 4;
+  tickMarket(m);
+  assert.ok(e.stock <= e.target * 4, "exceeded cap: " + e.stock);
+  assert.ok(e.stock >= e.target * 4 - e.rate, "dropped too far below the cap: " + e.stock);
+});

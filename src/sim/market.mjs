@@ -1,6 +1,6 @@
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
 // Written from first principles; not derived from any other game's data.
-export function makeMarket(world, rng) {
+export function makeMarket(world) {
   const m = {};
   for (const c of world.cities) {
     m[c.id] = {};
@@ -21,7 +21,7 @@ export function price(world, entry, good, elasticity = 0.6) {
 export function tickMarket(market) {
   for (const city of Object.values(market))
     for (const e of Object.values(city)) {
-      if (e.makes) e.stock += e.rate * 2;
+      if (e.makes) e.stock = Math.min(e.target * 4, e.stock + e.rate * 2); // warehouses are finite
       if (e.needs) e.stock = Math.max(0, e.stock - e.rate * 2);
       else e.stock = Math.max(0, e.stock - Math.round(e.rate * 0.3));
     }

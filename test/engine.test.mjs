@@ -23,7 +23,7 @@ test("rng state can be saved and restored mid-sequence", () => {
   assert.deepEqual(Array.from({ length: 5 }, () => b.next()), expected);
 });
 function run(seed, days) {
-  const rng = makeRng(seed), m = makeMarket(world, rng);
+  const rng = makeRng(seed), m = makeMarket(world);
   for (let d = 0; d < days; d++) tickMarket(m);
   return { seed, rngState: rng.getState(), day: days, market: m };
 }
