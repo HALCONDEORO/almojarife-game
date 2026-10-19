@@ -8,6 +8,7 @@ import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSv
 import { previewBuy, previewSell } from "../src/sim/trade.mjs";
 import { citySceneSvg } from "../src/view/cityscene.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
+import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
@@ -94,7 +95,7 @@ function drawShips() {
 }
 function tickDay() {
   const before = g.ships.map((x) => !!x.voyage);
-  advanceDay(g); progress = 0; departed.clear(); autosave();
+  advanceDay(g); progress = 0; departed.clear(); autosave(); if (g.pending) playing = false;
   if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
   render();
 }
@@ -121,7 +122,7 @@ function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!ra
 const cityIds = world.cities.map((c) => c.id);
 function start(prof, save = true) {
   const p = cleanProfile({ ...prof, company: prof?.company || T[lang].defCo }, cityIds);
-  g = newGame(world, p.home, { ...startBonus(p), profile: p }); sel = 0; company = p.company; if (save) autosave(); render();
+  g = newGame(world, p.home, { ...startBonus(p), profile: p, events: true }); sel = 0; company = p.company; if (save) autosave(); render();
 }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
@@ -155,10 +156,13 @@ function render() {
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g><g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => el.onclick = () => { const c = el.dataset.c; if (c) act(() => doSail(g, ship(), c)); });
-  const logLine = (l) => t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
+  const logLine = (l) => l.key === "event" ? `${t.day} ${l.day}: ${l.txt?.[lang] ?? ""}` : t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
   $("log").innerHTML = g.log.map((l) => `<div>${logLine(l)}</div>`).join("");
   // panel
-  let h = g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
+  let h = "";
+  const pe = pendingEvent(g);
+  if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
+  h += g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
   h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.daysLeft} ${t.days})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}<br>`;
   if (!s.voyage && !g.over) {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
@@ -197,6 +201,7 @@ function render() {
   if (!g.over) h += `<div><button data-wait="1">${t.wait}</button>${s.voyage ? `<button data-arrive="1">${t.arrive}</button>` : ""}</div>`;
   $("panel").innerHTML = h;
   const P = $("panel");
+  P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; render(); });
   P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
     const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;

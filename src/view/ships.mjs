@@ -25,9 +25,10 @@ export function wakeSvg(points) {
   return h;
 }
 /** Keep the last n screen positions per ship id. */
-export function pushTrail(trails, id, p, n = 14, minStep = 1.2) {
+export function pushTrail(trails, id, p, n = 14, minStep = 1.2, maxJump = 40) {
   const a = (trails[id] ??= []), last = a[a.length - 1];
   if (last && Math.hypot(p.x - last.x, p.y - last.y) < minStep) return a;
+  if (last && Math.hypot(p.x - last.x, p.y - last.y) > maxJump) a.length = 0; // the ship jumped (days skipped): no wake across the map
   a.push({ x: p.x, y: p.y }); if (a.length > n) a.shift();
   return a;
 }

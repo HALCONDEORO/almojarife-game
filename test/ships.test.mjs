@@ -20,3 +20,7 @@ test("wake needs two points, fades and the trail stays short and skips tiny step
   const n = tr[7].length; pushTrail(tr, 7, { x: 39 * 3 + 0.1, y: 0 });
   assert.equal(tr[7].length, n);
 });
+test("a big jump (days skipped) restarts the wake instead of drawing a line across the map", () => {
+  const tr = {}; pushTrail(tr, 1, { x: 0, y: 0 }); pushTrail(tr, 1, { x: 5, y: 0 }); pushTrail(tr, 1, { x: 400, y: 300 });
+  assert.equal(tr[1].length, 1);
+});
