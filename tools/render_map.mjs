@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { loadWorld } from "../src/sim/world.mjs";
 const world = loadWorld();
 const gj = JSON.parse(readFileSync(new URL("../data/ne_50m_land.geojson", import.meta.url), "utf8"));
-const [x0, x1, y0, y1] = [-4, 28, 49.5, 62], W = 1200, k = W / (x1 - x0), H = Math.round((y1 - y0) * k * 1.6 / 1.6);
+const [x0, x1, y0, y1] = [-4, 28, 49.5, 62], W = 1200, k = W / (x1 - x0);
 const sx = (lon) => ((lon - x0) * k).toFixed(1), sy = (lat) => ((y1 - lat) * k * 1.75).toFixed(1);
 let d = "";
 const ring = (r) => "M" + r.map(([lo, la]) => sx(lo) + "," + sy(la)).join("L") + "Z";

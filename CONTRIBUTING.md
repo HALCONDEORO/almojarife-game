@@ -9,5 +9,5 @@ Ideas, bug reports and pull requests are welcome.
 
 Rules:
 - Only submit work you wrote or that has a compatible open licence. Do not copy code, art, names or data from other games.
-- By contributing you agree your code is released under MIT and your art or docs under CC BY 4.0.
+- By contributing you agree your code and data are released under MIT and your art or docs under CC BY 4.0.
 - Do not commit secrets, personal data or large downloaded datasets.
