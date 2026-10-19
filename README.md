@@ -1,56 +1,75 @@
-# Almojarife
+<h1 align="center">El Almojarife</h1>
+<p align="center"><em>An open-source sea-trading game on the Iberian and Mediterranean coast, 15th-16th century.</em><br>
+<a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your browser</b></a></p>
 
-An open-source sea-trading game set on the Iberian and western Mediterranean coast in the 15th and 16th centuries. Early development: a first playable prototype exists, but it is rough.
+<p align="center"><img src="docs/img/map.png" alt="The sea chart with ports, routes and ships" width="780"></p>
 
-You start with one cog and a few coins in a medieval harbour. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, add ships, and aim for the top rank: the **almojarife**, the royal treasurer who ran a port's trade. Pronounced al-mo-ha-REE-fay.
+You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
 
-The name "Almojarife" is provisional. A free TMview search on 19 Oct 2026 found no matching trademark (see docs/DECISIONS.md); this is not legal advice.
+**Status: early alpha.** It is playable and free, but rough. See the honest list below.
 
-Playable in **English and Spanish**. Spanish is the primary language of the project.
+## Why you might like it
 
-## Status (honest version)
+- **A living market.** 9 ports, 12 goods, prices that move with supply and demand. Selling a big load crashes the price. AI traders compete with you.
+- **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time.
+- **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
+- **Port panel.** Market, shipyard and warehouse tabs: buy a caravel, store goods in a warehouse.
+- **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file.
+- **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your browser.
+- **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
 
-- Playable now: a browser prototype with a map of 9 ports, 12 goods, a living market with AI traders, sailing, a second ship, and one mission (earn 50,000 coins in 365 days). Placeholder interface, no art, no tutorial, no save games yet.
-- Not done: missions and story, harbour orders, buildings and workshops, sound, art, balance beyond the first mission, outside playtesting.
-- Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See `docs/ROADMAP.md`.
+## Screenshots
 
-## Play the prototype
+| Title | Create your house |
+|---|---|
+| ![Title screen](docs/img/title.png) | ![Character and coat of arms](docs/img/create.png) |
+| **Trade in the market** | **Sail and store goods** |
+| ![Market with icons and cheap/dear arrows](docs/img/market.png) | ![Warehouse tab](docs/img/warehouse.png) |
 
-Online: https://halcondeoro.github.io/almojarife-game/ (once GitHub Pages is live). Or locally:
+## How to play
 
-You need Node 20 or newer (for the tests and tools) and any static web server. From the repository root:
+1. Pick a name and a home port, then **Start**.
+2. Mission 1: earn **50,000 coins in 365 days**.
+3. In the **Market** tab, look for the green ▼ (cheap: buy) and red ▲ (dear: sell) arrows.
+4. Click a port on the map, or a **Sail to** button, then press **Sail** to move time. Your ship takes days to arrive.
+5. Sell where the price is high. Buy a second ship in the **Shipyard**. Press **Esc** for the menu.
 
-    npm run serve
+Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to reset.
 
-then open http://localhost:8080/web/index.html. The language follows your browser; the EN/ES button switches it.
+## What works and what does not (yet)
 
-## Develop
+| Works now | Planned |
+|---|---|
+| Trading loop, 9 ports, 12 goods, AI traders | Campaign of 2 acts, 12 missions |
+| Sea chart with pan and zoom, moving ships | Storms, pirates, ship wear |
+| Company and character creation | Town halls, building permits, city logic |
+| Market, shipyard, warehouse, saves, pause menu | Tavern, workshops, standing ranks |
+| ES and EN | Sound, tutorial, more ports |
 
-    sh tools/fetch_data.sh   # downloads Natural Earth coastlines (not stored in the repo)
-    npm test                 # simulation, AI traders and game logic tests
-    npm run sim1000          # 1,000 simulated years of the economy (about a minute)
-    npm run map              # renders the world map to SVG
+Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
 
-No dependencies beyond Node and curl.
+## Run it yourself
 
-## What is in the repository
+You need Node 20 or newer and any static web server:
 
-- `src/sim/`: simulation core (world graph and routes, market model, ships, AI traders).
-- `src/game/`: game state and player actions, no UI code.
-- `web/`: the browser prototype.
-- `data/world.json`: 9 ports, 23 waypoints, 33 sea lanes, 12 goods (original data).
-- `assets/`: art assets; each one has a row in `CREDITS.md`.
-- `docs/`: design, roadmap, decisions, process and studies (index in `docs/README.md`).
-- `locales/`, `TRANSLATING.md`: how text is translated.
-- `tools/`, `test/`: scripts and tests.
+    npm run serve        # then open http://localhost:8080/web/index.html
+    npm test             # simulation, AI traders, game logic, saves, profile
+    sh tools/fetch_data.sh   # downloads the coastline data (not stored in the repo)
+
+The sea-chart background is rebuilt by `tools/build_background.py` from the Natural Earth raster; the finished image is in `assets/map/`.
+
+## Repository map
+
+`src/sim/` simulation core · `src/game/` game rules, saves, profile · `src/view/` map camera · `web/` browser UI · `data/` ports, lanes, goods · `assets/` art (each file credited in [`CREDITS.md`](CREDITS.md)) · `docs/` design, roadmap, decisions · `test/` tests.
 
 ## Contribute
 
-Ideas, bug reports and translations are welcome. Start with `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` and `TRANSLATING.md`. Open an issue before large changes. Historical corrections (ports, goods, ships, prices) are especially useful.
+Ideas, bug reports, historical corrections and translations are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`TRANSLATING.md`](TRANSLATING.md). Open an issue before large changes. Every change goes through a pull request with tests and review.
 
-## Licence
+## Licence and credits
 
-- Code and game data: MIT (`LICENSE`).
-- Original art and documents: CC BY 4.0 (`LICENSE-ART.md`).
-- Third-party material is limited to public domain, CC0 and CC BY, and every file is listed with its source and licence in `CREDITS.md`.
-- Everything here is original work. Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.
+- Code and game data: MIT ([`LICENSE`](LICENSE)).
+- Original art and documents: CC BY 4.0 ([`LICENSE-ART.md`](LICENSE-ART.md)).
+- Third-party material is limited to public domain, CC0 and CC BY; every file is listed with its source in [`CREDITS.md`](CREDITS.md). Map data: Made with Natural Earth.
+- The name "Almojarife" is provisional. A free trademark search found no conflict (19 Oct 2026); this is not legal advice.
+- Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.
