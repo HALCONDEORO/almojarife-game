@@ -11,3 +11,5 @@ Rules:
 - Only submit work you wrote or that has a compatible open licence. Do not copy code, art, names or data from other games.
 - By contributing you agree your code and data are released under MIT and your art or docs under CC BY 4.0.
 - Do not commit secrets, personal data or large downloaded datasets.
+
+Process: issues for ideas and bugs (templates provided), small pull requests, CI must pass. Milestones and gates are in `docs/ROADMAP.md`.

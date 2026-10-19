@@ -45,9 +45,13 @@ Después / After 1.0: Act 3, more ports (Canarias, Génova, Marsella, Málaga, O
 
 Needs Node 20 or newer. No other dependencies.
 
+## Organización del repositorio / Repository layout
+
+`data/` game data; `src/` simulation; `tools/` scripts; `test/` tests; `docs/` documents (index in `docs/README.md`); `locales/` text in ES/EN; `.github/` CI, issue and PR templates. Same layout idea as other open-source games (OpenTTD, Mindustry, Wesnoth, OpenRCT2, Unciv): README, CONTRIBUTING, CODE_OF_CONDUCT, CHANGELOG, TRANSLATING, templates, CI.
+
 ## Contribuir / Contribute
 
-See `CONTRIBUTING.md`. Ideas for cities, goods, ships or mechanics are welcome: open an issue. Translations too.
+See `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `TRANSLATING.md`. Ideas for cities, goods, ships or mechanics are welcome: open an issue. Translations too.
 
 ## Licencia / Licence
 
