@@ -49,6 +49,8 @@ export function buy(world, market, ship, cash, good, qty) {
   }
   if (n === 0) return { ok: false, reason: qty <= 0 ? "nothing to buy" : "no cash" };
   ship.cargo[good] = (ship.cargo[good] ?? 0) + n;
+  ship.basis = ship.basis ?? {};
+  ship.basis[good] = (ship.basis[good] ?? 0) + cost; // what this cargo cost, for profit display
   return { ok: true, qty: n, cost };
 }
 export function sell(world, market, ship, good, qty) {
@@ -60,7 +62,33 @@ export function sell(world, market, ship, good, qty) {
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
   for (let i = 0; i < qty; i++) { e.stock += 1; revenue += Math.floor(price(world, e, good) * (1 - FEE)); }
+  const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
+  const spent = Math.round(paid * qty / had); // share of the cost that leaves with the goods
   ship.cargo[good] -= qty;
-  if (!ship.cargo[good]) delete ship.cargo[good];
-  return { ok: true, qty, revenue };
+  if (ship.basis) ship.basis[good] = paid - spent;
+  if (!ship.cargo[good]) { delete ship.cargo[good]; if (ship.basis) delete ship.basis[good]; }
+  return { ok: true, qty, revenue, profit: revenue - spent, spent };
+}
+/** What a buy of qty would do, without changing anything. Same rules as buy(). */
+export function previewBuy(world, market, ship, cash, good, qty) {
+  const e = market[ship.at]?.[good];
+  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
+  const room = SHIP_TYPES[ship.type].capacity - cargoUsed(ship);
+  const lim = Math.min(qty, e.stock, room);
+  const sim = { ...e }; let n = 0, cost = 0;
+  while (n < lim) {
+    const unit = Math.ceil(price(world, sim, good) * (1 + FEE));
+    if (cost + unit > cash) break;
+    cost += unit; sim.stock -= 1; n++;
+  }
+  return { qty: n, cost, avg: n ? Math.round(cost / n) : 0, next: price(world, sim, good), limit: n < qty ? (e.stock < qty && n === e.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
+}
+/** What a sell of qty would do, without changing anything. Same rules as sell(). */
+export function previewSell(world, market, ship, good, qty) {
+  const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
+  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
+  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += Math.floor(price(world, sim, good) * (1 - FEE)); }
+  const spent = Math.round((ship.basis?.[good] ?? 0) * n / have);
+  return { qty: n, revenue, avg: Math.round(revenue / n), profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }
