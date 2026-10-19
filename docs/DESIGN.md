@@ -40,6 +40,20 @@ Pillars:
 
 Check market -> load goods -> pick a route -> sail (events) -> sell -> reinvest -> repeat. Around it: workshops that make goods, warehouses, ship upgrades, city standing.
 
+## 3b. Game modes: free play and campaign with missions
+
+Studied (public pages, 19 Oct 2026): Port Royale 4 has a free game mode plus four campaigns, lets the player play with or without tasks, and lets the player continue endlessly after finishing (Kalypso FAQ). Anno 1800's campaign is built as chapters of story missions with extra voluntary quests and rewards. Patrician IV's campaign works as a tutorial through set tasks with short example videos. High Seas, High Profits leans on hundreds of procedural events instead of a long campaign. What we take (ideas only, our own words): both modes, an optional-goals switch, endless play after the story, tasks that teach, and event variety.
+
+**Free play (sandbox).** Pick a starting port, difficulty and seed. No story. Optional "tasks" toggle gives small goals (reach a net worth, serve a town) and can be turned off. Endless.
+
+**Campaign.** Two acts, 12 missions in total (6 per act), each 10 to 20 minutes, chained by the four characters. Mission types: deliver a cargo, reach a profit, supply a hungry town, build a workshop, keep a lane safe, win standing in a port. Each mission has a clear goal, a reward (money, a ship, a building unlock or standing) and a fail rule that never deletes the save. Optional side missions per act. After the last mission the player continues in free play with the save.
+
+**Tutorial.** The first three missions of Act 1 are the tutorial: each introduces one idea (buy and sell, route, second ship), with plain hints in Spanish and English that can be skipped.
+
+**Progression.** Standing ranks (Forastero to Almojarife) unlock ships, buildings and port rights. Missions grant extra unlocks but the player can also earn them in free play.
+
+**Scope by milestone.** Slice (M2): mission 1 and the hint system. Alpha (M3): free play complete for the 8 ports, tutorial and all of Act 1 (6 missions), ES complete. Beta (M4): Act 2 (6 missions) and side missions, saves carried into free play. 1.0 (M5): polish, balance, proofreading.
+
 ## 4. Mechanics with our own numbers (v0, to be tuned by simulation)
 
 ### 4.1 Time
