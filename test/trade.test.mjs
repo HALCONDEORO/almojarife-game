@@ -70,3 +70,40 @@ test("partly affordable order never spends more than cash; marginal price rises 
   for (let i = 0; i < 4; i++) sells.push(sell(world, m2, s2, good, 1).revenue);
   assert.ok(sells.every((v, i) => i === 0 || v <= sells[i - 1]), "marginal sell price never rises");
 });
+import { previewBuy, previewSell } from "../src/sim/trade.mjs";
+test("previews match the real deal and change nothing", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const good = world.cities[0].makes[0];
+  const before = JSON.stringify([m, s]);
+  const pb = previewBuy(world, m, s, 500, good, 25);
+  assert.equal(JSON.stringify([m, s]), before);
+  const b = buy(world, m, s, 500, good, 25);
+  assert.equal(pb.qty, b.qty); assert.equal(pb.cost, b.cost);
+  const ps = previewSell(world, m, s, good, 10);
+  const snap = JSON.stringify([m, s]);
+  assert.equal(JSON.stringify([m, s]), snap);
+  const r = sell(world, m, s, good, 10);
+  assert.equal(ps.qty, r.qty); assert.equal(ps.revenue, r.revenue); assert.equal(ps.profit, r.profit);
+});
+test("cost basis follows the cargo and is gone when the hold is empty", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const good = world.cities[0].makes[0];
+  const b = buy(world, m, s, 1e9, good, 20);
+  assert.equal(s.basis[good], b.cost);
+  const r1 = sell(world, m, s, good, 5);
+  assert.equal(r1.spent, Math.round(b.cost * 5 / 20));
+  sell(world, m, s, good, 15);
+  assert.equal(s.basis[good], undefined);
+});
+test("a ship from an older save without basis still sells", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const good = world.cities[0].makes[0];
+  buy(world, m, s, 1e9, good, 5); delete s.basis;
+  assert.ok(sell(world, m, s, good, 5).ok);
+});
+test("preview explains why a buy is capped", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const good = world.cities[0].makes[0];
+  assert.equal(previewBuy(world, m, s, 5, good, 50).limit, "cash");
+  assert.equal(previewBuy(world, m, s, 1e9, good, 1e5).limit === "cash", false);
+});

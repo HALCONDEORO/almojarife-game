@@ -4,20 +4,21 @@ import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
 import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
+import { previewBuy, previewSell } from "../src/sim/trade.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
   es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", resume: "Seguir jugando", saveNow: "Guardar ahora", quit: "Salir al título", lang2: "Idioma", speedDef: "Velocidad", paused: "Juego en pausa", tabMarket: "Mercado", tabYard: "Astillero", tabStore: "Almacén", warehouse: "Almacén", yardInfo: "Aquí compras barcos (máximo 3).", buyWh: "Comprar almacén ({p})", whInfo: "Guarda bienes en este puerto (hasta 300 unidades).", whEmpty: "Vacío", store: "Guardar", take: "Sacar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida", create: "Crea tu casa mercantil", character: "Tu nombre", portrait: "Retrato", crest: "Escudo", shield: "Forma", division: "División", charge: "Emblema", c1: "Color principal", c2: "Color secundario", home: "Puerto de origen", background: "Origen", back: "Atrás", sh: { heater: "Clásico", round: "Redondo" }, dv: { plain: "Liso", pale: "Partido", fess: "Cortado", chevron: "Cheurón", cross: "Cruz" }, ch: { star: "Estrella", tower: "Torre", ship: "Nave", anchor: "Ancla", sun: "Sol", wheat: "Trigo" }, bgInfo: { merchant: "+300 monedas", seafarer: "Barcos 15% más baratos de mantener", scholar: "+150 monedas y 5% menos de mantenimiento" },
     hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Pulsa un puerto del mapa para zarpar.",
     hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega", holdValue: "Valor de la bodega aquí (aprox.)", cheap: "Barato: buen momento para comprar", dear: "Caro: buen momento para vender",
-    buy: "Comprar", sell: "Vender", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
+    buy: "Comprar", sell: "Vender", sellAll: "Todo", dealBuy: "Compras {q}: {c} (media {a}, precio pasa a {n})", dealSell: "Vendes {q}: {c} (media {a}, precio pasa a {n})", profit: "ganancia", loss: "pérdida", capCash: "limitado por tus monedas", capStock: "limitado por el stock", capRoom: "limitado por la bodega", qtyLbl: "Cantidad", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
     caravel: "Comprar carabela ({p})", at: "En", sea: "En el mar hacia", win: "¡Victoria! Alcanzaste la meta.", lose: "Se acabó el tiempo. Patrimonio final:",
     cap: "Carga", log: { warehouse: "Día {day}: compras un almacén en {city}", arrive: "Día {day}: el barco {ship} llega a {city}", buy: "Día {day}: compras {qty} {good} por {sum}", sell: "Día {day}: vendes {qty} {good} por {sum}", sail: "Día {day}: el barco {ship} zarpa a {city} ({days} días)", caravel: "Día {day}: compras una carabela en {city}" }, goods: { grain: "Trigo", dried_fish: "Pescado seco", salt: "Sal", wool: "Lana", iron: "Hierro", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta" },
     types: { cog: "Coca", caravel: "Carabela" } },
   en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game", cont: "Continue", resume: "Resume", saveNow: "Save now", quit: "Quit to title", lang2: "Language", speedDef: "Speed", paused: "Game paused", tabMarket: "Market", tabYard: "Shipyard", tabStore: "Warehouse", warehouse: "Stored", yardInfo: "Buy ships here (max 3).", buyWh: "Buy warehouse ({p})", whInfo: "Store goods in this port (up to 300 units).", whEmpty: "Empty", store: "Store", take: "Take", start: "Start", company: "Name of your trading house", defCo: "My Trading House", tagline: "Sea trading on the Iberian coast, 15th-16th century", menu: "Menu", saved: "Game saved", noSave: "No saved game", exportS: "Export", importS: "Import", badSave: "That file is not a valid save", create: "Create your trading house", character: "Your name", portrait: "Portrait", crest: "Coat of arms", shield: "Shape", division: "Division", charge: "Emblem", c1: "Main colour", c2: "Second colour", home: "Home port", background: "Background", back: "Back", sh: { heater: "Classic", round: "Round" }, dv: { plain: "Plain", pale: "Split", fess: "Cut", chevron: "Chevron", cross: "Cross" }, ch: { star: "Star", tower: "Tower", ship: "Ship", anchor: "Anchor", sun: "Sun", wheat: "Wheat" }, bgInfo: { merchant: "+300 coins", seafarer: "Ships cost 15% less to keep", scholar: "+150 coins and 5% lower upkeep" },
     hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port on the map to sail.",
     hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold", holdValue: "Hold value here (approx.)", cheap: "Cheap: good time to buy", dear: "Dear: good time to sell",
-    buy: "Buy", sell: "Sell", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
+    buy: "Buy", sell: "Sell", sellAll: "All", dealBuy: "Buy {q}: {c} (avg {a}, price moves to {n})", dealSell: "Sell {q}: {c} (avg {a}, price moves to {n})", profit: "profit", loss: "loss", capCash: "limited by your coins", capStock: "limited by stock", capRoom: "limited by hold space", qtyLbl: "Quantity", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
     caravel: "Buy a caravel ({p})", at: "At", sea: "At sea to", win: "Victory! You reached the goal.", lose: "Time is up. Final net worth:",
     cap: "Cargo", log: { warehouse: "Day {day}: you buy a warehouse in {city}", arrive: "Day {day}: ship {ship} arrives at {city}", buy: "Day {day}: you buy {qty} {good} for {sum}", sell: "Day {day}: you sell {qty} {good} for {sum}", sail: "Day {day}: ship {ship} sails to {city} ({days} days)", caravel: "Day {day}: you buy a caravel at {city}" }, goods: { grain: "Grain", dried_fish: "Dried fish", salt: "Salt", wool: "Wool", iron: "Iron", timber: "Timber", cloth: "Cloth", olive_oil: "Olive oil", wine: "Wine", silk: "Silk", sugar: "Sugar", pepper: "Pepper" },
     types: { cog: "Cog", caravel: "Caravel" } },
@@ -92,7 +93,7 @@ function frame(now) {
   drawShips();
   requestAnimationFrame(frame);
 }
-let tab = "market";
+let tab = "market"; const qtys = {}; // per-good quantity chosen in the market table
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 function autosave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
@@ -147,9 +148,11 @@ function render() {
     if (tab === "market") {
       h += `<table><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr>`;
       for (const gd of Object.keys(world.goods)) {
+        const have = s.cargo[gd] ?? 0, q = Math.max(1, Math.min(qtys[gd] ?? 10, 999)), pb = previewBuy(world, g.market, s, g.cash, gd, q), ps = previewSell(world, g.market, s, gd, q);
         const p = quote(g, s.at, gd), base = world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
         h += `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td style="color:${col}" title="${tag === "" ? "" : tag === "▼" ? t.cheap : t.dear}">${tag} ${p}</td><td>${g.market[s.at][gd].stock}</td><td>${s.cargo[gd] ?? 0}</td>` +
-          `<td><button data-b="${gd}:10">${t.buy} 10</button><button data-b="${gd}:60">${t.buy} max</button><button data-s="${gd}" ${(s.cargo[gd] ?? 0) > 0 ? "" : "disabled"}>${t.sell}</button></td></tr>`;
+          `<td class="qty"><button data-q="${gd}:-1" aria-label="-1">−</button><b>${q}</b><button data-q="${gd}:1" aria-label="+1">+</button><button data-q="${gd}:10">10</button><button data-q="${gd}:max">Max</button></td></tr>` +
+          `<tr class="deal"><td colspan="5"><button data-b="${gd}:${q}" ${pb.qty ? "" : "disabled"}>${t.buy} ${q}</button> <button data-s="${gd}:${q}" ${ps.qty ? "" : "disabled"}>${t.sell} ${q}</button> <button data-s="${gd}:all" ${have ? "" : "disabled"}>${t.sell} ${t.sellAll}</button> <br><small>${pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmt(pb.cost)).replace("{a}", pb.avg).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : ""}${ps.qty ? " | " + t.dealSell.replace("{q}", ps.qty).replace("{c}", fmt(ps.revenue)).replace("{a}", ps.avg).replace("{n}", ps.next) + (ps.hasBasis ? ` (${Math.abs(ps.profit)} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : ""}</small></td></tr>`;
       }
       h += `</table>`;
     } else if (tab === "yard") {
@@ -171,8 +174,13 @@ function render() {
   $("panel").innerHTML = h;
   const P = $("panel");
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; render(); });
+  P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
+    const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;
+    qtys[gd] = v === "max" ? Math.max(1, previewBuy(world, g.market, s, g.cash, gd, 9999).qty) : v === "10" ? 10 : Math.max(1, cur + +v);
+    render();
+  });
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
-  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => act(() => doSell(g, s, e.dataset.s, s.cargo[e.dataset.s] ?? 0)));
+  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); act(() => doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v)); });
   P.querySelectorAll("[data-sail]").forEach((e) => e.onclick = () => act(() => doSail(g, s, e.dataset.sail)));
   P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; render(); });
   P.querySelectorAll("[data-wh]").forEach((e) => e.onclick = () => act(() => buyWarehouse(g, s.at)));
