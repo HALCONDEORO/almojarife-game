@@ -43,7 +43,7 @@ Después / After 1.0: Act 3, more ports (Canarias, Génova, Marsella, Málaga, O
     npm test
     npm run map
 
-Needs Node 20 or newer. No other dependencies.
+Needs Node 20 or newer and curl. No other dependencies.
 
 ## Organización del repositorio / Repository layout
 

@@ -8,7 +8,7 @@ Status: draft for review. Name: Almojarife (final for now, owner decision 19 Oct
 
 Tagline ES: "Del primer barco al tesoro del reino." EN: "From your first cog to the king's treasury."
 
-The game is bilingual Spanish/English. Spanish is the primary language: design text, story and UI are written in Spanish first, English is a full second language. Rules: every visible string has an ID; Spanish text can run 20-30% longer than English so layouts keep room; a small glossary fixes terms (nao, cog, lonja, almojarife); fonts must support Spanish characters and be open licence; the player can switch language at any time.
+The game is bilingual Spanish/English. Spanish is the primary language: design text, story and UI are written in Spanish first, English is a full second language. Rules: every visible string has an ID; Spanish text can run 20-30% longer than English so layouts keep room; a small glossary fixes terms (nao, carraca, carabela, lonja, almojarife); fonts must support Spanish characters and be open licence; the player can switch language at any time.
 
 ## 1. Concept
 
@@ -64,7 +64,7 @@ Studied (public pages, 19 Oct 2026): Port Royale 4 has a free game mode plus fou
 Start with 12 goods in 4 groups: **staples** (grain, dried fish, salt), **craft inputs** (wool, iron, timber), **crafted** (cloth, olive oil, wine), **luxury** (silk, sugar, pepper). Each has base price, bulk (cargo units per item), and perishability.
 
 ### 4.3 Market model
-- Each city has stock S and target stock T for each good. Price = base x clamp((T / max(S,1))^0.6, 0.4, 2.5).
+- Each city has stock S and target stock T for each good. Price = base x clamp((T / max(S,1))^0.6, 0.4, 3.0).
 - Producers add stock each day. Population consumes stock each day. Both rates are set per city.
 - Player buying or selling moves stock immediately, so selling a big load crashes the price.
 - Prices relax toward target slowly (about 5 percent per day), so arbitrage fades if you spam one route.
@@ -117,7 +117,7 @@ The roadmap lives in `ROADMAP.md` (v5). Official plan (Option 2, owner decision 
 
 JavaScript, simulation in plain modules with no engine dependency, rendering in the browser (canvas). Seeded deterministic simulation, headless tests, balance by running thousands of simulated years. All code on GitHub by pull request with review. Open source (MIT code, CC BY 4.0 art and docs).
 
-Roadmap: see `ROADMAP.md` (audited v4). Competition study: see `COMPETITION.md`.
+Roadmap: see `ROADMAP.md` (v5.2). Competition study: see `COMPETITION.md`.
 
 ## 9. Risks
 

@@ -1,4 +1,4 @@
-# Almojarife - Roadmap (official reference), v5
+# Almojarife - Roadmap (official reference), v5.2
 
 Language: Spanish is the main language, English second. Today: 19 Oct 2026.
 Map: the Spanish coast and its surroundings first. Name: Almojarife is the top rank.
@@ -40,7 +40,7 @@ Not in 1.0: Act 3, 20 cities, council voting, insurance, plague, blockade, a 4th
 | M4 | Public web beta | Act 2 (6 missions) and side missions; saves continue into free play; sound CC0 or CC BY logged in CREDITS; content and string freeze 6 weeks before beta (not in holiday weeks); native ES and EN proofread; privacy notice naming the feedback method | 20+ testers, 70%+ finish the tutorial, no known crash. Fail: slip 2 weeks or cut random events |
 | M5 | 1.0 (web) | Asset licence audit clean; 0 open P1 bugs; 3 full campaign playthroughs by different testers; beta saves load | Owner go. A P1 bug slips the date in 2-week steps |
 
-Rules: the owner's weekly review budget is set in hours; PRs stay small; an M3 slip moves the freeze, M4 and M5 by the same amount. the owner's weekly review budget is set in hours and PRs stay small.
+Rules: the owner's weekly review budget is set in hours; PRs stay small; an M3 slip moves the freeze, M4 and M5 by the same amount.
 
 ## Risks
 - PR review is the owner reviewing work made with AI help, so it is self-review. Independent checks are outside testers and external model or human reviewers.
