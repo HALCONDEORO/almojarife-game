@@ -16,7 +16,7 @@ Navegador primero (gratis, sin instalar). Descargas de escritorio después del 1
 
 ## Hoja de ruta / Roadmap
 
-Mapa inicial: la costa de España (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger). 8 ports, 12 goods, 2 acts, web only.
+Mapa inicial: la costa de España (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, Cartagena). 9 ports, 12 goods, 2 acts, web only.
 
 | Hito / Milestone | Fecha / Date |
 |---|---|

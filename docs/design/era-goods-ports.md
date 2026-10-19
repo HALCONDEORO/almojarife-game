@@ -6,7 +6,7 @@ Status: draft for owner approval. Sources marked "to confirm" must be checked be
 
 Late 15th century, roughly 1480 to 1500 in flavour. Why: the Crown of Castile and the Crown of Aragon are joined by marriage, the Atlantic routes to the Canary Islands and Lisbon are active, Seville and Cádiz handle growing trade, and the western Mediterranean is still busy. The game calendar is our own ("Year 1" onward), so no real event is required. Dates in text are avoided; names of real rulers are not used.
 
-## Ports (1.0, 8)
+## Ports (1.0, 9)
 
 | Port | Role in play | Main outputs (game) | Main demand (game) |
 |---|---|---|---|
@@ -18,6 +18,9 @@ Late 15th century, roughly 1480 to 1500 in flavour. Why: the Crown of Castile an
 | Palma | Island stopover | salt, olive oil | grain, cloth |
 | Bilbao | Northern iron and wool port | iron, wool, timber | wine, olive oil, sugar |
 | Tánger | Gateway to North Africa | salt, sugar, pepper | cloth, iron |
+| Cartagena | South-east deep-water harbour, Murcia coast (added 19 Oct 2026 on the owner's request as relayed by the project lead) | salt, dried fish | grain, wine, cloth |
+
+Cartagena notes: in the 1480 to 1500 era it is a modest Castilian port (we use 6,000 people). Alum from the Mazarrón mines (worked from the 1460s, traded by Genoese and Florentines) and esparto grass are historically real but are not among our 12 goods, so they stay flavour text until a goods update. The naval arsenal and the silver-mine era are NOT of this period (arsenal is 18th century, the silver mines are Roman and later), so we do not use them. Lanes: the old Gata to Palos lane now runs through a new waypoint off Cartagena, plus the Cartagena port lane: 31 lanes become 33 (3 added, 1 removed).
 
 These are game values (ours, to be tuned by simulation). They follow general trade patterns and do not copy any other game's tables. Historical flavour is approximate (for example Tánger's outputs and sugar origins) and is to confirm before M1b; the game does not claim exact history. Sources to confirm: Spanish and Portuguese maritime history surveys, public encyclopedia pages per port.
 

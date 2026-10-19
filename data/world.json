@@ -132,6 +132,22 @@
     "cloth",
     "iron"
    ]
+  },
+  {
+   "id": "cartagena",
+   "name": "Cartagena",
+   "lat": 37.6,
+   "lon": -0.98,
+   "pop": 6000,
+   "makes": [
+    "salt",
+    "dried_fish"
+   ],
+   "needs": [
+    "grain",
+    "wine",
+    "cloth"
+   ]
   }
  ],
  "goods": {
@@ -260,6 +276,10 @@
   "w_sanlucar": {
    "lat": 36.72,
    "lon": -6.45
+  },
+  "w_cartagena_off": {
+   "lat": 37.45,
+   "lon": -0.95
   }
  },
  "lanes": [
@@ -324,10 +344,6 @@
    "w_gata"
   ],
   [
-   "w_gata",
-   "w_palos"
-  ],
-  [
    "w_palos",
    "w_nao"
   ],
@@ -386,6 +402,18 @@
   [
    "w_nao",
    "w_ibiza_n"
+  ],
+  [
+   "w_gata",
+   "w_cartagena_off"
+  ],
+  [
+   "w_cartagena_off",
+   "w_palos"
+  ],
+  [
+   "cartagena",
+   "w_cartagena_off"
   ]
  ]
 }

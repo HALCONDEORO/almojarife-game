@@ -34,7 +34,7 @@ Pillars:
 
 **Characters (invented):** the harbour master, an old rival merchant, a guild clerk who keeps the books, a corsair captain who used to be a trader.
 
-**1.0 map (8 ports):** Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger. Málaga, Marseille, Canary Islands, Genoa and Orán are the first expansion candidates. Coastlines from Natural Earth; cities, lanes and numbers are ours.
+**1.0 map (9 ports):** Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, Cartagena. Málaga, Marseille, Canary Islands, Genoa and Orán are the first expansion candidates. Coastlines from Natural Earth; cities, lanes and numbers are ours.
 
 ## 3. Core loop
 
@@ -52,7 +52,7 @@ Studied (public pages, 19 Oct 2026): Port Royale 4 has a free game mode plus fou
 
 **Progression.** Standing ranks (Forastero to Almojarife) unlock ships, buildings and port rights. Missions grant extra unlocks but the player can also earn them in free play.
 
-**Scope by milestone.** Slice (M2): mission 1 and the hint system. Alpha (M3): free play complete for the 8 ports, tutorial and all of Act 1 (6 missions), ES complete. Beta (M4): Act 2 (6 missions) and side missions, saves carried into free play. 1.0 (M5): polish, balance, proofreading.
+**Scope by milestone.** Slice (M2): mission 1 and the hint system. Alpha (M3): free play complete for the 9 ports, tutorial and all of Act 1 (6 missions), ES complete. Beta (M4): Act 2 (6 missions) and side missions, saves carried into free play. 1.0 (M5): polish, balance, proofreading.
 
 ## 4. Mechanics with our own numbers (v0, to be tuned by simulation)
 

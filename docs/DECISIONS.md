@@ -20,6 +20,7 @@ Every decision that shapes the game, with date, who decided and where it lives. 
 | 19 Oct | Producer stock is capped at 4x target so prices do not sit on the floor. Consumers drain to zero until trade exists (M1b) | Project lead | PR #17, test/world.test.mjs |
 | 19 Oct 14:03 | Art plan A: 2D nautical-chart map, flat icons, parchment UI, made by own code and SVG, cost 0 EUR. Review commissioning original art (option C) after M2. 3D in the browser is out of scope for 1.0 | Owner | docs/DECISIONS.md |
 | 19 Oct 14:03 | Procedural low-poly cog made as a test of level only (tools/make_cog.py, assets/models/cog.gltf, own work CC BY 4.0). Not part of the 1.0 art plan | Project lead | docs/design/cog_preview.png |
+| 19 Oct 14:15 | Cartagena added as port 9 (37.60 N, 0.98 W; makes salt and dried fish, needs grain, wine and cloth; 33 lanes). Alpha map is 9 ports. No new goods, no arsenal or silver (wrong era) | Owner (request relayed by the project lead) | data/world.json, docs/design/era-goods-ports.md |
 
 ## Open
 - Trademark check (owner, by hand).

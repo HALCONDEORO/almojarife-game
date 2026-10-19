@@ -5,8 +5,8 @@ import { loadWorld, route } from "../src/sim/world.mjs";
 import { makeMarket, price, tickMarket } from "../src/sim/market.mjs";
 const land = loadLand();
 const world = loadWorld();
-test("8 ports, all on or next to the coast (river ports within 120 km)", () => {
-  assert.equal(world.cities.length, 8);
+test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
+  assert.equal(world.cities.length, 9);
   assert.equal(Object.keys(world.goods).length, 12);
   for (const c of world.cities) {
     let near = false;
@@ -61,7 +61,7 @@ test("routes are not absurd detours (km / great-circle <= 2.6)", () => {
     if (a.id === b.id) continue;
     const r = route(world, a.id, b.id);
     const g = haversineKm(a, b);
-    const med = new Set(["valencia", "barcelona", "palma"]);
+    const med = new Set(["valencia", "barcelona", "palma", "cartagena"]);
     if (med.has(a.id) !== med.has(b.id)) continue; // crossing Gibraltar is legitimately long
     if (g > 150) assert.ok(r.km / g <= 2.6, `${a.id}->${b.id} ratio ${(r.km / g).toFixed(2)}`);
   }

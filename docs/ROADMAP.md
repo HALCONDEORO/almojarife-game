@@ -8,7 +8,7 @@ Rule from two audits: shorten the plan by cutting scope, not by squeezing dates 
 
 | | |
 |---|---|
-| Ports (8) | Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger |
+| Ports (9) | Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, Cartagena |
 | Goods | 12 |
 | Modes | Free play and campaign (2 acts, 12 missions), tasks switch in free play |
 | Workshops | One chain in Alpha, the rest after 1.0 |
@@ -36,7 +36,7 @@ Not in 1.0: Act 3, 20 cities, council voting, insurance, plague, blockade, a 4th
 | M1a | Engine base | World data for the chosen ports and lanes; deterministic seeds; save format with schema version; save/load round trip; CI running | Replay and round trip pass. Else no economy work |
 | M1b | Economy prototype | 12 goods (cut to 8 on retune fail), 3 ships, AI traders, market fees; 1,000 simulated years in CI under 5 min; no good pinned at a price clamp more than 30% of the time | A scripted bot finds profitable routes that fade with use. Retune time-boxed to 3 weeks; if still failing, cut goods to 8 and re-gate. 5 testers confirmed by now; if fewer, recruiting becomes the top M2 task and M2 cannot exit without 5 |
 | M2 | Vertical slice (browser) | First 10 minutes playable incl. harbour orders and a second ship; 3 screens in a locked style; ES and EN complete for the slice; hosting target; browser matrix, load budget, accessibility baseline | 5 outside testers (3+ native Spanish speakers) finish it unaided, 3+ want more. Fail: iterate the loop 4 weeks, add no content |
-| M3 | Alpha | Free play for the 8 ports; tutorial and Act 1 (6 missions); one workshop chain; standing ranks to Almojarife; storms and pirates; save/load with migration corpus; deploy pipeline; ES complete, EN complete for Act 1 | Owner plays free play and Act 1 end to end; zero save-loss bugs. Fail: slip 2 weeks (freeze, M4 and M5 move with it) or defer the workshop chain to after 1.0 and update the plan table |
+| M3 | Alpha | Free play for the 9 ports; tutorial and Act 1 (6 missions); one workshop chain; standing ranks to Almojarife; storms and pirates; save/load with migration corpus; deploy pipeline; ES complete, EN complete for Act 1 | Owner plays free play and Act 1 end to end; zero save-loss bugs. Fail: slip 2 weeks (freeze, M4 and M5 move with it) or defer the workshop chain to after 1.0 and update the plan table |
 | M4 | Public web beta | Act 2 (6 missions) and side missions; saves continue into free play; sound CC0 or CC BY logged in CREDITS; content and string freeze 6 weeks before beta (not in holiday weeks); native ES and EN proofread; privacy notice naming the feedback method | 20+ testers, 70%+ finish the tutorial, no known crash. Fail: slip 2 weeks or cut random events |
 | M5 | 1.0 (web) | Asset licence audit clean; 0 open P1 bugs; 3 full campaign playthroughs by different testers; beta saves load | Owner go. A P1 bug slips the date in 2-week steps |
 
