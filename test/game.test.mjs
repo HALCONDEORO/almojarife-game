@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld, route } from "../src/sim/world.mjs";
+import { buyRumor } from "../src/game/game.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, quote, GOAL_CASH } from "../src/game/game.mjs";
 const world = loadWorld();
 
@@ -89,6 +90,8 @@ test("bestPorts ranks other ports for the hold, best first, and is empty for an 
   assert.deepEqual(bestPorts(g, s), []);
   const good = Object.keys(g.world.goods)[0];
   doBuy(g, s, good, 20);
+  assert.deepEqual(bestPorts(g, s), [], "unknown ports give no advice");
+  g.cash += 5000; for (const c of g.world.cities) if (c.id !== s.at) buyRumor(g, c.id);
   const rows = bestPorts(g, s), snap = JSON.stringify(g);
   assert.ok(rows.length > 0 && rows.every((r, i) => i === 0 || rows[i - 1].revenue >= r.revenue));
   assert.ok(rows.every((r) => r.city !== s.at && r.days >= 1));
