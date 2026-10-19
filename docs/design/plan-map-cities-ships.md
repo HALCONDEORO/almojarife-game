@@ -22,16 +22,27 @@ Study limit: this is based on text sources (manuals, guides, wiki pages). UI lay
 6. Encounters first resolve automatically (odds from cargo value, ship type, escort, and a lane risk number), with three player choices: pay, flee, fight. Tactical battles come later and only if testers want them. Reason: Port Royale 4 and Patrician IV both offer manual battles, but they are a large build; an auto-resolve loop tests the fun cheaply.
 7. Convoys and automatic trade routes come after pirates, since escorts only matter once pirates exist.
 
+## Where this sits in the roadmap
+
+ROADMAP.md is the approved plan. M2 (vertical slice) needs "3 screens in a locked style" and harbour orders; M3 (alpha) already lists "storms and pirates". So:
+
+- Steps A, B and C are prototype work toward M2. B and C deliver the three M2 screens: Map, Market and Port. Fleet is a panel inside Map. They do not add scope to M2.
+- Steps D and E are M3 scope (pirates are already in the M3 exit criteria). Convoys and automatic trade routes (E) are not in any approved exit criteria; they stay an idea until the owner moves them into M3 or after 1.0, and they are the first thing cut.
+- Dates are unchanged. A prototype step that is not finished does not block its milestone.
+
 ## Milestones, in build order
 
-| Step | What | Done when |
-|---|---|---|
-| A | Ships move on the map, civil AI ships drawn, play/pause and speed control | A new player sees 3 AI ships sailing while their own ship moves; tests check positions follow lanes |
-| B | Panels: Map, Market, Fleet, Port as separate windows in one page | Player can sail, trade and buy a ship without leaving the page; keyboard reachable |
-| C | Port view you can enter | Clicking a city opens its view; market and shipyard actions work from it |
-| D | Pirates and encounters (auto-resolve, pay/flee/fight, lane risk, hideouts that grow) | 1,000-year sim shows pirates do not make trade impossible; a test shows risk rises with cargo value |
-| E | Convoys and escorts, then automatic trade routes | A scripted player can run a route with an escort; pirate losses drop with escorts |
+| Step | Roadmap | What | Done when |
+|---|---|---|---|
+| A | toward M2 | Ships move on the map; civil AI ships drawn; play/pause and speed control. Voyages today store only destination and days left, so each voyage gets its route (path of waypoints) and distance travelled when it starts, saved with the game. Animation is only a view: it reads sim state each frame and the sim advances only on the daily tick, so speed never desyncs market, AI or ships | Positions follow lanes; a save made at sea loads with the ship at the same point; sim output is identical at speed 1 and speed 8 (test) |
+| B | toward M2 | Panels: Map, Market, Port, with Fleet inside Map, as separate windows in one page | Player can sail, trade and buy a ship without leaving the page; keyboard reachable |
+| C | toward M2 | Port view you can enter | Clicking a city opens its view; market and shipyard actions work from it |
+| D | M3 | Pirates and encounters, playable and balanced without escorts | See below |
+| E | idea, not approved | Convoys and escorts, then automatic trade routes | Only if the owner adds it to a milestone |
 
-The owner named city view first, then ships on the map, then pirates. Step A goes first only because it is small and everything else sits on top of it; C follows B.
+## Step D without escorts
 
-Each step is its own small PR with tests and an outside review. Dates: none promised. This sits between the M2 slice and M3 in `ROADMAP.md`; scope will be cut before dates move.
+- Before escorts exist, pirates are stopped three ways: the player fights an encounter (odds from ship type and cargo), a port can pay for a patrol that removes pirates near it each season, and a hideout that is left alone grows slowly while one that is hit shrinks. Escorts (E) would add a fourth way later and must not be needed to balance D.
+- Encounter odds use cargo value, ship type, lane risk and a per-ship armed flag. The player can pay, flee or fight; the choice is part of the test.
+- AI traders get the same encounters, resolved automatically by the same odds, with one rule: an AI trader that loses its ship or cargo is replaced the next season by a new trader with starting cash, so the AI never ends in bankruptcy or stops trading. The loss is not reimbursed from nothing: the replaced trader's cash is removed from the economy.
+- Validation keeps the M1b gates on top of any pirate test: no good pinned at a price clamp more than 30% of days (per good and per city/good, 0, 6 and 12 traders, unrounded ratio), profitable routes that fade with use, and the 1,000-year run in CI under 5 minutes. Pirates must pass these gates with pirates on, and a pirates-off run is the baseline. "Trade is still possible" alone is not a pass.
