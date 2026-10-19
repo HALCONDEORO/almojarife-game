@@ -56,3 +56,16 @@ All game rules and numbers are our own design. Other games inspire ideas only; s
 - next: glossary and architecture decision records
 - next: AI levels (careful, balanced, bold) with a long-run balance test
 - later: mission conditions store, replays, mod loading
+
+## Added 20:52 (Marco)
+- shipyard: today only "buy a caravel" (fixed price, max 3 ships, no building, repair or upgrade, one shipyard action in any port). Next: ship classes as data, shipyard only in some ports, build orders with delay, repair, upgrades, selling ships, named fleets/convoys
+- real calendar: months, dates, seasons and feasts; a game year with real historical events per era (fairs, wars, epidemics, bad harvests, milestones), data in JSON, public-domain/verified sources noted in docs (English), tests; yearly variation by seeded random events on top of the fixed historical ones
+
+## Added 20:54 (Marco) - world and calendar plan (supersedes the 1480-1500 proposal)
+Start year 1470 (Iberia, Mediterranean, Atlantic coast). The map opens by dated milestones; every region, port, good and event is data in JSON with a verified public-domain source in docs/ (English) and tests.
+- phase 1: real calendar (months, dates, seasons, feasts), game starts 1470, year counter, dated event table
+- phase 2: milestone engine: regions/ports/goods unlock on their date (Atlantic islands, West Africa coast 1470s-80s, Cape of Good Hope 1488, Americas/Caribbean 1492, Brazil 1500, India route 1498)
+- phase 3: new goods (sugar, gold, tobacco, spices, silk), prices and production per region
+- phase 4: Africa, Indian Ocean, Asia, rest of world by later milestones
+- phase 5: base map from Natural Earth (public domain), split into regional tiles loaded on demand so GitHub Pages download stays small; simplified coast geometry per region
+- phase 6: yearly variation: fixed historical events + seeded random ones (harvests, epidemics, wars, fairs, piracy)

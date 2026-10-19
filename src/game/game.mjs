@@ -2,6 +2,7 @@
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
+import { rollEvent } from "./events.mjs";
 import { aiStep } from "../sim/ai.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -30,7 +31,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  return { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null };
+  return { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null, eventsOn: !!opts.events, pending: null };
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
@@ -41,7 +42,7 @@ export function netWorth(g) {
 }
 /** Advance one day: markets, AI traders, ships, upkeep; then check the end. */
 export function advanceDay(g) {
-  if (g.over) return;
+  if (g.over || g.pending) return; // an event waits for the player's choice
   g.day++;
   tickMarket(g.market, g.day);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
@@ -53,12 +54,13 @@ export function advanceDay(g) {
     if (was && !s.voyage) say(g, "arrive", { ship: s.id, city: s.at });
   }
   if (g.cash < 0) g.cash = 0;
+  rollEvent(g);
   if (g.cash >= GOAL_CASH) g.over = "win";
   else if (g.day >= DEADLINE_DAYS) g.over = "lose";
 }
 export function waitUntilArrival(g, ship) {
   let n = 0;
-  while (ship.voyage && !g.over && n++ < 400) advanceDay(g);
+  while (ship.voyage && !g.over && !g.pending && n++ < 400) advanceDay(g);
 }
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
