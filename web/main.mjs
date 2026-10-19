@@ -3,17 +3,18 @@ import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/came
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
+import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
-  es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida",
+  es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida", create: "Crea tu casa mercantil", character: "Tu nombre", portrait: "Retrato", crest: "Escudo", shield: "Forma", division: "División", charge: "Emblema", c1: "Color principal", c2: "Color secundario", home: "Puerto de origen", background: "Origen", back: "Atrás", sh: { heater: "Clásico", round: "Redondo" }, dv: { plain: "Liso", pale: "Partido", fess: "Cortado", chevron: "Cheurón", cross: "Cruz" }, ch: { star: "Estrella", tower: "Torre", ship: "Nave", anchor: "Ancla", sun: "Sol", wheat: "Trigo" }, bgInfo: { merchant: "+300 monedas", seafarer: "Barcos 15% más baratos de mantener", scholar: "+150 monedas y 5% menos de mantenimiento" },
     hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Pulsa un puerto del mapa para zarpar.",
     hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega", holdValue: "Valor de la bodega aquí (aprox.)", cheap: "Barato: buen momento para comprar", dear: "Caro: buen momento para vender",
     buy: "Comprar", sell: "Vender", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
     caravel: "Comprar carabela ({p})", at: "En", sea: "En el mar hacia", win: "¡Victoria! Alcanzaste la meta.", lose: "Se acabó el tiempo. Patrimonio final:",
     cap: "Carga", log: { arrive: "Día {day}: el barco {ship} llega a {city}", buy: "Día {day}: compras {qty} {good} por {sum}", sell: "Día {day}: vendes {qty} {good} por {sum}", sail: "Día {day}: el barco {ship} zarpa a {city} ({days} días)", caravel: "Día {day}: compras una carabela en {city}" }, goods: { grain: "Trigo", dried_fish: "Pescado seco", salt: "Sal", wool: "Lana", iron: "Hierro", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta" },
     types: { cog: "Coca", caravel: "Carabela" } },
-  en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game", cont: "Continue", start: "Start", company: "Name of your trading house", defCo: "My Trading House", tagline: "Sea trading on the Iberian coast, 15th-16th century", menu: "Menu", saved: "Game saved", noSave: "No saved game", exportS: "Export", importS: "Import", badSave: "That file is not a valid save",
+  en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game", cont: "Continue", start: "Start", company: "Name of your trading house", defCo: "My Trading House", tagline: "Sea trading on the Iberian coast, 15th-16th century", menu: "Menu", saved: "Game saved", noSave: "No saved game", exportS: "Export", importS: "Import", badSave: "That file is not a valid save", create: "Create your trading house", character: "Your name", portrait: "Portrait", crest: "Coat of arms", shield: "Shape", division: "Division", charge: "Emblem", c1: "Main colour", c2: "Second colour", home: "Home port", background: "Background", back: "Back", sh: { heater: "Classic", round: "Round" }, dv: { plain: "Plain", pale: "Split", fess: "Cut", chevron: "Chevron", cross: "Cross" }, ch: { star: "Star", tower: "Tower", ship: "Ship", anchor: "Anchor", sun: "Sun", wheat: "Wheat" }, bgInfo: { merchant: "+300 coins", seafarer: "Ships cost 15% less to keep", scholar: "+150 coins and 5% lower upkeep" },
     hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port on the map to sail.",
     hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold", holdValue: "Hold value here (approx.)", cheap: "Cheap: good time to buy", dear: "Dear: good time to sell",
     buy: "Buy", sell: "Sell", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
@@ -95,7 +96,11 @@ const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 function autosave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
 function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
-function start(name, save = true) { g = newGame(world); sel = 0; company = cleanCompany(name) || T[lang].defCo; if (save) autosave(); render(); }
+const cityIds = world.cities.map((c) => c.id);
+function start(prof, save = true) {
+  const p = cleanProfile({ ...prof, company: prof?.company || T[lang].defCo }, cityIds);
+  g = newGame(world, p.home, { ...startBonus(p), profile: p }); sel = 0; company = p.company; if (save) autosave(); render();
+}
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const was = new Set(g.ships.filter((x) => x.voyage).map((x) => x.id));
@@ -107,7 +112,7 @@ function act(fn) {
 
 function render() {
   t = T[lang]; const s = ship();
-  $("co").textContent = company ? `· ${company}` : "";
+  const pr = g.profile; $("co").innerHTML = pr ? `${crestSvg(pr.crest, 22, "top")} ${pr.company}${pr.character ? ` <small>(${pr.character})</small>` : ""}` : (company ? `· ${company}` : "");
   $("day").textContent = `${t.day} ${g.day}/${DEADLINE_DAYS}`;
   $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`;
   $("goal").textContent = `${t.goal}: ${fmt(GOAL_CASH)}`;
@@ -158,6 +163,28 @@ $("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
 $("new").onclick = () => { playing = false; showTitle(); };
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
+function showCreate(name) {
+  t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
+  const draw = () => {
+    el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
+      `<label>${t.company}<br><input id="p-co" maxlength="30" value="${pf.company}"></label><label>${t.character}<br><input id="p-ch" maxlength="30" value="${pf.character}"></label>` +
+      `<div>${t.portrait}</div><div class="ports">${Array.from({ length: PORTRAITS }, (_, i) => `<button class="pt ${pf.portrait === i ? "on" : ""}" data-p="${i}">${portraitSvg(i, pf.crest.c1, 48)}</button>`).join("")}</div>` +
+      `<label>${t.home}<br><select id="p-home">${opt(cityIds, pf.home, (id) => cityName(id))}</select></label>` +
+      `<label>${t.background}<br><select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small>${t.bgInfo[pf.background]}</small></div>` +
+      `<div><div>${t.crest}</div><div class="prev">${crestSvg(pf.crest, 96, "prev")}${portraitSvg(pf.portrait, pf.crest.c1, 96)}</div>` +
+      `<label>${t.shield} <select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label> <label>${t.division} <select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label> <label>${t.charge} <select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
+      `<div>${t.c1}</div><div>${swatch("c1")}</div><div>${t.c2}</div><div>${swatch("c2")}</div></div></div>` +
+      `<p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
+    const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; };
+    el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
+    el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
+    for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
+    $("p-back").onclick = () => showTitle();
+    $("p-go").onclick = () => { read(); playing = false; progress = 0; departed.clear(); start(pf); el.hidden = true; };
+  };
+  draw();
+}
 function showTitle() {
   t = T[lang]; const saved = loadSaved(), el = $("title");
   el.innerHTML = `<div class="box"><h1>El Almojarife</h1><p>${t.tagline}</p>` +
@@ -166,13 +193,13 @@ function showTitle() {
     `<button id="t-exp" ${saved ? "" : "disabled"}>${t.exportS}</button> <button id="t-imp">${t.importS}</button> <button id="t-lang">${lang === "es" ? "EN" : "ES"}</button>` +
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
-  $("t-start").onclick = () => { playing = false; progress = 0; departed.clear(); start($("co-in").value); el.hidden = true; };
+  $("t-start").onclick = () => showCreate($("co-in").value);
   $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; departed.clear(); render(); el.hidden = true; };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
   $("t-file").onchange = async (e) => { try { const f = e.target.files[0]; const r = unpackGame(JSON.parse(await f.text()), world); g = r.g; company = r.company; autosave(); sel = 0; render(); el.hidden = true; } catch { $("t-msg").textContent = t.badSave; } };
 }
-start("", false); // background game behind the title screen; it never overwrites a save
+start(null, false); // background game behind the title screen; it never overwrites a save
 showTitle();
 requestAnimationFrame(frame);
