@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Almojarife - 3D port prototype</title>
+<style>html,body{margin:0;height:100%;background:#1b2a33;font:14px sans-serif;color:#fff}canvas{display:block;width:100%;height:100%}#hud{position:fixed;left:10px;top:8px;text-shadow:0 1px 2px #000}</style></head>
+<body><div id="hud">3D port prototype (three.js, procedural). Drag to orbit-look, wheel to zoom.</div>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { buildPortScene, animateWater } from "../../src/view3d/port3d.mjs";
+const q = new URLSearchParams(location.search), city = q.get("city") || "cadiz";
+const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); document.body.appendChild(renderer.domElement);
+const { scene, water } = buildPortScene(THREE, { id: city, pop: +(q.get("pop") || 12000), ships: 3 });
+const cam = new THREE.PerspectiveCamera(50, 1, 0.1, 200); let yaw = 0.25, dist = 22, pitch = 0.22;
+const place = () => { cam.position.set(Math.sin(yaw) * dist, 4 + pitch * dist, Math.cos(yaw) * dist + 2); cam.lookAt(0, 2, -4); };
+const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }; addEventListener("resize", resize); resize(); place();
+let drag = null; addEventListener("pointerdown", (e) => drag = [e.clientX]); addEventListener("pointerup", () => drag = null);
+addEventListener("pointermove", (e) => { if (drag) { yaw += (e.clientX - drag[0]) * 0.005; drag[0] = e.clientX; place(); } });
+addEventListener("wheel", (e) => { dist = Math.max(8, Math.min(50, dist * (e.deltaY > 0 ? 1.1 : 0.9))); place(); });
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; animateWater(water, t); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.3 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.03; }); renderer.render(scene, cam); window.__ready = true; });
+</script></body></html>
