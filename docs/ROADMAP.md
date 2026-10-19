@@ -62,4 +62,4 @@ Owner decision only; needs a paid developer registration. Nothing done until the
 - v4 to v5: owner chose Option 2 (19 Oct 11:06). Option 1 removed from the plan (kept in git history). Final audit (Claude Opus, 19 Oct): REVISE with small edits, applied in v5.2 (workshop fail rule, slip rule, 8-goods fallback, tester rule).
 - v5 to v5.1 (owner 11:17): free play and campaign with missions added; Alpha now holds Act 1 only and Act 2 moves to the beta (M4); dates unchanged.
 - v5.1 to v5.2 (19 Oct): audit fixes applied (gates and fail rules clarified), no date change.
-- v5.2 to v5.3 (19 Oct 11:35): platform decision recorded, no date change.
+- v5.2 to v5.3 (19 Oct 11:35): platform decision recorded (browser first; desktop Windows and Linux after 1.0; macOS dropped for now: notarization cost and no test hardware), no date change.
