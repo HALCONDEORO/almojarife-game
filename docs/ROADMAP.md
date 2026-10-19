@@ -1,4 +1,4 @@
-# Almojarife - Roadmap (official reference), v5.2
+# Almojarife - Roadmap (official reference), v5.3
 
 Language: Spanish is the main language, English second. Today: 19 Oct 2026.
 Map: the Spanish coast and its surroundings first. Name: Almojarife is the top rank.
@@ -50,6 +50,9 @@ Rules: the owner's weekly review budget is set in hours; PRs stay small; an M3 s
 ## Dependencies
 String IDs, glossary and UI room for text 30% longer; save format and seeds from M1a; orders and a second ship by M2; asset ledger in CREDITS from the first file; OFL fonts with Spanish glyphs.
 
+## Platform decision
+Browser first; desktop builds (Windows, Linux) after 1.0 from the same code. Decision delegated to the project lead by the owner on 19 Oct 2026 11:35. Any spend (code signing, Steam registration) needs the owner's explicit approval after the price is checked.
+
 ## Steam
 Owner decision only; needs a paid developer registration. Nothing done until the owner says so.
 
@@ -58,3 +61,5 @@ Owner decision only; needs a paid developer registration. Nothing done until the
 - v3.1 to v4: map changed to the Spanish coast; two scope options instead of compressed dates (external audit of a compressed draft and a second external review both said not to compress dates or buffers); inconsistencies fixed (insurance, plague, desktop moved out of 1.0 everywhere); M1a moved to 15 Jan; 3-week retune box and 25% buffers kept; era decision and tester recruiting added to M0; self-review risk recorded. Second external audit (Claude Opus) of the options: Alpha date for Option 2 moved to 14 Jul 2027, freeze dates added, zero-capacity weeks defined, failed-gate rule added, USPTO added to the hand check.
 - v4 to v5: owner chose Option 2 (19 Oct 11:06). Option 1 removed from the plan (kept in git history). Final audit (Claude Opus, 19 Oct): REVISE with small edits, applied in v5.2 (workshop fail rule, slip rule, 8-goods fallback, tester rule).
 - v5 to v5.1 (owner 11:17): free play and campaign with missions added; Alpha now holds Act 1 only and Act 2 moves to the beta (M4); dates unchanged.
+- v5.1 to v5.2 (19 Oct): audit fixes applied (gates and fail rules clarified), no date change.
+- v5.2 to v5.3 (19 Oct 11:35): platform decision recorded (browser first; desktop Windows and Linux after 1.0; macOS dropped for now: notarization cost and no test hardware), no date change.

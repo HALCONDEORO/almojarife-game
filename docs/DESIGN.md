@@ -105,19 +105,19 @@ Decision (proposed): **1.0 ships with B (8 ports around Spain, 12 goods, 3 ship 
 
 ## 6. Roadmap
 
-The roadmap lives in `ROADMAP.md` (v5). Official plan (Option 2, owner decision 19 Oct 2026): engine base 15 Jan 2027, economy prototype 12 Feb, vertical slice 9 Apr, Alpha 14 Jul 2027, public web beta 30 Nov 2027, 1.0 on 28 Feb 2028; 8 ports, 12 goods, 2 acts, web only. Everything else comes after 1.0.
+The roadmap lives in `ROADMAP.md` (v5.3). Official plan (Option 2, owner decision 19 Oct 2026): engine base 15 Jan 2027, economy prototype 12 Feb, vertical slice 9 Apr, Alpha 14 Jul 2027, public web beta 30 Nov 2027, 1.0 on 28 Feb 2028; 8 ports, 12 goods, 2 acts, web only. Everything else comes after 1.0.
 
 ## 7. Where it will be playable
 
 1. **Web (browser), free, first.** Static site, runs on any device, no install. Alpha and Beta ship here.
-2. **Desktop builds** (Windows, Mac, Linux) after 1.0. 1.0 is web only.
+2. **Desktop builds** (Windows, Linux) after 1.0. 1.0 is web only.
 3. **Steam** only if the owner decides to. It needs a paid developer registration and store review, so nothing is done until the owner says so.
 
 ## 8. Tech and process
 
 JavaScript, simulation in plain modules with no engine dependency, rendering in the browser (canvas). Seeded deterministic simulation, headless tests, balance by running thousands of simulated years. All code on GitHub by pull request with review. Open source (MIT code, CC BY 4.0 art and docs).
 
-Roadmap: see `ROADMAP.md` (v5.2). Competition study: see `COMPETITION.md`.
+Roadmap: see `ROADMAP.md` (v5.3). Competition study: see `COMPETITION.md`.
 
 ## 9. Risks
 
