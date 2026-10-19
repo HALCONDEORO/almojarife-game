@@ -24,3 +24,6 @@ export function panBy(c, dfx, dfy) {
   c.x -= dfx * vw; c.y -= dfy * vh;
   return clampCamera(c);
 }
+// Marker scale: how big ports and ships are drawn so they stay readable at any zoom
+// (almost constant on screen, slightly larger when zoomed in).
+export const markerScale = (zoom) => 1 / Math.pow(zoom, 0.85);
