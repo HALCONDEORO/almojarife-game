@@ -7,6 +7,7 @@ import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "
 import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { previewBuy, previewSell } from "../src/sim/trade.mjs";
 import { citySceneSvg } from "../src/view/cityscene.mjs";
+import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
@@ -152,7 +153,7 @@ function render() {
     const canSail = !s.voyage && c.id !== s.at && !g.over;
     m += `<g class="city" data-c="${canSail ? c.id : ""}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><circle cx="0" cy="0" r="7" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
   }
-  $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g><g id="shipsLayer" pointer-events="none"></g>`;
+  $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => el.onclick = () => { const c = el.dataset.c; if (c) act(() => doSail(g, ship(), c)); });
   const logLine = (l) => t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
