@@ -6,14 +6,14 @@ import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCarave
 const T = {
   es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida",
     hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Pulsa un puerto del mapa para zarpar.",
-    hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega",
+    hintSea: "Tu barco está en el mar. Espera para llegar.", good: "Bien", price: "Precio", stock: "Stock", hold: "Bodega", cheap: "Barato: buen momento para comprar", dear: "Caro: buen momento para vender",
     buy: "Comprar", sell: "Vender", sailTo: "Zarpar a", days: "días", wait: "Esperar 1 día", arrive: "Esperar llegada",
     caravel: "Comprar carabela ({p})", at: "En", sea: "En el mar hacia", win: "¡Victoria! Alcanzaste la meta.", lose: "Se acabó el tiempo. Patrimonio final:",
     cap: "Carga", log: { arrive: "Día {day}: el barco {ship} llega a {city}", buy: "Día {day}: compras {qty} {good} por {sum}", sell: "Día {day}: vendes {qty} {good} por {sum}", sail: "Día {day}: el barco {ship} zarpa a {city} ({days} días)", caravel: "Día {day}: compras una carabela en {city}" }, goods: { grain: "Trigo", dried_fish: "Pescado seco", salt: "Sal", wool: "Lana", iron: "Hierro", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta" },
     types: { cog: "Coca", caravel: "Carabela" } },
   en: { play: "▶ Sail", pause: "⏸ Pause", speed: "Speed", day: "Day", cash: "Coins", goal: "Goal", ships: "Ships", new: "New game",
     hint0: "Mission 1: earn {goal} coins in {days} days. Buy cheap where a good is plentiful, sell dear where it is scarce. Click a port on the map to sail.",
-    hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold",
+    hintSea: "Your ship is at sea. Wait to arrive.", good: "Good", price: "Price", stock: "Stock", hold: "Hold", cheap: "Cheap: good time to buy", dear: "Dear: good time to sell",
     buy: "Buy", sell: "Sell", sailTo: "Sail to", days: "days", wait: "Wait 1 day", arrive: "Wait for arrival",
     caravel: "Buy a caravel ({p})", at: "At", sea: "At sea to", win: "Victory! You reached the goal.", lose: "Time is up. Final net worth:",
     cap: "Cargo", log: { arrive: "Day {day}: ship {ship} arrives at {city}", buy: "Day {day}: you buy {qty} {good} for {sum}", sell: "Day {day}: you sell {qty} {good} for {sum}", sail: "Day {day}: ship {ship} sails to {city} ({days} days)", caravel: "Day {day}: you buy a caravel at {city}" }, goods: { grain: "Grain", dried_fish: "Dried fish", salt: "Salt", wool: "Wool", iron: "Iron", timber: "Timber", cloth: "Cloth", olive_oil: "Olive oil", wine: "Wine", silk: "Silk", sugar: "Sugar", pepper: "Pepper" },
@@ -97,8 +97,8 @@ function render() {
   if (!s.voyage && !g.over) {
     h += `<table><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr>`;
     for (const gd of Object.keys(world.goods)) {
-      const p = quote(g, s.at, gd), base = world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit";
-      h += `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td style="color:${col}">${p}</td><td>${g.market[s.at][gd].stock}</td><td>${s.cargo[gd] ?? 0}</td>` +
+      const p = quote(g, s.at, gd), base = world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
+      h += `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td style="color:${col}" title="${tag === "" ? "" : tag === "▼" ? t.cheap : t.dear}">${tag} ${p}</td><td>${g.market[s.at][gd].stock}</td><td>${s.cargo[gd] ?? 0}</td>` +
         `<td><button data-b="${gd}:10">${t.buy} 10</button><button data-b="${gd}:60">${t.buy} max</button><button data-s="${gd}">${t.sell}</button></td></tr>`;
     }
     h += `</table><div>${t.sailTo}: ` + world.cities.filter((c) => c.id !== s.at).map((c) => `<button data-sail="${c.id}">${c.name}</button>`).join("") + `</div>`;
