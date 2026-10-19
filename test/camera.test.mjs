@@ -16,3 +16,9 @@ test("cannot pan outside the map", () => {
 });
 test("zoom at 1 cannot be panned", () => { const c = newCamera(800, 600); panBy(c, 0.3, 0.3); assert.deepEqual(viewBox(c), [0, 0, 800, 600]); });
 test("clamp fixes a bad state", () => { const c = { W: 800, H: 600, x: 999, y: -5, zoom: 2 }; clampCamera(c); assert.deepEqual(viewBox(c), [400, 0, 400, 300]); });
+import { markerScale } from "../src/view/camera.mjs";
+test("markers stay near constant on screen", () => {
+  assert.equal(markerScale(1), 1);
+  assert.ok(markerScale(8) < 0.2 && markerScale(8) > 0.1);
+  assert.ok(markerScale(2) < markerScale(1));
+});

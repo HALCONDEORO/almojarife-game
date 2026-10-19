@@ -1,5 +1,5 @@
 import { goodIcon } from "./icons.mjs";
-import { newCamera, zoomAt, panBy, viewBox } from "../src/view/camera.mjs";
+import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
@@ -30,7 +30,12 @@ const sc = 800 / (x1 - x0), VH = Math.round((y1 - y0) * sc * 1.25);
 $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
 // Pan and zoom: the wheel zooms at the cursor, dragging pans, two fingers pinch, double click resets.
 const cam = newCamera(800, VH), mapEl = $("map");
-const applyCam = () => mapEl.setAttribute("viewBox", viewBox(cam).join(" "));
+const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); };
+function scaleMarkers() {
+  const k = markerScale(cam.zoom);
+  mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
+  mapEl.querySelectorAll("#static line").forEach((el) => el.setAttribute("stroke-width", 1.5 * k));
+}
 const frac = (e) => { const r = mapEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
 mapEl.style.touchAction = "none";
 mapEl.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(cam, e.deltaY < 0 ? 1.25 : 0.8, ...frac(e)); applyCam(); }, { passive: false });
@@ -66,9 +71,9 @@ const shipFrac = (id) => { const d = departed.get(id); return d === undefined ? 
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
   let h = "";
-  for (const a of g.ai) { const p = shipPosition(world, a.ship, progress); h += `<text x="${X(p.lon) - 6}" y="${Y(p.lat) + 5}" font-size="13" fill="#555" opacity="0.8">⛵</text>`; }
-  g.ships.forEach((sh, i) => { const p = shipPosition(world, sh, shipFrac(sh.id)); h += `<text x="${X(p.lon) - 8}" y="${Y(p.lat) + 6}" font-size="18" fill="${i === sel ? "#a00" : "#036"}">⛵</text><text x="${X(p.lon) + 8}" y="${Y(p.lat) - 6}" font-size="11" fill="#300">${sh.id}</text>`; });
-  layer.innerHTML = h;
+  for (const a of g.ai) { const p = shipPosition(world, a.ship, progress); h += `<g data-mx="${X(p.lon)}" data-my="${Y(p.lat)}"><text x="-6" y="5" font-size="13" fill="#555" opacity="0.8">⛵</text></g>`; }
+  g.ships.forEach((sh, i) => { const p = shipPosition(world, sh, shipFrac(sh.id)); h += `<g data-mx="${X(p.lon)}" data-my="${Y(p.lat)}"><text x="-8" y="6" font-size="18" fill="${i === sel ? "#a00" : "#036"}">⛵</text><text x="8" y="-6" font-size="11" fill="#300">${sh.id}</text></g>`; });
+  layer.innerHTML = h; scaleMarkers();
 }
 function tickDay() {
   const before = g.ships.map((x) => !!x.voyage);
@@ -110,10 +115,10 @@ function render() {
   for (const [a, b] of world.lanes) m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`;
   for (const c of world.cities) {
     const canSail = !s.voyage && c.id !== s.at && !g.over;
-    m += `<g class="city" data-c="${canSail ? c.id : ""}"><circle cx="${X(c.lon)}" cy="${Y(c.lat)}" r="7" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}"/><text x="${X(c.lon) + 10}" y="${Y(c.lat) + 4}" font-size="14">${c.name}</text></g>`;
+    m += `<g class="city" data-c="${canSail ? c.id : ""}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><circle cx="0" cy="0" r="7" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
   }
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g><g id="shipsLayer" pointer-events="none"></g>`;
-  drawShips();
+  drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => el.onclick = () => { const c = el.dataset.c; if (c) act(() => doSail(g, ship(), c)); });
   const logLine = (l) => t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
   $("log").innerHTML = g.log.map((l) => `<div>${logLine(l)}</div>`).join("");
