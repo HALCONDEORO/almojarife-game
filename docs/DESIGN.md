@@ -81,7 +81,7 @@ Campaign: finish the Act 3 goal. Bankruptcy ends a run. Sandbox: score by net wo
 Options:
 - **A. Medium (Baltic and North Sea, 20 cities).** Similar scale to classic hanseatic trade games.
 - **B. Small (10 cities, current prototype).** Fastest to a polished build.
-- **C. World (Europe, Africa, Asia).** the owner's long-term goal.
+- **C. World (Europe, Africa, Asia).** The owner's long-term goal.
 
 Criteria: (1) finishing in months, not years; (2) economy needs enough cities and goods to have real arbitrage, about 8 to 12 cities minimum; (3) cost of art, balancing and events per city; (4) testability, all runs must stay fast in a headless simulation.
 
@@ -95,7 +95,7 @@ The roadmap lives in `ROADMAP.md` and is the working reference (three audit pass
 
 1. **Web (browser), free, first.** Static site, runs on any device, no install. Alpha and Beta ship here.
 2. **Desktop builds** (Windows, Mac, Linux) as downloads at 1.0.
-3. **Steam** only if the owner decides to. It needs a paid developer registration and store review, so nothing is done until he says so.
+3. **Steam** only if the owner decides to. It needs a paid developer registration and store review, so nothing is done until the owner says so.
 
 ## 8. Tech and process
 
