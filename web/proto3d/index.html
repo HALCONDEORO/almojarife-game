@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { buildPortScene, animateWater } from "../../src/view3d/port3d.mjs";
 const q = new URLSearchParams(location.search), city = q.get("city") || "cadiz";
 const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); document.body.appendChild(renderer.domElement);
-const { scene, water } = buildPortScene(THREE, { id: city, pop: +(q.get("pop") || 12000), ships: 3 });
+const { scene, water } = buildPortScene(THREE, { id: city, pop: +(q.get("pop") || 12000), ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: +(q.get("tod") || 0.5) });
 const cam = new THREE.PerspectiveCamera(50, 1, 0.1, 200); let yaw = 0.25, dist = 22, pitch = 0.22;
 const place = () => { cam.position.set(Math.sin(yaw) * dist, 4 + pitch * dist, Math.cos(yaw) * dist + 2); cam.lookAt(0, 2, -4); };
 const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }; addEventListener("resize", resize); resize(); place();
