@@ -1,5 +1,7 @@
 // Geometry helpers: point in land polygon (Natural Earth 50m land, public domain), haversine distance.
-import { readFileSync } from "node:fs";
+// node:fs is loaded only under Node so these modules also run in the browser (M2).
+const fs = typeof process !== "undefined" && process.versions?.node ? await import("node:fs") : null;
+const readFileSync = (...a) => fs.readFileSync(...a);
 export function loadLand(path = new URL("../data/ne_50m_land.geojson", import.meta.url)) {
   const gj = JSON.parse(readFileSync(path, "utf8"));
   const polys = [];

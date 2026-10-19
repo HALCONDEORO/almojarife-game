@@ -1,58 +1,52 @@
 # Almojarife
 
-**ES** Juego de comercio marítimo de código abierto, en desarrollo temprano. Empiezas con una nao y unas monedas en un puerto medieval de la costa española; compras barato, navegas, vendes caro, montas talleres y flota, y asciendes hasta el rango más alto: el **almojarife**, el tesorero que gobierna el comercio del puerto. Español como idioma principal; también en inglés.
+An open-source sea-trading game set on the Iberian and western Mediterranean coast in the 15th and 16th centuries. Early development: a first playable prototype exists, but it is rough.
 
-**EN** An open-source sea-trading game, early development. Start with one cog and a few coins in a medieval harbour; buy low, sail, sell high, build workshops and a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who runs the port's trade. Spanish is the main language; English is fully supported.
+You start with one cog and a few coins in a medieval harbour. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, add ships, and aim for the top rank: the **almojarife**, the royal treasurer who ran a port's trade. Pronounced al-mo-ha-REE-fay.
 
-Pronunciation / Pronunciación: al-mo-ja-RI-fe (EN: "al-mo-ha-REE-fay").
+Playable in **English and Spanish**. Spanish is the primary language of the project.
 
-## Estado / Status
+## Status (honest version)
 
-Prototype only: Baltic prototype data (10 cities, to be replaced by the Spanish coast), sea-lane graph, market model, SVG map. Not playable yet. / Solo prototipo: no se puede jugar todavía.
+- Playable now: a browser prototype with a map of 9 ports, 12 goods, a living market with AI traders, sailing, a second ship, and one mission (earn 50,000 coins in 365 days). Placeholder interface, no art, no tutorial, no save games yet.
+- Not done: missions and story, harbour orders, buildings and workshops, sound, art, balance beyond the first mission, outside playtesting.
+- Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See `docs/ROADMAP.md`.
 
-## Dónde jugar / Where to play
+## Play the prototype
 
-Navegador primero (gratis, sin instalar). Descargas de escritorio después del 1.0. Steam solo si lo decide el propietario. / Browser first (free, no install). Desktop downloads after 1.0. Steam only if the owner decides.
+You need Node 20 or newer (for the tests and tools) and any static web server. From the repository root:
 
-## Hoja de ruta / Roadmap
+    npm run serve
 
-Mapa inicial: la costa de España (Cádiz, Sevilla, Lisboa, Valencia, Barcelona, Palma, Bilbao, Tánger, Cartagena). 9 ports, 12 goods, 2 acts, web only.
+then open http://localhost:8080/web/index.html. The language follows your browser; the EN/ES button switches it.
 
-| Hito / Milestone | Fecha / Date |
-|---|---|
-| Engine base | 15 Jan 2027 |
-| Economy prototype | 12 Feb 2027 |
-| Vertical slice (browser) | 9 Apr 2027 |
-| Alpha | 14 Jul 2027 |
-| Public web beta | 30 Nov 2027 |
-| 1.0 | 28 Feb 2028 |
+## Develop
 
-Después / After 1.0: Act 3, more ports (Canarias, Génova, Marsella, Málaga, Orán), desktop builds. Details: `docs/ROADMAP.md`; design: `docs/DESIGN.md`; other games: `docs/COMPETITION.md`.
+    sh tools/fetch_data.sh   # downloads Natural Earth coastlines (not stored in the repo)
+    npm test                 # simulation, AI traders and game logic tests
+    npm run sim1000          # 1,000 simulated years of the economy (about a minute)
+    npm run map              # renders the world map to SVG
 
-## Qué hay aquí / What is here
+No dependencies beyond Node and curl.
 
-- `data/world.json`: prototype world data (Baltic and North Sea, 10 cities). To be replaced by the Spanish coast at milestone M1a.
-- `src/sim/`: simulation core (market, routes).
-- `tools/`: geometry helpers, SVG map renderer, `fetch_data.sh` (downloads coastline data).
-- `test/`: tests.
-- `docs/map.svg`: current map render (the PNG is exported from the SVG by hand for now).
+## What is in the repository
 
-## Ejecutar / Run (from the repository root)
+- `src/sim/`: simulation core (world graph and routes, market model, ships, AI traders).
+- `src/game/`: game state and player actions, no UI code.
+- `web/`: the browser prototype.
+- `data/world.json`: 9 ports, 23 waypoints, 33 sea lanes, 12 goods (original data).
+- `assets/`: art assets; each one has a row in `CREDITS.md`.
+- `docs/`: design, roadmap, decisions, process and studies (index in `docs/README.md`).
+- `locales/`, `TRANSLATING.md`: how text is translated.
+- `tools/`, `test/`: scripts and tests.
 
-    sh tools/fetch_data.sh
-    npm test
-    npm run map
+## Contribute
 
-Needs Node 20 or newer and curl. No other dependencies.
+Ideas, bug reports and translations are welcome. Start with `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` and `TRANSLATING.md`. Open an issue before large changes. Historical corrections (ports, goods, ships, prices) are especially useful.
 
-## Organización del repositorio / Repository layout
+## Licence
 
-`data/` game data; `src/` simulation; `tools/` scripts; `test/` tests; `docs/` documents (index in `docs/README.md`); `locales/` text in ES/EN; `.github/` CI, issue and PR templates. Same layout idea as other open-source games (OpenTTD, Mindustry, Wesnoth, OpenRCT2, Unciv): README, CONTRIBUTING, CODE_OF_CONDUCT, CHANGELOG, TRANSLATING, templates, CI.
-
-## Contribuir / Contribute
-
-See `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `TRANSLATING.md`. Ideas for cities, goods, ships or mechanics are welcome: open an issue. Translations too.
-
-## Licencia / Licence
-
-Code and game data (`data/`): MIT (`LICENSE`). Art and docs: CC BY 4.0 (`LICENSE-ART.md`). Coastlines: Natural Earth, public domain (`CREDITS.md`). All original; nothing copied from other games.
+- Code and game data: MIT (`LICENSE`).
+- Original art and documents: CC BY 4.0 (`LICENSE-ART.md`).
+- Third-party material is limited to public domain, CC0 and CC BY, and every file is listed with its source and licence in `CREDITS.md`.
+- Everything here is original work. Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.

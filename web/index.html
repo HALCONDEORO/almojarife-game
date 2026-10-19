@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Almojarife</title>
+<style>
+body{margin:0;font:15px Georgia,serif;background:#e8d9b5;color:#3a2a14}
+header{padding:8px 14px;background:#c9b07a;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+header b{font-size:18px}
+main{display:grid;grid-template-columns:minmax(300px,1.2fr) minmax(300px,1fr);gap:10px;padding:10px}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:#f4ead0;border:1px solid #b8a06a;border-radius:6px;padding:8px}
+svg{width:100%;height:auto;background:#d9c79c;border-radius:4px}
+table{width:100%;border-collapse:collapse}td,th{padding:2px 4px;text-align:right}td:first-child,th:first-child{text-align:left}
+button{font:inherit;background:#8a6a2f;color:#fff8e6;border:0;border-radius:4px;padding:3px 8px;cursor:pointer;margin:1px}
+button:disabled{opacity:.4;cursor:default}
+.hint{background:#fff4c2;border-left:4px solid #c9962a;padding:6px;margin-bottom:6px}
+#log{max-height:110px;overflow:auto;font-size:13px}
+.city{cursor:pointer}.city:hover circle{fill:#a23}
+</style></head><body>
+<header><b>El Almojarife</b><span id="day"></span><span id="cash"></span><span id="goal"></span><span id="ships"></span>
+<span style="margin-left:auto"><button id="lang">EN</button> <button id="new">Nueva partida</button></span></header>
+<main>
+<section class="card"><div class="hint" id="hint"></div><svg id="map" viewBox="0 0 800 600"></svg><div id="log"></div></section>
+<section class="card"><div id="panel"></div></section>
+</main>
+<script type="module" src="main.mjs"></script></body></html>

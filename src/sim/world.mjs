@@ -1,7 +1,12 @@
-import { readFileSync } from "node:fs";
+// node:fs is loaded only under Node so these modules also run in the browser (M2).
+const fs = typeof process !== "undefined" && process.versions?.node ? await import("node:fs") : null;
+const readFileSync = (...a) => fs.readFileSync(...a);
 import { haversineKm } from "../../tools/geo.mjs";
 export function loadWorld(path = new URL("../../data/world.json", import.meta.url)) {
-  const w = JSON.parse(readFileSync(path, "utf8"));
+  return buildWorld(JSON.parse(readFileSync(path, "utf8")));
+}
+/** Build the world graph from parsed world.json (works in the browser too). */
+export function buildWorld(w) {
   const nodes = {};
   for (const c of w.cities) nodes[c.id] = c;
   for (const [id, p] of Object.entries(w.waypoints)) nodes[id] = { id, ...p };
