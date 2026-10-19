@@ -1,4 +1,5 @@
 import { goodIcon } from "./icons.mjs";
+import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
@@ -72,12 +73,23 @@ document.documentElement.lang = lang;
 let playing = false, speed = 1, progress = 0, lastFrame = 0;
 const MS_PER_DAY = 1500, departed = new Map(); // ship id -> progress when it left port (view only)
 const shipFrac = (id) => { const d = departed.get(id); return d === undefined ? progress : Math.max(0, (progress - d) / (1 - d || 1)); };
+const trails = {}; // view only: recent screen positions per ship, for the wake
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
-  let h = "";
-  for (const a of g.ai) { const p = shipPosition(world, a.ship, progress); h += `<g data-mx="${X(p.lon)}" data-my="${Y(p.lat)}"><text x="-6" y="5" font-size="13" fill="#555" opacity="0.8">⛵</text></g>`; }
-  g.ships.forEach((sh, i) => { const p = shipPosition(world, sh, shipFrac(sh.id)); h += `<g data-mx="${X(p.lon)}" data-my="${Y(p.lat)}"><text x="-8" y="6" font-size="18" fill="${i === sel ? "#a00" : "#036"}">⛵</text><text x="8" y="-6" font-size="11" fill="#300">${sh.id}</text></g>`; });
-  layer.innerHTML = h; scaleMarkers();
+  const all = [...g.ai.map((a) => ({ sh: a.ship, mine: false, id: "ai" + a.ship.id })), ...g.ships.map((sh, i) => ({ sh, mine: true, sel: i === sel, id: "p" + sh.id }))];
+  let h = "", wakes = "";
+  for (const { sh, mine, sel: isSel, id } of all) {
+    const f = mine ? shipFrac(sh.id) : progress;
+    const p = shipPosition(world, sh, f), pt = { x: X(p.lon), y: Y(p.lat) };
+    let ang = 0;
+    if (sh.voyage) {
+      const q = shipPosition(world, sh, Math.min(1, f + 0.08)), qb = shipPosition(world, sh, Math.max(0, f - 0.08));
+      ang = headingDeg({ x: X(qb.lon), y: Y(qb.lat) }, { x: X(q.lon), y: Y(q.lat) }) ?? 0;
+      wakes += wakeSvg(pushTrail(trails, id, pt));
+    } else delete trails[id];
+    h += `<g data-mx="${pt.x}" data-my="${pt.y}">${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
+  }
+  layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
 }
 function tickDay() {
   const before = g.ships.map((x) => !!x.voyage);
