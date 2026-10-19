@@ -5,12 +5,12 @@ import { aiStep } from "../sim/ai.mjs";
 
 export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_PRICE = 3000, WARMUP_DAYS = 60;
 
-export function newGame(world, start = "cadiz") {
+export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
   const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
   const market = makeMarket(world);
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } } // so prices differ from day 0
-  return { world, day: 0, cash: START_CASH, market, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null };
+  return { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null };
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
@@ -27,7 +27,7 @@ export function advanceDay(g) {
   for (const s of g.ships) {
     const was = s.voyage;
     tickShip(s);
-    g.cash -= SHIP_TYPES[s.type].upkeepPerDay;
+    g.cash -= SHIP_TYPES[s.type].upkeepPerDay * (g.upkeepMul ?? 1);
     if (was && !s.voyage) say(g, "arrive", { ship: s.id, city: s.at });
   }
   if (g.cash < 0) g.cash = 0;
