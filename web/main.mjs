@@ -86,7 +86,7 @@ function render() {
     const canSail = !s.voyage && c.id !== s.at && !g.over;
     m += `<g class="city" data-c="${canSail ? c.id : ""}"><circle cx="${X(c.lon)}" cy="${Y(c.lat)}" r="7" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}"/><text x="${X(c.lon) + 10}" y="${Y(c.lat) + 4}" font-size="14">${c.name}</text></g>`;
   }
-  $("map").innerHTML = `<g id="static">${m}</g><g id="shipsLayer" pointer-events="none"></g>`;
+  $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g><g id="shipsLayer" pointer-events="none"></g>`;
   drawShips();
   $("map").querySelectorAll("g.city").forEach((el) => el.onclick = () => { const c = el.dataset.c; if (c) act(() => doSail(g, ship(), c)); });
   const logLine = (l) => t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
