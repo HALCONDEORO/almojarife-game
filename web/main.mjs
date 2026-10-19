@@ -1,3 +1,4 @@
+import { goodIcon } from "./icons.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, quote, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
@@ -97,7 +98,7 @@ function render() {
     h += `<table><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr>`;
     for (const gd of Object.keys(world.goods)) {
       const p = quote(g, s.at, gd), base = world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit";
-      h += `<tr><td>${t.goods[gd]}</td><td style="color:${col}">${p}</td><td>${g.market[s.at][gd].stock}</td><td>${s.cargo[gd] ?? 0}</td>` +
+      h += `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td style="color:${col}">${p}</td><td>${g.market[s.at][gd].stock}</td><td>${s.cargo[gd] ?? 0}</td>` +
         `<td><button data-b="${gd}:10">${t.buy} 10</button><button data-b="${gd}:60">${t.buy} max</button><button data-s="${gd}">${t.sell}</button></td></tr>`;
     }
     h += `</table><div>${t.sailTo}: ` + world.cities.filter((c) => c.id !== s.at).map((c) => `<button data-sail="${c.id}">${c.name}</button>`).join("") + `</div>`;
