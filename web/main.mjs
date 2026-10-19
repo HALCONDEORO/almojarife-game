@@ -112,7 +112,9 @@ function act(fn) {
 
 function render() {
   t = T[lang]; const s = ship();
-  const pr = g.profile; $("co").innerHTML = pr ? `${crestSvg(pr.crest, 22, "top")} ${pr.company}${pr.character ? ` <small>(${pr.character})</small>` : ""}` : (company ? `· ${company}` : "");
+  const pr = g.profile, co = $("co"); co.textContent = "";
+  if (pr) { const box = document.createElement("span"); box.innerHTML = crestSvg(pr.crest, 22, "top"); co.append(box, ` ${pr.company}`); if (pr.character) { const sm = document.createElement("small"); sm.textContent = ` (${pr.character})`; co.append(sm); } }
+  else if (company) co.textContent = `· ${company}`;
   $("day").textContent = `${t.day} ${g.day}/${DEADLINE_DAYS}`;
   $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`;
   $("goal").textContent = `${t.goal}: ${fmt(GOAL_CASH)}`;
@@ -168,7 +170,7 @@ function showCreate(name) {
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
-      `<label>${t.company}<br><input id="p-co" maxlength="30" value="${pf.company}"></label><label>${t.character}<br><input id="p-ch" maxlength="30" value="${pf.character}"></label>` +
+      `<label>${t.company}<br><input id="p-co" maxlength="30"></label><label>${t.character}<br><input id="p-ch" maxlength="30"></label>` +
       `<div>${t.portrait}</div><div class="ports">${Array.from({ length: PORTRAITS }, (_, i) => `<button class="pt ${pf.portrait === i ? "on" : ""}" data-p="${i}">${portraitSvg(i, pf.crest.c1, 48)}</button>`).join("")}</div>` +
       `<label>${t.home}<br><select id="p-home">${opt(cityIds, pf.home, (id) => cityName(id))}</select></label>` +
       `<label>${t.background}<br><select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small>${t.bgInfo[pf.background]}</small></div>` +
@@ -176,6 +178,7 @@ function showCreate(name) {
       `<label>${t.shield} <select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label> <label>${t.division} <select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label> <label>${t.charge} <select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
       `<div>${t.c1}</div><div>${swatch("c1")}</div><div>${t.c2}</div><div>${swatch("c2")}</div></div></div>` +
       `<p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
+    $("p-co").value = pf.company; $("p-ch").value = pf.character; // set as values, never parsed as HTML
     const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; };
     el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
