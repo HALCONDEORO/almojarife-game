@@ -9,13 +9,16 @@ Spanish is the source language. One term, one translation. Add terms here before
 | Carta de Almojarifazgo | Customs Charter | royal charter in the story |
 | nao | nao (merchant ship) | big ship |
 | carabela | caravel | fast ship |
-| cog / coca | cog | small starting ship |
+| coca | cog | small starting ship |
 | lonja | market hall | place where goods are traded |
 | gremio | guild | |
 | casa comercial | trading house | the player's company |
-| rumbo / ruta | route | |
+| ruta | route | |
+| rumbo | heading | |
+| pirata | pirate | |
 | carga | cargo | |
-| bodega | warehouse | |
+| almacén | warehouse | on land |
+| bodega | hold | ship cargo space |
 | taller | workshop | |
 | reputación | standing | per port |
 | forastero | outsider | first standing rank |
