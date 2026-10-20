@@ -29,7 +29,7 @@ test("a pending event stops the clock until the player chooses", () => {
   const pe = pendingEvent(g); assert.ok(pe.choices.length >= 1);
   const r = resolveEvent(g, pe.choices[0].id);
   assert.ok(r.ok && r.text.es && r.text.en); assert.equal(g.pending, null);
-  advanceDay(g); assert.ok(g.day > day);
+  const t0 = g.tick; advanceDay(g); assert.ok(g.tick > t0, "the clock runs again after the choice");
 });
 test("outcomes are deterministic for the same game, and effects stay in bounds", () => {
   const run = () => { const g = sailing(3); g.pending = { event: "pirates", ship: 1, day: g.day }; const before = g.ships[0].cargo.salt; const r = resolveEvent(g, "fight"); return { r, left: g.ships[0].cargo.salt ?? 0, before, cash: g.cash }; };

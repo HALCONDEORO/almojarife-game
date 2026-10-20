@@ -282,7 +282,7 @@ function render() {
       }
     }
     { const te = target ? travelEstimate(world, s, target) : null;
-      h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ${te.days} ${t.daysLbl}, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
+      h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (!g.over) h += `<div><button data-wait="1">${t.wait}</button>${s.voyage ? `<button data-arrive="1">${t.arrive}</button>` : ""}</div>`;
   $("panel").innerHTML = h;

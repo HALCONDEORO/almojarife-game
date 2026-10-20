@@ -86,22 +86,27 @@ function dayTick(g) {
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
   if(!g.over)for(const s of g.ships)automaticEncounter(g,s);
 }
-/** Arrival of a player's ship on its exact tick: tolls, log and ledger. */
+/** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
+  wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
 }
-/** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). */
+/** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
 export function advanceDay(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   const target = (Math.floor(g.tick / TICKS_PER_DAY) + 1) * TICKS_PER_DAY;
-  do advanceTick(g); while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
+  do {
+    const atSea = new Set(g.ships.filter((s) => s.voyage).map((s) => s.id));
+    advanceTick(g);
+    if (atSea.size && g.ships.some((s) => atSea.has(s.id) && !s.voyage)) break; // a ship of yours just arrived
+  } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
 }
 /** Advance one tick: ships move continuously and arrive on the exact tick; day work runs only at a day boundary. */
 export function advanceTick(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
-  for (const t of g.ai) if (sailTick(t.ship)) aiStep(g.world, g.market, t, t.ship); // AI traders act on their own arrival tick
+  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {

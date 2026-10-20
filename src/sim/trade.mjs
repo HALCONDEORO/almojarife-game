@@ -37,9 +37,9 @@ export function sailTick(ship) {
   if (--ship.voyage.ticksLeft <= 0) { ship.at = ship.voyage.to; ship.voyage = null; return true; }
   return false;
 }
-/** One day at sea: hull wear. Movement is per tick in sailTick. */
-export function tickShip(ship) {
-  if (!ship.voyage) return;
+/** One day at sea: hull wear. Movement is per tick in sailTick. `force` charges a ship that just arrived (its voyage is already cleared). */
+export function tickShip(ship, force = false) {
+  if (!ship.voyage && !force) return;
   ship.hull = Math.max(10, (ship.hull ?? 100) - 0.5); // sea wear
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the

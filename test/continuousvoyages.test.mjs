@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
-import { newGame, advanceTick, doSail, TICKS_PER_DAY } from "../src/game/game.mjs";
+import { newGame, advanceDay, advanceTick, doSail, TICKS_PER_DAY } from "../src/game/game.mjs";
 import { TICKS_PER_HOUR, tickParts } from "../src/sim/clock.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
@@ -73,4 +73,20 @@ test("the departure log line carries whole hours, never an undefined field", () 
   assert.ok(line, "departure is logged");
   assert.ok(Number.isInteger(line.hours) && line.hours >= 1, "hours param is set: " + JSON.stringify(line));
   assert.equal(line.days, undefined, "the old days field is gone");
+});
+
+test("the arrival day pays its sea wear, same count as the day model", () => {
+  const g = newGame(world), s = g.ships[0];
+  doSail(g, s, "huelva");
+  const hull0 = s.hull, days = Math.ceil(s.voyage.totalTicks / TICKS_PER_DAY);
+  while (s.voyage) advanceTick(g);
+  assert.equal(s.hull, hull0 - 0.5 * days, "one wear charge per started day at sea, including the arrival day");
+});
+
+test("advanceDay stops on the arrival tick instead of running to the day boundary", () => {
+  const g = newGame(world), s = g.ships[0];
+  doSail(g, s, "barcelona");
+  const arrivalTick = g.tick + s.voyage.ticksLeft;
+  while (s.voyage) advanceDay(g);
+  assert.equal(g.tick, arrivalTick, "no extra hours after the arrival");
 });
