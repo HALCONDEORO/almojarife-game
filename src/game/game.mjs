@@ -1,6 +1,6 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
-import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, OVERDRAFT_LIMIT } from "./ledger.mjs";
+import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
@@ -74,13 +74,13 @@ export function waitUntilArrival(g, ship) {
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   const r = buy(g.world, g.market, ship, g.cash, good, qty);
-  if (r.ok) { g.cash -= r.cost; say(g, "buy", { qty: r.qty, good, sum: r.cost }); }
+  if (r.ok) { g.cash -= r.cost; logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); }
   return r;
 }
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   const r = sell(g.world, g.market, ship, good, qty);
-  if (r.ok) { g.cash += r.revenue; say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.cash += r.revenue; logSell(g, good, r.qty, r.revenue); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
