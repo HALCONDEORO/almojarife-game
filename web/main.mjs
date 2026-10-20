@@ -1,3 +1,4 @@
+import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
@@ -275,7 +276,7 @@ function render() {
   P.querySelectorAll("[data-3d]").forEach((e) => e.onclick = () => open3d(s));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; render(); });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   if ($("rt-set")) $("rt-set").onclick = () => act(() => setRoute(g, s, s.at, $("rt-to").value, $("rt-out").value, $("rt-back").value));
   if ($("rt-cancel")) $("rt-cancel").onclick = () => act(() => clearRoute(s));
   P.querySelectorAll("[data-loan]").forEach((e) => e.onclick = () => act(() => borrow(g, s.at, +e.dataset.loan)));
@@ -296,17 +297,43 @@ function render() {
 }
 
 function sailToTarget() { if (!target) return; const to = target; act(() => doSail(g, ship(), to)); target = null; render(); }
-function open3d(s0) {
-  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }) });
-  const d = document.createElement("div"); d.id = "v3d"; d.style.cssText = "position:fixed;inset:0;z-index:60;background:#000";
-  d.innerHTML = `<iframe src="proto3d/index.html?${q}" style="border:0;width:100%;height:100%" title="3D"></iframe><button style="position:absolute;right:12px;top:10px">${t.close} (Esc)</button>`;
-  document.body.appendChild(d); d.querySelector("button").onclick = () => d.remove();
+function closeCityWindow() {
+  const d=$("v3d"); if (!d) return;
+  const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.querySelector("[data-open-panel]")?.focus();}
 }
-// A click on a building in the 3D port opens that panel of the game and closes the 3D view.
-addEventListener("message", (e) => {
-  if (e.origin !== location.origin || e.data?.kind !== "building") return;
-  const tb = tabForBuilding(e.data.id); if (!tb || !document.getElementById("v3d")) return;
-  document.getElementById("v3d").remove(); tab = tb; render();
+function close3d() {
+  const d=$("v3d"); if(!d)return;
+  const p=$("panel"), home=$("panel-home"); if(p&&home)home.appendChild(p);
+  d.remove();document.body.classList.remove("in-city-3d"); document.querySelector("[data-3d]")?.focus();
+}
+function openCityPanel(tb) {
+  const d=$("v3d");if(!d)return;tab=tb;render();
+  const w=d.querySelector(".city-window");w.hidden=false;
+  d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,route:t.tabRoute,house:t.tabHouse,store:t.tabStore})[tb]||t.tabCity;
+  d.querySelector("[data-close-panel]").focus();
+}
+function open3d(s0) {
+  if($("v3d")||s0.voyage)return;
+  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }) });
+  const d=document.createElement("div");d.id="v3d";
+  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="store">${t.tabStore}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
+  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
+  d.querySelector("[data-map]").onclick=close3d;
+  d.querySelector("[data-close-panel]").onclick=closeCityWindow;
+  d.querySelector("[data-open-panel]").onclick=()=>openCityPanel("market");
+  d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
+  const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
+  const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
+  handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX-win.offsetLeft,e.clientY-win.offsetTop];handle.setPointerCapture(e.pointerId);};
+  handle.onpointermove=e=>{if(drag)move(e.clientX-drag[0],e.clientY-drag[1]);};
+  handle.onpointerup=handle.onpointercancel=()=>drag=null;
+  handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
+  d.querySelector("[data-open-panel]").focus();
+}
+addEventListener("message",e=>{
+  const d=$("v3d");
+  if(!d||e.origin!==location.origin||e.source!==d.querySelector("iframe").contentWindow||e.data?.kind!=="building")return;
+  const tb=tabForBuilding(e.data.id);if(tb)openCityPanel(tb);
 });
 function closeMenu() { document.getElementById("ctx")?.remove(); }
 function openMenu(city, x, y) {
@@ -321,7 +348,8 @@ document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx"
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("title") && !$("title").hidden) return;
-  if (e.key === "Escape" && document.getElementById("v3d")) { document.getElementById("v3d").remove(); return; }
+  if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
+  if($("v3d"))return;
   if (e.key === "Escape") { closeMenu(); target = null; render(); }
   else if (e.key === "Enter" && target) { e.preventDefault(); sailToTarget(); }
   else if (e.key === " ") { e.preventDefault(); playing = !playing; render(); }
@@ -354,7 +382,7 @@ function showMenu() {
   $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
   $("m-quit").onclick = () => { autosave(); playing = false; showTitle(); };
 }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
+document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
 function showCreate(name) {
   t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
