@@ -1,0 +1,173 @@
+{
+  "competition": "planned",
+  "npcCount": 48,
+  "elapsedMs": 33274,
+  "scope": "Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.",
+  "gamesPerStrategy": 6,
+  "offset": 0,
+  "ports": 33,
+  "summaries": {
+    "greedy-preview": {
+      "wins": 6,
+      "bankrupt": 0,
+      "deadlineLosses": 0,
+      "medianFinalCash": 50729,
+      "medianFinalNetWorth": 50707,
+      "medianEndDay": 52
+    },
+    "random-destination": {
+      "wins": 5,
+      "bankrupt": 0,
+      "deadlineLosses": 1,
+      "medianFinalCash": 50450,
+      "medianFinalNetWorth": 50436,
+      "medianEndDay": 312
+    }
+  },
+  "results": [
+    {
+      "strategy": "greedy-preview",
+      "start": "cadiz",
+      "day": 69,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50540,
+      "netWorth": 50522,
+      "trips": 26,
+      "unitsBought": 1545,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "sevilla",
+      "day": 52,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50342,
+      "netWorth": 50333,
+      "trips": 24,
+      "unitsBought": 1301,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "lisboa",
+      "day": 42,
+      "outcome": "win",
+      "reason": null,
+      "cash": 51339,
+      "netWorth": 51339,
+      "trips": 16,
+      "unitsBought": 939,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "valencia",
+      "day": 56,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50163,
+      "netWorth": 50163,
+      "trips": 14,
+      "unitsBought": 800,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "barcelona",
+      "day": 32,
+      "outcome": "win",
+      "reason": null,
+      "cash": 51323,
+      "netWorth": 51309,
+      "trips": 8,
+      "unitsBought": 455,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "palma",
+      "day": 33,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50729,
+      "netWorth": 50707,
+      "trips": 9,
+      "unitsBought": 521,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "random-destination",
+      "start": "cadiz",
+      "day": 343,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50319,
+      "netWorth": 50319,
+      "trips": 29,
+      "unitsBought": 1669,
+      "repairPaid": 588
+    },
+    {
+      "strategy": "random-destination",
+      "start": "sevilla",
+      "day": 365,
+      "outcome": "lose",
+      "reason": null,
+      "cash": 35934,
+      "netWorth": 47932,
+      "trips": 27,
+      "unitsBought": 1620,
+      "repairPaid": 642
+    },
+    {
+      "strategy": "random-destination",
+      "start": "lisboa",
+      "day": 290,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53586,
+      "netWorth": 53574,
+      "trips": 25,
+      "unitsBought": 1435,
+      "repairPaid": 494
+    },
+    {
+      "strategy": "random-destination",
+      "start": "valencia",
+      "day": 221,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50131,
+      "netWorth": 50117,
+      "trips": 21,
+      "unitsBought": 1179,
+      "repairPaid": 302
+    },
+    {
+      "strategy": "random-destination",
+      "start": "barcelona",
+      "day": 312,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50450,
+      "netWorth": 50436,
+      "trips": 26,
+      "unitsBought": 1546,
+      "repairPaid": 442
+    },
+    {
+      "strategy": "random-destination",
+      "start": "palma",
+      "day": 257,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53899,
+      "netWorth": 53883,
+      "trips": 24,
+      "unitsBought": 1346,
+      "repairPaid": 434
+    }
+  ]
+}

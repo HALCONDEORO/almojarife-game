@@ -15,6 +15,7 @@ import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed
 import { rollEvent } from "./events.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import { aiStep } from "../sim/ai.mjs";
+import { npcPlan } from "../sim/npcplan.mjs";
 
 export const HISTORY_DAYS = 30;
 /** Append today's price of every good in every port; keep the last HISTORY_DAYS. */
@@ -39,7 +40,9 @@ export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_
 
 export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
-  const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
+  // Opt-in research option only. Production defaults stay exactly three traders.
+  const origins = opts.npcCompetition === "planned" ? npcPlan(world).ports.flatMap(r=>Array(r.count).fill(r.city)) : Array.from({length:3},(_,i)=>ids[(i*3+1)%ids.length]);
+  const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
   const g = { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null, eventsOn: !!opts.events, pending: null };

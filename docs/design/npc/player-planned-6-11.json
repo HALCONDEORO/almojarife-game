@@ -1,0 +1,173 @@
+{
+  "competition": "planned",
+  "npcCount": 48,
+  "elapsedMs": 33613,
+  "scope": "Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.",
+  "gamesPerStrategy": 6,
+  "offset": 6,
+  "ports": 33,
+  "summaries": {
+    "greedy-preview": {
+      "wins": 6,
+      "bankrupt": 0,
+      "deadlineLosses": 0,
+      "medianFinalCash": 54418,
+      "medianFinalNetWorth": 54403,
+      "medianEndDay": 58
+    },
+    "random-destination": {
+      "wins": 4,
+      "bankrupt": 0,
+      "deadlineLosses": 2,
+      "medianFinalCash": 51099,
+      "medianFinalNetWorth": 51099,
+      "medianEndDay": 300
+    }
+  },
+  "results": [
+    {
+      "strategy": "greedy-preview",
+      "start": "bilbao",
+      "day": 58,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50047,
+      "netWorth": 50038,
+      "trips": 18,
+      "unitsBought": 1080,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "tanger",
+      "day": 68,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50917,
+      "netWorth": 50895,
+      "trips": 29,
+      "unitsBought": 1677,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "cartagena",
+      "day": 40,
+      "outcome": "win",
+      "reason": null,
+      "cash": 56068,
+      "netWorth": 56052,
+      "trips": 10,
+      "unitsBought": 576,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "porto",
+      "day": 60,
+      "outcome": "win",
+      "reason": null,
+      "cash": 52851,
+      "netWorth": 52835,
+      "trips": 21,
+      "unitsBought": 1199,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "setubal",
+      "day": 47,
+      "outcome": "win",
+      "reason": null,
+      "cash": 54418,
+      "netWorth": 54403,
+      "trips": 18,
+      "unitsBought": 1059,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "faro",
+      "day": 52,
+      "outcome": "win",
+      "reason": null,
+      "cash": 60073,
+      "netWorth": 60064,
+      "trips": 11,
+      "unitsBought": 582,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "random-destination",
+      "start": "bilbao",
+      "day": 365,
+      "outcome": "lose",
+      "reason": null,
+      "cash": 44656,
+      "netWorth": 45854,
+      "trips": 23,
+      "unitsBought": 1339,
+      "repairPaid": 718
+    },
+    {
+      "strategy": "random-destination",
+      "start": "tanger",
+      "day": 225,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50180,
+      "netWorth": 50172,
+      "trips": 20,
+      "unitsBought": 1200,
+      "repairPaid": 338
+    },
+    {
+      "strategy": "random-destination",
+      "start": "cartagena",
+      "day": 365,
+      "outcome": "lose",
+      "reason": null,
+      "cash": 21877,
+      "netWorth": 33875,
+      "trips": 27,
+      "unitsBought": 1541,
+      "repairPaid": 610
+    },
+    {
+      "strategy": "random-destination",
+      "start": "porto",
+      "day": 273,
+      "outcome": "win",
+      "reason": null,
+      "cash": 51099,
+      "netWorth": 51099,
+      "trips": 24,
+      "unitsBought": 1429,
+      "repairPaid": 440
+    },
+    {
+      "strategy": "random-destination",
+      "start": "setubal",
+      "day": 300,
+      "outcome": "win",
+      "reason": null,
+      "cash": 51156,
+      "netWorth": 51138,
+      "trips": 27,
+      "unitsBought": 1561,
+      "repairPaid": 488
+    },
+    {
+      "strategy": "random-destination",
+      "start": "faro",
+      "day": 255,
+      "outcome": "win",
+      "reason": null,
+      "cash": 52759,
+      "netWorth": 52743,
+      "trips": 26,
+      "unitsBought": 1472,
+      "repairPaid": 498
+    }
+  ]
+}

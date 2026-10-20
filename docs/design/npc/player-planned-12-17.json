@@ -1,0 +1,173 @@
+{
+  "competition": "planned",
+  "npcCount": 48,
+  "elapsedMs": 30981,
+  "scope": "Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.",
+  "gamesPerStrategy": 6,
+  "offset": 12,
+  "ports": 33,
+  "summaries": {
+    "greedy-preview": {
+      "wins": 6,
+      "bankrupt": 0,
+      "deadlineLosses": 0,
+      "medianFinalCash": 53148,
+      "medianFinalNetWorth": 53142,
+      "medianEndDay": 58
+    },
+    "random-destination": {
+      "wins": 5,
+      "bankrupt": 0,
+      "deadlineLosses": 1,
+      "medianFinalCash": 52889,
+      "medianFinalNetWorth": 54234,
+      "medianEndDay": 260
+    }
+  },
+  "results": [
+    {
+      "strategy": "greedy-preview",
+      "start": "huelva",
+      "day": 73,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53148,
+      "netWorth": 53142,
+      "trips": 31,
+      "unitsBought": 1824,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "malaga",
+      "day": 58,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53004,
+      "netWorth": 53000,
+      "trips": 23,
+      "unitsBought": 1340,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "almeria",
+      "day": 57,
+      "outcome": "win",
+      "reason": null,
+      "cash": 59790,
+      "netWorth": 59788,
+      "trips": 17,
+      "unitsBought": 923,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "alicante",
+      "day": 58,
+      "outcome": "win",
+      "reason": null,
+      "cash": 51284,
+      "netWorth": 51276,
+      "trips": 14,
+      "unitsBought": 823,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "ibiza",
+      "day": 45,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50483,
+      "netWorth": 50471,
+      "trips": 12,
+      "unitsBought": 697,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "tarragona",
+      "day": 39,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53780,
+      "netWorth": 53769,
+      "trips": 10,
+      "unitsBought": 600,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "random-destination",
+      "start": "huelva",
+      "day": 260,
+      "outcome": "win",
+      "reason": null,
+      "cash": 62245,
+      "netWorth": 62237,
+      "trips": 25,
+      "unitsBought": 1472,
+      "repairPaid": 450
+    },
+    {
+      "strategy": "random-destination",
+      "start": "malaga",
+      "day": 202,
+      "outcome": "win",
+      "reason": null,
+      "cash": 52889,
+      "netWorth": 52871,
+      "trips": 18,
+      "unitsBought": 1040,
+      "repairPaid": 316
+    },
+    {
+      "strategy": "random-destination",
+      "start": "almeria",
+      "day": 300,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50238,
+      "netWorth": 50222,
+      "trips": 28,
+      "unitsBought": 1592,
+      "repairPaid": 444
+    },
+    {
+      "strategy": "random-destination",
+      "start": "alicante",
+      "day": 195,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50383,
+      "netWorth": 50365,
+      "trips": 18,
+      "unitsBought": 1080,
+      "repairPaid": 308
+    },
+    {
+      "strategy": "random-destination",
+      "start": "ibiza",
+      "day": 365,
+      "outcome": "lose",
+      "reason": null,
+      "cash": 43265,
+      "netWorth": 55263,
+      "trips": 27,
+      "unitsBought": 1575,
+      "repairPaid": 638
+    },
+    {
+      "strategy": "random-destination",
+      "start": "tarragona",
+      "day": 233,
+      "outcome": "win",
+      "reason": null,
+      "cash": 54241,
+      "netWorth": 54234,
+      "trips": 20,
+      "unitsBought": 1183,
+      "repairPaid": 298
+    }
+  ]
+}
