@@ -49,3 +49,18 @@ test("respect is kept in whole coins and the next rank respects a title already 
   assert.equal(nextRank(100, g.rankIdx).rank.id, "magnate");
   assert.equal(nextRank(100).rank.id, "trader");
 });
+import { ensureRep, heldRank, LOAN_MAX_BASE } from "../src/game/rank.mjs";
+import { LOAN_MAX } from "../src/game/bank.mjs";
+test("old saves keep their respect (points are converted to coins once) and bad data is dropped", () => {
+  const g = game(); g.rep = { cadiz: 21, sevilla: NaN, lisboa: -5 }; // old format: points
+  assert.equal(repOf(g, "cadiz"), 21); assert.equal(g.repV, 2); assert.equal(g.rep.cadiz, 2100);
+  assert.equal(repOf(g, "sevilla"), 0); assert.equal(repOf(g, "lisboa"), 0);
+  assert.equal(repOf(g, "cadiz"), 21, "not converted twice");
+  addRespect(g, "cadiz", 100); assert.equal(repOf(g, "cadiz"), 22);
+  const h = game(); h.rankIdx = 99; assert.equal(heldRank(h), 0); h.rankIdx = NaN; assert.equal(heldRank(h), 0);
+});
+test("promotion message uses the real loan cap and house panel escapes city names", () => {
+  assert.equal(LOAN_MAX_BASE, LOAN_MAX);
+  const g = game(); g.rep = { "<b>x</b>": 5000 }; g.repV = 2;
+  assert.ok(!houseHtml(g, "es", 3500, fmt, (c) => c).includes("<b>x</b>"));
+});
