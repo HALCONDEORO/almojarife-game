@@ -68,7 +68,7 @@ test("selling to the goal wins at once, before any upkeep, and ends the game", (
 import { priceHistory, trendPct, HISTORY_DAYS } from "../src/game/game.mjs";
 test("price history starts filled, rolls daily and stays bounded", () => {
   const g = newGame(loadWorld()), city = g.world.cities[0].id, good = Object.keys(g.world.goods)[0];
-  const a0 = priceHistory(g, city, good);
+  const a0 = priceHistory(g, city, good).slice(); // copy: the live array rolls in place
   assert.equal(a0.length, HISTORY_DAYS);
   advanceDay(g); advanceDay(g);
   const a = priceHistory(g, city, good);
