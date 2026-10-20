@@ -1,8 +1,13 @@
 // Weekly settlement of running costs, reports and the message inbox. Pure game logic: no DOM.
 // Ship upkeep is no longer taken every day. It builds up as "accrued" and is paid once a week (every SETTLE_EVERY days),
-// so the player can plan prices against a known weekly cost. Unpaid money carries over as debt (no interest).
+// so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
 import { SHIP_TYPES } from "../sim/trade.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
+// Cash may go negative (an overdraft). Each settlement charges OVERDRAFT_RATE of the deficit. Below -OVERDRAFT_LIMIT the house is bankrupt.
+export const OVERDRAFT_RATE = 0.02, OVERDRAFT_LIMIT = 3000;
+const r2 = (x) => Math.round(x * 100) / 100;
+/** Interest the next settlement will charge on a negative balance. */
+export const overdraftInterest = (g) => g.cash < 0 ? r2(-g.cash * OVERDRAFT_RATE) : 0;
 
 /** Add one day of upkeep for a ship to the accrual book. */
 export function accrueDay(g, ship) {
@@ -11,8 +16,8 @@ export function accrueDay(g, ship) {
   a.ships[ship.id] = (a.ships[ship.id] ?? 0) + cost;
 }
 export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0);
-/** What the next settlement will ask for (accrued upkeep plus debt carried over). */
-export const dueNow = (g) => accruedTotal(g) + (g.accrued?.debt ?? 0);
+/** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and any debt from an old save). */
+export const dueNow = (g) => r2(accruedTotal(g) + (g.accrued?.debt ?? 0) + overdraftInterest(g));
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
@@ -39,14 +44,15 @@ export function settleWeek(g) {
   if (!g.day || g.day % SETTLE_EVERY !== 0) return null;
   const a = (g.accrued ??= { ships: {}, debt: 0 });
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100 }));
-  const week = accruedTotal(g), owed = week + a.debt, paid = Math.min(Math.max(g.cash, 0), owed);
-  g.cash -= paid;
-  const debt = Math.round((owed - paid) * 100) / 100;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: Math.round(week * 100) / 100, carried: Math.round(a.debt * 100) / 100, paid: Math.round(paid * 100) / 100, debt, cashAfter: Math.round(g.cash * 100) / 100 };
-  a.ships = {}; a.debt = debt;
+  if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
+  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), owed = r2(week + interest);
+  g.cash = r2(g.cash - owed);
+  const debt = g.cash < 0 ? r2(-g.cash) : 0;
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, carried, paid: owed, debt, cashAfter: g.cash };
+  a.ships = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
   post(g, "report", { week: r.week, paid: r.paid, debt: r.debt });
-  if (debt > 0) post(g, "debt", { owed: debt });
+  if (debt > 0) post(g, "debt", { owed: debt, rate: Math.round(OVERDRAFT_RATE * 100), limit: OVERDRAFT_LIMIT });
   return r;
 }
