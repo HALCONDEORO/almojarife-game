@@ -10,7 +10,7 @@ import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
-import { makeMarket, tickMarket, price } from "../sim/market.mjs";
+import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
@@ -66,9 +66,8 @@ export function netWorth(g) {
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
   g.day++;
-  tickMarket(g.market, g.day, g.world);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); } // aiStep no-ops at sea; arrivals act on their own tick
-  recordPrices(g.world, g.market, g.hist ??= {});
+  // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
     accrueDay(g, s);
@@ -101,12 +100,29 @@ export function advanceDay(g) {
     if (atSea.size && g.ships.some((s) => atSea.has(s.id) && !s.voyage)) break; // a ship of yours just arrived
   } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
 }
-/** Advance one tick: ships move continuously and arrive on the exact tick; day work runs only at a day boundary. */
+/** The slot inside the day at which port i ticks its market (P3-style stagger: updates spread through the day). */
+export const marketSlot = (world, i) => Math.floor(i * TICKS_PER_DAY / world.cities.length);
+/** Ports whose daily market tick is this tick run it now, with their own day count (bit-identical per port to a daily tick). */
+function marketTick(g) {
+  const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
+  g.world.cities.forEach((c, i) => {
+    if (marketSlot(g.world, i) !== slot) return;
+    tickMarketCity(g.market[c.id], day, g.world);
+    const hist = (g.hist ??= {});
+    for (const [good, e] of Object.entries(g.market[c.id])) {
+      const a = ((hist[c.id] ??= {})[good] ??= []);
+      a.push(price(g.world, e, good));
+      if (a.length > HISTORY_DAYS) a.shift();
+    }
+  });
+}
+/** Advance one tick: ships move continuously and arrive on the exact tick; staggered markets tick at their slot; day work runs only at a day boundary. */
 export function advanceTick(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  marketTick(g);
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {

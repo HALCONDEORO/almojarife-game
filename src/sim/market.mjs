@@ -48,13 +48,16 @@ export function cityDemand(e, good, base) {
   return totalDemand(pop, good, affordRatio(e, base)) * DEMAND_SCALE * (e.needs ? NEEDS_MUL : 1) * (e.makes ? MAKES_MUL : 1);
 }
 export function tickMarket(market, day, world) {
-  for (const city of Object.values(market))
-    for (const [good, e] of Object.entries(city)) {
-      if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
-      e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
-      const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
-      const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
-      const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
-      e.stock = Math.max(0, e.stock - used);
-    }
+  for (const city of Object.values(market)) tickMarketCity(city, day, world);
+}
+/** One day for ONE city (market[cityId]): the same formulas and quantities as a full tickMarket day. */
+export function tickMarketCity(city, day, world) {
+  for (const [good, e] of Object.entries(city)) {
+    if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
+    e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
+    const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
+    const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
+    const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
+    e.stock = Math.max(0, e.stock - used);
+  }
 }
