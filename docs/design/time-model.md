@@ -1,6 +1,6 @@
 # Time model: from whole days to ticks with hours
 
-Status: study and proposal (owner asked 20 Oct 2026). Desktop only.
+Status: study and proposal, 20 Oct 2026. Desktop only.
 Sources: own code (src/game/game.mjs, src/sim/trade.mjs, src/sim/market.mjs, web/main.mjs);
 Patrician 3 as reference, from reverse-engineering notes at p3modding.github.io (basics/time,
 ships) and the official manual (cdn.akamai.steamstatic.com/steam/apps/33570/manuals/manual-patrician3.pdf).
@@ -58,7 +58,7 @@ Keep the day as the accounting unit; add a tick as the simulation unit.
   "en 37 h"), departure/arrival log lines with hours, shipyard ready times with hours.
   Speeds stay 1x/2x/4x; MS_PER_TICK replaces MS_PER_DAY (same wall-clock feel).
 - Saves: add `tick`; bump SAVE_VERSION to 2. Pre-launch saves are not kept, so no
-  migration code, per the owner's save policy.
+  migration code, per the pre-launch save policy (test saves are not kept).
 - Construction engine hook: build times are stored in ticks, so "obra de 3 dias y 6
   horas" falls out naturally when the city builder lands.
 
