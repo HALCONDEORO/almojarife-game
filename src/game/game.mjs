@@ -53,7 +53,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
-  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
+  let w = g.cash - accruedTotal(g) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;

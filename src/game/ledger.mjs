@@ -3,7 +3,7 @@
 // so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
 import { captainWage } from "./captains.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
-import { cannonUpkeep, splitCost, dailyUpkeep, WAGE_SHARE } from "./crew.mjs";
+import { cannonUpkeep, splitCost, dailyUpkeep } from "./crew.mjs";
 import { tollsDue } from "./tolls.mjs";
 import { loanInterest, loanInterestRaw, processLoans } from "./bank.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
@@ -16,23 +16,16 @@ export const overdraftInterest = (g) => g.cash < 0 ? r2(-g.cash * OVERDRAFT_RATE
 /** Add one day of upkeep for a ship to the accrual book. */
 export function accrueDay(g, ship) {
   const up = dailyUpkeep(ship, SHIP_TYPES[ship.type].upkeepPerDay * (g.upkeepMul ?? 1)), cost = up.total;
-  const a = (g.accrued ??= { ships: {}, debt: 0 });
+  const a = (g.accrued ??= { ships: {} });
   const gun = cannonUpkeep(ship);
-  // A week that began on an older save has upkeep without a wages entry: count that part with the old fixed wage share instead of charging it all to the hull.
-  const before = a.ships[ship.id] ?? 0;
-  if (before > 0 && a.wages?.[ship.id] === undefined) (a.wages ??= {})[ship.id] = (before - (a.cannons?.[ship.id] ?? 0)) * WAGE_SHARE;
   a.ships[ship.id] = (a.ships[ship.id] ?? 0) + cost + gun;
   (a.captains ??= {})[ship.id]=(a.captains[ship.id]??0)+captainWage(ship);
   (a.wages ??= {})[ship.id] = (a.wages[ship.id] ?? 0) + up.wages;
   if (gun) (a.cannons ??= {})[ship.id] = (a.cannons[ship.id] ?? 0) + gun;
 }
 export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0)+Object.values(g.accrued?.captains??{}).reduce((x,y)=>x+y,0);
-/** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and any debt from an old save). */
-export const dueNow = (g) => {
-  const debt = g.accrued?.debt ?? 0, cash = g.cash - debt; // old saves: the carried debt is folded into cash first
-  const interest = cash < 0 ? r2(-cash * OVERDRAFT_RATE) : 0;
-  return r2(accruedTotal(g) + tollsDue(g) + debt + interest + loanInterestRaw(g) + (g.weekLoanInterest ?? 0));
-};
+/** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and loan interest due). */
+export const dueNow = (g) => r2(accruedTotal(g) + tollsDue(g) + overdraftInterest(g) + loanInterestRaw(g) + (g.weekLoanInterest ?? 0));
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
@@ -75,9 +68,8 @@ function takeWeekTrades(g) {
 }
 export function settleWeek(g) {
   if (!g.day || g.day % SETTLE_EVERY !== 0) return null;
-  const a = (g.accrued ??= { ships: {}, debt: 0 });
+  const a = (g.accrued ??= { ships: {} });
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round((cost+(a.captains?.[ship]??0)) * 100) / 100, captain: r2(a.captains?.[ship]??0), ...splitCost(cost, a.cannons?.[ship] ?? 0, a.wages?.[ship] ?? null) }));
-  if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
   const tolls = tollsDue(g), week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterestRaw(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + tolls + interest + lint);
   g.cash = r2(g.cash - owed);
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today

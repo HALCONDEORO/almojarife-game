@@ -44,7 +44,7 @@ export function affordRatio(e, base) {
   return base ? Math.round(base * raw) / base : raw;
 }
 export function cityDemand(e, good, base) {
-  const pop = e.pop ?? e.rate * 1000; // older saves have no pop on the entry
+  const pop = e.pop;
   return totalDemand(pop, good, affordRatio(e, base)) * DEMAND_SCALE * (e.needs ? NEEDS_MUL : 1) * (e.makes ? MAKES_MUL : 1);
 }
 export function tickMarket(market, day, world) {

@@ -8,8 +8,3 @@ test('House exists only at recorded home, local office is not a property',()=>{
  assert.equal(premises(g,'lisboa','en').isHome,true);
  assert.match(premises(g,'cadiz','en').info,/do not own/);
 });
-test('Legacy save does not invent a home or mutate save',()=>{
- const g={}; const before=JSON.stringify(g);
- assert.equal(premises(g,'cadiz').home,null);assert.equal(premises(g,'cadiz').isHome,false);
- assert.match(premises(g,'cadiz','en').info,/older save/);assert.equal(JSON.stringify(g),before);
-});

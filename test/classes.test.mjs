@@ -34,10 +34,6 @@ test("market: demand grows with population, whole units are taken from stock, sm
   for (let d = 0; d < 400; d++) { tickMarket(m, d); for (const c of Object.values(m)) for (const e of Object.values(c)) assert.ok(e.stock >= 0 && Number.isInteger(e.stock)); }
   assert.ok(m.a.silk.stock <= before);
 });
-test("old saved market entries without pop or owed still tick", () => {
-  const m = { x: { grain: { stock: 30, target: 30, makes: false, needs: true, rate: 4 } } };
-  tickMarket(m, 1); assert.ok(m.x.grain.stock >= 0);
-});
 test("city rows: three classes, top goods sorted, poor are priced out of luxuries when dear", () => {
   const goods = ["grain", "wine", "silk"];
   const rows = cityRows(20000, goods);
