@@ -53,6 +53,8 @@ export function tickMarket(market, day, world) {
       if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
       e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
       const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
-      e.stock = Math.max(0, e.stock - Math.round(cityDemand(e, good, world?.goods?.[good]?.base) * scarcity)); // whole units; no hidden state, so a year repeats exactly
+      const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
+      const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
+      e.stock = Math.max(0, e.stock - used);
     }
 }

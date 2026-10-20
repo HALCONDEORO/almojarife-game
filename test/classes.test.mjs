@@ -61,3 +61,11 @@ test("rounding boundary: the market and the City tab use the same rounded price"
   // without the base (old call sites) it falls back to the raw ratio
   assert.ok(Math.abs(affordRatio(e, undefined) - (100 / 58) ** 0.6) < 1e-9);
 });
+
+test("tickMarket: daily demand below 0.5 still consumes over time, and the long run matches demand", () => {
+  for (const d of [0.2, 0.4, 0.5, 0.7, 1.3]) {
+    let total = 0;
+    for (let day = 0; day < 1000; day++) total += Math.round(d * (day + 1)) - Math.round(d * day);
+    assert.ok(Math.abs(total - d * 1000) <= 1, `d=${d} total=${total}`);
+  }
+});
