@@ -1,9 +1,9 @@
 # City construction engine: design (piece 0)
 
-Status: design proposal (owner request 20 Oct 2026, after the city streets prototype #108).
+Status: design proposal, 20 Oct 2026 (after the city streets prototype #108).
 Own design. Desktop only. Depends on the tick time model (#111) for build times.
 
-## 1. What the owner asked
+## 1. Requirements
 
 The player places and upgrades workshops, houses, warehouses and more on city parcels.
 Costs, construction times, upkeep and a simulated, tested economic effect. Each building
