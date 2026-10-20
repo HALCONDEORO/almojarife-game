@@ -21,7 +21,7 @@ export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce(
 export const dueNow = (g) => {
   const debt = g.accrued?.debt ?? 0, cash = g.cash - debt; // old saves: the carried debt is folded into cash first
   const interest = cash < 0 ? r2(-cash * OVERDRAFT_RATE) : 0;
-  return r2(accruedTotal(g) + debt + interest + loanInterest(g));
+  return r2(accruedTotal(g) + debt + interest + loanInterest(g) + (g.weekLoanInterest ?? 0));
 };
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
