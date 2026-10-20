@@ -2,6 +2,7 @@
 // Ship upkeep is no longer taken every day. It builds up as "accrued" and is paid once a week (every SETTLE_EVERY days),
 // so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
 import { SHIP_TYPES } from "../sim/trade.mjs";
+import { cannonUpkeep, splitCost } from "./crew.mjs";
 import { loanInterest, processLoans } from "./bank.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
 // Cash may go negative (an overdraft). Each settlement charges OVERDRAFT_RATE of the deficit. Below -OVERDRAFT_LIMIT the house is bankrupt.
@@ -14,7 +15,9 @@ export const overdraftInterest = (g) => g.cash < 0 ? r2(-g.cash * OVERDRAFT_RATE
 export function accrueDay(g, ship) {
   const cost = SHIP_TYPES[ship.type].upkeepPerDay * (g.upkeepMul ?? 1);
   const a = (g.accrued ??= { ships: {}, debt: 0 });
-  a.ships[ship.id] = (a.ships[ship.id] ?? 0) + cost;
+  const gun = cannonUpkeep(ship);
+  a.ships[ship.id] = (a.ships[ship.id] ?? 0) + cost + gun;
+  if (gun) (a.cannons ??= {})[ship.id] = (a.cannons[ship.id] ?? 0) + gun;
 }
 export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0);
 /** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and any debt from an old save). */
@@ -65,14 +68,14 @@ function takeWeekTrades(g) {
 export function settleWeek(g) {
   if (!g.day || g.day % SETTLE_EVERY !== 0) return null;
   const a = (g.accrued ??= { ships: {}, debt: 0 });
-  const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100 }));
+  const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100, ...splitCost(cost, a.cannons?.[ship] ?? 0) }));
   if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
   const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterest(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + interest + lint);
   g.cash = r2(g.cash - owed);
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
   const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
-  a.ships = {};
+  a.ships = {}; a.cannons = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
   post(g, "report", { week: r.week, paid: r.paid, debt: r.debt });
