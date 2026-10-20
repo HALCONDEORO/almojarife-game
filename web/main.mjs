@@ -13,6 +13,7 @@ import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml } from "../src/view/rankview.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding } from "../src/view3d/port3d.mjs";
+import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
 import { reportsHtml, inboxHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
@@ -84,7 +85,7 @@ mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercanc
 // a drag must not count as a click on a port
 mapEl.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
 const X = (lon) => (lon - x0) * sc, Y = (lat) => (y1 - lat) * sc * 1.25;
-const cityName = (id) => world.nodes[id].name ?? id;
+const cityName = (id) => world.nodes[id]?.name ?? id; // an unknown id shows as the id, it never throws
 
 document.documentElement.lang = lang;
 // Moving ships. The view only reads sim state; the sim advances on the daily tick below.
@@ -331,7 +332,7 @@ $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render
 $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
-  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
+  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
   const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
     $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
