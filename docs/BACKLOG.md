@@ -122,3 +122,9 @@ The game is made for desktop computers. Mobile is no longer a priority: it must 
 6. NEXT: crew wages and cannon cost as weekly lines in the report.
 7. NEXT: tolls and trade privileges per city.
 8. NEXT (owner 09:52): free navigation across the map, not only port to port. Depends on a coastline and sea mask for the map before it can be done safely.
+
+## City economy (done: social classes)
+- Each city splits into poor, middle (craftsmen and merchants) and rich citizens; big ports have more rich citizens.
+- Each class buys different goods per 1000 citizens per day and stops buying a good when its price passes what the class can pay (poor 1.4x base, middle 2x, rich 3x).
+- Market consumption is now the sum over classes (small demands accumulate until a whole unit); new "City" tab shows classes and what they buy.
+- Ideas: class wealth changing with prosperity, class-specific unrest, building types per class.
