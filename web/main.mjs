@@ -230,8 +230,8 @@ function render() {
     } else if (tab === "house") {
       const pr = premises(g,s.at,lang);
       h += `<h3>${pr.label}: ${cityName(s.at)}</h3><p>${pr.info}</p>`;
-      if(pr.isHome) h += houseHtml(g, lang, netWorth(g), fmt, cityName, LOAN_MAX);
-      else h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
+      h += houseHtml(g, lang, netWorth(g), fmt, cityName, LOAN_MAX);
+      if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
       const room = bankRoom(g), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
       h += `<p>${t.bankInfo.replace("{r}", Math.round(LOAN_RATE * 100)).replace("{m}", fmt(loanCapFor(g, LOAN_MAX)))}</p><p>${t.bankRoom}: <b>${fmt(room)}</b> · ${t.bankOwed}: <b>${fmt(loansOwed(g))}</b></p>`;
