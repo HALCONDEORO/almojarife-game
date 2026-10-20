@@ -2,7 +2,8 @@
 // Run: node tools/sim_economy.mjs [games=50] [days=1095]   Prints one JSON report. Own design, no outside data.
 import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../src/sim/market.mjs";
-import { makeShip, tickShip, SHIP_TYPES, FEE, buy, sell, sail, cargoUsed } from "../src/sim/trade.mjs";
+import { makeShip, tickShip, sailTick, SHIP_TYPES, FEE, buy, sell, sail, cargoUsed } from "../src/sim/trade.mjs";
+import { TICKS_PER_DAY } from "../src/sim/clock.mjs";
 import { aiStep } from "../src/sim/ai.mjs";
 import { makeRng } from "../src/sim/rng.mjs";
 
@@ -57,10 +58,15 @@ for (let gi = 0; gi < games; gi++) {
   for (let d = 0; d < days; d++) {
     tickMarket(m, d, world);
     for (const t of ts) {
-      const wasAtSea = !!t.ship.voyage; tickShip(t.ship);
-      if (wasAtSea && !t.ship.voyage) { visits[t.ship.at]++; arrivalsByStrategy[t.n][t.ship.at]++; } // an arrival
-      const had = !!t.ship.voyage; strategies[t.n](m, t, t.ship, rng);
-      if (!had && t.ship.voyage) for (const [g, q] of Object.entries(t.ship.cargo)) sold[g] += q;
+      // Continuous movement: bots act on their arrival tick (like the game's AI) and once a day when docked.
+      for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) {
+        tickShip(t.ship, true);
+        visits[t.ship.at]++; arrivalsByStrategy[t.n][t.ship.at]++; // an arrival
+        const had = !!t.ship.voyage; strategies[t.n](m, t, t.ship, rng);
+        if (!had && t.ship.voyage) for (const [g, q] of Object.entries(t.ship.cargo)) sold[g] += q;
+      }
+      tickShip(t.ship); // daily wear while at sea
+      if (!t.ship.voyage) { const had = !!t.ship.voyage; strategies[t.n](m, t, t.ship, rng); if (!had && t.ship.voyage) for (const [g, q] of Object.entries(t.ship.cargo)) sold[g] += q; }
     }
     if (d % 30 === 0) for (const c of ids) for (const g of goods) {
       const e = m[c][g], raw = (e.target / Math.max(1, e.stock)) ** 0.6, pin = raw >= 3 || raw <= 0.4 ? 1 : 0;

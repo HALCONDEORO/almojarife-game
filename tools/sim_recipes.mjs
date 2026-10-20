@@ -1,13 +1,17 @@
 // Isolated candidate-material demand, not enabled game construction or player spending.
 import {loadWorld} from '../src/sim/world.mjs';import {makeMarket,tickMarket} from '../src/sim/market.mjs';
-import {makeShip,tickShip} from '../src/sim/trade.mjs';import {aiStep} from '../src/sim/ai.mjs';
+import {makeShip,tickShip,sailTick} from '../src/sim/trade.mjs';import {aiStep} from '../src/sim/ai.mjs';
+import {TICKS_PER_DAY} from '../src/sim/clock.mjs';
 import {consumeRecipe} from '../src/sim/recipes.mjs';
 const world=loadWorld(),enabled=process.argv.includes('--recipes'),m=makeMarket(world);
 const traders=Array.from({length:6},(_,i)=>({cash:2000,ship:makeShip(i,i%2?'caravel':'cog',world.cities[i].id)}));
 const consumed={},made={},failures={},counts={};let samples=0,pins=0,spent=0;
 for(let day=0;day<1095;day++){
  tickMarket(m,day,world);
- for(const tr of traders){tickShip(tr.ship);aiStep(world,m,tr,tr.ship);}
+ for(const tr of traders){
+  for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);aiStep(world,m,tr,tr.ship);} // act on the arrival tick
+  tickShip(tr.ship);aiStep(world,m,tr,tr.ship); // daily wear; docked traders decide once a day
+ }
  if(enabled&&day%30===0)for(const c of world.cities){
   // Hypothetical town budget. Not minted player money, not evidence of actual buildings.
   const recipe=day%90===0?'barca':day%60===0?'warehouse':'weave';
