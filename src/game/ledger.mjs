@@ -2,6 +2,7 @@
 // Ship upkeep is no longer taken every day. It builds up as "accrued" and is paid once a week (every SETTLE_EVERY days),
 // so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
 import { SHIP_TYPES } from "../sim/trade.mjs";
+import { loanInterest, processLoans } from "./bank.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
 // Cash may go negative (an overdraft). Each settlement charges OVERDRAFT_RATE of the deficit. Below -OVERDRAFT_LIMIT the house is bankrupt.
 export const OVERDRAFT_RATE = 0.02, OVERDRAFT_LIMIT = 3000;
@@ -17,7 +18,7 @@ export function accrueDay(g, ship) {
 }
 export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0);
 /** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and any debt from an old save). */
-export const dueNow = (g) => r2(accruedTotal(g) + (g.accrued?.debt ?? 0) + overdraftInterest(g));
+export const dueNow = (g) => r2(accruedTotal(g) + (g.accrued?.debt ?? 0) + overdraftInterest(g) + loanInterest(g));
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
@@ -45,10 +46,11 @@ export function settleWeek(g) {
   const a = (g.accrued ??= { ships: {}, debt: 0 });
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100 }));
   if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
-  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), owed = r2(week + interest);
+  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = loanInterest(g), owed = r2(week + interest + lint);
   g.cash = r2(g.cash - owed);
+  processLoans(g, post); // loans that fell due are collected from cash (it can go negative)
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, carried, paid: owed, debt, cashAfter: g.cash };
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, carried, paid: owed, debt, cashAfter: g.cash };
   a.ships = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();

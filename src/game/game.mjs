@@ -1,4 +1,5 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
+import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
@@ -39,7 +40,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
-  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0); // upkeep owed but not yet settled counts against you
+  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0) - loansOwed(g); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;
@@ -63,7 +64,7 @@ export function advanceDay(g) {
   rollEvent(g);
   deliverOrders(g);
   refreshIntel(g);
-  if (g.cash >= GOAL_CASH) g.over = "win";
+  if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
 }
 export function waitUntilArrival(g, ship) {
@@ -79,7 +80,7 @@ export function doBuy(g, ship, good, qty) {
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   const r = sell(g.world, g.market, ship, good, qty);
-  if (r.ok) { g.cash += r.revenue; say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.cash += r.revenue; say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
@@ -191,3 +192,9 @@ export function bestPorts(g, ship) {
   }
   return rows.sort((a, b) => b.revenue - a.revenue);
 }
+
+/** Bank: borrow at a port where one of your ships is docked. */
+export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g), post);
+export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
+export const bankRoom = (g) => loanRoom(g, netWorth(g));
+export { loansOwed };
