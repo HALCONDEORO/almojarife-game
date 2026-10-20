@@ -41,3 +41,13 @@ test("a ray at a building picks it, a ray at the sky picks nothing", async () =>
   assert.equal(pickBuilding(THREE, scene, cam, 0, 0), "shipyard");
   assert.equal(pickBuilding(THREE, scene, cam, 0, 0.95), null);
 });
+import { buildingLevel } from "../src/view3d/port3d.mjs";
+test("building level grows with city size, keeps upgrades and stays in 1..3", () => {
+  assert.deepEqual([3000, 12000, 40000].map((p) => buildingLevel("market", p)), [1, 2, 3]);
+  assert.equal(buildingLevel("market", 3000, { market: 3 }), 3); assert.equal(buildingLevel("market", 40000, { market: 1 }), 3);
+  for (const bad of [{ market: 99 }, { market: -2 }, { market: "x" }, null, undefined]) assert.ok(buildingLevel("market", 3000, bad) >= 1 && buildingLevel("market", 3000, bad) <= 3);
+});
+test("every level builds a clickable building", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
+  for (const pop of [3000, 12000, 40000]) { const { scene } = buildPortScene(THREE, { id: "cadiz", pop, ships: 0 }); const bs = scene.children.filter((c) => c.userData.building); assert.equal(bs.length, 4); for (const b of bs) assert.equal(b.userData.level, buildingLevel(b.userData.building, pop)); }
+});
