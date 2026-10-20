@@ -1,0 +1,170 @@
+{
+ "games": 50,
+ "days": 1095,
+ "cities": 33,
+ "seconds": 55,
+ "finalCashMedian": {
+  "greedy": 30706,
+  "wanderer": 169896,
+  "shuttle": 86281
+ },
+ "finalCashMin": {
+  "greedy": 0,
+  "wanderer": 120025,
+  "shuttle": 21
+ },
+ "finalCashMax": {
+  "greedy": 861530,
+  "wanderer": 256704,
+  "shuttle": 931488
+ },
+ "brokeShare": {
+  "greedy": 0,
+  "wanderer": 0,
+  "shuttle": 0
+ },
+ "medianCashByYear": {
+  "1": 40167,
+  "2": 86130,
+  "3": 127026
+ },
+ "pinnedPctByGood": {
+  "grain": 0.2,
+  "dried_fish": 0,
+  "salt": 0,
+  "wool": 0,
+  "iron": 0,
+  "timber": 0,
+  "cloth": 0,
+  "olive_oil": 0,
+  "wine": 0,
+  "silk": 0.5,
+  "sugar": 0,
+  "pepper": 0.1
+ },
+ "pinnedPctByCityWorst": [
+  [
+   "huelva",
+   1.6
+  ],
+  [
+   "cartagena",
+   0.4
+  ],
+  [
+   "cadiz",
+   0.1
+  ],
+  [
+   "ceuta",
+   0.1
+  ],
+  [
+   "melilla",
+   0.1
+  ],
+  [
+   "arcila",
+   0.1
+  ],
+  [
+   "rabat",
+   0.1
+  ],
+  [
+   "sevilla",
+   0
+  ]
+ ],
+ "pinnedPctOverall": 0.1,
+ "tripsToCityLeast": [
+  [
+   "porto",
+   542
+  ],
+  [
+   "sansebastian",
+   544
+  ],
+  [
+   "coruna",
+   551
+  ],
+  [
+   "bilbao",
+   606
+  ],
+  [
+   "santander",
+   612
+  ],
+  [
+   "mazagan",
+   787
+  ],
+  [
+   "alicante",
+   791
+  ],
+  [
+   "tarragona",
+   791
+  ]
+ ],
+ "tripsToCityMost": [
+  [
+   "sevilla",
+   18669
+  ],
+  [
+   "cadiz",
+   17602
+  ],
+  [
+   "huelva",
+   15999
+  ],
+  [
+   "tanger",
+   2557
+  ],
+  [
+   "ceuta",
+   2028
+  ]
+ ],
+ "unitsPlannedByGood": {
+  "grain": 143062,
+  "dried_fish": 140561,
+  "salt": 383494,
+  "wool": 146705,
+  "iron": 94020,
+  "timber": 91432,
+  "cloth": 94922,
+  "olive_oil": 409911,
+  "wine": 246376,
+  "silk": 1377829,
+  "sugar": 26052,
+  "pepper": 635602
+ },
+ "staticTopRatios": [
+  {
+   "a": "cadiz",
+   "b": "valencia",
+   "g": "dried_fish",
+   "ratio": 2.666666666666667
+  },
+  {
+   "a": "cadiz",
+   "b": "barcelona",
+   "g": "dried_fish",
+   "ratio": 2.666666666666667
+  },
+  {
+   "a": "cadiz",
+   "b": "barcelona",
+   "g": "salt",
+   "ratio": 2.666666666666667
+  }
+ ]
+}

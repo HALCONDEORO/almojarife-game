@@ -7,6 +7,7 @@
     "test": "node --test test/*.test.mjs",
     "serve": "python3 -m http.server 8080",
     "map": "node tools/render_map.mjs",
-    "sim1000": "node tools/sim_1000y.mjs"
+    "sim1000": "node tools/sim_1000y.mjs",
+    "simeco": "node tools/sim_economy.mjs"
   }
 }
