@@ -1,0 +1,200 @@
+[
+  {
+    "city": "cadiz",
+    "ok": true,
+    "materials": 1717,
+    "total": 2217
+  },
+  {
+    "city": "sevilla",
+    "ok": true,
+    "materials": 1796,
+    "total": 2296
+  },
+  {
+    "city": "lisboa",
+    "ok": true,
+    "materials": 1650,
+    "total": 2150
+  },
+  {
+    "city": "valencia",
+    "ok": true,
+    "materials": 1696,
+    "total": 2196
+  },
+  {
+    "city": "barcelona",
+    "ok": true,
+    "materials": 871,
+    "total": 1371
+  },
+  {
+    "city": "palma",
+    "ok": true,
+    "materials": 1717,
+    "total": 2217
+  },
+  {
+    "city": "bilbao",
+    "ok": true,
+    "materials": 930,
+    "total": 1430
+  },
+  {
+    "city": "tanger",
+    "ok": true,
+    "materials": 1809,
+    "total": 2309
+  },
+  {
+    "city": "cartagena",
+    "ok": true,
+    "materials": 1751,
+    "total": 2251
+  },
+  {
+    "city": "porto",
+    "ok": true,
+    "materials": 1038,
+    "total": 1538
+  },
+  {
+    "city": "setubal",
+    "ok": true,
+    "materials": 1583,
+    "total": 2083
+  },
+  {
+    "city": "faro",
+    "ok": true,
+    "materials": 1676,
+    "total": 2176
+  },
+  {
+    "city": "huelva",
+    "ok": true,
+    "materials": 2088,
+    "total": 2588
+  },
+  {
+    "city": "malaga",
+    "ok": true,
+    "materials": 1494,
+    "total": 1994
+  },
+  {
+    "city": "almeria",
+    "ok": true,
+    "materials": 1549,
+    "total": 2049
+  },
+  {
+    "city": "alicante",
+    "ok": true,
+    "materials": 1819,
+    "total": 2319
+  },
+  {
+    "city": "ibiza",
+    "ok": true,
+    "materials": 1761,
+    "total": 2261
+  },
+  {
+    "city": "tarragona",
+    "ok": true,
+    "materials": 1402,
+    "total": 1902
+  },
+  {
+    "city": "santander",
+    "ok": true,
+    "materials": 1289,
+    "total": 1789
+  },
+  {
+    "city": "sansebastian",
+    "ok": true,
+    "materials": 1600,
+    "total": 2100
+  },
+  {
+    "city": "coruna",
+    "ok": true,
+    "materials": 1131,
+    "total": 1631
+  },
+  {
+    "city": "vigo",
+    "ok": true,
+    "materials": 1338,
+    "total": 1838
+  },
+  {
+    "city": "ceuta",
+    "ok": true,
+    "materials": 1761,
+    "total": 2261
+  },
+  {
+    "city": "melilla",
+    "ok": true,
+    "materials": 1657,
+    "total": 2157
+  },
+  {
+    "city": "tetuan",
+    "ok": true,
+    "materials": 1806,
+    "total": 2306
+  },
+  {
+    "city": "arcila",
+    "ok": true,
+    "materials": 1477,
+    "total": 1977
+  },
+  {
+    "city": "larache",
+    "ok": true,
+    "materials": 1400,
+    "total": 1900
+  },
+  {
+    "city": "rabat",
+    "ok": true,
+    "materials": 1614,
+    "total": 2114
+  },
+  {
+    "city": "casablanca",
+    "ok": true,
+    "materials": 1706,
+    "total": 2206
+  },
+  {
+    "city": "mazagan",
+    "ok": true,
+    "materials": 1864,
+    "total": 2364
+  },
+  {
+    "city": "oran",
+    "ok": true,
+    "materials": 1806,
+    "total": 2306
+  },
+  {
+    "city": "argel",
+    "ok": true,
+    "materials": 1720,
+    "total": 2220
+  },
+  {
+    "city": "mostaganem",
+    "ok": true,
+    "materials": 1826,
+    "total": 2326
+  }
+]
