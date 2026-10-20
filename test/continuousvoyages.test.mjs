@@ -65,3 +65,12 @@ test("the position at sea is a pure function of the voyage ticks", () => {
   const copy = JSON.parse(JSON.stringify(s));
   assert.deepEqual(shipPosition(world, copy, 0.5), shipPosition(world, s, 0.5));
 });
+
+test("the departure log line carries whole hours, never an undefined field", () => {
+  const g = newGame(world);
+  doSail(g, g.ships[0], "huelva");
+  const line = g.log.find((l) => l.key === "sail");
+  assert.ok(line, "departure is logged");
+  assert.ok(Number.isInteger(line.hours) && line.hours >= 1, "hours param is set: " + JSON.stringify(line));
+  assert.equal(line.days, undefined, "the old days field is gone");
+});
