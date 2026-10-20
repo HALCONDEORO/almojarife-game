@@ -13,7 +13,10 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 - **A living market.** 9 ports, 12 goods, prices that move with supply and demand. Selling a big load crashes the price. AI traders compete with you.
 - **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time.
 - **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
-- **Port panel.** Market, shipyard and warehouse tabs: buy a caravel, store goods in a warehouse.
+- **Port panel.** Market, shipyard and warehouse tabs. The shipyard is an illustrated slipway: pick a ship class, build it (it takes days), repair hull wear, sell.
+- **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
+- **Events and rumours.** Storms, pirates, fair winds and drifting cargo bring choices at sea. Prices of ports you have not visited are rumours with an age and an error margin; buy news at the tavern.
+- **A 3D port (prototype).** A three.js harbour built from your game state: docked ships, warehouse, time of day. Desktop first.
 - **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file.
 - **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your browser.
 - **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
@@ -25,6 +28,10 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 | ![Title screen](docs/img/title.png) | ![Character and coat of arms](docs/img/create.png) |
 | **Trade in the market** | **Sail and store goods** |
 | ![Market with icons and cheap/dear arrows](docs/img/market.png) | ![Warehouse tab](docs/img/warehouse.png) |
+| **Build ships at the slipway** | **Weekly ledger (Spanish UI)** |
+| ![Shipyard slipway scene](docs/img/shipyard.png) | ![Weekly report](docs/img/reports.png) |
+| **Message inbox (Spanish UI)** | |
+| ![Message inbox](docs/img/messages.png) | |
 
 ## How to play
 
@@ -32,7 +39,8 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 2. Mission 1: earn **50,000 coins in 365 days**.
 3. In the **Market** tab, look for the green ▼ (cheap: buy) and red ▲ (dear: sell) arrows.
 4. Click a port on the map, or a **Sail to** button, then press **Sail** to move time. Your ship takes days to arrive.
-5. Sell where the price is high. Buy a second ship in the **Shipyard**. Press **Esc** for the menu.
+5. Sell where the price is high. Build a second ship in the **Shipyard**. Press **Esc** for the menu.
+6. Once a week ship upkeep is settled. Check **Reports** for the numbers and **Messages** for what happened. Keep cash for that day.
 
 Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to reset.
 
@@ -41,10 +49,11 @@ Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to 
 | Works now | Planned |
 |---|---|
 | Trading loop, 9 ports, 12 goods, AI traders | Campaign of 2 acts, 12 missions |
-| Sea chart with pan and zoom, moving ships | Storms, pirates, ship wear |
+| Sea chart with pan and zoom, moving ships, click-to-sail | Crew wages and building upkeep in the weekly ledger |
 | Company and character creation | Town halls, building permits, city logic |
-| Market, shipyard, warehouse, saves, pause menu | Tavern, workshops, standing ranks |
-| ES and EN | Sound, tutorial, more ports |
+| Market, shipyard with ship classes, warehouse, saves | Tavern, workshops, standing ranks |
+| Events at sea, market rumours, weekly settlement, reports and messages | More uses for reports and messages (profit per route, price history) |
+| ES and EN, 3D port prototype | Sound, tutorial, more ports, world map by historical milestones |
 
 Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
 
@@ -53,7 +62,7 @@ Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 2
 You need Node 20 or newer and any static web server:
 
     npm run serve        # then open http://localhost:8080/web/index.html
-    npm test             # simulation, AI traders, game logic, saves, profile
+    npm test             # simulation, AI traders, game logic, saves, ledger, 3D scene
     sh tools/fetch_data.sh   # downloads the coastline data (not stored in the repo)
 
 The sea-chart background is rebuilt by `tools/build_background.py` from the Natural Earth raster; the finished image is in `assets/map/`.
@@ -64,7 +73,7 @@ The sea-chart background is rebuilt by `tools/build_background.py` from the Natu
 
 ## Contribute
 
-Ideas, bug reports, historical corrections and translations are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`TRANSLATING.md`](TRANSLATING.md). Open an issue before large changes. Every change goes through a pull request with tests and review.
+Ideas, bug reports, historical corrections and translations are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`TRANSLATING.md`](TRANSLATING.md). Open an issue before large changes. Every change goes through a pull request with tests and review. Good first steps: pick an item from [`docs/BACKLOG.md`](docs/BACKLOG.md), fix a translation string, or report a price that feels wrong.
 
 ## Licence and credits
 
