@@ -4,6 +4,7 @@ import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
 import { buyCannon as buyCannonShip } from "./crew.mjs";
 export const buyCannon = buyCannonShip;
+import { chargeToll } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
@@ -62,7 +63,7 @@ export function advanceDay(g) {
     const was = s.voyage;
     tickShip(s);
     accrueDay(g, s);
-    if (was && !s.voyage) { say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
+    if (was && !s.voyage) { chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
   }
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement

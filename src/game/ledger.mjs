@@ -3,6 +3,7 @@
 // so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
 import { SHIP_TYPES } from "../sim/trade.mjs";
 import { cannonUpkeep, splitCost } from "./crew.mjs";
+import { tollsDue } from "./tolls.mjs";
 import { loanInterest, processLoans } from "./bank.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
 // Cash may go negative (an overdraft). Each settlement charges OVERDRAFT_RATE of the deficit. Below -OVERDRAFT_LIMIT the house is bankrupt.
@@ -24,7 +25,7 @@ export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce(
 export const dueNow = (g) => {
   const debt = g.accrued?.debt ?? 0, cash = g.cash - debt; // old saves: the carried debt is folded into cash first
   const interest = cash < 0 ? r2(-cash * OVERDRAFT_RATE) : 0;
-  return r2(accruedTotal(g) + debt + interest + loanInterest(g) + (g.weekLoanInterest ?? 0));
+  return r2(accruedTotal(g) + tollsDue(g) + debt + interest + loanInterest(g) + (g.weekLoanInterest ?? 0));
 };
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
@@ -70,12 +71,12 @@ export function settleWeek(g) {
   const a = (g.accrued ??= { ships: {}, debt: 0 });
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100, ...splitCost(cost, a.cannons?.[ship] ?? 0) }));
   if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
-  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterest(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + interest + lint);
+  const tolls = tollsDue(g), week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterest(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + tolls + interest + lint);
   g.cash = r2(g.cash - owed);
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
-  a.ships = {}; a.cannons = {};
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), tolls, interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
+  a.ships = {}; a.cannons = {}; a.tolls = 0;
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
   post(g, "report", { week: r.week, paid: r.paid, debt: r.debt });
