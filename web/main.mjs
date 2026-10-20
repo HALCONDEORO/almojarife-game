@@ -316,9 +316,12 @@ function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="store">${t.tabStore}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
+  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
   document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
   d.querySelector("[data-map]").onclick=close3d;
+  d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
+  d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
+  d.querySelector("[data-city-menu]").onclick=showMenu;
   d.querySelector("[data-close-panel]").onclick=closeCityWindow;
   d.querySelector("[data-open-panel]").onclick=()=>openCityPanel("market");
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
@@ -348,6 +351,7 @@ document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx"
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("title") && !$("title").hidden) return;
+  if($("title")&&!$("title").hidden)return;
   if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
   if($("v3d"))return;
   if (e.key === "Escape") { closeMenu(); target = null; render(); }
@@ -380,7 +384,7 @@ function showMenu() {
   $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
   $("m-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showMenu(); };
   $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
-  $("m-quit").onclick = () => { autosave(); playing = false; showTitle(); };
+  $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
 }
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
 function showCreate(name) {
@@ -403,7 +407,7 @@ function showCreate(name) {
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
     $("p-back").onclick = () => showTitle();
-    $("p-go").onclick = () => { read(); playing = false; progress = 0; departed.clear(); start(pf); el.hidden = true; };
+    $("p-go").onclick = () => { read(); playing = false; progress = 0; departed.clear(); start(pf); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   };
   draw();
 }
@@ -416,11 +420,11 @@ function showTitle() {
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
   $("t-start").onclick = () => showCreate($("co-in").value);
-  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; departed.clear(); render(); el.hidden = true; };
+  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; departed.clear(); render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
-  $("t-file").onchange = async (e) => { try { const f = e.target.files[0]; const r = unpackGame(JSON.parse(await f.text()), world); g = r.g; company = r.company; autosave(); sel = 0; render(); el.hidden = true; } catch { $("t-msg").textContent = t.badSave; } };
+  $("t-file").onchange = async (e) => { try { const f = e.target.files[0]; const r = unpackGame(JSON.parse(await f.text()), world); g = r.g; company = r.company; autosave(); sel = 0; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); } catch { $("t-msg").textContent = t.badSave; } };
 }
 start(null, false); // background game behind the title screen; it never overwrites a save
 showTitle();
