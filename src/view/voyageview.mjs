@@ -4,6 +4,7 @@ const TX = {
   es: { empty: "Aún no has zarpado. Cada viaje aparecerá aquí con sus ventas y su beneficio.", day: "Día", route: "Ruta", sold: "Vendido", revenue: "Ingresos", profit: "Beneficio", best: "Mejor viaje", total: "Total" },
   en: { empty: "You have not sailed yet. Each voyage will show up here with its sales and profit.", day: "Day", route: "Route", sold: "Sold", revenue: "Revenue", profit: "Profit", best: "Best voyage", total: "Total" },
 };
+export const voyagesTitle = (lang) => (lang === "es" ? "Diario de viajes" : "Voyage log");
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export function voyagesHtml(g, lang, fmt, cityName, limit = 15) {
   const x = TX[lang] ?? TX.en, all = voyageLog(g);

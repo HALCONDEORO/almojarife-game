@@ -15,3 +15,5 @@ test("only the last rows are listed", () => {
   const g = { day: 1 }; for (let i = 0; i < 30; i++) openVoyage(g, { id: 1 }, "cadiz", "lisboa");
   assert.equal((voyagesHtml(g, "en", fmt, name, 15).match(/<tr>/g) ?? []).length, 16);
 });
+import { voyagesTitle } from "../src/view/voyageview.mjs";
+test("section title in both languages", () => { assert.equal(voyagesTitle("es"), "Diario de viajes"); assert.equal(voyagesTitle("en"), "Voyage log"); });
