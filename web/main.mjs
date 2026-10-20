@@ -13,6 +13,7 @@ import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
+import { attachTexts, knownCityEvents, cityEventText } from "../src/game/cityevents.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { setRoute, clearRoute, borrow, repay, bankRoom, loansOwed, newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairCost, sellShip, shipValue, buyRumor, RUMOR_PRICE, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
@@ -36,6 +37,7 @@ const T = {
 let lang = localStorage.getItem("lang") || (navigator.language?.toLowerCase().startsWith("es") ? "es" : "en"), t = T[lang], g, sel = 0;
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang);
 const world = buildWorld(await (await fetch("../data/world.json")).json());
+attachTexts(world, Object.fromEntries(await Promise.all(["es", "en"].map(async (l) => [l, await (await fetch(`../locales/${l}.json`)).json()])))); // city event texts
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
@@ -162,9 +164,10 @@ function render() {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
     m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(last.lon) + 10}" y="${Y(last.lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${est.days} ${t.daysLbl}</text>`;
   }
+  const cev = Object.fromEntries(knownCityEvents(g).map((x) => [x.city, x])); // famine, epidemic, fair you know of
   for (const c of world.cities) {
-    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ${e.days} ${t.daysLbl}, ${e.km} km` : "");
-    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
+    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ${e.days} ${t.daysLbl}, ${e.km} km` : "") + (cev[c.id] ? ` - ${cityEventText(world, lang, cev[c.id], "banner", g.day)}` : "");
+    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/>${cev[c.id] ? `<circle class="cev" cx="8" cy="-8" r="4.5" fill="#d4a017" stroke="#5a3a00" stroke-width="1.5"/>` : ""}<text x="10" y="4" font-size="14">${c.name}</text></g>`;
   }
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
@@ -187,6 +190,8 @@ function render() {
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
     const nd = world.nodes[s.at];
     h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).length, day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
+    const here = cev[s.at];
+    if (here) h += `<div class="event"><b>${cityEventText(world, lang, here, "banner", g.day)}</b></div>`;
     h += `<div><button data-3d="1">${t.view3d}</button></div>`;
     const bp = bestPorts(g, s).slice(0, 3);
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;

@@ -681,5 +681,58 @@
     }
    ]
   }
+ ],
+ "cityEvents": [
+  {
+   "id": "famine",
+   "weight": 3,
+   "days": [
+    20,
+    30
+   ],
+   "mods": {
+    "grain": {
+     "make": 0.3,
+     "use": 2.6
+    },
+    "dried_fish": {
+     "use": 1.6
+    }
+   }
+  },
+  {
+   "id": "epidemic",
+   "weight": 2,
+   "days": [
+    15,
+    24
+   ],
+   "mods": {
+    "*": {
+     "make": 0.55,
+     "use": 0.65
+    }
+   }
+  },
+  {
+   "id": "fair",
+   "weight": 4,
+   "days": [
+    7,
+    11
+   ],
+   "minPop": 20000,
+   "mods": {
+    "cloth": {
+     "use": 3.5
+    },
+    "silk": {
+     "use": 3.5
+    },
+    "wine": {
+     "use": 2.8
+    }
+   }
+  }
  ]
 }

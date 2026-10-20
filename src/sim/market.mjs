@@ -35,13 +35,15 @@ export function seasonMul(good, day) {
 export const SEASONS = ["winter", "spring", "summer", "autumn"];
 /** Calendar season for a game day (day 0 is 1 January). */
 export function seasonOf(day) { return SEASONS[Math.floor((((day + 11) % 365) / 91.25)) % 4]; }
-export function tickMarket(market, day) {
-  for (const city of Object.values(market))
+/** `mods` is optional: { [city]: { [good]: { make, use } } } multiplies production and consumption (city events). Without it the day is exactly as before. */
+export function tickMarket(market, day, mods = null) {
+  for (const [cityId, city] of Object.entries(market))
     for (const [good, e] of Object.entries(city)) {
-      if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
+      const m = mods?.[cityId]?.[good], make = m?.make ?? 1, use = m?.use ?? 1;
+      if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day) * make)); // warehouses are finite
       e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
       const base = e.needs ? e.rate * 1.2 : e.rate * 0.3;
       const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
-      e.stock = Math.max(0, e.stock - Math.round(base * scarcity));
+      e.stock = Math.max(0, e.stock - Math.round(base * scarcity * use));
     }
 }

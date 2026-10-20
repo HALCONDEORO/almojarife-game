@@ -1,0 +1,21 @@
+{
+ "cityEvents": {
+  "famine": {
+   "name": "Hambruna",
+   "start": "Hambruna en {city}: la cosecha se ha perdido y el pan escasea. El grano se paga caro y la gente busca pescado seco. Durará unas semanas.",
+   "end": "En {city} ha pasado la hambruna. El grano vuelve poco a poco a su precio."
+  },
+  "epidemic": {
+   "name": "Epidemia",
+   "start": "Epidemia en {city}: muchos vecinos están en cama. Los talleres producen la mitad y se compra mucho menos de todo.",
+   "end": "En {city} la epidemia ha remitido. Talleres y mercado recuperan el pulso."
+  },
+  "fair": {
+   "name": "Feria",
+   "start": "Feria grande en {city}: llegan compradores de toda la comarca. Paños, seda y vino se venden como nunca durante unos días.",
+   "end": "Termina la feria de {city}. La demanda de paños, seda y vino vuelve a lo normal."
+  },
+  "active": "{name} en {city}: quedan {n} días",
+  "banner": "{name}: quedan {n} días"
+ }
+}

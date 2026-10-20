@@ -9,6 +9,7 @@ import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { rollEvent } from "./events.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
+import { updateCityEvents, cityMarketMods, noticeCityEvents } from "./cityevents.mjs";
 import { aiStep } from "../sim/ai.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -52,7 +53,8 @@ export function netWorth(g) {
 export function advanceDay(g) {
   if (g.over || g.pending) return; // an event waits for the player's choice
   g.day++;
-  tickMarket(g.market, g.day);
+  updateCityEvents(g); // famine, epidemic, fair: end the old ones, maybe start new ones
+  tickMarket(g.market, g.day, cityMarketMods(g));
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {
@@ -69,6 +71,7 @@ export function advanceDay(g) {
   rollEvent(g);
   deliverOrders(g);
   refreshIntel(g);
+  noticeCityEvents(g);
   if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
 }

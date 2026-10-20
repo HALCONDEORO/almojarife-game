@@ -1,0 +1,21 @@
+{
+ "cityEvents": {
+  "famine": {
+   "name": "Famine",
+   "start": "Famine in {city}: the harvest has failed and bread is short. Grain fetches a high price and people turn to dried fish. It will last a few weeks.",
+   "end": "The famine in {city} is over. Grain slowly returns to its usual price."
+  },
+  "epidemic": {
+   "name": "Epidemic",
+   "start": "Epidemic in {city}: many townsfolk are sick in bed. Workshops make half as much and people buy far less of everything.",
+   "end": "The epidemic in {city} has eased. Workshops and market pick up again."
+  },
+  "fair": {
+   "name": "Fair",
+   "start": "Great fair in {city}: buyers come from all around. For a few days cloth, silk and wine sell like never before.",
+   "end": "The fair in {city} is over. Demand for cloth, silk and wine is back to normal."
+  },
+  "active": "{name} in {city}: {n} days left",
+  "banner": "{name}: {n} days left"
+ }
+}
