@@ -80,3 +80,10 @@ test("a loan collected before settlement still pays its last weekly interest", a
   for (let i = 0; i < 7; i++) advanceDay(g);
   assert.equal(g.reports[0].loanInterest, 10);
 });
+test("the estimate of what is due includes the interest of loans collected this week", async () => {
+  const { newGame, advanceDay, } = await import("../src/game/game.mjs"); const { dueNow } = await import("../src/game/ledger.mjs"); const { loadWorld } = await import("../src/sim/world.mjs");
+  const g = newGame(loadWorld()); g.eventsOn = false; g.cash = 5000;
+  g.loans = [{ id: 1, city: g.ships[0].at, principal: 1000, left: 1000, taken: 0, due: 3 }];
+  for (let i = 0; i < 3; i++) advanceDay(g);
+  assert.ok(dueNow(g) >= 10, "includes the 10 coins of last interest");
+});
