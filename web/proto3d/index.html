@@ -1,18 +1,22 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Almojarife - 3D port prototype</title>
 <style>html,body{margin:0;height:100%;background:#1b2a33;font:14px sans-serif;color:#fff}canvas{display:block;width:100%;height:100%}#hud{position:fixed;left:10px;top:8px;text-shadow:0 1px 2px #000}</style></head>
-<body><div id="hud">3D port prototype (three.js, procedural). Drag to orbit-look, wheel to zoom.</div>
+<body><div id="tip" style="position:fixed;display:none;padding:3px 8px;background:#000b;border-radius:4px;pointer-events:none"></div><div id="hud"></div>
 <script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from "three";
-import { buildPortScene, animateWater } from "../../src/view3d/port3d.mjs";
-const q = new URLSearchParams(location.search), city = q.get("city") || "cadiz";
+import { buildPortScene, animateWater, pickBuilding } from "../../src/view3d/port3d.mjs";
+const q = new URLSearchParams(location.search); document.getElementById("hud").textContent = q.get("hud") || "Drag to look around, wheel to zoom, click a building to open it."; const city = q.get("city") || "cadiz";
 const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); document.body.appendChild(renderer.domElement);
 const { scene, water } = buildPortScene(THREE, { id: city, pop: +(q.get("pop") || 12000), ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: +(q.get("tod") || 0.5) });
-const cam = new THREE.PerspectiveCamera(50, 1, 0.1, 200); let yaw = 0.25, dist = 22, pitch = 0.22;
+const cam = new THREE.PerspectiveCamera(50, 1, 0.1, 200); let yaw = 0.25, dist = 24, pitch = 0.5;
 const place = () => { cam.position.set(Math.sin(yaw) * dist, 4 + pitch * dist, Math.cos(yaw) * dist + 2); cam.lookAt(0, 2, -4); };
 const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }; addEventListener("resize", resize); resize(); place();
-let drag = null; addEventListener("pointerdown", (e) => drag = [e.clientX]); addEventListener("pointerup", () => drag = null);
-addEventListener("pointermove", (e) => { if (drag) { yaw += (e.clientX - drag[0]) * 0.005; drag[0] = e.clientX; place(); } });
+let drag = null, moved = 0; const names = JSON.parse(q.get("names") || "{}"), tip = document.getElementById("tip");
+const ndc = (e) => [(e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1];
+addEventListener("pointerdown", (e) => { drag = [e.clientX]; moved = 0; });
+addEventListener("pointerup", (e) => { const click = moved < 5; drag = null; if (!click) return; const b = pickBuilding(THREE, scene, cam, ...ndc(e)); if (b) parent.postMessage({ kind: "building", id: b }, location.origin); });
+addEventListener("pointermove", (e) => { const b = drag ? null : pickBuilding(THREE, scene, cam, ...ndc(e)); document.body.style.cursor = b ? "pointer" : ""; tip.style.display = b ? "block" : "none"; if (b) { tip.textContent = names[b] || b; tip.style.left = e.clientX + 14 + "px"; tip.style.top = e.clientY + 10 + "px"; } });
+addEventListener("pointermove", (e) => { if (drag) { moved += Math.abs(e.clientX - drag[0]); yaw += (e.clientX - drag[0]) * 0.005; drag[0] = e.clientX; place(); } });
 addEventListener("wheel", (e) => { dist = Math.max(8, Math.min(50, dist * (e.deltaY > 0 ? 1.1 : 0.9))); place(); });
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; animateWater(water, t); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.3 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.03; }); renderer.render(scene, cam); window.__ready = true; });
