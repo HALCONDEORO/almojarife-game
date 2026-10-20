@@ -59,3 +59,15 @@ test("every level builds a clickable building", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
   for (const pop of [3000, 12000, 40000]) { const { scene } = buildPortScene(THREE, { id: "cadiz", pop, ships: 0 }); const bs = scene.children.filter((c) => c.userData.building); assert.equal(bs.length, 4); for (const b of bs) assert.equal(b.userData.level, buildingLevel(b.userData.building, pop)); }
 });
+test("the largest port stays far inside the draw-call budget (150, shadows included)", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
+  const { scene } = buildPortScene(THREE, { id: "lisboa", pop: 50000, ships: 3, warehouse: true, upgrades: { market: 3, tavern: 3, bank: 3, shipyard: 3 } });
+  let meshes = 0, tris = 0; scene.traverse((o) => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+  assert.ok(meshes * 2 <= 150, "meshes " + meshes); assert.ok(tris < 150000, "triangles " + tris);
+});
+test("fusing keeps the buildings clickable and keeps emissive lights apart", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene, fuseStatic } = await import("../src/view3d/port3d.mjs");
+  const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 40000, ships: 0 });
+  const t = scene.children.find((c) => c.userData.building === "tavern"); assert.ok(t.children.some((c) => c.name === "fused")); assert.ok(t.children.some((c) => c.isMesh && c.material.emissiveIntensity > 0));
+  assert.equal(fuseStatic(THREE, new THREE.Group()), 0);
+});

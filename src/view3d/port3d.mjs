@@ -49,6 +49,26 @@ export function cameraPose(zoom = 1, yaw = 0) {
   return { x: lx + (dx * c + dz * s) * z, y: ly + dy * z, z: lz + (-dx * s + dz * c) * z, look: CAMERA.look };
 }
 
+/**
+ * Fuse the plain meshes under `root` into ONE mesh with per-vertex colours (one draw call). Meshes with emissive light stay apart so they keep glowing.
+ * Pure geometry work, no GPU needed. Returns the number of meshes that were fused.
+ */
+export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = true } = {}) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), pos = [], nor = [], col = [], dead = [], c = new THREE.Color();
+  root.traverse((o) => {
+    if (!o.isMesh || o.userData.keep || (o.material.emissiveIntensity > 0 && o.material.emissive?.getHex() > 0)) return;
+    const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    c.copy(o.material.color); const p = g.attributes.position, n = g.attributes.normal;
+    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); col.push(c.r, c.g, c.b); }
+    dead.push(o); g.dispose();
+  });
+  if (!dead.length) return 0;
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  const fused = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide })); fused.castShadow = castShadow; fused.receiveShadow = receiveShadow; fused.name = "fused";
+  for (const o of dead) o.parent.remove(o); root.add(fused); return dead.length;
+}
+
 export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {} } = {}) {
   const scene = new THREE.Scene(), L = portLayout(id, pop), sk = skyFor(tod);
   const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o })); return mats.get(k); };
@@ -110,6 +130,11 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   for (let x = -27; x <= 27; x += 3) add(scene, new THREE.CylinderGeometry(0.18, 0.18, 0.5, 8), M(dark), x, QUAY_TOP + 0.25, QUAY_EDGE_Z - 0.5, false);
   for (let i = 0; i < 6; i++) { add(scene, new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8), M(timber), 1 + i * 0.7, QUAY_TOP + 0.4, -3.2, false); box(scene, 0.8, 0.8, 0.8, 0x9a7a4a, -14 - (i % 3) * 0.9, QUAY_TOP + 0.4 + Math.floor(i / 3) * 0.8, -3.4); }
   for (let i = 0; i < Math.min(3, ships); i++) scene.add(makeShip(THREE, -4 + i * 14, 2.5, i));
+  // performance: the town (houses, tower, quay props), each building and each ship become one mesh each
+  const town = new THREE.Group(); town.name = "town";
+  for (const o of [...scene.children]) if (!o.userData.building && o.name !== "ship" && o.name !== "water" && o.name !== "sun" && !o.isLight && o !== water) { if (o.isGroup || o.isMesh) { town.add(o); } }
+  scene.add(town); fuseStatic(THREE, town);
+  for (const o of scene.children) if (o.userData.building || o.name === "ship") fuseStatic(THREE, o);
   return { scene, layout: L, water, mats };
 }
 
