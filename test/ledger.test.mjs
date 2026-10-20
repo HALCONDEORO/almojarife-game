@@ -48,11 +48,6 @@ test("bankruptcy: a deficit past the limit ends the game, a smaller one does not
   g.cash = -(OVERDRAFT_LIMIT + 1); advanceDay(g);
   assert.equal(g.over, "lose"); assert.equal(g.overReason, "bankrupt");
 });
-test("an old save with carried debt folds it into cash at the next settlement", () => {
-  const g = idle(); g.cash = 100; g.accrued = { ships: {}, debt: 30 };
-  for (let d = 0; d < 7; d++) advanceDay(g);
-  assert.equal(g.accrued.debt, 0); assert.equal(g.cash, 100 - 30 - 14);
-});
 test("money owed counts against net worth, so waiting for settlement day gives no free money", () => {
   const g = idle(); const w0 = netWorth(g);
   for (let d = 0; d < 3; d++) advanceDay(g);
@@ -83,7 +78,7 @@ test("inbox and report history are capped", () => {
   const g = idle();
   for (let i = 0; i < MAX_INBOX + 20; i++) post(g, "info", { txt: "x" });
   assert.equal(g.inbox.length, MAX_INBOX);
-  g.accrued = { ships: {}, debt: 0 };
+  g.accrued = { ships: {} };
   for (let w = 1; w <= MAX_REPORTS + 5; w++) { g.day = w * SETTLE_EVERY; settleWeek(g); }
   assert.equal(g.reports.length, MAX_REPORTS);
 });
@@ -150,18 +145,4 @@ test("view: warning and debt messages read well in both languages", () => {
   assert.ok(messageText({ kind: "warn", due: 70, cash: 3 }, "es", fmt).startsWith("Mañana toca pagar el mantenimiento: 70."));
   assert.equal(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "en", fmt), "Cash is negative: you owe 12. Every week 2% interest is charged on that debt. Past 3000, you go bankrupt.");
   assert.ok(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "es", fmt).includes("debes 12"));
-});
-test("dueNow counts interest on old carried debt that exceeds cash", () => {
-  const g = idle(); g.cash = 0; g.accrued = { ships: {}, debt: 100 };
-  assert.equal(dueNow(g), 102);
-  const before = g.cash; g.day = SETTLE_EVERY; const r = settleWeek(g); assert.equal(before - g.cash, 102); assert.equal(r.carried, 100); assert.equal(r.interest, 2);
-});
-
-test("old save: a week that started without a wages entry keeps the old wage share for those days", async () => {
-  const { accrueDay } = await import("../src/game/ledger.mjs");
-  const g = { day: 7, ships: [{ id: 1, type: "cog" }], accrued: { ships: { 1: 70 }, debt: 0 }, cash: 1000 };
-  accrueDay(g, g.ships[0]); // first day after the upgrade
-  const w = g.accrued.wages[1];
-  assert.ok(Math.abs(w - (70 * 0.6 + (g.accrued.ships[1] - 70) * 0.6)) < 1e-9, "wages cover the old part (60%) and the new day (real wages)");
-  assert.ok(w > 70 * 0.6, "not only the new day");
 });

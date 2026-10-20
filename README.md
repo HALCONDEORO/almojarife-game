@@ -17,7 +17,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 - **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
 - **Events and rumours.** Storms, pirates, fair winds and drifting cargo bring choices at sea. Prices of ports you have not visited are rumours with an age and an error margin; buy news at the tavern.
 - **A 3D port (prototype).** A three.js harbour built from your game state: docked ships, warehouse, time of day. Desktop first.
-- **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file.
+- **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file. Until launch the save format can change without migration: test saves from earlier builds are not preserved.
 - **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your browser.
 - **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
 

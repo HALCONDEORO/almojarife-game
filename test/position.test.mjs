@@ -40,17 +40,6 @@ test("a save made at sea loads with the ship at the same point", () => {
   const copy = JSON.parse(JSON.stringify(s));
   assert.deepEqual(shipPosition(world, copy, 0.4), shipPosition(world, s, 0.4));
 });
-test("an old-format voyage (no route, no totalDays) moves steadily and ends at the port", () => {
-  const ref = makeShip(1, "cog", "cadiz"); sail(world, ref, "barcelona"); // same trip, new format
-  const old = makeShip(1, "cog", "cadiz"); old.voyage = { to: "barcelona", daysLeft: ref.voyage.daysLeft }; // as the old game stored it
-  let prev = -1, ticks = 0;
-  while (old.voyage) {
-    const here = shipPosition(world, old, 0), dist = haversineKm(world.nodes.cadiz, here);
-    assert.ok(dist > prev - 1e-9, "never goes backwards"); assert.ok(near(here, shipPosition(world, ref, 0)), "same point as the new format at day " + ticks);
-    prev = dist; tickShip(old); tickShip(ref); ticks++;
-  }
-  assert.ok(ticks > 3 && near(shipPosition(world, old), world.nodes.barcelona));
-});
 test("the sim does not depend on how often the view asks for positions", () => {
   const run = (calls) => { const g = newGame(world); for (let d = 0; d < 200; d++) { for (const t of g.ai) for (let i = 0; i < calls; i++) shipPosition(world, t.ship, i / calls); advanceDay(g); } return JSON.stringify([g.market, g.ai]); };
   assert.equal(run(1), run(8));

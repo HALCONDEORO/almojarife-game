@@ -25,6 +25,16 @@ test("bad or newer saves are refused", () => {
   assert.throws(() => migrate(null)); assert.throws(() => migrate({ version: SAVE_VERSION + 1 }));
   assert.throws(() => deserialize({ version: SAVE_VERSION, state: { cash: 1 } }, world));
 });
+test("pre-launch saves without profile, voyage fields or market pop are refused with a clear error", () => {
+  const g = newGame(world); const s = serialize(g, "X");
+  const noProfile = JSON.parse(JSON.stringify(s)); delete noProfile.state.profile;
+  assert.throws(() => deserialize(noProfile, world), /not kept/);
+  const oldVoyage = JSON.parse(JSON.stringify(s)); oldVoyage.state.ships[0].voyage = { to: "valencia", daysLeft: 3 };
+  assert.throws(() => deserialize(oldVoyage, world), /not kept/);
+  const noPop = JSON.parse(JSON.stringify(s)); delete noPop.state.market.cadiz.grain.pop;
+  assert.throws(() => deserialize(noPop, world), /not kept/);
+  assert.ok(deserialize(JSON.parse(JSON.stringify(s)), world).g.profile.home); // current saves still load
+});
 test("company name is cleaned and limited", () => {
   assert.equal(cleanCompany("  <b>Casa</b> \n"), "bCasa/b");
   assert.equal(cleanCompany("x".repeat(80)).length, 30);

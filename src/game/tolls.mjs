@@ -12,6 +12,6 @@ export const tollsDue = (g) => r2(g.accrued?.tolls ?? 0);
 /** Charge the toll of `city` for `ship` into the weekly bill. Returns the amount. */
 export function chargeToll(g, ship, city) {
   const t = tollFor(g, ship, city);
-  if (t > 0) { const a = (g.accrued ??= { ships: {}, debt: 0 }); a.tolls = r2((a.tolls ?? 0) + t); }
+  if (t > 0) { const a = (g.accrued ??= { ships: {} }); a.tolls = r2((a.tolls ?? 0) + t); }
   return t;
 }
