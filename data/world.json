@@ -681,5 +681,35 @@
     }
    ]
   }
+ ],
+ "workshops": [
+  {
+   "id": "loom",
+   "name": {
+    "es": "Telar de paños",
+    "en": "Cloth loom"
+   },
+   "text": {
+    "es": "Teje la lana del almacén en paño. Cada día: 4 de lana dan 3 de paño.",
+    "en": "Weaves wool from the warehouse into cloth. Each day: 4 wool make 3 cloth."
+   },
+   "price": 2200,
+   "buildDays": 10,
+   "upkeepPerDay": 6,
+   "wagesPerDay": 9,
+   "batchesPerDay": 1,
+   "inputs": {
+    "wool": 4
+   },
+   "outputs": {
+    "cloth": 3
+   },
+   "allow": {
+    "makes": [
+     "wool"
+    ],
+    "minPop": 30000
+   }
+  }
  ]
 }

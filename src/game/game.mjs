@@ -10,6 +10,7 @@ import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed
 import { rollEvent } from "./events.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import { aiStep } from "../sim/ai.mjs";
+import { tickWorkshops } from "./workshops.mjs";
 
 export const HISTORY_DAYS = 30;
 /** Append today's price of every good in every port; keep the last HISTORY_DAYS. */
@@ -63,6 +64,7 @@ export function advanceDay(g) {
   }
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
+  tickWorkshops(g); // own workshops work from the warehouse; their costs are paid on settlement day, before the report
   warnLowCash(g);
   settleWeek(g);
   if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
@@ -204,3 +206,4 @@ export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g) => loanRoom(g, netWorth(g));
 export { loansOwed };
 export { setRoute, clearRoute };
+export { buildWorkshop, sellWorkshop, workshopTypes, workshopOf, allowedIn, costPerDay, workshopsDue, workshopsValue, WORKSHOP_RESALE } from "./workshops.mjs";
