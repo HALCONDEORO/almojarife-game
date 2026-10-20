@@ -1,4 +1,4 @@
-import {captainRoster,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
+import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
@@ -288,7 +288,13 @@ function render() {
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
   });
-  P.querySelector("[data-captain-dismiss]")?.addEventListener("click",()=>act(()=>dismissCaptain(g,s)));
+  P.querySelector("[data-captain-dismiss]")?.addEventListener("click",()=>{
+    const c=captainOf(s);if(!c)return;const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
+    el.innerHTML=`<div class="box"><h2 id="cap-heading"></h2><p>${t.dismissInfo}</p><button id="cap-confirm">${t.dismissConfirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div>`;
+    $("cap-heading").textContent=t.dismissConfirm+": "+c.name;
+    $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
+    $("cap-confirm").onclick=()=>{if(s.captain?.id!==c.id){$("cap-msg").textContent=t.failed;return;}const r=dismissCaptain(g,s);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
+  });
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => act(() => buyRumor(g, P.querySelector("#rum").value, s.at));
   P.querySelector("[data-local-store]")?.addEventListener("click",()=>{if($("v3d"))openCityPanel("store");else{tab="store";render();}});
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
