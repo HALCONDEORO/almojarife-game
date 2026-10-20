@@ -1,21 +1,21 @@
 // Map navigation logic that does not need a browser: travel estimate and the context-menu entries.
-import { playerTravelDays } from "../game/traveltime.mjs";
+import { playerTravelTicks } from "../game/traveltime.mjs";
 import { route } from "../sim/world.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
-/** {ok, days, km, path} for sending `ship` to `to`, or {ok:false, reason}. */
+/** {ok, ticks, km, path} for sending `ship` to `to` (still air: the leg's wind sets the real duration), or {ok:false, reason}. */
 export function travelEstimate(world, ship, to) {
   if (!ship) return { ok: false, reason: "no ship" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (ship.at === to) return { ok: false, reason: "already here" };
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
-  const days=playerTravelDays(Math.max(1,Math.ceil(r.km/SHIP_TYPES[ship.type].kmPerDay)),ship);
-  if(days===null)return {ok:false,reason:"crew"};
-  return { ok: true, km: Math.round(r.km), days, path: r.path };
+  const ticks=playerTravelTicks(r.km,SHIP_TYPES[ship.type].kmPerDay,ship);
+  if(ticks===null)return {ok:false,reason:"crew"};
+  return { ok: true, km: Math.round(r.km), ticks, path: r.path };
 }
-/** Entries for the right-click / long-press menu on a port. Each: {id, enabled, days?}. */
+/** Entries for the right-click / long-press menu on a port. Each: {id, enabled, ticks?}. */
 export function cityMenu(world, ship, city) {
-  const est = travelEstimate(world, ship, city), items = [{ id: "sail", enabled: est.ok, days: est.days, reason: est.reason }];
+  const est = travelEstimate(world, ship, city), items = [{ id: "sail", enabled: est.ok, ticks: est.ticks, reason: est.reason }];
   items.push({ id: "select", enabled: true });
   return items;
 }

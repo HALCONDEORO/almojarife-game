@@ -43,8 +43,8 @@ test("cargo loss keeps the cost basis in step and an empty hold is not an error"
   g.world.events = structuredClone(world.events); g.world.events.find((e) => e.id === "storm").choices[1].outcomes = [{ p: 1, effects: { cargoLossPct: 50 }, text: { es: "x", en: "x" } }];
   resolveEvent(g, "press");
   assert.equal(s.cargo.salt, 10); assert.ok(Math.abs(s.basis.salt - per * 10) < 1);
-  const g2 = newGame(world); g2.ships[0].voyage = { from: "cadiz", to: "lisboa", daysLeft: 3, totalDays: 4, path: ["cadiz", "lisboa"], km: 100 }; g2.pending = { event: "storm", ship: 1, day: 0 };
-  assert.ok(resolveEvent(g2, "shelter").ok); assert.equal(g2.ships[0].voyage.daysLeft, 4);
+  const g2 = newGame(world); g2.ships[0].voyage = { from: "cadiz", to: "lisboa", ticksLeft: 720, totalTicks: 960, path: ["cadiz", "lisboa"], km: 100 }; g2.pending = { event: "storm", ship: 1, day: 0 };
+  assert.ok(resolveEvent(g2, "shelter").ok); assert.equal(g2.ships[0].voyage.ticksLeft, 960);
 });
 test("an unknown choice or no event is refused and changes nothing", () => {
   const g = sailing(0); assert.equal(resolveEvent(g, "x").ok, false);

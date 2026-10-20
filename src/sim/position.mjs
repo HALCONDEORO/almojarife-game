@@ -1,15 +1,14 @@
 // Where a ship is on the map (lat/lon). Pure function of sim state, so a view can call it
-// as often as it likes without touching the simulation. `frac` is the part of the current
-// day already elapsed (0 to 1); it is only for smooth drawing.
+// as often as it likes without touching the simulation. `tickFrac` is the part of the current
+// tick already elapsed (0 to 1); it is only for smooth drawing.
 import { haversineKm } from "../../tools/geo.mjs";
 
-export function shipPosition(world, ship, frac = 0) {
+export function shipPosition(world, ship, tickFrac = 0) {
   const v = ship.voyage;
   if (!v) return pointOf(world, ship.at);
   const path = v.path, total = v.km;
-  // totalDays is the full duration written by sail(), so progress is right on every day of the voyage.
-  const days = v.totalDays;
-  const done = Math.min(1, Math.max(0, (days - v.daysLeft + Math.min(1, Math.max(0, frac))) / days));
+  // totalTicks is the full duration written by sail(), so progress is right on every tick of the voyage.
+  const done = Math.min(1, Math.max(0, (v.totalTicks - v.ticksLeft + Math.min(1, Math.max(0, tickFrac))) / v.totalTicks));
   let want = total * done;
   for (let i = 0; i + 1 < path.length; i++) {
     const a = pointOf(world, path[i]), b = pointOf(world, path[i + 1]);

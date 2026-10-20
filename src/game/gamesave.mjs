@@ -1,6 +1,6 @@
 // Versioned save format. Pure functions (no DOM) so they can be tested.
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
-export const SAVE_VERSION = 2; // v2 adds state.tick (the tick clock); v1 test saves are not kept
+export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
 export const MAX_COMPANY = 30;
 export const cleanCompany = (s) => String(s ?? "").replace(/[\u0000-\u001f<>&"]/g, "").trim().slice(0, MAX_COMPANY);
 export function serialize(g, company, now = Date.now()) {
@@ -23,7 +23,7 @@ export function deserialize(save, world) {
   // Pre-launch saves are not kept: reject them clearly instead of failing later with a TypeError.
   if (!st.profile || typeof st.profile.home !== "string") throw new Error("save is from a test build and is not kept");
   if (!Number.isFinite(st.tick)) throw new Error("save is from a test build and is not kept");
-  for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalDays) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
+  for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
   for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
   return { g: { world, ...JSON.parse(JSON.stringify(st)) }, company: cleanCompany(s.company) };
 }

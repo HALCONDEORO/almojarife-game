@@ -22,7 +22,7 @@ test("tolls go into the weekly bill and show as their own report line", () => {
 });
 test("a ship that docks pays the toll", () => {
   const g = game(), s = g.ships[0], other = world.cities.find((c) => c.id !== s.at).id;
-  s.voyage = { from: s.at, to: other, daysLeft: 1, totalDays: 1, path: [s.at, other], km: 1 };
+  s.voyage = { from: s.at, to: other, ticksLeft: 240, totalTicks: 240, path: [s.at, other], km: 1 };
   const before = tollsDue(g); advanceDay(g);
   assert.ok(tollsDue(g) > before);
 });

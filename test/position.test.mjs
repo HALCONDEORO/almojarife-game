@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { makeShip, sail, tickShip } from "../src/sim/trade.mjs";
+import { makeShip, sail, sailTick } from "../src/sim/trade.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { haversineKm } from "../tools/geo.mjs";
@@ -13,7 +13,7 @@ test("docked ship sits on its port; voyage start and end are the two ports", () 
   assert.ok(near(shipPosition(world, s), world.nodes.cadiz));
   sail(world, s, "valencia");
   assert.ok(near(shipPosition(world, s, 0), world.nodes.cadiz));
-  while (s.voyage && s.voyage.daysLeft > 1) tickShip(s);
+  while (s.voyage && s.voyage.ticksLeft > 1) sailTick(s);
   const last = shipPosition(world, s, 1);
   assert.ok(near(last, world.nodes.valencia), "end of last day is the destination");
 });
@@ -31,12 +31,12 @@ test("every position along a voyage stays on its lane path (never jumps over lan
       assert.ok(dmin < 1, "off the lane by " + dmin);
       prev = p; steps++;
     }
-    tickShip(s);
+    sailTick(s);
   }
   assert.ok(steps > 4 && maxLeg > 0);
 });
 test("a save made at sea loads with the ship at the same point", () => {
-  const s = makeShip(1, "caravel", "lisboa"); sail(world, s, "barcelona"); tickShip(s); tickShip(s);
+  const s = makeShip(1, "caravel", "lisboa"); sail(world, s, "barcelona"); sailTick(s); sailTick(s);
   const copy = JSON.parse(JSON.stringify(s));
   assert.deepEqual(shipPosition(world, copy, 0.4), shipPosition(world, s, 0.4));
 });

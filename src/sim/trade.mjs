@@ -1,6 +1,7 @@
 // M1b: ships, voyages along sea lanes, and buy/sell with price impact.
 // Own design. Numbers are first-pass and will be tuned by the balance tests.
 import { route } from "./world.mjs";
+import { ticksForKm } from "./clock.mjs";
 import { price } from "./market.mjs";
 
 export const SHIP_TYPES = {
@@ -18,21 +19,28 @@ export function makeShip(id, type, at) {
 export function cargoUsed(ship) {
   return Object.values(ship.cargo).reduce((a, b) => a + b, 0);
 }
-/** Start a voyage. Returns {ok, days} or {ok:false, reason}. */
-export function sail(world, ship, to) {
+/** Start a voyage. speedMul covers crew and captain factors, wind the leg's weather. Returns {ok, ticks} or {ok:false, reason}. */
+export function sail(world, ship, to, opts = {}) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
-  const days = Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay));
-  // Keep the route and total days so the position at sea is known and survives a save.
-  ship.voyage = { from: ship.at, to, daysLeft: days, totalDays: days, path: r.path, km: r.km };
-  return { ok: true, days, km: Math.round(r.km) };
+  const { speedMul = 1, wind = 1 } = opts;
+  // Continuous movement: no day rounding, so a short hop lands in hours, on the exact tick.
+  const ticks = Math.max(1, Math.round(ticksForKm(r.km, SHIP_TYPES[ship.type].kmPerDay) / (speedMul * wind)));
+  // Keep the route, total ticks and wind so the position at sea is known and survives a save.
+  ship.voyage = { from: ship.at, to, ticksLeft: ticks, totalTicks: ticks, path: r.path, km: r.km, wind };
+  return { ok: true, ticks, km: Math.round(r.km) };
 }
-/** One day at sea; arrives when daysLeft reaches 0. */
+/** One tick at sea; arrives exactly when ticksLeft reaches 0. Returns true on arrival. */
+export function sailTick(ship) {
+  if (!ship.voyage) return false;
+  if (--ship.voyage.ticksLeft <= 0) { ship.at = ship.voyage.to; ship.voyage = null; return true; }
+  return false;
+}
+/** One day at sea: hull wear. Movement is per tick in sailTick. */
 export function tickShip(ship) {
   if (!ship.voyage) return;
   ship.hull = Math.max(10, (ship.hull ?? 100) - 0.5); // sea wear
-  if (--ship.voyage.daysLeft <= 0) { ship.at = ship.voyage.to; ship.voyage = null; }
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the
 // price against the trader and a buy-then-sell loop in one port always loses to fees.
