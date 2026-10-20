@@ -148,6 +148,213 @@
     "wine",
     "cloth"
    ]
+  },
+  {
+   "id": "porto",
+   "name": "Oporto",
+   "lat": 41.15,
+   "lon": -8.61,
+   "pop": 14000,
+   "pop1500": 14000,
+   "makes": [
+    "wine",
+    "cloth"
+   ],
+   "needs": [
+    "grain",
+    "salt"
+   ]
+  },
+  {
+   "id": "setubal",
+   "name": "Setúbal",
+   "lat": 38.52,
+   "lon": -8.89,
+   "pop": 6000,
+   "pop1500": 6000,
+   "makes": [
+    "salt",
+    "dried_fish"
+   ],
+   "needs": [
+    "wool",
+    "iron"
+   ]
+  },
+  {
+   "id": "faro",
+   "name": "Faro",
+   "lat": 37.02,
+   "lon": -7.94,
+   "pop": 4000,
+   "pop1500": 4000,
+   "makes": [
+    "dried_fish",
+    "salt"
+   ],
+   "needs": [
+    "cloth",
+    "iron"
+   ]
+  },
+  {
+   "id": "huelva",
+   "name": "Huelva",
+   "lat": 37.26,
+   "lon": -6.95,
+   "pop": 3000,
+   "pop1500": null,
+   "makes": [
+    "wine",
+    "dried_fish"
+   ],
+   "needs": [
+    "cloth",
+    "timber"
+   ]
+  },
+  {
+   "id": "malaga",
+   "name": "Málaga",
+   "lat": 36.76,
+   "lon": -4.44,
+   "pop": 15000,
+   "pop1500": 42000,
+   "makes": [
+    "wine",
+    "silk"
+   ],
+   "needs": [
+    "grain",
+    "wool"
+   ]
+  },
+  {
+   "id": "almeria",
+   "name": "Almería",
+   "lat": 36.87,
+   "lon": -2.31,
+   "pop": 8000,
+   "pop1500": 30000,
+   "makes": [
+    "silk",
+    "salt"
+   ],
+   "needs": [
+    "grain",
+    "iron"
+   ]
+  },
+  {
+   "id": "alicante",
+   "name": "Alicante",
+   "lat": 38.34,
+   "lon": -0.49,
+   "pop": 3000,
+   "pop1500": 3000,
+   "makes": [
+    "salt",
+    "wine"
+   ],
+   "needs": [
+    "wool",
+    "timber"
+   ]
+  },
+  {
+   "id": "ibiza",
+   "name": "Ibiza",
+   "lat": 38.91,
+   "lon": 1.44,
+   "pop": 2500,
+   "pop1500": null,
+   "makes": [
+    "salt"
+   ],
+   "needs": [
+    "grain",
+    "cloth"
+   ]
+  },
+  {
+   "id": "tarragona",
+   "name": "Tarragona",
+   "lat": 41.12,
+   "lon": 1.25,
+   "pop": 4000,
+   "pop1500": 4000,
+   "makes": [
+    "wine",
+    "olive_oil"
+   ],
+   "needs": [
+    "wool",
+    "iron"
+   ]
+  },
+  {
+   "id": "santander",
+   "name": "Santander",
+   "lat": 43.46,
+   "lon": -3.81,
+   "pop": 2500,
+   "pop1500": 1000,
+   "makes": [
+    "iron",
+    "wool"
+   ],
+   "needs": [
+    "wine",
+    "salt"
+   ]
+  },
+  {
+   "id": "sansebastian",
+   "name": "San Sebastián",
+   "lat": 43.32,
+   "lon": -1.98,
+   "pop": 3000,
+   "pop1500": null,
+   "makes": [
+    "iron",
+    "dried_fish"
+   ],
+   "needs": [
+    "wine",
+    "cloth"
+   ]
+  },
+  {
+   "id": "coruna",
+   "name": "La Coruña",
+   "lat": 43.35,
+   "lon": -8.41,
+   "pop": 3000,
+   "pop1500": 3000,
+   "makes": [
+    "dried_fish",
+    "timber"
+   ],
+   "needs": [
+    "wine",
+    "salt"
+   ]
+  },
+  {
+   "id": "vigo",
+   "name": "Vigo",
+   "lat": 42.2,
+   "lon": -8.73,
+   "pop": 5000,
+   "pop1500": 5000,
+   "makes": [
+    "dried_fish",
+    "timber"
+   ],
+   "needs": [
+    "cloth",
+    "olive_oil"
+   ]
   }
  ],
  "goods": {
@@ -280,6 +487,58 @@
   "w_cartagena_off": {
    "lat": 37.45,
    "lon": -0.95
+  },
+  "w_porto_off": {
+   "lat": 41.15,
+   "lon": -9.2
+  },
+  "w_vigo_off": {
+   "lat": 42.2,
+   "lon": -9.3
+  },
+  "w_coruna_off": {
+   "lat": 43.5,
+   "lon": -8.6
+  },
+  "w_santander_off": {
+   "lat": 43.75,
+   "lon": -3.8
+  },
+  "w_ss_off": {
+   "lat": 43.7,
+   "lon": -2.0
+  },
+  "w_faro_off": {
+   "lat": 36.8,
+   "lon": -7.9
+  },
+  "w_huelva_off": {
+   "lat": 36.95,
+   "lon": -6.95
+  },
+  "w_malaga_off": {
+   "lat": 36.5,
+   "lon": -4.4
+  },
+  "w_almeria_off": {
+   "lat": 36.7,
+   "lon": -2.4
+  },
+  "w_alicante_off": {
+   "lat": 38.3,
+   "lon": -0.2
+  },
+  "w_tarragona_off": {
+   "lat": 40.95,
+   "lon": 1.5
+  },
+  "w_sado": {
+   "lat": 38.47,
+   "lon": -8.78
+  },
+  "w_espichel": {
+   "lat": 38.33,
+   "lon": -9.3
   }
  },
  "lanes": [
@@ -414,6 +673,146 @@
   [
    "cartagena",
    "w_cartagena_off"
+  ],
+  [
+   "w_lisboa_off",
+   "w_porto_off"
+  ],
+  [
+   "porto",
+   "w_porto_off"
+  ],
+  [
+   "w_porto_off",
+   "w_vigo_off"
+  ],
+  [
+   "vigo",
+   "w_vigo_off"
+  ],
+  [
+   "w_vigo_off",
+   "w_finisterre"
+  ],
+  [
+   "coruna",
+   "w_coruna_off"
+  ],
+  [
+   "w_coruna_off",
+   "w_galicia_nw"
+  ],
+  [
+   "w_coruna_off",
+   "w_finisterre"
+  ],
+  [
+   "santander",
+   "w_santander_off"
+  ],
+  [
+   "w_santander_off",
+   "w_biscay"
+  ],
+  [
+   "w_santander_off",
+   "w_bilbao_off"
+  ],
+  [
+   "sansebastian",
+   "w_ss_off"
+  ],
+  [
+   "w_ss_off",
+   "w_bilbao_off"
+  ],
+  [
+   "faro",
+   "w_faro_off"
+  ],
+  [
+   "w_faro_off",
+   "w_stvincent"
+  ],
+  [
+   "w_faro_off",
+   "w_huelva_off"
+  ],
+  [
+   "huelva",
+   "w_huelva_off"
+  ],
+  [
+   "w_huelva_off",
+   "w_cadiz_off"
+  ],
+  [
+   "malaga",
+   "w_malaga_off"
+  ],
+  [
+   "w_malaga_off",
+   "w_gibraltar"
+  ],
+  [
+   "w_malaga_off",
+   "w_alboran"
+  ],
+  [
+   "almeria",
+   "w_almeria_off"
+  ],
+  [
+   "w_almeria_off",
+   "w_alboran"
+  ],
+  [
+   "w_almeria_off",
+   "w_gata"
+  ],
+  [
+   "alicante",
+   "w_alicante_off"
+  ],
+  [
+   "w_alicante_off",
+   "w_nao"
+  ],
+  [
+   "w_alicante_off",
+   "w_palos"
+  ],
+  [
+   "ibiza",
+   "w_nao"
+  ],
+  [
+   "ibiza",
+   "w_palma_sw"
+  ],
+  [
+   "tarragona",
+   "w_tarragona_off"
+  ],
+  [
+   "w_tarragona_off",
+   "w_bcn_off"
+  ],
+  [
+   "w_tarragona_off",
+   "w_valencia_off"
+  ],
+  [
+   "setubal",
+   "w_sado"
+  ],
+  [
+   "w_sado",
+   "w_espichel"
+  ],
+  [
+   "w_espichel",
+   "w_lisboa_off"
   ]
  ],
  "events": [

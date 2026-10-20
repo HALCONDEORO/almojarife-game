@@ -10,3 +10,6 @@ test("every city of the map has an entry, with a number or an explicit null", ()
 test("the file names its year, unit and source", () => {
   assert.equal(pop.year, 1500); assert.equal(pop.unit, "inhabitants"); assert.match(pop.source, /Bairoch/);
 });
+test("world.json pop1500 matches the population file", () => {
+  for (const c of world.cities) if (Object.hasOwn(c, "pop1500")) assert.equal(c.pop1500, pop.cities[c.id], c.id);
+});
