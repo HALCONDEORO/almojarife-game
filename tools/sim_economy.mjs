@@ -1,6 +1,6 @@
 // Economy check over the whole map: many simulated games with bots of different strategies.
 // Run: node tools/sim_economy.mjs [games=50] [days=1095]   Prints one JSON report. Own design, no outside data.
-import { loadWorld, route } from "../src/sim/world.mjs";
+import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../src/sim/market.mjs";
 import { makeShip, tickShip, SHIP_TYPES, FEE, buy, sell, sail, cargoUsed } from "../src/sim/trade.mjs";
 import { aiStep } from "../src/sim/ai.mjs";
@@ -8,6 +8,7 @@ import { makeRng } from "../src/sim/rng.mjs";
 
 const games = Number(process.argv[2] ?? 50), days = Number(process.argv[3] ?? 1095);
 const world = loadWorld(), ids = world.cities.map((c) => c.id), goods = Object.keys(world.goods);
+if (![games, days].every((x) => Number.isSafeInteger(x) && x > 0)) throw new Error("games and days must be positive integers");
 const START_CASH = 2000;
 
 // Strategies. Each acts for an idle ship (sells what it carries first, like aiStep does).
@@ -25,7 +26,7 @@ const strategies = {
     const qty = Math.min(SHIP_TYPES[s.type].capacity, m[s.at][bestG].stock, Math.floor(t.cash / Math.ceil(price(world, m[s.at][bestG], bestG) * (1 + FEE))));
     if (qty <= 0) return; const b = buy(world, m, s, t.cash, bestG, qty); if (!b.ok) return; t.cash -= b.cost; sail(world, s, dest);
   },
-  // Shuttles between its home port and the best partner it found at the start (a fixed two-port loop).
+  // Shuttles between its home port and a randomly assigned partner (a fixed two-port loop).
   shuttle: (m, t, s) => {
     if (s.voyage) return;
     sellAll(m, t, s); if (cargoUsed(s) > 0) return;
@@ -38,15 +39,11 @@ const strategies = {
 };
 const names = Object.keys(strategies);
 
-// 1) Static check: best single-hop margin per good at base prices (planned arbitrage), and ports with no use.
-const staticMargins = [];
-for (const a of world.cities) for (const b of world.cities) if (a.id !== b.id) for (const g of goods) {
-  const ea = a.makes.includes(g) ? 0.6 : a.needs.includes(g) ? 1.6 : 1, eb = b.makes.includes(g) ? 0.6 : b.needs.includes(g) ? 1.6 : 1;
-  staticMargins.push({ a: a.id, b: b.id, g, ratio: eb / ea });
-}
 // 2) Dynamic: games x days.
 const pinnedByGood = Object.fromEntries(goods.map((g) => [g, [0, 0]])), pinnedByCity = Object.fromEntries(ids.map((c) => [c, [0, 0]]));
 const visits = Object.fromEntries(ids.map((c) => [c, 0])), sold = Object.fromEntries(goods.map((g) => [g, 0]));
+const arrivalsByStrategy = Object.fromEntries(names.map((n) => [n, Object.fromEntries(ids.map((c) => [c, 0]))]));
+const immobilized = Object.fromEntries(names.map((n) => [n, 0]));
 const finals = Object.fromEntries(names.map((n) => [n, []])), stuck = Object.fromEntries(names.map((n) => [n, 0])), yearly = {};
 const t0 = Date.now();
 for (let gi = 0; gi < games; gi++) {
@@ -61,26 +58,32 @@ for (let gi = 0; gi < games; gi++) {
     tickMarket(m, d, world);
     for (const t of ts) {
       const wasAtSea = !!t.ship.voyage; tickShip(t.ship);
-      if (wasAtSea && !t.ship.voyage) visits[t.ship.at]++; // an arrival
+      if (wasAtSea && !t.ship.voyage) { visits[t.ship.at]++; arrivalsByStrategy[t.n][t.ship.at]++; } // an arrival
       const had = !!t.ship.voyage; strategies[t.n](m, t, t.ship, rng);
       if (!had && t.ship.voyage) for (const [g, q] of Object.entries(t.ship.cargo)) sold[g] += q;
     }
     if (d % 30 === 0) for (const c of ids) for (const g of goods) {
-      const p = price(world, m[c][g], g), b = world.goods[g].base, pin = p >= b * 2.9 || p <= b * 0.41 ? 1 : 0;
+      const e = m[c][g], raw = (e.target / Math.max(1, e.stock)) ** 0.6, pin = raw >= 3 || raw <= 0.4 ? 1 : 0;
       pinnedByGood[g][0] += pin; pinnedByGood[g][1]++; pinnedByCity[c][0] += pin; pinnedByCity[c][1]++;
     }
     if (d % 365 === 364) { const y = Math.round((d + 1) / 365); yearly[y] ??= []; for (const t of ts) yearly[y].push(t.cash); }
   }
-  for (const t of ts) { finals[t.n].push(t.cash); if (t.cash < 100 && cargoUsed(t.ship) === 0) stuck[t.n]++; }
+  for (const t of ts) { finals[t.n].push(t.cash); if (t.cash < 100 && cargoUsed(t.ship) === 0) stuck[t.n]++;
+    const cheapest = Math.min(...goods.filter((g) => m[t.ship.at][g].stock > 0).map((g) => Math.ceil(price(world, m[t.ship.at][g], g) * (1 + FEE))));
+    if (!t.ship.voyage && t.cash < cheapest) immobilized[t.n]++; }
 }
 const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
 const pct = (a) => +((a[0] / a[1]) * 100).toFixed(1);
 const rep = {
+  scope: "Trading bots only. No player upkeep, wages, tolls, loan costs, win/loss or construction. Cash growth is not global money inflation.",
+  sampling: "Clamps use the unrounded model ratio, sampled every 30 days; not an every-day safety bound.",
   games, days, cities: ids.length, seconds: Math.round((Date.now() - t0) / 1000),
   finalCashMedian: Object.fromEntries(names.map((n) => [n, med(finals[n])])),
   finalCashMin: Object.fromEntries(names.map((n) => [n, Math.min(...finals[n])])),
   finalCashMax: Object.fromEntries(names.map((n) => [n, Math.max(...finals[n])])),
-  brokeShare: Object.fromEntries(names.map((n) => [n, +(stuck[n] / finals[n].length * 100).toFixed(1)])),
+  lowCashEmptyHoldShare: Object.fromEntries(names.map((n) => [n, +(stuck[n] / finals[n].length * 100).toFixed(1)])),
+  cannotAffordOneUnitShare: Object.fromEntries(names.map((n) => [n, +(immobilized[n] / finals[n].length * 100).toFixed(1)])),
+  arrivalsByStrategy,
   medianCashByYear: Object.fromEntries(Object.entries(yearly).map(([y, a]) => [y, med(a)])),
   pinnedPctByGood: Object.fromEntries(goods.map((g) => [g, pct(pinnedByGood[g])])),
   pinnedPctByCityWorst: Object.entries(pinnedByCity).map(([c, v]) => [c, pct(v)]).sort((a, b) => b[1] - a[1]).slice(0, 8),
@@ -88,6 +91,6 @@ const rep = {
   tripsToCityLeast: Object.entries(visits).sort((a, b) => a[1] - b[1]).slice(0, 8),
   tripsToCityMost: Object.entries(visits).sort((a, b) => b[1] - a[1]).slice(0, 5),
   unitsPlannedByGood: sold,
-  staticTopRatios: staticMargins.sort((a, b) => b.ratio - a.ratio).slice(0, 3),
+
 };
 console.log(JSON.stringify(rep, null, 1));

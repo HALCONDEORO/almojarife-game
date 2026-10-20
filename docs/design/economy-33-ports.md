@@ -8,17 +8,20 @@ Strategies: greedy (the game's own AI: best profit per day), wanderer (random po
 
 Structural tests (routes do not cross land, every port next to water, every pair reachable, every good has a maker and a buyer) and `npm run sim1000` (price clamps on the old 9 ports). Nothing measured profit, balance between ports or inflation on the 33-port map. This is the first run that does.
 
-## Results
+## Corrected interpretation (20 Oct 2026)
 
-- Prices are stable: 0.1% of price samples sit at the 3x ceiling or 0.4x floor (silk 0.5%, Huelva 1.6% worst port). No price blow-up or collapse.
-- No bot went broke (0% of bots under 100 coins with an empty hold at the end).
-- Gold inflation is high. Median bot cash: 40,167 after year 1, 86,130 after year 2, 127,026 after year 3, from 2,000. The mission goal is 50,000 in 365 days, so a bot beats it in about 14 months. The random wanderer reaches a median of 169,896 in 3 years: arbitrage is too easy when you do not even look for it.
-- Trade is concentrated. With the game's AI, Sevilla, Cadiz and Huelva receive 18,669 / 17,602 / 15,999 arrivals; Oporto, San Sebastian, La Coruna, Bilbao and Santander about 540-610 each over the same games. The northern and Atlantic ports are close to useless as destinations.
-- Goods are very uneven. Units shipped: silk 1,377,829, pepper 635,602, olive oil 409,911, salt 383,494 against sugar 26,052 and iron 94,020. Silk and pepper carry most of the profit.
+This is a trading-bot stress test, not a complete player game. It does not apply player upkeep, wages, tolls, loan costs, construction, mission success or bankruptcy. Cash earned here must not be compared directly with the player's 50,000-coin mission target. The original inference about beating the mission in 14 months was not supported. The model does not track all money holders, so it does not measure global money inflation.
 
-## Not fixed yet (next PR)
+- Exact price clamps (unrounded model ratio >=3 or <=0.4) occupy 0.1% of the samples. Samples are taken every 30 days, not every day. This alone does not rule out shorter spikes.
+- No trader ended with cash below 100 and an empty hold. This is a low-cash heuristic, not a measured player bankruptcy rate. None was unable to afford any available unit at its final port. Traders with cargo can still have low liquid cash.
+- Median bot cash after 3 years: greedy 30,706; wanderer 169,896; shuttle 86,281. These are raw trading cash balances without player operating costs. They justify further testing, not an automatic cut in player profits.
+- Arrivals are now split by strategy. Greedy bots alone: Sevilla 17,761, Cadiz 16,353, Huelva 15,000; La Coruna and Argel 0, Cartagena 3, Oran 4, Oporto 5. The previous counts pooled all three strategies and were mislabeled as the game's AI alone. Concentration is a measured concern; it does not prove that a city is useless to a human player.
+- Units carried still pool all strategies: silk 1,377,829, pepper 635,602, sugar 26,052, iron 94,020. Shipment volume is neither unmet demand nor profit. No conclusion that silk is oversupplied or iron is undersupplied follows from those counts alone.
+- The shuttle partner is assigned randomly, not chosen by best profitability. Removed artificial static margin rankings (0.6/1.6): these were not actual model prices.
 
-1. Lower the easy profit (margin and demand curve) so a year takes more than a year to reach the goal.
-2. Give the north and Atlantic ports a reason to be visited (a producer of a scarce good, or higher demand).
-3. Make sugar and iron matter, and cap silk and pepper.
-4. NPC merchants per port as a formula of historical population, port size, goods made and needed, distance to lanes and demand, with a performance cap. To be validated with this same simulation.
+## Next balance work
+
+1. Measure player outcomes through the real game cost and end-state functions before tuning mission prices or rewards.
+2. Scale NPC count with port population and trade opportunity under a performance cap; compare traffic coverage against this baseline.
+3. Add construction and production uses with explicit stock accounting and failure tests. Validate actual fulfilled demand, not just shipments.
+4. Re-run identical seeds before and after each change. Historical populations remain a separate evidence-led change; unknown figures are not zero.
