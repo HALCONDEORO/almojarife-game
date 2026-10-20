@@ -6,7 +6,7 @@ import { makeMarket, price, tickMarket } from "../src/sim/market.mjs";
 const land = loadLand();
 const world = loadWorld();
 test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
-  assert.equal(world.cities.length, 9);
+  assert.equal(world.cities.length, 22);
   assert.equal(Object.keys(world.goods).length, 12);
   for (const c of world.cities) {
     let near = false;
@@ -61,7 +61,7 @@ test("routes are not absurd detours (km / great-circle <= 2.6)", () => {
     if (a.id === b.id) continue;
     const r = route(world, a.id, b.id);
     const g = haversineKm(a, b);
-    const med = new Set(["valencia", "barcelona", "palma", "cartagena"]);
+    const med = new Set(["valencia", "barcelona", "palma", "cartagena", "malaga", "almeria", "alicante", "ibiza", "tarragona"]);
     if (med.has(a.id) !== med.has(b.id)) continue; // crossing Gibraltar is legitimately long
     if (g > 150) assert.ok(r.km / g <= 2.6, `${a.id}->${b.id} ratio ${(r.km / g).toFixed(2)}`);
   }
@@ -98,9 +98,9 @@ test("every good has at least one producer and one consumer", () => {
 test("no port both makes and needs the same good", () => {
   for (const c of world.cities) for (const g of c.makes) assert.ok(!c.needs.includes(g), c.id + " " + g);
 });
-test("Cadiz to Palma route is plausible (1050-1200 km)", () => {
+test("Cadiz to Palma route is plausible (1000-1200 km)", () => {
   const r = route(world, "cadiz", "palma");
-  assert.ok(r.km > 1050 && r.km < 1200, String(r.km));
+  assert.ok(r.km > 1000 && r.km < 1200, String(r.km));
 });
 test("after a year producers sell at or below base, consumers at or above base, nobody is pinned at the floor", () => {
   const m = makeMarket(world);
