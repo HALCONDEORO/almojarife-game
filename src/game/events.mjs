@@ -34,7 +34,7 @@ export function rollEvent(g) {
     if (!ship.voyage) continue;
     const r = seeded(`ev:${g.day}:${ship.id}:${g.seed ?? 0}`);
     if (r() >= EVENT_CHANCE) continue;
-    const ok = list.filter((e) => (e.minDay ?? 0) <= g.day);
+    const ok = list.filter((e) => !["pirates","storm"].includes(e.id) && (e.minDay ?? 0) <= g.day);
     const total = ok.reduce((a, e) => a + e.weight, 0);
     if (!total) return null;
     let x = r() * total, pick = ok[ok.length - 1];

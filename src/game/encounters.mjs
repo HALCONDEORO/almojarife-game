@@ -33,3 +33,9 @@ export function applyEncounter(g,ship,outcome){
  ship.voyage.daysLeft+=outcome.delay;ship.voyage.totalDays=Math.max((ship.voyage.totalDays??ship.voyage.daysLeft-outcome.delay)+outcome.delay,ship.voyage.daysLeft);
  return {ok:true,...outcome,hullLost:before-ship.hull,cargoLost};
 }
+
+export function encounterText(e,lang='es'){
+ const es=lang==='es',kind=e.kind==='pirates'?(es?'Piratas':'Pirates'):(es?'Tormenta':'Storm');
+ const result=e.result==='repelled'?(es?'rechazados':'repelled'):e.result==='raided'?(es?'asalto sufrido':'raided'):e.result==='severe'?(es?'fuerte':'severe'):(es?'superada':'weathered');
+ return es?`${kind}: ${result}. Casco -${e.hullLost}; carga perdida ${e.cargoLost}; retraso ${e.delay} días.`:`${kind}: ${result}. Hull -${e.hullLost}; cargo lost ${e.cargoLost}; delay ${e.delay} days.`;
+}
