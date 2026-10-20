@@ -1,4 +1,5 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
+import { setRoute, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
@@ -58,6 +59,7 @@ export function advanceDay(g) {
     accrueDay(g, s);
     if (was && !s.voyage) { say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
   }
+  processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   warnLowCash(g);
   settleWeek(g);
   if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
@@ -198,3 +200,4 @@ export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g)
 export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g) => loanRoom(g, netWorth(g));
 export { loansOwed };
+export { setRoute, clearRoute };

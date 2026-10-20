@@ -34,3 +34,10 @@ Request (owner, 20/10/2026): running costs of ships should arrive every week, no
 - Every purchase adds to an average-cost basis per good. Every sale takes its cost from that basis, so profit = revenue minus average cost of the units sold.
 - Selling more than the log knows (old saves, goods taken from a warehouse bought earlier) never invents cost: the extra units count at zero cost.
 - At each weekly settlement the report lists profit per good, best first, with a total; the weekly counter then resets. Per-route profit is still open.
+
+## Automatic trade routes
+
+- A route is port A, port B, a good to buy at A (`out`) and an optional good to buy at B (`back`). Set it from the Route tab while the ship is docked at A. One route per ship.
+- Each day a docked ship on a route sells what it carries for that leg, buys for the next leg with the normal rules (fees, price impact, hold space, cash), then sails. At A it waits and retries when it cannot load anything (one message only); at B it always goes home, empty if there is no return cargo.
+- A ship that is somewhere else first sails to A. Cancel clears the route; the ship finishes its current voyage.
+- Sales appear as messages with the profit, so the routes are visible in the inbox and the weekly profit table.
