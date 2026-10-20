@@ -1,3 +1,4 @@
+import { loanCapFor } from "./rank.mjs";
 // The moneylender (bank). Pure game logic: no DOM. Any port has one; you borrow while a ship of yours is docked there.
 // Loans cost LOAN_RATE of what is left, every weekly settlement (cheaper than the 2% overdraft, so asking is better than falling short).
 // Total borrowing is capped at half of your net worth, rounded down to LOAN_STEP, and never above LOAN_MAX.
@@ -12,7 +13,7 @@ export const loanInterest = (g) => r2(loansOwed(g) * LOAN_RATE);
 export function loanRoom(g, netWorth) {
   const owed = loansOwed(g);
   // Based on net worth, which borrowing does not change (cash goes up, debt goes up), so you cannot lend yourself more by borrowing.
-  const total = Math.min(LOAN_MAX, Math.floor(Math.max(netWorth, 0) * 0.5 / LOAN_STEP) * LOAN_STEP);
+  const total = Math.min(loanCapFor(g, LOAN_MAX), Math.floor(Math.max(netWorth, 0) * 0.5 / LOAN_STEP) * LOAN_STEP);
   return Math.max(0, total - owed);
 }
 const docked = (g, city) => g.ships.some((s) => s.at === city && !s.voyage);

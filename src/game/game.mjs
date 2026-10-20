@@ -1,6 +1,7 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
 import { setRoute, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
+import { addRespect, updateRank, rankOf } from "./rank.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
@@ -65,6 +66,7 @@ export function advanceDay(g) {
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
   settleWeek(g);
+  updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
   rollEvent(g);
   deliverOrders(g);
@@ -85,7 +87,7 @@ export function doBuy(g, ship, good, qty) {
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   const r = sell(g.world, g.market, ship, good, qty);
-  if (r.ok) { g.cash += r.revenue; logSell(g, good, r.qty, r.revenue); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.cash += r.revenue; logSell(g, good, r.qty, r.revenue); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
