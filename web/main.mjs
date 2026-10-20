@@ -1,3 +1,4 @@
+import {encountersHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
 import { premises } from "../src/view/premises.mjs";
@@ -388,7 +389,7 @@ $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render
 $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
-  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
+  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
   const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
     $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };

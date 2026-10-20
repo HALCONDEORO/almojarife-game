@@ -14,6 +14,7 @@ import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { rollEvent } from "./events.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
+import {automaticEncounter} from "./encounterdaily.mjs";
 import { playerTravelDays } from "./traveltime.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
@@ -66,6 +67,7 @@ export function advanceDay(g) {
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {
     const was = s.voyage;
+    automaticEncounter(g,s);
     if (s.voyage) wearGuns(s); // armament wears at sea like the hull
     tickShip(s);
     accrueDay(g, s);
