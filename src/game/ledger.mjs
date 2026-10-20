@@ -67,9 +67,9 @@ export function settleWeek(g) {
   const a = (g.accrued ??= { ships: {}, debt: 0 });
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round(cost * 100) / 100 }));
   if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
-  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = loanInterest(g), owed = r2(week + interest + lint);
+  const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterest(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + interest + lint);
   g.cash = r2(g.cash - owed);
-  const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; // loans collected daily this week, plus any due today
+  const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
   const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
   a.ships = {};

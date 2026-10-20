@@ -73,3 +73,10 @@ test("loans are collected on their due day and shown as principal in the report"
   assert.equal(g.reports[0].loanPrincipal, 1000);
   assert.ok(g.reports[0].paid >= 1000);
 });
+test("a loan collected before settlement still pays its last weekly interest", async () => {
+  const { newGame, advanceDay } = await import("../src/game/game.mjs"); const { loadWorld } = await import("../src/sim/world.mjs");
+  const g = newGame(loadWorld()); g.eventsOn = false; g.cash = 5000;
+  g.loans = [{ id: 1, city: g.ships[0].at, principal: 1000, left: 1000, taken: 0, due: 3 }];
+  for (let i = 0; i < 7; i++) advanceDay(g);
+  assert.equal(g.reports[0].loanInterest, 10);
+});
