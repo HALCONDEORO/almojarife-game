@@ -4,6 +4,7 @@ import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
 import { buyCannon as buyCannonShip } from "./crew.mjs";
 export const buyCannon = buyCannonShip;
+import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
@@ -46,7 +47,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
-  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0) - loansOwed(g); // upkeep owed but not yet settled counts against you
+  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;
@@ -62,7 +63,7 @@ export function advanceDay(g) {
     const was = s.voyage;
     tickShip(s);
     accrueDay(g, s);
-    if (was && !s.voyage) { say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
+    if (was && !s.voyage) { chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
   }
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
