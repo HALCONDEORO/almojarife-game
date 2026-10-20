@@ -14,6 +14,7 @@ import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { rollEvent } from "./events.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
+import { playerTravelDays } from "./traveltime.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
 
@@ -102,7 +103,7 @@ export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   const from = ship.at, r = sail(g.world, ship, to);
-  if (r.ok && speedFactor(ship) !== 1) { const d = Math.max(1, Math.ceil(ship.voyage.totalDays / speedFactor(ship))); ship.voyage.totalDays = d; ship.voyage.daysLeft = d; r.days = d; }
+  if (r.ok) { const d = playerTravelDays(ship.voyage.totalDays,ship); ship.voyage.totalDays = d; ship.voyage.daysLeft = d; r.days = d; }
   if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, days: r.days });
   return r;
