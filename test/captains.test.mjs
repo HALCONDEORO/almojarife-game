@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {captainRoster,hireCaptain,dismissCaptain,captainOf,captainSpeed,captainWage} from '../src/game/captains.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
-const setup=()=>({world:{cities:[{id:'cadiz'},{id:'lisboa'}]},day:0,cash:2000,market:{},ships:[{id:1,at:'cadiz'}]});
+const setup=()=>({world:{cities:[{id:'cadiz'},{id:'lisboa'}]},day:0,tick:0,cash:2000,market:{},ships:[{id:1,at:'cadiz'}]});
 test('stable roster, one hire and assignment, fee once, no respawn after dismissal',()=>{
  const g=setup(),s=g.ships[0],before=JSON.stringify(g),r=captainRoster(g,'cadiz')[0];
  assert.equal(JSON.stringify(g),before);assert.deepEqual(captainRoster(g,'cadiz')[0],r);

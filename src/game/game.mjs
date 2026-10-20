@@ -40,6 +40,8 @@ export function trendPct(g, city, good, days = 7) {
   return old ? Math.round((a[a.length - 1] - old) / old * 100) : null;
 }
 export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_PRICE = 3000, WARMUP_DAYS = 60;
+/** Ticks per game day (10 per hour). The tick is the simulation unit; the day stays the accounting unit. See docs/design/time-model.md. */
+export const TICKS_PER_DAY = 240;
 
 export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
@@ -48,7 +50,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? defaultProfile(), eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? defaultProfile(), eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
   return g;
 }
@@ -59,9 +61,8 @@ export function netWorth(g) {
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;
 }
-/** Advance one day: markets, AI traders, ships, upkeep; then check the end. */
-export function advanceDay(g) {
-  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
+/** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
+function dayTick(g) {
   g.day++;
   tickMarket(g.market, g.day, g.world);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
@@ -85,6 +86,18 @@ export function advanceDay(g) {
   if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
   if(!g.over)for(const s of g.ships)automaticEncounter(g,s);
+}
+/** Advance one whole day: jump to the next day boundary and run the day work (same as the old daily step, including its progress reset). */
+export function advanceDay(g) {
+  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
+  g.tick = (Math.floor(g.tick / TICKS_PER_DAY) + 1) * TICKS_PER_DAY;
+  dayTick(g);
+}
+/** Advance one tick. Day work runs only when a day boundary is crossed, so 240 ticks are exactly one old day. */
+export function advanceTick(g) {
+  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
+  g.tick++;
+  if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {
   let n = 0;

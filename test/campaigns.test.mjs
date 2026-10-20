@@ -16,7 +16,7 @@ test('unknown ids fail and legacy/free games are unaffected',()=>{
  const g={};campaignEvent(g,{kind:'buy',qty:1});assert.deepEqual(g,{});assert.deepEqual(campaignSteps(g),[]);
 });
 test('save/restore retains campaign progress and future chapters cannot complete',()=>{
- const g={day:0,cash:2000,ships:[],market:{},world:{},profile:{home:'cadiz'},campaign:newCampaign('river-1503')};
+ const g={day:0,tick:0,cash:2000,ships:[],market:{},world:{},profile:{home:'cadiz'},campaign:newCampaign('river-1503')};
  campaignEvent(g,{kind:'buy',qty:3});const r=deserialize(serialize(g,'House'),{}).g;
  assert.equal(r.campaign.bought,3);assert.notEqual(r.campaign,g.campaign);
  const f={campaign:newCampaign('wool-1511')};campaignEvent(f,{kind:'buy',qty:3});assert.equal(f.campaign.bought,0);assert.equal(f.campaign.completed,false);
