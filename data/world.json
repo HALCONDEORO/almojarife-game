@@ -355,6 +355,181 @@
     "cloth",
     "olive_oil"
    ]
+  },
+  {
+   "id": "ceuta",
+   "name": "Ceuta",
+   "lat": 35.89,
+   "lon": -5.36,
+   "pop": 2500,
+   "pop1500": null,
+   "makes": [
+    "dried_fish",
+    "salt"
+   ],
+   "needs": [
+    "grain",
+    "cloth"
+   ]
+  },
+  {
+   "id": "melilla",
+   "name": "Melilla",
+   "lat": 35.29,
+   "lon": -2.94,
+   "pop": 1500,
+   "pop1500": null,
+   "makes": [
+    "salt"
+   ],
+   "needs": [
+    "cloth",
+    "wine"
+   ]
+  },
+  {
+   "id": "tetuan",
+   "name": "Tetuán",
+   "lat": 35.57,
+   "lon": -5.38,
+   "pop": 8000,
+   "pop1500": null,
+   "makes": [
+    "olive_oil",
+    "silk"
+   ],
+   "needs": [
+    "iron",
+    "cloth"
+   ],
+   "river": true
+  },
+  {
+   "id": "arcila",
+   "name": "Arcila",
+   "lat": 35.46,
+   "lon": -5.92,
+   "pop": 2000,
+   "pop1500": null,
+   "makes": [
+    "dried_fish"
+   ],
+   "needs": [
+    "wool",
+    "iron"
+   ]
+  },
+  {
+   "id": "larache",
+   "name": "Larache",
+   "lat": 35.2,
+   "lon": -6.15,
+   "pop": 3000,
+   "pop1500": null,
+   "makes": [
+    "grain",
+    "timber"
+   ],
+   "needs": [
+    "cloth",
+    "salt"
+   ]
+  },
+  {
+   "id": "rabat",
+   "name": "Rabat",
+   "lat": 34.02,
+   "lon": -6.84,
+   "pop": 3000,
+   "pop1500": null,
+   "makes": [
+    "wool",
+    "grain"
+   ],
+   "needs": [
+    "iron",
+    "wine"
+   ]
+  },
+  {
+   "id": "casablanca",
+   "name": "Casablanca",
+   "lat": 33.59,
+   "lon": -7.62,
+   "pop": 2000,
+   "pop1500": null,
+   "makes": [
+    "grain",
+    "wool"
+   ],
+   "needs": [
+    "cloth",
+    "sugar"
+   ]
+  },
+  {
+   "id": "mazagan",
+   "name": "Mazagán",
+   "lat": 33.23,
+   "lon": -8.5,
+   "pop": 2500,
+   "pop1500": null,
+   "makes": [
+    "grain",
+    "olive_oil"
+   ],
+   "needs": [
+    "cloth",
+    "iron"
+   ]
+  },
+  {
+   "id": "oran",
+   "name": "Orán",
+   "lat": 35.7,
+   "lon": -0.65,
+   "pop": 8000,
+   "pop1500": null,
+   "makes": [
+    "wool",
+    "grain"
+   ],
+   "needs": [
+    "iron",
+    "cloth"
+   ]
+  },
+  {
+   "id": "argel",
+   "name": "Argel",
+   "lat": 36.77,
+   "lon": 3.06,
+   "pop": 15000,
+   "pop1500": null,
+   "makes": [
+    "olive_oil",
+    "wool"
+   ],
+   "needs": [
+    "timber",
+    "iron"
+   ]
+  },
+  {
+   "id": "mostaganem",
+   "name": "Mostaganem",
+   "lat": 35.93,
+   "lon": 0.09,
+   "pop": 4000,
+   "pop1500": null,
+   "makes": [
+    "grain",
+    "dried_fish"
+   ],
+   "needs": [
+    "cloth",
+    "timber"
+   ]
   }
  ],
  "goods": {
@@ -539,6 +714,54 @@
   "w_espichel": {
    "lat": 38.33,
    "lon": -9.3
+  },
+  "w_ceuta_e": {
+   "lat": 35.95,
+   "lon": -5.1
+  },
+  "w_spartel": {
+   "lat": 35.85,
+   "lon": -6.1
+  },
+  "w_arcila_off": {
+   "lat": 35.5,
+   "lon": -6.2
+  },
+  "w_larache_off": {
+   "lat": 35.3,
+   "lon": -6.4
+  },
+  "w_rabat_off": {
+   "lat": 34.05,
+   "lon": -6.95
+  },
+  "w_casa_off": {
+   "lat": 33.7,
+   "lon": -7.8
+  },
+  "w_mazagan_off": {
+   "lat": 33.3,
+   "lon": -8.7
+  },
+  "w_melilla_off": {
+   "lat": 35.5,
+   "lon": -2.9
+  },
+  "w_oran_off": {
+   "lat": 35.85,
+   "lon": -0.65
+  },
+  "w_mosta_off": {
+   "lat": 36.2,
+   "lon": 0.1
+  },
+  "w_argel_off": {
+   "lat": 37.0,
+   "lon": 3.0
+  },
+  "w_tenes": {
+   "lat": 36.8,
+   "lon": 0.9
   }
  },
  "lanes": [
@@ -813,6 +1036,122 @@
   [
    "w_espichel",
    "w_lisboa_off"
+  ],
+  [
+   "ceuta",
+   "w_gibraltar"
+  ],
+  [
+   "tetuan",
+   "w_ceuta_e"
+  ],
+  [
+   "w_ceuta_e",
+   "w_gibraltar"
+  ],
+  [
+   "w_ceuta_e",
+   "w_alboran"
+  ],
+  [
+   "tanger",
+   "w_spartel"
+  ],
+  [
+   "w_spartel",
+   "w_arcila_off"
+  ],
+  [
+   "arcila",
+   "w_arcila_off"
+  ],
+  [
+   "w_arcila_off",
+   "w_cadiz_off"
+  ],
+  [
+   "w_arcila_off",
+   "w_larache_off"
+  ],
+  [
+   "larache",
+   "w_larache_off"
+  ],
+  [
+   "w_larache_off",
+   "w_rabat_off"
+  ],
+  [
+   "rabat",
+   "w_rabat_off"
+  ],
+  [
+   "w_rabat_off",
+   "w_casa_off"
+  ],
+  [
+   "casablanca",
+   "w_casa_off"
+  ],
+  [
+   "w_casa_off",
+   "w_mazagan_off"
+  ],
+  [
+   "mazagan",
+   "w_mazagan_off"
+  ],
+  [
+   "w_mazagan_off",
+   "w_stvincent"
+  ],
+  [
+   "melilla",
+   "w_melilla_off"
+  ],
+  [
+   "w_melilla_off",
+   "w_alboran"
+  ],
+  [
+   "w_melilla_off",
+   "w_oran_off"
+  ],
+  [
+   "oran",
+   "w_oran_off"
+  ],
+  [
+   "w_oran_off",
+   "w_gata"
+  ],
+  [
+   "w_oran_off",
+   "w_cartagena_off"
+  ],
+  [
+   "mostaganem",
+   "w_mosta_off"
+  ],
+  [
+   "w_mosta_off",
+   "w_oran_off"
+  ],
+  [
+   "argel",
+   "w_argel_off"
+  ],
+  [
+   "w_argel_off",
+   "w_palma_sw"
+  ],
+  [
+   "w_mosta_off",
+   "w_tenes"
+  ],
+  [
+   "w_tenes",
+   "w_argel_off"
   ]
  ],
  "events": [
