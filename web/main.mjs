@@ -29,7 +29,7 @@ import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
-import { setRoute, clearRoute, borrow, repay, bankRoom, loansOwed, newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, hireCrew, dismissCrew, repairCost, sellShip, shipValue, buyRumor, RUMOR_PRICE, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
+import { setRoute, clearRoute, borrow, repay, bankRoom, loansOwed, newGame, advanceDay, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, hireCrew, dismissCrew, repairCost, sellShip, shipValue, buyRumor, RUMOR_PRICE, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE } from "../src/game/game.mjs";
 
 const T = {
   es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", resume: "Seguir jugando", saveNow: "Guardar ahora", quit: "Salir al título", lang2: "Idioma", speedDef: "Velocidad", paused: "Juego en pausa", tabMarket: "Mercado", tabYard: "Astillero", tabStore: "Almacén", warehouse: "Almacén", yardInfo: "Encarga barcos (se entregan tras el plazo; sin límite de flota: el mantenimiento diario es el freno), repara el casco o vende.", order: "Encargar {type} ({p}, {d} días, carga {c})", repair: "Reparar casco {h}% ({p})", sellShip: "Vender barco ({p})", orders: "En construcción", ready: "{type} en {city}, listo el día {day} ({pct}%)", yardEmpty: "Grada libre", orderShort: "Encargar ({p})", yc: "Carga {c} · {d} días · mantenimiento {u}/día", buyWh: "Comprar almacén ({p})", whInfo: "Guarda bienes en este puerto (hasta 300 unidades).", whEmpty: "Vacío", store: "Guardar", take: "Sacar", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida", create: "Crea tu casa mercantil", character: "Tu nombre", portrait: "Retrato", crest: "Escudo", shield: "Forma", division: "División", charge: "Emblema", c1: "Color principal", c2: "Color secundario", home: "Puerto de origen", background: "Origen", back: "Atrás", sh: { heater: "Clásico", round: "Redondo" }, dv: { plain: "Liso", pale: "Partido", fess: "Cortado", chevron: "Cheurón", cross: "Cruz" }, ch: { star: "Estrella", tower: "Torre", ship: "Nave", anchor: "Ancla", sun: "Sol", wheat: "Trigo" }, bgInfo: { merchant: "+300 monedas", seafarer: "Barcos 15% más baratos de mantener", scholar: "+150 monedas y 5% menos de mantenimiento" },
@@ -97,8 +97,8 @@ document.documentElement.lang = lang;
 // Moving ships. The view only reads sim state; the sim advances on the daily tick below.
 // `progress` is how much of the current day has elapsed (0 to 1). It is kept across pause,
 // resume and speed changes, so ships never move backwards or jump.
-let playing = false, speed = 1, progress = 0, lastFrame = 0;
-const MS_PER_DAY = 1500, departed = new Map(); // ship id -> progress when it left port (view only)
+let playing = false, speed = 1, progress = 0, lastFrame = 0, tickAcc = 0;
+const MS_PER_DAY = 1500, MS_PER_TICK = MS_PER_DAY / TICKS_PER_DAY, departed = new Map(); // ship id -> progress when it left port (view only)
 const shipFrac = (id) => { const d = departed.get(id); return d === undefined ? progress : Math.max(0, (progress - d) / (1 - d || 1)); };
 const trails = {}; // view only: recent screen positions per ship, for the wake
 function drawShips() {
@@ -118,17 +118,23 @@ function drawShips() {
   }
   layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
 }
-function tickDay() {
-  const before = g.ships.map((x) => !!x.voyage);
-  advanceDay(g); progress = 0; departed.clear(); autosave(); if (g.pending||g.encounterReport) playing = false;
-  if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
+function stepTicks(n) {
+  for (let i = 0; i < n; i++) {
+    const dayBefore = g.day, before = g.ships.map((x) => !!x.voyage);
+    advanceTick(g);
+    if (g.day !== dayBefore) { departed.clear(); autosave(); }
+    if (g.pending || g.encounterReport) playing = false;
+    if (g.ships.some((x, j) => before[j] && !x.voyage)) playing = false; // pause when your ship arrives
+  }
   render();
 }
 function frame(now) {
   const dt = lastFrame ? Math.min(250, now - lastFrame) : 0; lastFrame = now;
   if (playing && !g.over) {
-    progress += (dt * speed) / MS_PER_DAY;
-    if (progress >= 1) tickDay();
+    tickAcc += dt * speed;
+    const n = Math.floor(tickAcc / MS_PER_TICK);
+    if (n) { tickAcc -= n * MS_PER_TICK; stepTicks(n); }
+    progress = (g.tick % TICKS_PER_DAY + tickAcc / MS_PER_TICK) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
   requestAnimationFrame(frame);
@@ -153,7 +159,7 @@ function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const was = new Set(g.ships.filter((x) => x.voyage).map((x) => x.id));
   const day = g.day; fn();
-  if (g.day !== day) { progress = 0; departed.clear(); } // wait buttons advance whole days
+  if (g.day !== day) { progress = 0; tickAcc = 0; departed.clear(); } // wait buttons advance whole days
   else for (const x of g.ships) if (x.voyage && !was.has(x.id)) departed.set(x.id, progress); // left port mid-day
   autosave(); render();
 }
@@ -441,7 +447,7 @@ function showCreate(name) {
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
     $("p-back").onclick = () => showTitle();
-    $("p-go").onclick = () => { read(); playing = false; progress = 0; departed.clear(); start(pf); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+    $("p-go").onclick = () => { read(); playing = false; progress = 0; tickAcc = 0; departed.clear(); start(pf); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   };
   draw();
 }
@@ -454,14 +460,14 @@ function showTitle() {
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
   $("t-start").onclick = () => showCreate($("co-in").value);
-  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; departed.clear(); render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; tickAcc = 0; departed.clear(); render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
     let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    g = r.g; company = r.company; sel = 0; playing = false; progress = 0; departed.clear(); autosave(); render(); el.hidden = true;
+    g = r.g; company = r.company; sel = 0; playing = false; progress = 0; tickAcc = 0; departed.clear(); autosave(); render(); el.hidden = true;
     try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
