@@ -101,3 +101,11 @@ Also queued: crew and guns, illustrated shipyard, buildings and factories, guild
 
 ## Platform rule (owner, 21:55)
 The game is made for desktop computers. Mobile is no longer a priority: it must not break, but it does not drive design, performance budgets or the 3D decision.
+- DONE (owner 09:12, 20/10, "more uses for reports and messages"): low-cash warning the day before settlement, and a debt message when the bill cannot be paid in full.
+- MORE USES FOR REPORTS AND MESSAGES, ranked by value (with the main objection):
+  1. Profit per trade (route and good) in the weekly report. Value: high, the player learns what works. Objection: needs a trade log; keep it to the last 52 weeks.
+  2. Price history seen per port in Reports. Value: high, supports the "plan with prices" goal. Objection: partly there (recordPrices); only needs a view.
+  3. Market opportunity messages (a good is cheap or dear at a port you know). Value: medium. Objection: can nag; cap at one per week and only for known ports.
+  4. Trip summary on arrival (sold, bought, margin). Value: medium. Objection: duplicates the report; keep it one line.
+  5. Message categories like Patrician (official, personal, trade) with tabs. Value: medium. Objection: only useful once there are many messages.
+  6. Offers and rumours from the tavern as messages. Value: low-medium. Objection: depends on the rumour system staying simple.

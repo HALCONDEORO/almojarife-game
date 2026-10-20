@@ -14,7 +14,7 @@ export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce(
 /** What the next settlement will ask for (accrued upkeep plus debt carried over). */
 export const dueNow = (g) => accruedTotal(g) + (g.accrued?.debt ?? 0);
 
-/** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info. */
+/** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
   const box = (g.inbox ??= []);
   box.unshift({ id: (g.nextMsg = (g.nextMsg ?? 0) + 1), day: g.day, kind, read: false, ...p });
@@ -23,6 +23,16 @@ export function post(g, kind, p = {}) {
 export const unread = (g) => (g.inbox ?? []).filter((m) => !m.read).length;
 export function markRead(g, id) { const m = (g.inbox ?? []).find((x) => x.id === id); if (m) m.read = true; return !!m; }
 export function markAllRead(g) { for (const m of g.inbox ?? []) m.read = true; }
+
+/** The day before settlement: warn once if cash will not cover what is due (accrued so far, one more day, and any debt). Returns true if a warning was posted. */
+export function warnLowCash(g) {
+  if (!g.day || g.day % SETTLE_EVERY !== SETTLE_EVERY - 1) return false;
+  const tomorrow = g.ships.reduce((x, s) => x + SHIP_TYPES[s.type].upkeepPerDay * (g.upkeepMul ?? 1), 0);
+  const due = Math.round((dueNow(g) + tomorrow) * 100) / 100, cash = Math.round(Math.max(g.cash, 0) * 100) / 100;
+  if (cash >= due) return false;
+  post(g, "warn", { due, cash });
+  return true;
+}
 
 /** If today is a settlement day, pay what can be paid, write the report and post a message. Returns the report or null. */
 export function settleWeek(g) {
@@ -37,5 +47,6 @@ export function settleWeek(g) {
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
   post(g, "report", { week: r.week, paid: r.paid, debt: r.debt });
+  if (debt > 0) post(g, "debt", { owed: debt });
   return r;
 }

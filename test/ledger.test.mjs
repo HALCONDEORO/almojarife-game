@@ -109,3 +109,29 @@ test("view: message text with debt, event text per language, and unread badge", 
   assert.equal(messageText({ kind: "event", txt: { es: "Tormenta", en: "Storm" } }, "es", fmt), "Tormenta");
   assert.equal(badge("Mensajes", 3), "Mensajes (3)"); assert.equal(badge("Mensajes", 0), "Mensajes");
 });
+
+import { warnLowCash } from "../src/game/ledger.mjs";
+test("warning: the day before settlement, low cash posts one warning with the amounts", () => {
+  const g = idle(); g.cash = 3; // far below a week of upkeep
+  for (let d = 0; d < SETTLE_EVERY - 1; d++) advanceDay(g);
+  const w = g.inbox.filter((m) => m.kind === "warn");
+  assert.equal(w.length, 1); assert.equal(w[0].day, SETTLE_EVERY - 1);
+  assert.equal(w[0].cash, 3); assert.equal(w[0].due, Math.round(SHIP_TYPES.cog.upkeepPerDay * SETTLE_EVERY * 100) / 100);
+  assert.equal(warnLowCash(g), true); // same day again would repeat; the game calls it once per day
+});
+test("warning: no message when cash covers the bill, and none on other days", () => {
+  const g = idle(); for (let d = 0; d < SETTLE_EVERY; d++) advanceDay(g);
+  assert.equal(g.inbox.filter((m) => m.kind === "warn").length, 0);
+  const h = idle(); h.cash = 0; h.day = 2; assert.equal(warnLowCash(h), false);
+});
+test("debt: a settlement that cannot be paid in full posts a debt message", () => {
+  const g = idle(); g.cash = 5; for (let d = 0; d < SETTLE_EVERY; d++) advanceDay(g);
+  const m = g.inbox.find((x) => x.kind === "debt"); assert.ok(m); assert.equal(m.owed, g.reports[0].debt); assert.ok(m.owed > 0);
+  const ok = idle(); for (let d = 0; d < SETTLE_EVERY; d++) advanceDay(ok); assert.ok(!ok.inbox.some((x) => x.kind === "debt"));
+});
+test("view: warning and debt messages read well in both languages", () => {
+  assert.equal(messageText({ kind: "warn", due: 70, cash: 3 }, "en", fmt), "Upkeep is due tomorrow: 70. You have 3 in cash. Sell cargo before you sail.");
+  assert.ok(messageText({ kind: "warn", due: 70, cash: 3 }, "es", fmt).startsWith("Mañana toca pagar el mantenimiento: 70."));
+  assert.equal(messageText({ kind: "debt", owed: 12 }, "en", fmt), "Cash did not cover it: 12 is still owed. It is added to the next payment.");
+  assert.ok(messageText({ kind: "debt", owed: 12 }, "es", fmt).includes("quedan 12 por pagar"));
+});
