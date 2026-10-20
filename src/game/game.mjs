@@ -40,7 +40,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
   const ai = Array.from({ length: 3 }, (_, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", ids[(i * 3 + 1) % ids.length]) }));
   const market = makeMarket(world), hist = {};
-  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
+  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
   const g = { world, day: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? null, eventsOn: !!opts.events, pending: null };
   refreshIntel(g);
   return g;
@@ -56,7 +56,7 @@ export function netWorth(g) {
 export function advanceDay(g) {
   if (g.over || g.pending) return; // an event waits for the player's choice
   g.day++;
-  tickMarket(g.market, g.day);
+  tickMarket(g.market, g.day, g.world);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {

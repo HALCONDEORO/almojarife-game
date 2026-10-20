@@ -11,7 +11,7 @@ import { citySceneSvg } from "../src/view/cityscene.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml } from "../src/view/rankview.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
-import { price as marketPrice } from "../src/sim/market.mjs";
+import { affordRatio } from "../src/sim/market.mjs";
 import { reportsHtml, inboxHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
 import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
@@ -216,7 +216,7 @@ function render() {
       h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
     } else if (tab === "city") {
       const nd2 = world.nodes[s.at], pop2 = nd2.pop ?? 8000, ks = Object.keys(world.goods), ent = g.market[s.at];
-      const rows = cityRows(pop2, ks, (k) => marketPrice(world, ent[k], k) / world.goods[k].base), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
+      const rows = cityRows(pop2, ks, (k) => affordRatio(ent[k], world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
       h += `<p>${t.cityInfo}</p><div class="cityclasses">` + rows.map((r) => `<div class="card"><b>${cn[r.cls]}</b>: ${fmt(r.count)} ${t.cityCitizens} (${r.pct} %)<br>${t.cityBuys}: ${r.top.map((x) => goodIcon(x.good) + t.goods[x.good]).join(", ") || "-"}` + (r.priced_out.length ? `<br><i>${t.cityOut}: ${r.priced_out.map((k) => t.goods[k]).join(", ")}</i>` : "") + `</div>`).join("") + `</div>`;
     } else if (tab === "house") {
       h += houseHtml(g, lang, netWorth(g), fmt, cityName, LOAN_MAX);

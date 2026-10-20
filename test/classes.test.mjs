@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { classShares, classCounts, demandBy, totalDemand, affordMul, PER_1000, CLASSES } from "../src/sim/classes.mjs";
-import { makeMarket, tickMarket, cityDemand } from "../src/sim/market.mjs";
+import { makeMarket, tickMarket, cityDemand, affordRatio, price } from "../src/sim/market.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 
 test("class counts add up to the population and big cities have a bigger rich share", () => {
@@ -47,4 +47,17 @@ test("city rows: three classes, top goods sorted, poor are priced out of luxurie
   assert.equal(rows[2].top[0].good, "silk");
   const dear = cityRows(20000, goods, (g) => g === "wine" ? 2 : 1);
   assert.ok(dear[0].priced_out.includes("wine") && dear[1].priced_out.includes("wine") && !dear[2].priced_out.includes("wine"));
+});
+test("rounding boundary: the market and the City tab use the same rounded price", () => {
+  // grain base 22, target 100, stock 58: raw ratio 1.4 ^ ... rounds to a trading price of 31, above the poor limit of 1.4x
+  const e = { target: 100, stock: 58, needs: true, makes: false, rate: 10, pop: 10000 };
+  const base = 22, tradePrice = price({ goods: { grain: { base } } }, e, "grain");
+  assert.equal(affordRatio(e, base), tradePrice / base);
+  assert.ok(tradePrice / base > 1.4, "trading price is over the poor limit");
+  assert.equal(demandBy(10000, "grain", affordRatio(e, base)).poor, 0);
+  assert.equal(cityRows(10000, ["grain"], () => affordRatio(e, base))[0].priced_out[0], "grain");
+  const e2 = { ...e, stock: 100 }; // price at base: poor buy again
+  assert.ok(demandBy(10000, "grain", affordRatio(e2, base)).poor > 0);
+  // without the base (old call sites) it falls back to the raw ratio
+  assert.ok(Math.abs(affordRatio(e, undefined) - (100 / 58) ** 0.6) < 1e-9);
 });
