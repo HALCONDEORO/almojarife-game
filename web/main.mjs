@@ -348,7 +348,7 @@ document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx"
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("title") && !$("title").hidden) return;
-  if (e.key === "Escape" && $("v3d")) { const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
+  if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
   if($("v3d"))return;
   if (e.key === "Escape") { closeMenu(); target = null; render(); }
   else if (e.key === "Enter" && target) { e.preventDefault(); sailToTarget(); }
@@ -382,7 +382,7 @@ function showMenu() {
   $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
   $("m-quit").onclick = () => { autosave(); playing = false; showTitle(); };
 }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
+document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
 function showCreate(name) {
   t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
