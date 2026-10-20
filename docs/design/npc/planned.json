@@ -1,0 +1,349 @@
+{
+  "scope": "Isolated raw NPC trading test, no player costs or mission. All merchants use current greedy policy; starting coverage does not guarantee destination coverage.",
+  "planned": true,
+  "traders": 48,
+  "days": 365,
+  "elapsedMs": 4959,
+  "maxDayMs": 48,
+  "clampShare": 0.0038259305382593056,
+  "portsWithArrival": 32,
+  "arrivals": {
+    "cadiz": 672,
+    "sevilla": 805,
+    "lisboa": 15,
+    "valencia": 86,
+    "barcelona": 365,
+    "palma": 561,
+    "bilbao": 7,
+    "tanger": 333,
+    "cartagena": 92,
+    "porto": 28,
+    "setubal": 7,
+    "faro": 79,
+    "huelva": 478,
+    "malaga": 41,
+    "almeria": 6,
+    "alicante": 22,
+    "ibiza": 464,
+    "tarragona": 135,
+    "santander": 6,
+    "sansebastian": 17,
+    "coruna": 36,
+    "vigo": 49,
+    "ceuta": 473,
+    "melilla": 0,
+    "tetuan": 31,
+    "arcila": 810,
+    "larache": 754,
+    "rabat": 352,
+    "casablanca": 133,
+    "mazagan": 35,
+    "oran": 32,
+    "argel": 34,
+    "mostaganem": 16
+  },
+  "totalTraderCash": 87611,
+  "allocation": {
+    "cap": 48,
+    "total": 48,
+    "ports": [
+      {
+        "city": "alicante",
+        "population": 3000,
+        "populationBasis": "historical estimate",
+        "accessKm": 25.687325585917176,
+        "score": 2.6018759234574618,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "almeria",
+        "population": 30000,
+        "populationBasis": "historical estimate",
+        "accessKm": 20.532108263749116,
+        "score": 4.325053410132556,
+        "desired": 5,
+        "count": 2
+      },
+      {
+        "city": "arcila",
+        "population": 2000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 25.740629821464847,
+        "score": 2.209269864726616,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "argel",
+        "population": 15000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 26.12562144290278,
+        "score": 3.555526562322949,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "barcelona",
+        "population": 20000,
+        "populationBasis": "historical estimate",
+        "accessKm": 24.040448389438826,
+        "score": 4.841973219876737,
+        "desired": 5,
+        "count": 3
+      },
+      {
+        "city": "bilbao",
+        "population": 9000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 49.25067754429736,
+        "score": 3.9287490182734133,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "cadiz",
+        "population": 2000,
+        "populationBasis": "historical estimate",
+        "accessKm": 31.26426151665716,
+        "score": 2.4143988168204893,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "cartagena",
+        "population": 4000,
+        "populationBasis": "historical estimate",
+        "accessKm": 16.887756091296993,
+        "score": 3.141948156298162,
+        "desired": 4,
+        "count": 1
+      },
+      {
+        "city": "casablanca",
+        "population": 2000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 20.66977737971928,
+        "score": 2.5066382239927747,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "ceuta",
+        "population": 2500,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 22.618293178117487,
+        "score": 2.5623051911890213,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "coruna",
+        "population": 3000,
+        "populationBasis": "historical estimate",
+        "accessKm": 22.663534452908014,
+        "score": 2.629366390300641,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "faro",
+        "population": 4000,
+        "populationBasis": "historical estimate",
+        "accessKm": 24.720040548969358,
+        "score": 2.7302583767520803,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "huelva",
+        "population": 3000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 34.47042725981267,
+        "score": 2.5331864695062656,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "ibiza",
+        "population": 2500,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 73.11843959201354,
+        "score": 2.02988645712858,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "larache",
+        "population": 3000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 25.27855090261749,
+        "score": 2.605463156447754,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "lisboa",
+        "population": 65000,
+        "populationBasis": "historical estimate",
+        "accessKm": 41.77457810744836,
+        "score": 5.567031124943229,
+        "desired": 6,
+        "count": 3
+      },
+      {
+        "city": "malaga",
+        "population": 15000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 29.130188608724158,
+        "score": 3.530587571844378,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "mazagan",
+        "population": 2500,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 20.158312424036314,
+        "score": 2.5864473744693557,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "melilla",
+        "population": 1500,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 23.63074600499533,
+        "score": 2.1434533748543187,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "mostaganem",
+        "population": 4000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 30.036082302384436,
+        "score": 2.685812091763735,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "oran",
+        "population": 8000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 16.67923899668365,
+        "score": 3.181436318689511,
+        "desired": 4,
+        "count": 1
+      },
+      {
+        "city": "palma",
+        "population": 13000,
+        "populationBasis": "historical estimate",
+        "accessKm": 19.38403795193519,
+        "score": 3.8330783894328113,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "porto",
+        "population": 14000,
+        "populationBasis": "historical estimate",
+        "accessKm": 49.39978258697442,
+        "score": 3.3430059286173943,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "rabat",
+        "population": 3000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 10.67095581943882,
+        "score": 2.765380894708503,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "sansebastian",
+        "population": 3000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 42.28484357015024,
+        "score": 2.483064113432279,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "santander",
+        "population": 1000,
+        "populationBasis": "historical estimate",
+        "accessKm": 32.25657944185457,
+        "score": 2.221734373524901,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "setubal",
+        "population": 6000,
+        "populationBasis": "historical estimate",
+        "accessKm": 11.070447879774632,
+        "score": 3.080838379170302,
+        "desired": 4,
+        "count": 1
+      },
+      {
+        "city": "sevilla",
+        "population": 45000,
+        "populationBasis": "historical estimate",
+        "accessKm": 84.95050067373104,
+        "score": 4.870506220802283,
+        "desired": 5,
+        "count": 3
+      },
+      {
+        "city": "tanger",
+        "population": 10000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 26.74752428105068,
+        "score": 3.2323670420462527,
+        "desired": 4,
+        "count": 2
+      },
+      {
+        "city": "tarragona",
+        "population": 4000,
+        "populationBasis": "historical estimate",
+        "accessKm": 28.23152230606759,
+        "score": 2.7002224151345486,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "tetuan",
+        "population": 8000,
+        "populationBasis": "design fallback, history unknown",
+        "accessKm": 49.23121274464802,
+        "score": 2.935451447652758,
+        "desired": 3,
+        "count": 1
+      },
+      {
+        "city": "valencia",
+        "population": 42000,
+        "populationBasis": "historical estimate",
+        "accessKm": 15.61221895959957,
+        "score": 5.160328527637285,
+        "desired": 6,
+        "count": 3
+      },
+      {
+        "city": "vigo",
+        "population": 5000,
+        "populationBasis": "historical estimate",
+        "accessKm": 46.95292889824271,
+        "score": 2.6823808443422856,
+        "desired": 3,
+        "count": 1
+      }
+    ]
+  }
+}
