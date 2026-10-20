@@ -13,3 +13,11 @@ test("each preset changes starting cash and upkeep", () => {
 test("unknown or hostile ids fall back to normal", () => {
   for (const id of ["", undefined, "__proto__", "constructor", "EASY"]) assert.equal(difficultyOpts(id).difficulty, "normal");
 });
+import { cleanProfile, startBonus, defaultProfile } from "../src/game/profile.mjs";
+test("the profile keeps a valid difficulty and the start adds cash and multiplies upkeep", () => {
+  assert.equal(defaultProfile().difficulty, "normal");
+  for (const bad of ["", "x", "__proto__", 3, null]) assert.equal(cleanProfile({ difficulty: bad }).difficulty, "normal");
+  const base = startBonus(cleanProfile({ background: "merchant" })), easy = startBonus(cleanProfile({ background: "merchant", difficulty: "easy" })), hard = startBonus(cleanProfile({ background: "seafarer", difficulty: "hard" }));
+  assert.equal(base.cash, 300); assert.equal(easy.cash, 1300); assert.equal(hard.cash, -500);
+  assert.ok(Math.abs(easy.upkeepMul - 0.8) < 1e-9); assert.ok(Math.abs(hard.upkeepMul - 0.85 * 1.25) < 1e-9);
+});
