@@ -10,7 +10,7 @@ export const gunCond = (ship) => { const c = Number(ship.gunCond); return Number
 export const GUN_WEAR_PER_DAY = 0.4, GUN_REPAIR_SHARE = 0.4; // sea wear per day; full repair costs 40% of the cannons' price
 export const defenceOf = (ship) => Math.round(cannonsOf(ship) * 10 * gunCond(ship) / 100);
 /** Armament wears out while sailing. Call once per day for a ship at sea. Fights will use wearGunsBy too. */
-export const wearGunsBy = (ship, pct) => { if (cannonsOf(ship) > 0) ship.gunCond = Math.max(10, gunCond(ship) - pct); };
+export const wearGunsBy = (ship, pct) => { if (cannonsOf(ship) > 0) { const c = gunCond(ship); ship.gunCond = Math.max(Math.min(c, 10), c - pct); } }; // wear stops at 10% and never raises a lower value
 export const wearGuns = (ship) => wearGunsBy(ship, GUN_WEAR_PER_DAY);
 /** Cost to bring the armament back to 100%: proportional to the damage and to the number of cannons. */
 export const gunRepairCost = (ship) => Math.round(cannonsOf(ship) * CANNON_PRICE * GUN_REPAIR_SHARE * (100 - gunCond(ship)) / 100 * 100) / 100;

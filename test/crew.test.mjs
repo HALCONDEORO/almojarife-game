@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, buyCannon } from "../src/game/game.mjs";
-import { CANNON_PRICE, CANNON_UPKEEP, maxCannons, defenceOf, splitCost } from "../src/game/crew.mjs";
+import { CANNON_PRICE, CANNON_UPKEEP, maxCannons, defenceOf, splitCost, wearGunsBy } from "../src/game/crew.mjs";
 import { SETTLE_EVERY } from "../src/game/ledger.mjs";
 const world = loadWorld();
 const game = () => { const g = newGame(world); g.eventsOn = false; return g; };
@@ -66,4 +66,12 @@ test("repairing the armament at port costs in proportion to damage and cannons",
 test("a ship without cannons does not wear and a new cannon mixes into the condition", () => {
   const g = game(), s = g.ships[0]; wearGunsBy(s, 30); assert.equal(gunCond(s), 100);
   buyCannon(g, s); wearGunsBy(s, 40); buyCannon(g, s); assert.equal(gunCond(s), (60 + 100) / 2);
+});
+test("wear never raises armament condition: below the 10% floor it stays, at the floor it stays, above it falls to at least 10", () => {
+  const mk = (c) => ({ type: "cog", cannons: 2, gunCond: c });
+  const a = mk(0); wearGunsBy(a, 0.4); assert.equal(a.gunCond, 0);
+  const b = mk(5); wearGunsBy(b, 3); assert.equal(b.gunCond, 5);
+  const c = mk(10); wearGunsBy(c, 1); assert.equal(c.gunCond, 10);
+  const d = mk(10.2); wearGunsBy(d, 5); assert.equal(d.gunCond, 10);
+  const e = mk(80); wearGunsBy(e, 5); assert.equal(e.gunCond, 75);
 });
