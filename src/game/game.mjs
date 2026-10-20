@@ -150,6 +150,7 @@ export function repairShip(g, ship) {
 }
 export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * SELL_RATE * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
 export function sellShip(g, ship) {
+  if(g.over||!g.ships.includes(ship))return {ok:false,reason:"not an active owned ship"};
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (g.ships.length <= 1) return { ok: false, reason: "last ship" };
   if (cargoUsed(ship) > 0) return { ok: false, reason: "hold not empty" };
@@ -162,6 +163,7 @@ export const warehouseOf = (g, city) => g.warehouses?.[city] ?? null;
 /** Buy a warehouse in the port where a ship is docked. One per port. */
 export function buyWarehouse(g, city) {
   if (g.over) return { ok: false, reason: "game over" };
+  if(!g.ships.some(s=>s.at===city&&!s.voyage))return {ok:false,reason:"no ship here"};
   g.warehouses ??= {};
   if (g.warehouses[city]) return { ok: false, reason: "already owned" };
   if (g.cash < WAREHOUSE_PRICE) return { ok: false, reason: "no cash" };
@@ -170,21 +172,29 @@ export function buyWarehouse(g, city) {
 }
 /** Move goods from the ship's hold into the warehouse of the port where it is docked. */
 export function storeGoods(g, ship, good, qty) {
+  if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
   qty = Math.min(Math.floor(qty), ship.cargo[good] ?? 0, WAREHOUSE_CAP - whUsed(w));
   if (!(qty > 0)) return { ok: false, reason: "nothing to store" };
-  ship.cargo[good] -= qty; if (!ship.cargo[good]) delete ship.cargo[good];
+  const had=ship.cargo[good],paid=ship.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  if(ship.basis)ship.basis[good]=paid-transferred;
+  (w.basis??={})[good]=(w.basis[good]??0)+transferred;
+  ship.cargo[good] -= qty; if (!ship.cargo[good]){delete ship.cargo[good];if(ship.basis)delete ship.basis[good];}
   w.goods[good] = (w.goods[good] ?? 0) + qty;
   return { ok: true, qty };
 }
 /** Move goods from the warehouse into the hold (limited by the free room). */
 export function takeGoods(g, ship, good, qty) {
+  if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
   qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, SHIP_TYPES[ship.type].capacity - cargoUsed(ship));
   if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
-  w.goods[good] -= qty; if (!w.goods[good]) delete w.goods[good];
+  const had=w.goods[good],paid=w.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  if(w.basis)w.basis[good]=paid-transferred;
+  (ship.basis??={})[good]=(ship.basis[good]??0)+transferred;
+  w.goods[good] -= qty; if (!w.goods[good]){delete w.goods[good];if(w.basis)delete w.basis[good];}
   ship.cargo[good] = (ship.cargo[good] ?? 0) + qty;
   return { ok: true, qty };
 }
