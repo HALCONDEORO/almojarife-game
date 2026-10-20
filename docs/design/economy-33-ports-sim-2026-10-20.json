@@ -1,8 +1,10 @@
 {
+ "scope": "Trading bots only. No player upkeep, wages, tolls, loan costs, win/loss or construction. Cash growth is not global money inflation.",
+ "sampling": "Clamps use the unrounded model ratio, sampled every 30 days; not an every-day safety bound.",
  "games": 50,
  "days": 1095,
  "cities": 33,
- "seconds": 55,
+ "seconds": 65,
  "finalCashMedian": {
   "greedy": 30706,
   "wanderer": 169896,
@@ -18,10 +20,122 @@
   "wanderer": 256704,
   "shuttle": 931488
  },
- "brokeShare": {
+ "lowCashEmptyHoldShare": {
   "greedy": 0,
   "wanderer": 0,
   "shuttle": 0
+ },
+ "cannotAffordOneUnitShare": {
+  "greedy": 0,
+  "wanderer": 0,
+  "shuttle": 0
+ },
+ "arrivalsByStrategy": {
+  "greedy": {
+   "cadiz": 16353,
+   "sevilla": 17761,
+   "lisboa": 6,
+   "valencia": 11,
+   "barcelona": 738,
+   "palma": 339,
+   "bilbao": 96,
+   "tanger": 1628,
+   "cartagena": 3,
+   "porto": 5,
+   "setubal": 6,
+   "faro": 27,
+   "huelva": 15000,
+   "malaga": 38,
+   "almeria": 7,
+   "alicante": 10,
+   "ibiza": 75,
+   "tarragona": 354,
+   "santander": 12,
+   "sansebastian": 95,
+   "coruna": 0,
+   "vigo": 10,
+   "ceuta": 442,
+   "melilla": 100,
+   "tetuan": 186,
+   "arcila": 118,
+   "larache": 107,
+   "rabat": 426,
+   "casablanca": 17,
+   "mazagan": 11,
+   "oran": 4,
+   "argel": 0,
+   "mostaganem": 11
+  },
+  "wanderer": {
+   "cadiz": 391,
+   "sevilla": 374,
+   "lisboa": 402,
+   "valencia": 356,
+   "barcelona": 353,
+   "palma": 341,
+   "bilbao": 337,
+   "tanger": 336,
+   "cartagena": 373,
+   "porto": 357,
+   "setubal": 367,
+   "faro": 382,
+   "huelva": 362,
+   "malaga": 340,
+   "almeria": 347,
+   "alicante": 367,
+   "ibiza": 410,
+   "tarragona": 374,
+   "santander": 363,
+   "sansebastian": 372,
+   "coruna": 343,
+   "vigo": 356,
+   "ceuta": 344,
+   "melilla": 367,
+   "tetuan": 356,
+   "arcila": 370,
+   "larache": 392,
+   "rabat": 351,
+   "casablanca": 397,
+   "mazagan": 362,
+   "oran": 380,
+   "argel": 358,
+   "mostaganem": 377
+  },
+  "shuttle": {
+   "cadiz": 858,
+   "sevilla": 534,
+   "lisboa": 396,
+   "valencia": 645,
+   "barcelona": 449,
+   "palma": 720,
+   "bilbao": 173,
+   "tanger": 593,
+   "cartagena": 706,
+   "porto": 180,
+   "setubal": 477,
+   "faro": 723,
+   "huelva": 637,
+   "malaga": 616,
+   "almeria": 772,
+   "alicante": 414,
+   "ibiza": 323,
+   "tarragona": 63,
+   "santander": 237,
+   "sansebastian": 77,
+   "coruna": 208,
+   "vigo": 511,
+   "ceuta": 1242,
+   "melilla": 809,
+   "tetuan": 1155,
+   "arcila": 449,
+   "larache": 781,
+   "rabat": 656,
+   "casablanca": 381,
+   "mazagan": 414,
+   "oran": 420,
+   "argel": 474,
+   "mostaganem": 475
+  }
  },
  "medianCashByYear": {
   "1": 40167,
@@ -29,7 +143,7 @@
   "3": 127026
  },
  "pinnedPctByGood": {
-  "grain": 0.2,
+  "grain": 0.1,
   "dried_fish": 0,
   "salt": 0,
   "wool": 0,
@@ -49,11 +163,7 @@
   ],
   [
    "cartagena",
-   0.4
-  ],
-  [
-   "cadiz",
-   0.1
+   0.2
   ],
   [
    "ceuta",
@@ -70,6 +180,10 @@
   [
    "rabat",
    0.1
+  ],
+  [
+   "cadiz",
+   0
   ],
   [
    "sevilla",
@@ -146,25 +260,5 @@
   "silk": 1377829,
   "sugar": 26052,
   "pepper": 635602
- },
- "staticTopRatios": [
-  {
-   "a": "cadiz",
-   "b": "valencia",
-   "g": "dried_fish",
-   "ratio": 2.666666666666667
-  },
-  {
-   "a": "cadiz",
-   "b": "barcelona",
-   "g": "dried_fish",
-   "ratio": 2.666666666666667
-  },
-  {
-   "a": "cadiz",
-   "b": "barcelona",
-   "g": "salt",
-   "ratio": 2.666666666666667
-  }
- ]
+ }
 }
