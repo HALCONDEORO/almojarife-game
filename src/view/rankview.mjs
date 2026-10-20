@@ -14,7 +14,7 @@ const T = {
 };
 export const rankName = (lang, id) => RANK_NAMES[lang]?.[id] ?? id;
 export function houseHtml(g, lang, worth, fmt, cityName, loanBase = 5000) {
-  const t = T[lang], i = g.rankIdx ?? 0, n = nextRank(worth), cities = Object.entries(g.rep ?? {}).sort((a, b) => b[1] - a[1]);
+  const t = T[lang], i = g.rankIdx ?? 0, n = nextRank(worth, g.rankIdx ?? 0), cities = Object.keys(g.rep ?? {}).map((c) => [c, repOf(g, c)]).sort((a, b) => b[1] - a[1]);
   let h = `<h3>${t.title}</h3><p>${t.rank}: <b>${rankName(lang, RANKS[i].id)}</b> · ${t.worth}: <b>${fmt(worth)}</b></p>`;
   h += `<p>${n ? t.next.replace("{r}", rankName(lang, n.rank.id)).replace("{m}", fmt(n.missing)) : t.top}</p>`;
   h += `<p><b>${t.perks}:</b> ${t.perk.replace("{c}", fmt(loanCapFor(g, loanBase)))} ${t.toll}</p><p><small>${t.info}</small></p>`;

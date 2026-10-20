@@ -41,3 +41,11 @@ test("texts exist in both languages", () => {
   const g = game(); addRespect(g, "cadiz", 5000);
   for (const l of ["es", "en"]) assert.ok(houseHtml(g, l, 3500, fmt, (c) => c).includes("cadiz"));
 });
+test("respect is kept in whole coins and the next rank respects a title already held", () => {
+  const g = game();
+  for (let i = 0; i < 10; i++) addRespect(g, "cadiz", 0.1);
+  assert.equal(Number.isInteger(g.rep.cadiz), true);
+  g.rankIdx = 3;
+  assert.equal(nextRank(100, g.rankIdx).rank.id, "magnate");
+  assert.equal(nextRank(100).rank.id, "trader");
+});
