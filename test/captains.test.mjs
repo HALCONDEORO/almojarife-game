@@ -21,7 +21,7 @@ test('rejected hire never mutates: wrong ship, sea, wrong port, no cash, game ov
 test('captain unique across ships, save restore, old and malformed states safe',()=>{
  const g=setup(),s=g.ships[0],id=captainRoster(g,'cadiz')[0].id;hireCaptain(g,s,id);g.ships.push({id:2,at:'cadiz'});
  assert.equal(hireCaptain(g,g.ships[1],id).ok,false);
- const r=deserialize(serialize(g,'House'),g.world).g;assert.deepEqual(captainOf(r.ships[0]),captainOf(s));assert.equal(captainRoster(r,'cadiz').length,0);
+ g.profile??={home:'cadiz'};const r=deserialize(serialize(g,'House'),g.world).g;assert.deepEqual(captainOf(r.ships[0]),captainOf(s));assert.equal(captainRoster(r,'cadiz').length,0);
  assert.equal(captainOf({}),null);assert.equal(captainSpeed({}),1);assert.equal(captainWage({}),0);
  assert.equal(captainSpeed({captain:{id:'x',name:'X',navigation:99,wage:Infinity}}),1);
  assert.equal(captainRoster(g,'unknown').length,0);

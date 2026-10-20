@@ -20,5 +20,9 @@ export function deserialize(save, world) {
   const s = migrate(save);
   const st = s.state;
   if (!st || !Array.isArray(st.ships) || typeof st.cash !== "number" || typeof st.day !== "number" || !st.market) throw new Error("save is damaged");
+  // Pre-launch saves are not kept: reject them clearly instead of failing later with a TypeError.
+  if (!st.profile || typeof st.profile.home !== "string") throw new Error("save is from a test build and is not kept");
+  for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalDays) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
+  for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
   return { g: { world, ...JSON.parse(JSON.stringify(st)) }, company: cleanCompany(s.company) };
 }
