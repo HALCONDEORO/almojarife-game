@@ -2,8 +2,8 @@
 import { setRoute, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
-import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns } from "./crew.mjs";
-export const buyCannon = buyCannonShip, repairGuns = repairGunsShip;
+import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
+export const buyCannon = buyCannonShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
 import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
@@ -96,7 +96,9 @@ export function doSell(g, ship, good, qty) {
 }
 export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
+  if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   const r = sail(g.world, ship, to);
+  if (r.ok && speedFactor(ship) !== 1) { const d = Math.max(1, Math.ceil(ship.voyage.totalDays / speedFactor(ship))); ship.voyage.totalDays = d; ship.voyage.daysLeft = d; r.days = d; }
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, days: r.days });
   return r;
 }
