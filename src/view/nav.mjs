@@ -1,4 +1,5 @@
 // Map navigation logic that does not need a browser: travel estimate and the context-menu entries.
+import { playerTravelDays } from "../game/traveltime.mjs";
 import { route } from "../sim/world.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
 /** {ok, days, km, path} for sending `ship` to `to`, or {ok:false, reason}. */
@@ -8,7 +9,9 @@ export function travelEstimate(world, ship, to) {
   if (ship.at === to) return { ok: false, reason: "already here" };
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
-  return { ok: true, km: Math.round(r.km), days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)), path: r.path };
+  const days=playerTravelDays(Math.max(1,Math.ceil(r.km/SHIP_TYPES[ship.type].kmPerDay)),ship);
+  if(days===null)return {ok:false,reason:"crew"};
+  return { ok: true, km: Math.round(r.km), days, path: r.path };
 }
 /** Entries for the right-click / long-press menu on a port. Each: {id, enabled, days?}. */
 export function cityMenu(world, ship, city) {
