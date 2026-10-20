@@ -7,6 +7,8 @@ import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "
 import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { previewBuy, previewSell } from "../src/sim/trade.mjs";
 import { citySceneSvg } from "../src/view/cityscene.mjs";
+import { reportsHtml, inboxHtml, LT, badge } from "../src/view/ledgerview.mjs";
+import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
 import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
@@ -144,6 +146,7 @@ function render() {
   else if (company) co.textContent = `· ${company}`;
   $("day").textContent = `${t.day} ${g.day}/${DEADLINE_DAYS} · ${t.seasons[seasonOf(g.day)]}`;
   $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`;
+  $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, unread(g));
   $("goal").textContent = `${t.goal}: ${fmt(GOAL_CASH)}`;
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${t.speed} ${speed}x`;
@@ -278,6 +281,17 @@ document.addEventListener("keydown", (e) => {
 $("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
 $("new").onclick = () => showMenu();
+function showLedger(kind) {
+  const el = $("title"), wasPlaying = playing; playing = false;
+  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt) : inboxHtml(g, lang, fmt, cityName);
+  const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
+    $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
+    if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
+    el.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); draw(); }); };
+  draw();
+}
+$("rep").onclick = () => showLedger("rep");
+$("msg").onclick = () => showLedger("msg");
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
@@ -291,7 +305,7 @@ function showMenu() {
   $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
   $("m-quit").onclick = () => { autosave(); playing = false; showTitle(); };
 }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
 function showCreate(name) {
   t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");

@@ -1,5 +1,6 @@
 // Events at sea, driven by data (world.events in data/world.json). Own design.
 // Pure game logic: no DOM. The page shows g.pending as a choice box and calls resolveEvent.
+import { post } from "./ledger.mjs";
 import { seeded } from "../view/cityscene.mjs";
 export const EVENT_CHANCE = 0.07; // per day, per player ship at sea, while nothing is pending
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -70,6 +71,7 @@ export function resolveEvent(g, choiceId) {
     done.days = nd - v.daysLeft; v.daysLeft = nd; if (v.totalDays != null) v.totalDays = Math.max(v.totalDays + done.days, nd);
   }
   g.log.unshift({ day: g.day, key: "event", txt: out.text, ship: g.pending.ship }); if (g.log.length > 30) g.log.pop();
+  post(g, "event", { txt: out.text, ship: g.pending.ship });
   g.pending = null;
   return { ok: true, text: out.text, effects: done };
 }

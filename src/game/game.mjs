@@ -1,4 +1,5 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
+import { accrueDay, settleWeek, accruedTotal, post } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
@@ -38,7 +39,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export function netWorth(g) {
-  let w = g.cash;
+  let w = g.cash - accruedTotal(g) - (g.accrued?.debt ?? 0); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;
@@ -53,9 +54,10 @@ export function advanceDay(g) {
   for (const s of g.ships) {
     const was = s.voyage;
     tickShip(s);
-    g.cash -= SHIP_TYPES[s.type].upkeepPerDay * (g.upkeepMul ?? 1);
-    if (was && !s.voyage) say(g, "arrive", { ship: s.id, city: s.at });
+    accrueDay(g, s);
+    if (was && !s.voyage) { say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
   }
+  settleWeek(g);
   if (g.cash < 0) g.cash = 0;
   rollEvent(g);
   deliverOrders(g);
@@ -112,7 +114,7 @@ export function deliverOrders(g) {
   for (const o of [...(g.orders ?? [])]) {
     if (o.readyDay > g.day) continue;
     g.orders.splice(g.orders.indexOf(o), 1);
-    const s = makeShip(g.nextId++, o.type, o.at); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id });
+    const s = makeShip(g.nextId++, o.type, o.at); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id }); post(g, "order", { city: o.at, type: o.type, ship: s.id });
   }
 }
 export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
