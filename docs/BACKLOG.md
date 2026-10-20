@@ -112,3 +112,13 @@ The game is made for desktop computers. Mobile is no longer a priority: it must 
 - DONE (owner 09:20, 20/10, "negative money"): cash can go negative at settlement, 2% weekly interest on the deficit, bankruptcy past -3000, red coin counter, debt message and report line (design: docs/design/weekly-settlement.md).
 - DONE (owner 09:20): bank / moneylender in the port: loans with interest, term and limit, repayment, shown in reports and messages.
   Devil's advocate: (a) a loan plus negative cash is two kinds of debt: keep one rule, loans are priced lower than overdraft (e.g. 1% a week vs 2%) so asking is better than falling into it; (b) unlimited loans break the "50,000 in 365 days" goal: cap by net worth (e.g. half of net worth, max 5000) and one open loan per port; (c) a death spiral for new players: warn before the due date and let a late loan become overdraft instead of ending the game at once; (d) historical flavour: a moneylender in a 15th century port is fitting; keep names generic.
+
+## Patrician-style mechanics (owner 09:50, 20/10: "do all of them", in this order; ideas only, nothing copied)
+1. DONE: automatic trade routes (src/game/routes.mjs). Devil's advocate: a ship that sails by itself can make the game a spectator sport; so it uses the normal fees, price impact, hold space and cash, never sails empty from A, and reports every sale and stall in messages. Later: several goods per leg, stop-loss.
+2. NEXT: ranks and titles by net worth, with small perks (e.g. cheaper repairs). Objection: perks can snowball; keep them tiny.
+3. NEXT: pirates and escorts (route risk, guns, convoy). Objection: random losses feel unfair; show the risk before sailing and let guns reduce it.
+4. NEXT: famine and plague events that move prices in one port. Objection: must not be unwinnable; short and local.
+5. NEXT: own workshops that produce goods. Objection: large; start with one type (e.g. brewery).
+6. NEXT: crew wages and cannon cost as weekly lines in the report.
+7. NEXT: tolls and trade privileges per city.
+8. NEXT (owner 09:52): free navigation across the map, not only port to port. Depends on a coastline and sea mask for the map before it can be done safely.
