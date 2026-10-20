@@ -1,4 +1,5 @@
-import {encountersHtml} from "../src/view/encounterview.mjs";
+import {resolvePirates,dismissEncounterReport} from '../src/game/encounterdaily.mjs';
+import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
 import { premises } from "../src/view/premises.mjs";
@@ -119,7 +120,7 @@ function drawShips() {
 }
 function tickDay() {
   const before = g.ships.map((x) => !!x.voyage);
-  advanceDay(g); progress = 0; departed.clear(); autosave(); if (g.pending) playing = false;
+  advanceDay(g); progress = 0; departed.clear(); autosave(); if (g.pending||g.encounterReport) playing = false;
   if (g.ships.some((x, i) => before[i] && !x.voyage)) playing = false; // pause when your ship arrives
   render();
 }
@@ -158,6 +159,14 @@ function act(fn) {
 }
 
 function render() {
+  document.getElementById('sea-modal')?.remove();
+  if(g.pending?.event==='sea-pirates'||g.encounterReport){
+   playing=false;const modal=document.createElement('div');modal.id='sea-modal';modal.innerHTML=encounterDialogHtml(g,lang);document.body.appendChild(modal);
+   modal.querySelectorAll('[data-sea]').forEach(b=>b.onclick=()=>act(()=>resolvePirates(g,b.dataset.sea)));
+   modal.querySelector('[data-sea-close]')?.addEventListener('click',()=>act(()=>dismissEncounterReport(g)));
+   modal.querySelector('button')?.focus();
+  }
+
   t = T[lang]; const s = ship();
   const pr = g.profile, co = $("co"); co.textContent = "";
   if (pr) { const box = document.createElement("span"); box.innerHTML = crestSvg(pr.crest, 22, "top"); co.append(box, ` ${pr.company}`); if (pr.character) { const sm = document.createElement("small"); sm.textContent = ` (${pr.character})`; co.append(sm); } }
@@ -459,3 +468,12 @@ function showTitle() {
 start(null, false); // background game behind the title screen; it never overwrites a save
 showTitle();
 requestAnimationFrame(frame);
+
+// Keep keyboard actions within the encounter window, including when another key handler exists.
+document.addEventListener('keydown',e=>{
+ const modal=document.getElementById('sea-modal');if(!modal)return;
+ e.stopImmediatePropagation();
+ const buttons=[...modal.querySelectorAll('button')];
+ if(e.key==='Tab'){e.preventDefault();const i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus();}
+ else if(e.key==='Escape')e.preventDefault();
+},true);
