@@ -26,7 +26,8 @@ export function automaticEncounter(g,ship){
 
 /** Original escape rule: intact hull, crew and navigation improve the displayed chance. */
 export function escapeChance(ship){
- const hull=Math.min(100,Math.max(0,ship.hull??100));
+ const rawHull=ship.hull;
+ const hull=Number.isFinite(rawHull)?Math.min(100,Math.max(0,rawHull)):100;
  const nav=ship.captain?.navigation;
  return Math.round(Math.min(85,Math.max(15,35+hull*.25+speedFactor(ship)*10+(Number.isSafeInteger(nav)&&nav>=0&&nav<=3?nav*3:0))));
 }
