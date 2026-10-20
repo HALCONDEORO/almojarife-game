@@ -1,3 +1,5 @@
+import {captainRoster,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
+import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
@@ -196,6 +198,7 @@ function render() {
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   h += g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
   h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.daysLeft} ${t.days})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}<br>`;
+  h += assignedCaptainHtml(s,lang);
   if (!s.voyage && !g.over) {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
@@ -239,6 +242,7 @@ function render() {
       const ls = g.loans ?? [];
       h += ls.length ? ls.map((l) => `<div class="card">${t.bankLoan.replace("{d}", l.taken).replace("{l}", fmt(l.left)).replace("{u}", l.due)}<br><button data-repay="${l.id}:all" ${g.cash > 0 ? "" : "disabled"}>${t.bankRepay}</button> <button data-repay="${l.id}:100" ${g.cash >= 100 ? "" : "disabled"}>${t.bankRepay100}</button></div>`).join("") : `<p><i>${t.bankNone}</i></p>`;
     } else if (tab === "tavern") {
+      h += tavernCaptainsHtml(g,s,lang);
       const unk = world.cities.filter((c) => !isLive(g, c.id));
       h += `<p>${t.tavernInfo}</p>` + (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}">${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button></div>` : `<p><i>${t.tavernNone}</i></p>`);
       { const L = crewLimits(s), c = crewOf(s), sp = speedFactor(s);
@@ -276,6 +280,15 @@ function render() {
   });
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
   P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); act(() => doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v)); });
+  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
+    const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
+    const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
+    el.innerHTML=`<div class="box"><h2>${t.confirm}</h2><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div>`;
+    el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+(T[lang].types[s.type]??s.type)+" "+s.id;
+    $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
+    $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
+  });
+  P.querySelector("[data-captain-dismiss]")?.addEventListener("click",()=>act(()=>dismissCaptain(g,s)));
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => act(() => buyRumor(g, P.querySelector("#rum").value, s.at));
   P.querySelector("[data-local-store]")?.addEventListener("click",()=>{if($("v3d"))openCityPanel("store");else{tab="store";render();}});
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
@@ -391,7 +404,7 @@ function showMenu() {
   $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
   $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
 }
-document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); } });
+document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
 function showCreate(name) {
   t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
