@@ -1,0 +1,24 @@
+{
+  "scope": "Isolated 1095-day six-bot stress test. Candidate monthly town input purchases use a hypothetical 500-coin budget per event. Not player finance, not factories or construction enabled in game.",
+  "recipes": true,
+  "days": 1095,
+  "counts": {
+    "weave": 396,
+    "warehouse": 12
+  },
+  "consumed": {
+    "wool": 1584,
+    "timber": 240,
+    "iron": 72
+  },
+  "made": {
+    "cloth": 792
+  },
+  "failedPurchases": {
+    "no cash": 789,
+    "missing materials": 24
+  },
+  "hypotheticalSpend": 116326,
+  "exactClampShare": 0.0009985701766523684,
+  "finalNpcCash": 217237
+}
