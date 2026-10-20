@@ -60,14 +60,13 @@ export function netWorth(g) {
 }
 /** Advance one day: markets, AI traders, ships, upkeep; then check the end. */
 export function advanceDay(g) {
-  if (g.over || g.pending) return; // an event waits for the player's choice
+  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   g.day++;
   tickMarket(g.market, g.day, g.world);
   for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {
     const was = s.voyage;
-    automaticEncounter(g,s);
     if (s.voyage) wearGuns(s); // armament wears at sea like the hull
     tickShip(s);
     accrueDay(g, s);
@@ -84,10 +83,11 @@ export function advanceDay(g) {
   refreshIntel(g);
   if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
+  if(!g.over)for(const s of g.ships)automaticEncounter(g,s);
 }
 export function waitUntilArrival(g, ship) {
   let n = 0;
-  while (ship.voyage && !g.over && !g.pending && n++ < 400) advanceDay(g);
+  while (ship.voyage && !g.over && !g.pending && !g.encounterReport && n++ < 400) advanceDay(g);
 }
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };

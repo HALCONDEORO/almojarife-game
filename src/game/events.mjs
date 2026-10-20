@@ -29,7 +29,7 @@ export function validateEvents(list, textKeys = ["es", "en"]) {
 /** Maybe start an event for a player ship at sea. Sets g.pending and returns it, or null. */
 export function rollEvent(g) {
   const list = g.world.events ?? [];
-  if (!g.eventsOn || g.pending || !list.length || g.over) return null; // off unless the game was started with events
+  if (!g.eventsOn || g.pending || g.encounterReport || !list.length || g.over) return null; // off unless the game was started with events
   for (const ship of g.ships) {
     if (!ship.voyage) continue;
     const r = seeded(`ev:${g.day}:${ship.id}:${g.seed ?? 0}`);
@@ -44,7 +44,7 @@ export function rollEvent(g) {
   }
   return null;
 }
-export const pendingEvent = (g) => g.pending ? { ...g.world.events.find((e) => e.id === g.pending.event), ship: g.pending.ship } : null;
+export const pendingEvent = (g) => g.pending && g.pending.event!=='sea-pirates' ? { ...g.world.events.find((e) => e.id === g.pending.event), ship: g.pending.ship } : null;
 /** Apply a choice. Returns {ok, text:{es,en}, effects} and clears g.pending. */
 export function resolveEvent(g, choiceId) {
   if (!g.pending) return { ok: false, reason: "no event" };

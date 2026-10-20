@@ -38,6 +38,6 @@ export function applyEncounter(g,ship,outcome){
 
 export function encounterText(e,lang='es'){
  const es=lang==='es',kind=e.kind==='pirates'?(es?'Piratas':'Pirates'):(es?'Tormenta':'Storm');
- const result=e.result==='repelled'?(es?'rechazados':'repelled'):e.result==='raided'?(es?'asalto sufrido':'raided'):e.result==='severe'?(es?'fuerte':'severe'):(es?'superada':'weathered');
- return es?`${kind}: ${result}. Casco -${e.hullLost}; carga perdida ${e.cargoLost}; retraso ${e.delay} días.`:`${kind}: ${result}. Hull -${e.hullLost}; cargo lost ${e.cargoLost}; delay ${e.delay} days.`;
+ const result=e.result==='escaped'?(es?'huida lograda':'escaped'):e.result==='repelled'?(es?'rechazados':'repelled'):e.result==='raided'?(es?'asalto sufrido':'raided'):e.result==='severe'?(es?'fuerte':'severe'):(es?'superada':'weathered');
+ return es?`${kind}: ${result}. Casco -${e.hullLost}; carga perdida ${e.cargoLost}; retraso ${e.delay} ${e.delay===1?'día':'días'}.`:`${kind}: ${result}. Hull -${e.hullLost}; cargo lost ${e.cargoLost}; delay ${e.delay} ${e.delay===1?'day':'days'}.`;
 }
