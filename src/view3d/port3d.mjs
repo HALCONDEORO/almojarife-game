@@ -9,6 +9,11 @@ export const BUILDINGS = [
   { id: "tavern", tab: "tavern", x: -3.5, z: -5.6, w: 3, d: 2.6, h: 3.2 },
   { id: "shipyard", tab: "yard", x: 2.5, z: -5.6, w: 5, d: 2.8, h: 3 },
 ];
+/** Building level 1..3 from the city size, never below an upgrade level the player already holds. Pure. */
+export function buildingLevel(id, pop = 8000, upgrades = {}) {
+  const bySize = pop >= 25000 ? 3 : pop >= 10000 ? 2 : 1, up = Number.isInteger(upgrades?.[id]) ? upgrades[id] : 1;
+  return Math.max(1, Math.min(3, Math.max(bySize, up)));
+}
 /** Which game panel a building opens; null for anything else (houses, water, unknown ids). */
 export const tabForBuilding = (id) => BUILDINGS.find((b) => b.id === id)?.tab ?? null;
 
@@ -32,7 +37,7 @@ export function skyFor(t) {
 }
 const hex = ([r, g, b]) => (r << 16) | (g << 8) | b;
 
-export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5 } = {}) {
+export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {} } = {}) {
   const scene = new THREE.Scene(), L = portLayout(id, pop);
   const sk = skyFor(tod); scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(hex(sk.sky), 30, 80);
   scene.add(new THREE.HemisphereLight(0xfff4d6, 0x4a6b7a, 1.1));
@@ -51,7 +56,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   }
   const awning = [0xb33a2a, 0xf1e8cf], bm = { bank: 0xcfc4a8, market: 0xd9c9a0, tavern: 0xc9a27a, shipyard: 0xa98a5c };
   for (const b of BUILDINGS) { // each building is a group named after it, so a click can be traced back to its id
-    const g = new THREE.Group(); g.name = "building:" + b.id; g.userData.building = b.id; g.position.set(b.x, 0, b.z);
+    const lv = buildingLevel(b.id, pop, upgrades), g = new THREE.Group(); g.userData.level = lv; g.name = "building:" + b.id; g.userData.building = b.id; g.position.set(b.x, 0, b.z);
     const body = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), new THREE.MeshStandardMaterial({ color: bm[b.id], roughness: 0.9 })); body.position.y = b.h / 2 + 0.2;
     const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.max(b.w, b.d) * 0.78, 1.2, 4), roof); rf.rotation.y = Math.PI / 4; rf.position.y = b.h + 0.8; rf.scale.set(b.w >= b.d ? 1.15 : 1, 1, b.d > b.w ? 1.15 : 0.9);
     const door = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.06), dark); door.position.set(0, 0.9, b.d / 2 + 0.03);
@@ -60,6 +65,16 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     if (b.id === "tavern") { const sign = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x8a5a1e, roughness: 0.8 })); sign.position.set(b.w / 2 + 0.5, 2.4, b.d / 2 + 0.1); g.add(sign); }
     if (b.id === "shipyard") { const ramp = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.15, 3.6), wood0); ramp.position.set(0, 0.28, b.d / 2 + 1.8); ramp.rotation.x = 0.1; g.add(ramp); }
     if (b.id === "bank") for (let i = -1; i <= 1; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, b.h, 8), wall); c.position.set(i * 0.8, b.h / 2 + 0.2, b.d / 2 + 0.25); g.add(c); }
+    if (lv >= 2) { // taller: a second block on top, a banner pole
+      const up = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.8, 1.2, b.d * 0.8), new THREE.MeshStandardMaterial({ color: bm[b.id], roughness: 0.9 })); up.position.y = b.h + 0.8; g.add(up); rf.position.y = b.h + 2;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 5), wood0); pole.position.set(b.w / 2 - 0.2, b.h + 3, 0); g.add(pole);
+      const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshStandardMaterial({ color: 0xb33a2a, side: THREE.DoubleSide })); fl.position.set(b.w / 2 + 0.2, b.h + 3.5, 0); g.add(fl);
+    }
+    if (lv >= 3) { // stone plinth, lanterns at the door and a gold ridge
+      const pl = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.6, 0.35, b.d + 0.6), new THREE.MeshStandardMaterial({ color: 0x9a9283, roughness: 1 })); pl.position.y = 0.3; g.add(pl);
+      for (const sx of [-1, 1]) { const lt = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.22), new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0x7a5200 })); lt.position.set(sx * 0.9, 1.9, b.d / 2 + 0.2); g.add(lt); }
+      const ridge = new THREE.Mesh(new THREE.BoxGeometry(Math.max(b.w, b.d) * 0.9, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0xc9962a, metalness: 0.4, roughness: 0.5 })); ridge.position.y = b.h + 3; g.add(ridge);
+    }
     scene.add(g);
   }
   if (warehouse) { // the player's warehouse: a long timber-framed hall on the quay
