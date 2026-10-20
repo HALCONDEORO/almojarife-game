@@ -26,3 +26,9 @@ test("a ship that docks pays the toll", () => {
   const before = tollsDue(g); advanceDay(g);
   assert.ok(tollsDue(g) > before);
 });
+import { netWorth } from "../src/game/game.mjs";
+test("accrued tolls count against net worth until they are paid (exact)", () => {
+  const g = game(), s = g.ships[0], w0 = netWorth(g);
+  const t = chargeToll(g, s, "cadiz"); assert.ok(t > 0);
+  assert.equal(Math.round((w0 - netWorth(g)) * 100) / 100, t);
+});
