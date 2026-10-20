@@ -156,3 +156,12 @@ test("dueNow counts interest on old carried debt that exceeds cash", () => {
   assert.equal(dueNow(g), 102);
   const before = g.cash; g.day = SETTLE_EVERY; const r = settleWeek(g); assert.equal(before - g.cash, 102); assert.equal(r.carried, 100); assert.equal(r.interest, 2);
 });
+
+test("old save: a week that started without a wages entry keeps the old wage share for those days", async () => {
+  const { accrueDay } = await import("../src/game/ledger.mjs");
+  const g = { day: 7, ships: [{ id: 1, type: "cog" }], accrued: { ships: { 1: 70 }, debt: 0 }, cash: 1000 };
+  accrueDay(g, g.ships[0]); // first day after the upgrade
+  const w = g.accrued.wages[1];
+  assert.ok(Math.abs(w - (70 * 0.6 + (g.accrued.ships[1] - 70) * 0.6)) < 1e-9, "wages cover the old part (60%) and the new day (real wages)");
+  assert.ok(w > 70 * 0.6, "not only the new day");
+});
