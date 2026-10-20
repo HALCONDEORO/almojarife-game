@@ -4,6 +4,7 @@ import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
 import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
 export const buyCannon = buyCannonShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
+import { openVoyage, recordSale } from "./voyages.mjs";
 import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
@@ -91,14 +92,15 @@ export function doBuy(g, ship, good, qty) {
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   const r = sell(g.world, g.market, ship, good, qty);
-  if (r.ok) { g.cash += r.revenue; logSell(g, good, r.qty, r.revenue); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.cash += r.revenue; recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
-  const r = sail(g.world, ship, to);
+  const from = ship.at, r = sail(g.world, ship, to);
   if (r.ok && speedFactor(ship) !== 1) { const d = Math.max(1, Math.ceil(ship.voyage.totalDays / speedFactor(ship))); ship.voyage.totalDays = d; ship.voyage.daysLeft = d; r.days = d; }
+  if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, days: r.days });
   return r;
 }

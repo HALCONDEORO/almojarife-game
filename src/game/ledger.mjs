@@ -64,6 +64,7 @@ export function logSell(g, good, qty, revenue) {
   b.qty -= used; b.cost = Math.max(0, b.cost - basis);
   const w = ((g.weekTrade ??= {})[good] ??= { sold: 0, revenue: 0, profit: 0 });
   w.sold += qty; w.revenue += revenue; w.profit += revenue - basis;
+  return revenue - basis; // profit of this sale on cost basis
 }
 function takeWeekTrades(g) {
   const out = Object.entries(g.weekTrade ?? {}).map(([good, w]) => ({ good, sold: w.sold, revenue: Math.round(w.revenue * 100) / 100, profit: Math.round(w.profit * 100) / 100 }));
