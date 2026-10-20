@@ -1,5 +1,6 @@
 // Player profile: character, house colours, coat of arms, home port and background.
 // Pure data and SVG-string builders (no DOM), so they can be tested. All art here is original work.
+import { DIFFICULTY_IDS, difficultyOpts } from "./difficulty.mjs";
 import { cleanCompany } from "./gamesave.mjs";
 
 export const PALETTE = ["#8a1c1c", "#1f4e8c", "#2f6b3a", "#c9962a", "#4b2a6b", "#222222", "#e8e0cc", "#b4571e"];
@@ -18,7 +19,7 @@ export const NAMES = { es: { merchant: "Hijo de mercader", seafarer: "Marino", s
 export const defaultProfile = (company = "") => ({
   company: cleanCompany(company), character: "", portrait: 0,
   crest: { shield: "heater", division: "pale", charge: "star", c1: PALETTE[0], c2: PALETTE[3] },
-  home: "cadiz", background: "merchant",
+  home: "cadiz", background: "merchant", difficulty: "normal",
 });
 const pick = (v, list, d) => (list.includes(v) ? v : d);
 const color = (v, d) => (PALETTE.includes(v) ? v : d);
@@ -27,10 +28,14 @@ export function cleanProfile(p, cityIds = ["cadiz"]) {
   return {
     company: cleanCompany(p?.company), character: cleanCompany(p?.character), portrait: Number.isInteger(p?.portrait) && p.portrait >= 0 && p.portrait < PORTRAITS ? p.portrait : 0,
     crest: { shield: pick(c.shield, SHIELDS, d.crest.shield), division: pick(c.division, DIVISIONS, d.crest.division), charge: pick(c.charge, CHARGES, d.crest.charge), c1: color(c.c1, d.crest.c1), c2: color(c.c2, d.crest.c2) },
-    home: pick(p?.home, cityIds, cityIds[0]), background: pick(p?.background, Object.keys(BACKGROUNDS), d.background),
+    home: pick(p?.home, cityIds, cityIds[0]), background: pick(p?.background, Object.keys(BACKGROUNDS), d.background), difficulty: pick(p?.difficulty, DIFFICULTY_IDS, d.difficulty),
   };
 }
-export const startBonus = (p) => BACKGROUNDS[p.background] ?? BACKGROUNDS.merchant;
+/** Start options: the background bonus plus the difficulty preset. Cash adds up and upkeep multiplies, so neither overwrites the other. */
+export function startBonus(p) {
+  const b = BACKGROUNDS[p.background] ?? BACKGROUNDS.merchant, d = difficultyOpts(p.difficulty);
+  return { cash: (b.cash ?? 0) + d.cash, upkeepMul: (b.upkeepMul ?? 1) * d.upkeepMul };
+}
 
 const SHIELD_PATH = { heater: "M5 5h90v50c0 34-24 52-45 62C29 107 5 89 5 55z", round: "M50 6a44 44 0 1 0 .01 0z" };
 const light = (hex) => hex === "#e8e0cc" || hex === "#c9962a";

@@ -8,7 +8,7 @@ test("a bad profile is cleaned to safe values", () => {
   assert.deepEqual(p.crest, defaultProfile().crest); assert.equal(p.home, "cadiz"); assert.equal(p.background, "merchant");
 });
 test("a good profile is kept", () => {
-  const p = { company: "Casa Luna", character: "Ana", portrait: 5, crest: { shield: "round", division: "cross", charge: "anchor", c1: PALETTE[1], c2: PALETTE[2] }, home: "lisboa", background: "seafarer" };
+  const p = { company: "Casa Luna", character: "Ana", portrait: 5, crest: { shield: "round", division: "cross", charge: "anchor", c1: PALETTE[1], c2: PALETTE[2] }, home: "lisboa", background: "seafarer", difficulty: "hard" };
   assert.deepEqual(cleanProfile(p, ["cadiz", "lisboa"]), p);
 });
 test("every crest combination makes a well-formed svg without scripts", () => {
