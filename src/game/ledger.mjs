@@ -18,7 +18,11 @@ export function accrueDay(g, ship) {
 }
 export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0);
 /** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and any debt from an old save). */
-export const dueNow = (g) => r2(accruedTotal(g) + (g.accrued?.debt ?? 0) + overdraftInterest(g) + loanInterest(g));
+export const dueNow = (g) => {
+  const debt = g.accrued?.debt ?? 0, cash = g.cash - debt; // old saves: the carried debt is folded into cash first
+  const interest = cash < 0 ? r2(-cash * OVERDRAFT_RATE) : 0;
+  return r2(accruedTotal(g) + debt + interest + loanInterest(g));
+};
 
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
@@ -65,9 +69,9 @@ export function settleWeek(g) {
   if (a.debt > 0) { g.cash -= a.debt; a.debt = 0; } // old saves: fold the carried debt into cash
   const week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = loanInterest(g), owed = r2(week + interest + lint);
   g.cash = r2(g.cash - owed);
-  processLoans(g, post); // loans that fell due are collected from cash (it can go negative)
+  const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, trades: takeWeekTrades(g), carried, paid: owed, debt, cashAfter: g.cash };
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
   a.ships = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();

@@ -40,8 +40,10 @@ export function repayLoan(g, id, amount, post = () => {}) {
 }
 /** At settlement: warn about loans due within a week, and collect the ones that fell due. */
 export function processLoans(g, post = () => {}) {
+  let taken = 0;
   for (const l of [...loansOf(g)]) {
-    if (l.due <= g.day) { g.cash = r2(g.cash - l.left); g.loans.splice(g.loans.indexOf(l), 1); post(g, "loanLate", { amt: l.left }); }
+    if (l.due <= g.day) { taken += l.left; g.cash = r2(g.cash - l.left); g.loans.splice(g.loans.indexOf(l), 1); post(g, "loanLate", { amt: l.left }); }
     else if (l.due - g.day <= 7 && !l.warned) { l.warned = true; post(g, "loanDue", { amt: l.left, dueDay: l.due }); }
   }
+  return r2(taken);
 }

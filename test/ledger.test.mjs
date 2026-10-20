@@ -151,3 +151,8 @@ test("view: warning and debt messages read well in both languages", () => {
   assert.equal(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "en", fmt), "Cash is negative: you owe 12. Every week 2% interest is charged on that debt. Past 3000, you go bankrupt.");
   assert.ok(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "es", fmt).includes("debes 12"));
 });
+test("dueNow counts interest on old carried debt that exceeds cash", () => {
+  const g = idle(); g.cash = 0; g.accrued = { ships: {}, debt: 100 };
+  assert.equal(dueNow(g), 102);
+  const before = g.cash; g.day = SETTLE_EVERY; const r = settleWeek(g); assert.equal(before - g.cash, 102); assert.equal(r.carried, 100); assert.equal(r.interest, 2);
+});
