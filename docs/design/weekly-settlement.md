@@ -9,7 +9,7 @@ Request (owner, 20/10/2026): running costs of ships should arrive every week, no
 
 ## Design
 - Upkeep accrues each day per ship (same daily rate and profile discount as before) and is paid on every 7th day.
-- Settlement pays what the player has. The rest carries over as debt, without interest, and is asked again next week.
+- Settlement always charges the full bill. If cash cannot cover it, cash goes negative (an overdraft). Each settlement charges 2% interest on the deficit, and past a deficit of 3000 the house is bankrupt (game over). Buying and repairs still need positive cash. Old saves with carried debt fold it into cash at the next settlement.
 - Net worth subtracts upkeep owed but not yet settled, so waiting for settlement day gives no free money. The goal check (cash >= goal) is unchanged.
 - Each settlement writes a report (one line per ship, totals, debt, cash after) and posts an inbox message. Ship arrivals, finished ship orders and resolved events also post messages.
 - Two header buttons: Reports (next payment in N days, due now, last 12 weeks) and Messages (unread count, mark one or all as read). Spanish and English.
@@ -18,6 +18,6 @@ Request (owner, 20/10/2026): running costs of ships should arrive every week, no
 ## Devil's advocate
 - Weekly payment makes cash look higher than it is. Mitigation: the Reports screen shows "due now", and net worth counts the debt.
 - A player can sell and spend right before settlement day. Mitigation: debt carries over, so overspending is paid next week, and net worth already includes it.
-- No interest means debt is free credit. Accepted for now: small amounts, and it shows in the report. Interest or a credit limit can come with the credit and reputation feature.
+- Interest and the bankruptcy limit (added 20/10) answer the free-credit objection. Rates and limit are constants in src/game/ledger.mjs to tune. It come with the credit and reputation feature.
 - Crew wages, guns and building upkeep are not in yet. The ledger takes any cost line, so they can be added as new accrual lines.
 - The inbox is capped at 60 messages and 52 weekly reports to keep saves small.

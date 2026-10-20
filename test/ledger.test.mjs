@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, netWorth } from "../src/game/game.mjs";
-import { SETTLE_EVERY, dueNow, accruedTotal, post, unread, markRead, markAllRead, settleWeek, MAX_INBOX, MAX_REPORTS } from "../src/game/ledger.mjs";
+import { SETTLE_EVERY, dueNow, accruedTotal, post, unread, markRead, markAllRead, settleWeek, MAX_INBOX, MAX_REPORTS, OVERDRAFT_LIMIT } from "../src/game/ledger.mjs";
 import { SHIP_TYPES } from "../src/sim/trade.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
@@ -29,13 +29,29 @@ test("upkeepMul still applies to the weekly bill", () => {
   for (let d = 0; d < 7; d++) advanceDay(g);
   assert.equal(g.cash, c0 - SHIP_TYPES.cog.upkeepPerDay * 7 * 0.5);
 });
-test("when cash is short, pay what you have, carry the rest as debt, and clear it next week", () => {
+test("when cash is short the balance goes negative; next week pays 2% interest on the deficit", () => {
   const g = idle(); g.cash = 5;
   for (let d = 0; d < 7; d++) advanceDay(g);
-  assert.equal(g.cash, 0); assert.equal(g.reports[0].paid, 5); assert.equal(g.reports[0].debt, 9); assert.equal(g.accrued.debt, 9);
-  g.cash = 100;
+  assert.equal(g.cash, -9); assert.equal(g.reports[0].paid, 14); assert.equal(g.reports[0].debt, 9); assert.equal(g.reports[0].interest, 0);
   for (let d = 0; d < 7; d++) advanceDay(g);
-  assert.equal(g.reports[0].carried, 9); assert.equal(g.reports[0].debt, 0); assert.equal(g.cash, 100 - 9 - 14);
+  assert.equal(g.reports[0].carried, 9); assert.equal(g.reports[0].interest, 0.18); assert.equal(g.cash, -9 - 14 - 0.18); assert.equal(g.reports[0].debt, 23.18);
+});
+test("going back to positive cash stops the interest", () => {
+  const g = idle(); g.cash = -50; g.day = 6; advanceDay(g); // settlement on day 7: interest 1 + one day of upkeep (2)
+  assert.equal(g.reports[0].interest, 1); assert.equal(g.cash, -53);
+  g.cash = 500; for (let d = 0; d < 7; d++) advanceDay(g);
+  assert.equal(g.reports[0].interest, 0); assert.equal(g.cash, 486);
+});
+test("bankruptcy: a deficit past the limit ends the game, a smaller one does not", () => {
+  const g = idle(); g.cash = -(OVERDRAFT_LIMIT - 5); advanceDay(g);
+  assert.equal(g.over, null);
+  g.cash = -(OVERDRAFT_LIMIT + 1); advanceDay(g);
+  assert.equal(g.over, "lose"); assert.equal(g.overReason, "bankrupt");
+});
+test("an old save with carried debt folds it into cash at the next settlement", () => {
+  const g = idle(); g.cash = 100; g.accrued = { ships: {}, debt: 30 };
+  for (let d = 0; d < 7; d++) advanceDay(g);
+  assert.equal(g.accrued.debt, 0); assert.equal(g.cash, 100 - 30 - 14);
 });
 test("money owed counts against net worth, so waiting for settlement day gives no free money", () => {
   const g = idle(); const w0 = netWorth(g);
@@ -44,11 +60,11 @@ test("money owed counts against net worth, so waiting for settlement day gives n
   for (let d = 0; d < 4; d++) advanceDay(g);
   assert.equal(netWorth(g), w0 - 7 * SHIP_TYPES.cog.upkeepPerDay);
 });
-test("dueNow shows accrued upkeep plus carried debt", () => {
+test("dueNow shows accrued upkeep plus the interest on a negative balance", () => {
   const g = idle(); g.cash = 0;
   for (let d = 0; d < 7; d++) advanceDay(g);
   for (let d = 0; d < 2; d++) advanceDay(g);
-  assert.equal(dueNow(g), 14 + 4);
+  assert.equal(dueNow(g), 4 + 0.28);
 });
 test("a settlement posts a message; reading it clears the unread count", () => {
   const g = idle();
@@ -130,8 +146,8 @@ test("debt: a settlement that cannot be paid in full posts a debt message", () =
   const ok = idle(); for (let d = 0; d < SETTLE_EVERY; d++) advanceDay(ok); assert.ok(!ok.inbox.some((x) => x.kind === "debt"));
 });
 test("view: warning and debt messages read well in both languages", () => {
-  assert.equal(messageText({ kind: "warn", due: 70, cash: 3 }, "en", fmt), "Upkeep is due tomorrow: 70. You have 3 in cash. Sell cargo before you sail.");
+  assert.equal(messageText({ kind: "warn", due: 70, cash: 3 }, "en", fmt), "Upkeep is due tomorrow: 70. You have 3 in cash. If it is not enough, your cash goes negative and pays interest.");
   assert.ok(messageText({ kind: "warn", due: 70, cash: 3 }, "es", fmt).startsWith("Mañana toca pagar el mantenimiento: 70."));
-  assert.equal(messageText({ kind: "debt", owed: 12 }, "en", fmt), "Cash did not cover it: 12 is still owed. It is added to the next payment.");
-  assert.ok(messageText({ kind: "debt", owed: 12 }, "es", fmt).includes("quedan 12 por pagar"));
+  assert.equal(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "en", fmt), "Cash is negative: you owe 12. Every week 2% interest is charged on that debt. Past 3000, you go bankrupt.");
+  assert.ok(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "es", fmt).includes("debes 12"));
 });

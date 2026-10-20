@@ -1,5 +1,5 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
-import { accrueDay, settleWeek, warnLowCash, accruedTotal, post } from "./ledger.mjs";
+import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
@@ -59,12 +59,12 @@ export function advanceDay(g) {
   }
   warnLowCash(g);
   settleWeek(g);
-  if (g.cash < 0) g.cash = 0;
+  if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
   rollEvent(g);
   deliverOrders(g);
   refreshIntel(g);
   if (g.cash >= GOAL_CASH) g.over = "win";
-  else if (g.day >= DEADLINE_DAYS) g.over = "lose";
+  else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
 }
 export function waitUntilArrival(g, ship) {
   let n = 0;
