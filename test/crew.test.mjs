@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, buyCannon } from "../src/game/game.mjs";
-import { CANNON_PRICE, CANNON_UPKEEP, maxCannons, defenceOf, splitCost, wearGunsBy } from "../src/game/crew.mjs";
+import { CANNON_PRICE, CANNON_UPKEEP, maxCannons, defenceOf, splitCost } from "../src/game/crew.mjs";
 import { SETTLE_EVERY } from "../src/game/ledger.mjs";
 const world = loadWorld();
 const game = () => { const g = newGame(world); g.eventsOn = false; return g; };
