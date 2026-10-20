@@ -2,7 +2,11 @@
 
 The game is playable in Spanish (main language) and English. Both are complete.
 
-Today all interface texts live in one object, `T`, at the top of `web/main.mjs`, with one block per language (`es`, `en`). Goods and ship types are in the same blocks (`goods`, `types`). Port names are in `data/world.json`. Moving texts into separate `locales/<lang>.json` files is planned; until then, translate inside `T`.
+Texts live in two places:
+- **Interface**: the object `T` at the top of `web/main.mjs`, with one block per language (`es`, `en`). Goods and ship types are in the same blocks (`goods`, `types`). Translate inside `T`.
+- **City events** (famine, epidemic, fair): `locales/es.json` and `locales/en.json`, under `cityEvents`. Each event id has `name`, `start` (message when the player learns of it) and `end` (message when it ends); `active` and `banner` are the labels on the map and in the port panel. `start` and `end` must contain `{city}`; `{name}` and `{n}` (days left) are also filled in. The event rules (ids, days, effects) are in `cityEvents` in `data/world.json`; every id there needs its texts in both files, and `npm test` fails if one is missing.
+
+Port names are in `data/world.json`. The rest of `T` will move to `locales/<lang>.json` later.
 
 To fix or add a language:
 1. Copy the `en` block in `T`, rename it to the language code (for example `fr`), and translate the values. Keep the keys and the `{placeholders}` unchanged.

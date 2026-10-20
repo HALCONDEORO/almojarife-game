@@ -1,1 +1,1 @@
-Text files `es.json` and `en.json` go here (milestone M1a). See `../TRANSLATING.md`.
+Text files, one per language: `es.json` and `en.json`. Today they hold only the city event texts (`cityEvents`: `name`, `start`, `end` per event, plus the `active` and `banner` labels). The rest of the interface is still in `T` in `../web/main.mjs`. See `../TRANSLATING.md`.

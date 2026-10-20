@@ -3,9 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../src/sim/market.mjs";
-import { newGame, advanceDay } from "../src/game/game.mjs";
+import { newGame, advanceDay, buyRumor } from "../src/game/game.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
-import { buyRumor } from "../src/game/intel.mjs";
 import { validateCityEvents, attachTexts, rollCityEvents, updateCityEvents, noticeCityEvents, activeCityEvents, cityEventAt, cityMarketMods, knownCityEvents, cityEventText, MAX_ACTIVE, CITY_EVENT_CHANCE } from "../src/game/cityevents.mjs";
 const texts = Object.fromEntries(["es", "en"].map((l) => [l, JSON.parse(readFileSync(new URL(`../locales/${l}.json`, import.meta.url), "utf8"))]));
 const world = attachTexts(loadWorld(), texts);
@@ -99,9 +98,17 @@ test("you only hear of an event where you have a ship or warehouse, or after buy
   assert.match(msgs[0].txt.en, /Famine in Lisboa/);
   advanceDay(g); assert.equal(g.inbox.filter((m) => m.cityEvent).length, 1); // told once
   const h = forced("fair", "barcelona", 10); h.cash = 1000;
-  assert.ok(buyRumor(h, "barcelona").ok);
-  noticeCityEvents(h);
+  assert.ok(buyRumor(h, "barcelona").ok); // the same call the tavern button makes
   assert.equal(knownCityEvents(h).length, 1);
+  assert.equal(h.inbox.filter((m) => m.cityEvent === "fair").length, 1); // told right away, not tomorrow
+});
+test("a rumour bought on an event's last day tells both its start and its end", () => {
+  const g = forced("fair", "barcelona", 1); g.cash = 1000;
+  assert.ok(buyRumor(g, "barcelona").ok);
+  advanceDay(g);
+  const ours = g.inbox.filter((m) => m.cityEvent === "fair").map((m) => m.txt.en);
+  assert.equal(ours.length, 2);
+  assert.ok(ours.some((t) => /Great fair in Barcelona/.test(t)) && ours.some((t) => /fair in Barcelona is over/.test(t)));
 });
 test("the end of a known event is told; an unknown one ends quietly", () => {
   const g = forced("epidemic", "cadiz", 3);

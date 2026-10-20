@@ -8,7 +8,7 @@ import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
 import { rollEvent } from "./events.mjs";
-import { refreshIntel, knownMarket } from "./intel.mjs";
+import { refreshIntel, knownMarket, buyRumor as buyRumorRaw } from "./intel.mjs";
 import { updateCityEvents, cityMarketMods, noticeCityEvents } from "./cityevents.mjs";
 import { aiStep } from "../sim/ai.mjs";
 
@@ -177,7 +177,13 @@ export function takeGoods(g, ship, good, qty) {
 }
 export function quote(g, city, good) { return price(g.world, g.market[city][good], good); }
 export { cargoUsed, SHIP_TYPES };
-export { buyRumor, RUMOR_PRICE, isLive } from "./intel.mjs";
+export { RUMOR_PRICE, isLive } from "./intel.mjs";
+/** Buy a rumour; a city event running there is told at once, not the next day (it may end before then). */
+export function buyRumor(g, city, at) {
+  const r = buyRumorRaw(g, city, at);
+  if (r.ok) noticeCityEvents(g);
+  return r;
+}
 
 /**
  * Where would the whole hold sell best at today's prices? One row per other port, best first:
