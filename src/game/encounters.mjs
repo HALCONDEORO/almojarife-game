@@ -26,7 +26,9 @@ export function applyEncounter(g,ship,outcome){
  let cargoLost=0;
  for(const [good,q] of Object.entries(ship.cargo??{})){
   const lost=Math.min(q,Math.ceil(q*outcome.cargoLossPct/100));cargoLost+=lost;
-  ship.cargo[good]=q-lost;if(!ship.cargo[good])delete ship.cargo[good];
+  ship.cargo[good]=q-lost;
+  if(ship.basis?.[good]!=null&&q>0)ship.basis[good]=Math.round(ship.basis[good]*ship.cargo[good]/q);
+  if(!ship.cargo[good]){delete ship.cargo[good];if(ship.basis)delete ship.basis[good];}
   // Basis is currently global by good, not per ship. Remove the lost share from that book too.
   const b=g.basis?.[good];if(b&&b.qty>0){const used=Math.min(lost,b.qty),unit=b.cost/b.qty;b.qty-=used;b.cost=Math.max(0,b.cost-used*unit);}
  }
