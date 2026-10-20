@@ -15,7 +15,7 @@ export const rankOf = (worth) => RANKS[rankIndex(worth)];
 export const nextRank = (worth, held = 0) => { const i = Math.max(rankIndex(worth), held) + 1; return i < RANKS.length ? { rank: RANKS[i], missing: Math.ceil(RANKS[i].from - worth) } : null; };
 /** Loan cap: +50% of the base cap for every rank above the first. */
 export const loanCapFor = (g, base) => Math.round(base * (1 + 0.5 * heldRank(g)));
-// Respect is stored as coins sold, kept to hundredths so small sales neither vanish nor round up; points are coins / REP_PER_COINS.
+// Respect is stored as coins sold, kept to millionths so small sales neither vanish nor round up; points are coins / REP_PER_COINS.
 // Saves from before this change stored points (coins / 100). repV 2 marks coins; older data is converted once, and bad values (NaN, negative) are dropped.
 export function ensureRep(g) {
   if (g.repV === 2 && g.rep) return g.rep;
@@ -32,7 +32,8 @@ export const respectOf = (g, city) => RESPECT[respectIndex(repOf(g, city))];
 /** Sale of `revenue` coins in `city`: adds respect points. Returns true if the respect level rose. */
 export function addRespect(g, city, revenue) {
   const before = respectIndex(repOf(g, city));
-  ensureRep(g)[city] = Math.round(((g.rep[city] ?? 0) + Math.max(0, Number(revenue) || 0)) * 100) / 100; // hundredths of a coin: small sales add up exactly
+  const add = Number(revenue); // NaN, Infinity or negative sales add nothing
+  ensureRep(g)[city] = Math.round(((g.rep[city] ?? 0) + (Number.isFinite(add) && add > 0 ? add : 0)) * 1e6) / 1e6; // millionths of a coin: tiny sales (<0.005) are not lost
   return respectIndex(repOf(g, city)) > before;
 }
 /** Update the rank from net worth. It only goes up (a bad week does not take a title away). Returns the new rank if it rose. */

@@ -66,3 +66,11 @@ test("promotion message uses the real loan cap and house panel escapes city name
   const g = game(); g.rep = { "<b>x</b>": 5000 }; g.repV = 2;
   assert.ok(!houseHtml(g, "es", 3500, fmt, (c) => c).includes("<b>x</b>"));
 });
+
+test("respect: tiny sales add up and non-finite sales add nothing", () => {
+  const g = game();
+  for (let i = 0; i < 1000; i++) addRespect(g, "cadiz", 0.004);
+  assert.ok(Math.abs(g.rep.cadiz - 4) < 1e-6);
+  addRespect(g, "cadiz", Infinity); addRespect(g, "cadiz", NaN); addRespect(g, "cadiz", -Infinity);
+  assert.ok(Math.abs(g.rep.cadiz - 4) < 1e-6);
+});
