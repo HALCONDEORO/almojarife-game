@@ -1,3 +1,4 @@
+import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
@@ -205,7 +206,7 @@ function render() {
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
     const wh = warehouseOf(g, s.at);
-    h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", t.tabHouse], ["store", t.tabStore]].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;
+    h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore]].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;
     if (tab === "market") {
       h += `<table><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr>`;
       for (const gd of Object.keys(world.goods)) {
@@ -227,7 +228,10 @@ function render() {
       const rows = cityRows(pop2, ks, (k) => affordRatio(ent[k], world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
       h += `<p>${t.cityInfo}</p><div class="cityclasses">` + rows.map((r) => `<div class="card"><b>${cn[r.cls]}</b>: ${fmt(r.count)} ${t.cityCitizens} (${r.pct} %)<br>${t.cityBuys}: ${r.top.map((x) => goodIcon(x.good) + t.goods[x.good]).join(", ") || "-"}` + (r.priced_out.length ? `<br><i>${t.cityOut}: ${r.priced_out.map((k) => t.goods[k]).join(", ")}</i>` : "") + `</div>`).join("") + `</div>`;
     } else if (tab === "house") {
+      const pr = premises(g,s.at,lang);
+      h += `<h3>${pr.label}: ${cityName(s.at)}</h3><p>${pr.info}</p>`;
       h += houseHtml(g, lang, netWorth(g), fmt, cityName, LOAN_MAX);
+      if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
       const room = bankRoom(g), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
       h += `<p>${t.bankInfo.replace("{r}", Math.round(LOAN_RATE * 100)).replace("{m}", fmt(loanCapFor(g, LOAN_MAX)))}</p><p>${t.bankRoom}: <b>${fmt(room)}</b> · ${t.bankOwed}: <b>${fmt(loansOwed(g))}</b></p>`;
@@ -273,6 +277,8 @@ function render() {
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
   P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); act(() => doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v)); });
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => act(() => buyRumor(g, P.querySelector("#rum").value, s.at));
+  P.querySelector("[data-local-store]")?.addEventListener("click",()=>{if($("v3d"))openCityPanel("store");else{tab="store";render();}});
+  P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
   P.querySelectorAll("[data-3d]").forEach((e) => e.onclick = () => open3d(s));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
@@ -309,14 +315,14 @@ function close3d() {
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;tab=tb;render();
   const w=d.querySelector(".city-window");w.hidden=false;
-  d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,route:t.tabRoute,house:t.tabHouse,store:t.tabStore})[tb]||t.tabCity;
+  d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,route:t.tabRoute,house:premises(g,ship().at,lang).label,store:t.tabStore})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
+  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
   document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
   d.querySelector("[data-map]").onclick=close3d;
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
@@ -351,7 +357,6 @@ document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx"
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("title") && !$("title").hidden) return;
-  if($("title")&&!$("title").hidden)return;
   if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
   if($("v3d"))return;
   if (e.key === "Escape") { closeMenu(); target = null; render(); }
@@ -424,7 +429,12 @@ function showTitle() {
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
-  $("t-file").onchange = async (e) => { try { const f = e.target.files[0]; const r = unpackGame(JSON.parse(await f.text()), world); g = r.g; company = r.company; autosave(); sel = 0; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); } catch { $("t-msg").textContent = t.badSave; } };
+  $("t-file").onchange = async (e) => {
+    const f = e.target.files[0]; if(!f)return;
+    let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
+    g = r.g; company = r.company; sel = 0; playing = false; progress = 0; departed.clear(); autosave(); render(); el.hidden = true;
+    try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
+  };
 }
 start(null, false); // background game behind the title screen; it never overwrites a save
 showTitle();
