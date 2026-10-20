@@ -30,6 +30,6 @@ export function applyEncounter(g,ship,outcome){
   // Basis is currently global by good, not per ship. Remove the lost share from that book too.
   const b=g.basis?.[good];if(b&&b.qty>0){const used=Math.min(lost,b.qty),unit=b.cost/b.qty;b.qty-=used;b.cost=Math.max(0,b.cost-used*unit);}
  }
- ship.voyage.daysLeft+=outcome.delay;ship.voyage.totalDays=Math.max(ship.voyage.totalDays+outcome.delay,ship.voyage.daysLeft);
+ ship.voyage.daysLeft+=outcome.delay;ship.voyage.totalDays=Math.max((ship.voyage.totalDays??ship.voyage.daysLeft-outcome.delay)+outcome.delay,ship.voyage.daysLeft);
  return {ok:true,...outcome,hullLost:before-ship.hull,cargoLost};
 }
