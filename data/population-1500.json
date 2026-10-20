@@ -1,0 +1,17 @@
+{
+  "year": 1500,
+  "unit": "inhabitants",
+  "source": "Bairoch, P., Batou, J., Chevre, P. (1988), La population des villes europeennes 800-1850, Geneva: Droz. Figures in thousands per century, taken here from the manual transcription by Jacob W. Russ (github.com/JakeRuss/bairoch-1988, bairoch-1988.csv), column 1500. Round estimates, not census counts.",
+  "note": "Bairoch lists a city only when it passes his size threshold; null means not listed for 1500, not zero. Tangier is not in this data bank. These figures are NOT yet used by the game: data/world.json keeps its design numbers until the balance PR.",
+  "cities": {
+    "lisboa": 65000,
+    "sevilla": 45000,
+    "valencia": 42000,
+    "barcelona": 20000,
+    "palma": 13000,
+    "cartagena": 4000,
+    "cadiz": 2000,
+    "bilbao": null,
+    "tanger": null
+  }
+}
