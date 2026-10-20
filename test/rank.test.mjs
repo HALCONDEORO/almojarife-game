@@ -41,3 +41,36 @@ test("texts exist in both languages", () => {
   const g = game(); addRespect(g, "cadiz", 5000);
   for (const l of ["es", "en"]) assert.ok(houseHtml(g, l, 3500, fmt, (c) => c).includes("cadiz"));
 });
+test("respect adds up small sales exactly and the next rank respects a title already held", () => {
+  const g = game();
+  for (let i = 0; i < 10; i++) addRespect(g, "cadiz", 0.1);
+  assert.equal(g.rep.cadiz, 1); // ten sales of 0.1 coins are 1 coin, not 0
+  const h = game(); for (let i = 0; i < 10; i++) addRespect(h, "cadiz", 0.5);
+  assert.equal(h.rep.cadiz, 5); // ten sales of 0.5 coins are 5 coins, not 10
+  g.rankIdx = 3;
+  assert.equal(nextRank(100, g.rankIdx).rank.id, "magnate");
+  assert.equal(nextRank(100).rank.id, "trader");
+});
+import { ensureRep, heldRank, LOAN_MAX_BASE } from "../src/game/rank.mjs";
+import { LOAN_MAX } from "../src/game/bank.mjs";
+test("old saves keep their respect (points are converted to coins once) and bad data is dropped", () => {
+  const g = game(); g.rep = { cadiz: 21, sevilla: NaN, lisboa: -5 }; // old format: points
+  assert.equal(repOf(g, "cadiz"), 21); assert.equal(g.repV, 2); assert.equal(g.rep.cadiz, 2100);
+  assert.equal(repOf(g, "sevilla"), 0); assert.equal(repOf(g, "lisboa"), 0);
+  assert.equal(repOf(g, "cadiz"), 21, "not converted twice");
+  addRespect(g, "cadiz", 100); assert.equal(repOf(g, "cadiz"), 22);
+  const h = game(); h.rankIdx = 99; assert.equal(heldRank(h), 0); h.rankIdx = NaN; assert.equal(heldRank(h), 0);
+});
+test("promotion message uses the real loan cap and house panel escapes city names", () => {
+  assert.equal(LOAN_MAX_BASE, LOAN_MAX);
+  const g = game(); g.rep = { "<b>x</b>": 5000 }; g.repV = 2;
+  assert.ok(!houseHtml(g, "es", 3500, fmt, (c) => c).includes("<b>x</b>"));
+});
+
+test("respect: tiny sales add up and non-finite sales add nothing", () => {
+  const g = game();
+  for (let i = 0; i < 1000; i++) addRespect(g, "cadiz", 0.004);
+  assert.ok(Math.abs(g.rep.cadiz - 4) < 1e-6);
+  addRespect(g, "cadiz", Infinity); addRespect(g, "cadiz", NaN); addRespect(g, "cadiz", -Infinity);
+  assert.ok(Math.abs(g.rep.cadiz - 4) < 1e-6);
+});

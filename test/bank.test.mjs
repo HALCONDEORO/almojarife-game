@@ -87,3 +87,17 @@ test("the estimate of what is due includes the interest of loans collected this 
   for (let i = 0; i < 3; i++) advanceDay(g);
   assert.ok(dueNow(g) >= 10, "includes the 10 coins of last interest");
 });
+test("interest of open loans and of loans collected this week is rounded once", async () => {
+  const { dueNow, settleWeek } = await import("../src/game/ledger.mjs"); const { newGame } = await import("../src/game/game.mjs"); const { loadWorld } = await import("../src/sim/world.mjs");
+  const g = newGame(loadWorld()); g.eventsOn = false; g.ships = []; g.cash = 100;
+  g.loans = [{ id: 1, city: "cadiz", principal: 0.5, left: 0.5, taken: 0, due: 99 }, { id: 2, city: "cadiz", principal: 0.5, left: 0.5, taken: 0, due: 99 }];
+  g.weekLoanInterest = 0.5 * 0.01;
+  assert.equal(dueNow(g), 0.02); // 0.01 open + 0.005 collected = 0.015 -> 0.02 once
+  g.day = 7; const r = settleWeek(g); assert.equal(r.loanInterest, 0.02);
+});
+test("tiny loan interest is rounded once across open and collected loans (old code gave 0)", async () => {
+  const { dueNow } = await import("../src/game/ledger.mjs"); const { newGame } = await import("../src/game/game.mjs"); const { loadWorld } = await import("../src/sim/world.mjs");
+  const g = newGame(loadWorld()); g.eventsOn = false; g.ships = []; g.cash = 100;
+  g.loans = [{ id: 1, city: "cadiz", principal: 0.3, left: 0.3, taken: 0, due: 99 }]; g.weekLoanInterest = 0.003;
+  assert.equal(dueNow(g), 0.01);
+});

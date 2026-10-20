@@ -8,7 +8,8 @@ const r2 = (x) => Math.round(x * 100) / 100;
 export const loansOf = (g) => g.loans ?? [];
 export const loansOwed = (g) => r2(loansOf(g).reduce((x, l) => x + l.left, 0));
 /** Weekly interest on the open loans. */
-export const loanInterest = (g) => r2(loansOwed(g) * LOAN_RATE);
+export const loanInterestRaw = (g) => loansOwed(g) * LOAN_RATE;
+export const loanInterest = (g) => r2(loanInterestRaw(g));
 /** How much more the bank would lend now. `netWorth` is the player's net worth (already net of loans). */
 export function loanRoom(g, netWorth) {
   const owed = loansOwed(g);
