@@ -1,0 +1,7 @@
+# Automatic sea encounters, first rules module
+
+Original simulation, no battle screen. This module is not yet connected to daily events, reports or tavern skills. Four tests cover reproducibility, real defence from guns/crew/condition, bounded captain skill contribution, weather reduction, actual hull/cargo/basis/voyage effects and no-mutation rejections.
+
+Pirates: repel chance min(90%,20% + defence/150), defence is existing ship defence plus6per captain defence level0..3. Repelled costs2hull; raided costs10hull,20%cargo,1day. Storm:70% ordinary(6hull,4%cargo,1day),30% severe(12hull,10%cargo,2days); weather skill reduces hull/cargo loss15%per level up to45%. Own design candidate values, not historical frequencies, no balancing proof. No loot money, sunk ships, injury or dead captains in this stage. Hull floor10 preserved from current game. Cargo loss reduces global cost basis consistently with existing book; it is not per-ship lot accounting.
+
+Next integration must use persisted unique encounter IDs to prevent duplicates, deterministic seed/day/ship rolls, automatic report/inbox/voyage summaries ES+EN, and replace old pending pirate/storm choices rather than double-charge both systems. Encounter frequency and fleet exposure need stress tests. Existing old pending saves must remain resolvable or deliberately migrate with tests. Defence/weather may only appear as active skills after real hooks, roster and tests exist. No other game's assets/code/text used.
