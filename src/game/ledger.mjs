@@ -41,6 +41,23 @@ export function warnLowCash(g) {
 }
 
 /** If today is a settlement day, pay what can be paid, write the report and post a message. Returns the report or null. */
+/** Trade log: average-cost basis per good, and this week's profit per good (last report keeps it). */
+export function logBuy(g, good, qty, cost) {
+  const b = ((g.basis ??= {})[good] ??= { qty: 0, cost: 0 });
+  b.qty += qty; b.cost += cost;
+}
+export function logSell(g, good, qty, revenue) {
+  const b = (g.basis ??= {})[good] ?? { qty: 0, cost: 0 };
+  const used = Math.min(qty, b.qty), unit = b.qty > 0 ? b.cost / b.qty : 0, basis = unit * used;
+  b.qty -= used; b.cost = Math.max(0, b.cost - basis);
+  const w = ((g.weekTrade ??= {})[good] ??= { sold: 0, revenue: 0, profit: 0 });
+  w.sold += qty; w.revenue += revenue; w.profit += revenue - basis;
+}
+function takeWeekTrades(g) {
+  const out = Object.entries(g.weekTrade ?? {}).map(([good, w]) => ({ good, sold: w.sold, revenue: Math.round(w.revenue * 100) / 100, profit: Math.round(w.profit * 100) / 100 }));
+  g.weekTrade = {};
+  return out.sort((x, y) => y.profit - x.profit);
+}
 export function settleWeek(g) {
   if (!g.day || g.day % SETTLE_EVERY !== 0) return null;
   const a = (g.accrued ??= { ships: {}, debt: 0 });
@@ -50,7 +67,7 @@ export function settleWeek(g) {
   g.cash = r2(g.cash - owed);
   processLoans(g, post); // loans that fell due are collected from cash (it can go negative)
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, carried, paid: owed, debt, cashAfter: g.cash };
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), interest, loanInterest: lint, trades: takeWeekTrades(g), carried, paid: owed, debt, cashAfter: g.cash };
   a.ships = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();

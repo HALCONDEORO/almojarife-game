@@ -28,3 +28,9 @@ Request (owner, 20/10/2026): running costs of ships should arrive every week, no
 - Interest 1% a week, charged in the weekly bill and shown in the report. Cheaper than the 2% overdraft, so asking is better than falling into debt.
 - Term 56 days. A message warns 7 days before. At the due date the bank takes the rest from cash, even if cash goes negative (it then follows the overdraft rules, no instant game over).
 - Borrowed money does not count toward the win goal.
+
+## Trade profit in the report
+
+- Every purchase adds to an average-cost basis per good. Every sale takes its cost from that basis, so profit = revenue minus average cost of the units sold.
+- Selling more than the log knows (old saves, goods taken from a warehouse bought earlier) never invents cost: the extra units count at zero cost.
+- At each weekly settlement the report lists profit per good, best first, with a total; the weekly counter then resets. Per-route profit is still open.
