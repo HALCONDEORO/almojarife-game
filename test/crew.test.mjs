@@ -45,3 +45,25 @@ test("a cannon bought mid-week only costs upkeep for the days after the purchase
 test("crew wages never exceed the hull-and-crew base and cannon cost is not part of wages", () => {
   const x = splitCost(10, 4); assert.ok(x.wages <= 6 * 0.6 + 0.01); assert.equal(splitCost(0, 0).wages, 0); assert.ok(splitCost(3, 5).wages >= 0);
 });
+import { gunCond, gunRepairCost, repairGuns, wearGunsBy, GUN_WEAR_PER_DAY, GUN_REPAIR_SHARE } from "../src/game/crew.mjs";
+test("armament condition: old saves count as 100%, it wears at sea, defence follows it", () => {
+  const g = game(), s = g.ships[0]; assert.equal(gunCond(s), 100);
+  s.gunCond = "bad"; assert.equal(gunCond(s), 100); s.gunCond = 250; assert.equal(gunCond(s), 100); delete s.gunCond;
+  buyCannon(g, s); const other = world.cities.find((c) => c.id !== s.at).id;
+  s.voyage = { from: s.at, to: other, daysLeft: 5, totalDays: 5, path: [s.at, other], km: 1 };
+  advanceDay(g); assert.ok(Math.abs(gunCond(s) - (100 - GUN_WEAR_PER_DAY)) < 1e-9);
+  assert.equal(defenceOf(s), Math.round(10 * gunCond(s) / 100));
+});
+test("repairing the armament at port costs in proportion to damage and cannons", () => {
+  const g = game(), s = g.ships[0]; buyCannon(g, s); buyCannon(g, s);
+  assert.equal(repairGuns(g, s).reason, "no damage");
+  wearGunsBy(s, 50); assert.equal(gunCond(s), 50);
+  assert.equal(gunRepairCost(s), 2 * CANNON_PRICE * GUN_REPAIR_SHARE * 0.5);
+  const c0 = g.cash, cost = gunRepairCost(s); assert.ok(repairGuns(g, s).ok); assert.equal(g.cash, c0 - cost); assert.equal(gunCond(s), 100);
+  wearGunsBy(s, 50); g.cash = 1; assert.equal(repairGuns(g, s).reason, "no cash");
+  s.voyage = { from: "a", to: "b", daysLeft: 2, totalDays: 2, path: [], km: 1 }; g.cash = 1e5; assert.equal(repairGuns(g, s).reason, "at sea");
+});
+test("a ship without cannons does not wear and a new cannon mixes into the condition", () => {
+  const g = game(), s = g.ships[0]; wearGunsBy(s, 30); assert.equal(gunCond(s), 100);
+  buyCannon(g, s); wearGunsBy(s, 40); buyCannon(g, s); assert.equal(gunCond(s), (60 + 100) / 2);
+});
