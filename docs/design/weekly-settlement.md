@@ -21,3 +21,10 @@ Request (owner, 20/10/2026): running costs of ships should arrive every week, no
 - Interest and the bankruptcy limit (added 20/10) answer the free-credit objection. Rates and limit are constants in src/game/ledger.mjs to tune. It come with the credit and reputation feature.
 - Crew wages, guns and building upkeep are not in yet. The ledger takes any cost line, so they can be added as new accrual lines.
 - The inbox is capped at 60 messages and 52 weekly reports to keep saves small.
+
+## Bank (moneylender)
+
+- Borrow at a port where you have a docked ship, in steps of 100. Total debt is capped at half of net worth (max 5000). Borrowing does not change net worth, so the cap does not grow by borrowing.
+- Interest 1% a week, charged in the weekly bill and shown in the report. Cheaper than the 2% overdraft, so asking is better than falling into debt.
+- Term 56 days. A message warns 7 days before. At the due date the bank takes the rest from cash, even if cash goes negative (it then follows the overdraft rules, no instant game over).
+- Borrowed money does not count toward the win goal.
