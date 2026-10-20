@@ -2,8 +2,8 @@
 import { setRoute, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
-import { buyCannon as buyCannonShip } from "./crew.mjs";
-export const buyCannon = buyCannonShip;
+import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns } from "./crew.mjs";
+export const buyCannon = buyCannonShip, repairGuns = repairGunsShip;
 import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
@@ -61,6 +61,7 @@ export function advanceDay(g) {
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {
     const was = s.voyage;
+    if (s.voyage) wearGuns(s); // armament wears at sea like the hull
     tickShip(s);
     accrueDay(g, s);
     if (was && !s.voyage) { chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
