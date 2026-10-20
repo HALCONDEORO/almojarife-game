@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {escapeChance,resolvePirates} from '../src/game/encounterdaily.mjs';
 import {encounterDialogHtml} from '../src/view/encounterview.mjs';
 import {seeded} from '../src/view/cityscene.mjs';
-const state=(chance,seed=0)=>({seed,day:2,ships:[{id:1,type:'cog',hull:100,cargo:{},voyage:{from:'cadiz',to:'barcelona',daysLeft:10,totalDays:10}}],pending:{event:'sea-pirates',ship:1,day:2,id:'sea-v1:2:1',escapeChance:chance}});
+const state=(chance,seed=0)=>({seed,day:2,ships:[{id:1,type:'cog',hull:100,cargo:{},voyage:{from:'cadiz',to:'barcelona',ticksLeft:2400,totalTicks:2400}}],pending:{event:'sea-pirates',ship:1,day:2,id:'sea-v1:2:1',escapeChance:chance}});
 test('exact hull, crew and navigation contributions, rounding and physical domain limits',()=>{
  assert.equal(escapeChance({type:'cog',hull:100}),70);
  assert.equal(escapeChance({type:'cog',hull:0,crew:0}),35);

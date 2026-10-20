@@ -29,7 +29,7 @@ test("a pending event stops the clock until the player chooses", () => {
   const pe = pendingEvent(g); assert.ok(pe.choices.length >= 1);
   const r = resolveEvent(g, pe.choices[0].id);
   assert.ok(r.ok && r.text.es && r.text.en); assert.equal(g.pending, null);
-  advanceDay(g); assert.ok(g.day > day);
+  const t0 = g.tick; advanceDay(g); assert.ok(g.tick > t0, "the clock runs again after the choice");
 });
 test("outcomes are deterministic for the same game, and effects stay in bounds", () => {
   const run = () => { const g = sailing(3); g.pending = { event: "pirates", ship: 1, day: g.day }; const before = g.ships[0].cargo.salt; const r = resolveEvent(g, "fight"); return { r, left: g.ships[0].cargo.salt ?? 0, before, cash: g.cash }; };
@@ -43,8 +43,8 @@ test("cargo loss keeps the cost basis in step and an empty hold is not an error"
   g.world.events = structuredClone(world.events); g.world.events.find((e) => e.id === "storm").choices[1].outcomes = [{ p: 1, effects: { cargoLossPct: 50 }, text: { es: "x", en: "x" } }];
   resolveEvent(g, "press");
   assert.equal(s.cargo.salt, 10); assert.ok(Math.abs(s.basis.salt - per * 10) < 1);
-  const g2 = newGame(world); g2.ships[0].voyage = { from: "cadiz", to: "lisboa", daysLeft: 3, totalDays: 4, path: ["cadiz", "lisboa"], km: 100 }; g2.pending = { event: "storm", ship: 1, day: 0 };
-  assert.ok(resolveEvent(g2, "shelter").ok); assert.equal(g2.ships[0].voyage.daysLeft, 4);
+  const g2 = newGame(world); g2.ships[0].voyage = { from: "cadiz", to: "lisboa", ticksLeft: 720, totalTicks: 960, path: ["cadiz", "lisboa"], km: 100 }; g2.pending = { event: "storm", ship: 1, day: 0 };
+  assert.ok(resolveEvent(g2, "shelter").ok); assert.equal(g2.ships[0].voyage.ticksLeft, 960);
 });
 test("an unknown choice or no event is refused and changes nothing", () => {
   const g = sailing(0); assert.equal(resolveEvent(g, "x").ok, false);

@@ -22,7 +22,7 @@ test("below the minimum the ship does not sail; at the minimum it is slower", ()
   s.crew = L.min - 1; assert.equal(doSail(g, s, dest(g, s)).reason, "crew"); assert.ok(!s.voyage);
   s.crew = L.min; assert.ok(Math.abs(speedFactor(s) - 0.7) < 1e-9);
   const full = game(), f = full.ships[0]; assert.ok(doSail(full, f, dest(full, f)).ok);
-  assert.ok(doSail(g, s, dest(g, s)).ok); assert.ok(s.voyage.totalDays >= f.voyage.totalDays);
+  assert.ok(doSail(g, s, dest(g, s)).ok); assert.ok(s.voyage.totalTicks >= f.voyage.totalTicks);
 });
 test("a full crew is faster, defends more and costs more wages", () => {
   const g = game(), s = g.ships[0], L = CREW[s.type]; buyCannon(g, s);
@@ -37,7 +37,7 @@ test("hiring costs a fee, respects the maximum and cash, and only works in port"
   assert.equal(hireCrew(g, s, 1000).hired, L.max - (L.opt + 3)); assert.equal(hireCrew(g, s, 1).reason, "full");
   s.crew = 0; g.cash = 5; assert.equal(hireCrew(g, s, 1).reason, "no cash"); assert.equal(crewOf(s), 0);
   g.cash = 1000; assert.equal(hireCrew(g, s, 0).reason, "bad amount"); assert.equal(hireCrew(g, s, NaN).reason, "bad amount");
-  s.voyage = { from: s.at, to: "x", daysLeft: 2, totalDays: 2, path: [], km: 1 }; assert.equal(hireCrew(g, s, 1).reason, "at sea"); assert.equal(dismissCrew(g, s, 1).reason, "at sea");
+  s.voyage = { from: s.at, to: "x", ticksLeft: 480, totalTicks: 480, path: [], km: 1 }; assert.equal(hireCrew(g, s, 1).reason, "at sea"); assert.equal(dismissCrew(g, s, 1).reason, "at sea");
 });
 test("dismissing lowers wages in the report; the line follows the real crew", () => {
   const g = game(), s = g.ships[0]; dismissCrew(g, s, 100); assert.equal(crewOf(s), 0);

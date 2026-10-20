@@ -11,12 +11,14 @@ const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
+import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
+import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR } from "../sim/clock.mjs";
+import { captainSpeed } from "./captains.mjs";
+import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
-import { playerTravelDays } from "./traveltime.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
 
@@ -41,7 +43,7 @@ export function trendPct(g, city, good, days = 7) {
 }
 export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_PRICE = 3000, WARMUP_DAYS = 60;
 /** Ticks per game day (10 per hour). The tick is the simulation unit; the day stays the accounting unit. See docs/design/time-model.md. */
-export const TICKS_PER_DAY = 240;
+export const TICKS_PER_DAY = CLOCK_TICKS_PER_DAY;
 
 export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
@@ -49,7 +51,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const origins = opts.npcCompetition === "planned" ? npcPlan(world).ports.flatMap(r=>Array(r.count).fill(r.city)) : Array.from({length:3},(_,i)=>ids[(i*3+1)%ids.length]);
   const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
-  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
+  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
   const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? defaultProfile(), eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
   return g;
@@ -65,14 +67,11 @@ export function netWorth(g) {
 function dayTick(g) {
   g.day++;
   tickMarket(g.market, g.day, g.world);
-  for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); }
+  for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); } // aiStep no-ops at sea; arrivals act on their own tick
   recordPrices(g.world, g.market, g.hist ??= {});
   for (const s of g.ships) {
-    const was = s.voyage;
-    if (s.voyage) wearGuns(s); // armament wears at sea like the hull
-    tickShip(s);
+    if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
     accrueDay(g, s);
-    if (was && !s.voyage) { chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at }); }
   }
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
@@ -87,16 +86,27 @@ function dayTick(g) {
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
   if(!g.over)for(const s of g.ships)automaticEncounter(g,s);
 }
-/** Advance one whole day: jump to the next day boundary and run the day work (same as the old daily step, including its progress reset). */
+/** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
+function arrive(g, s) {
+  wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
+  chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
+}
+/** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
 export function advanceDay(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
-  g.tick = (Math.floor(g.tick / TICKS_PER_DAY) + 1) * TICKS_PER_DAY;
-  dayTick(g);
+  const target = (Math.floor(g.tick / TICKS_PER_DAY) + 1) * TICKS_PER_DAY;
+  do {
+    const atSea = new Set(g.ships.filter((s) => s.voyage).map((s) => s.id));
+    advanceTick(g);
+    if (atSea.size && g.ships.some((s) => atSea.has(s.id) && !s.voyage)) break; // a ship of yours just arrived
+  } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
 }
-/** Advance one tick. Day work runs only when a day boundary is crossed, so 240 ticks are exactly one old day. */
+/** Advance one tick: ships move continuously and arrive on the exact tick; day work runs only at a day boundary. */
 export function advanceTick(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   g.tick++;
+  for (const s of g.ships) if (sailTick(s)) arrive(g, s);
+  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {
@@ -118,10 +128,12 @@ export function doSell(g, ship, good, qty) {
 export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
-  const from = ship.at, r = sail(g.world, ship, to);
-  if (r.ok) { const d = playerTravelDays(ship.voyage.totalDays,ship); ship.voyage.totalDays = d; ship.voyage.daysLeft = d; r.days = d; }
+  const from = ship.at;
+  // Per-leg wind, seeded by departure tick and leg, so replays and save/load keep the same weather.
+  const wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${to}`)();
+  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship), wind });
   if (r.ok) openVoyage(g, ship, from, to);
-  if (r.ok) say(g, "sail", { ship: ship.id, city: to, days: r.days });
+  if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
   return r;
 }
 /** Buy a second ship (caravel) at the port where ship[0] is docked. */

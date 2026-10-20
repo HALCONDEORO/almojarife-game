@@ -4,10 +4,10 @@ import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, doSail } from "../src/game/game.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 const world = loadWorld(), g = newGame(world, "cadiz", {}), s = g.ships[0];
-test("estimate gives days, km and path ending at the target, matching what sailing then does", () => {
+test("estimate gives ticks, km and path ending at the target, within wind of what sailing then does", () => {
   const e = travelEstimate(world, s, "barcelona");
   assert.equal(e.ok, true); assert.equal(e.path.at(-1), "barcelona"); assert.equal(e.path[0], "cadiz");
-  doSail(g, s, "barcelona"); assert.equal(s.voyage.totalDays, e.days);
+  doSail(g, s, "barcelona"); assert.ok(s.voyage.totalTicks >= Math.round(e.ticks / 1.2) - 1 && s.voyage.totalTicks <= Math.round(e.ticks / 0.8) + 1, "wind stays inside 0.8-1.2 of the still-air estimate");
 });
 test("no estimate at sea, to the same port, to an unknown port or without a ship", () => {
   assert.equal(travelEstimate(world, s, "lisboa").reason, "at sea");

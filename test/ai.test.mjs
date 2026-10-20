@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket, tickMarket, price } from "../src/sim/market.mjs";
-import { makeShip, tickShip, SHIP_TYPES } from "../src/sim/trade.mjs";
+import { makeShip, tickShip, sailTick, SHIP_TYPES } from "../src/sim/trade.mjs";
+import { TICKS_PER_DAY } from "../src/sim/clock.mjs";
 import { aiStep } from "../src/sim/ai.mjs";
 const world = loadWorld();
 
@@ -14,7 +15,10 @@ function simulate(days, traders = 6, w = world) {
   let maxStock = 0;
   for (let d = 0; d < days; d++) {
     tickMarket(m);
-    for (const t of ts) { tickShip(t.ship); aiStep(w, m, t, t.ship); }
+    for (const t of ts) {
+      for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) aiStep(w, m, t, t.ship); // continuous movement; act on the arrival tick
+      tickShip(t.ship); aiStep(w, m, t, t.ship); // daily wear; docked traders decide once a day
+    }
     for (const c of ids) for (const g of goods) {
       const e = m[c][g], st = e.stock;
       if (!Number.isInteger(st) || st < 0) throw new Error(`bad stock ${c}/${g}: ${st} on day ${d}`);

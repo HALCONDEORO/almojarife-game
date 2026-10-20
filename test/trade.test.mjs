@@ -2,16 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { makeMarket } from "../src/sim/market.mjs";
-import { makeShip, sail, tickShip, buy, sell, cargoUsed, SHIP_TYPES } from "../src/sim/trade.mjs";
+import { makeShip, sail, sailTick, buy, sell, cargoUsed, SHIP_TYPES } from "../src/sim/trade.mjs";
 const world = loadWorld();
 const [A, B] = [world.cities[0].id, world.cities[1].id];
 
-test("a voyage takes whole days and ends in the destination", () => {
+test("a voyage takes its ticks and ends in the destination, on the exact tick", () => {
   const s = makeShip(1, "cog", A);
   const r = sail(world, s, B);
-  assert.ok(r.ok && r.days >= 1);
-  for (let i = 0; i < r.days - 1; i++) { tickShip(s); assert.equal(s.at, A); }
-  tickShip(s);
+  assert.ok(r.ok && r.ticks >= 1);
+  for (let i = 0; i < r.ticks - 1; i++) { assert.equal(sailTick(s), false); assert.equal(s.at, A); }
+  assert.equal(sailTick(s), true);
   assert.equal(s.at, B); assert.equal(s.voyage, null);
 });
 test("a ship at sea cannot sail or trade", () => {
@@ -22,7 +22,7 @@ test("a ship at sea cannot sail or trade", () => {
 });
 test("caravel is faster than cog on the same route", () => {
   const c = sail(world, makeShip(1, "cog", A), B), v = sail(world, makeShip(2, "caravel", A), B);
-  assert.ok(v.days <= c.days);
+  assert.ok(v.ticks <= c.ticks);
 });
 test("buying respects stock, capacity and cash; selling returns less than buying cost (fees)", () => {
   const m = makeMarket(world), s = makeShip(1, "cog", A);

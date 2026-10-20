@@ -42,12 +42,12 @@ test("day is always floor(tick / TICKS_PER_DAY) under mixed advances", () => {
   assert.equal(g.day, Math.floor(g.tick / TICKS_PER_DAY));
 });
 
-test("saves are version 2 and keep the tick through a round trip, mid-day futures identical", () => {
+test("saves are version 3 and keep the tick through a round trip, mid-day futures identical", () => {
   const g = newGame(world);
   for (let i = 0; i < 517; i++) advanceTick(g); // mid-day: day 2, tick 517
   assert.equal(g.day, 2); assert.equal(g.tick, 517);
   const s = serialize(g, "Casa Reloj");
-  assert.equal(s.version, 2); assert.equal(SAVE_VERSION, 2); assert.equal(s.state.tick, 517);
+  assert.equal(s.version, 3); assert.equal(SAVE_VERSION, 3); assert.equal(s.state.tick, 517);
   const { g: r } = deserialize(JSON.parse(JSON.stringify(s)), world);
   assert.deepEqual(r, g);
   for (let i = 0; i < 300; i++) { advanceTick(g); advanceTick(r); }

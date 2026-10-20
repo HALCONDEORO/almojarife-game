@@ -23,9 +23,9 @@ test('fight makes one final report, persists through save, blocks time until dis
 test('escape can succeed or fail into simulated fight, never rerolls and no cash reward',()=>{
  let escaped=false,failed=false;
  for(let seed=1;seed<40&&!(escaped&&failed);seed++){
-  const g=encounter(seed),cash=g.cash,s=g.ships[0],h=s.hull,days=s.voyage.daysLeft;
+  const g=encounter(seed),cash=g.cash,s=g.ships[0],h=s.hull,left=s.voyage.ticksLeft;
   const e=resolvePirates(g,'flee');assert.equal(g.cash,cash);
-  if(e.result==='escaped'){escaped=true;assert.equal(s.hull,h);assert.equal(s.voyage.daysLeft,days+1);assert.equal(e.cargoLost,0);}else{failed=true;assert.equal(e.escapeFailed,true);assert.ok(['raided','repelled'].includes(e.result));}
+  if(e.result==='escaped'){escaped=true;assert.equal(s.hull,h);assert.equal(s.voyage.ticksLeft,left+240);assert.equal(e.cargoLost,0);}else{failed=true;assert.equal(e.escapeFailed,true);assert.ok(['raided','repelled'].includes(e.result));}
   const before=JSON.stringify(g);resolvePirates(g,'flee');assert.equal(JSON.stringify(g),before);
  }
  assert.ok(escaped&&failed);
