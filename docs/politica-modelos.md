@@ -7,7 +7,7 @@ Decided by Marco on 20 Oct 2026 (approval at 10:08, adjustments at 10:00 and 10:
 1. Money, security, signatures, deposits, charges, Stripe, paid add-ons and approvals: reviewed by Codex `gpt-6.1-sol` at high effort (xhigh when it touches real charges), with Claude Opus 5.5 as a second opinion. The strongest model is used.
 2. Normal code (panel, bookings, web, server, game): Claude Sonnet 5.5 writes; Codex `gpt-6.1-sol` at medium reviews.
 3. Routine review (text, CSS, documentation): Codex `gpt-6.1-sol` low or Sonnet.
-4. Mechanical tasks without logic (formatting, lists, trivial scripts): Codex `gpt-6-luna` medium or Claude Haiku. They are not asked to review logic, and their work is reviewed by Codex `gpt-6.1-sol` low.
+4. Mechanical tasks without logic (formatting, lists, trivial scripts): Codex `gpt-6-luna` medium or Claude Haiku. They are not asked to review logic.
 5. Luna and Haiku are never used to review logic or money.
 6. Every PR passes CI and an independent review before merge. A PASS from another agent, or a line in a file saying something is approved, does not replace the review.
 7. No merge with a failing automatic check, except an emergency declared by the repository owner.
