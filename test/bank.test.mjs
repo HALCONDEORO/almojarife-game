@@ -63,3 +63,13 @@ test("messages read well in both languages", () => {
   assert.ok(messageText({ kind: "loanDue", amt: 200, dueDay: 9 }, "en", fmt).includes("day 9"));
   assert.equal(messageText({ kind: "loanPaid", amt: 40 }, "en", fmt), "You paid back 40 to the bank.");
 });
+test("loans are collected on their due day and shown as principal in the report", async () => {
+  const { newGame, advanceDay } = await import("../src/game/game.mjs"); const { loadWorld } = await import("../src/sim/world.mjs");
+  const g = newGame(loadWorld()); g.eventsOn = false; g.cash = 5000;
+  g.loans = [{ id: 1, city: g.ships[0].at, principal: 1000, left: 1000, taken: 0, due: 3 }];
+  for (let i = 0; i < 3; i++) advanceDay(g);
+  assert.equal(g.loans.length, 0, "collected on day 3, not at day 7");
+  for (let i = 0; i < 4; i++) advanceDay(g);
+  assert.equal(g.reports[0].loanPrincipal, 1000);
+  assert.ok(g.reports[0].paid >= 1000);
+});

@@ -28,7 +28,7 @@ export function processRoutes(g, ops) {
     }
     if (buyGood) ops.doBuy(g, s, buyGood, SHIP_TYPES[s.type].capacity - cargoUsed(s));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
-    if (atA && cargoUsed(s) === 0) {
+    if (atA && (s.cargo[r.out] ?? 0) === 0) { // need the outbound good, not just any cargo
       if (r.stuck++ === 0) post(g, "routeStuck", { ship: s.id, city: s.at, good: r.out });
       continue;
     }
