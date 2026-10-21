@@ -2,7 +2,8 @@
 import { loadWorld } from '../src/sim/world.mjs';
 import { npcPlan } from '../src/sim/npcplan.mjs';
 import { makeMarket, tickMarket } from '../src/sim/market.mjs';
-import { makeShip, tickShip } from '../src/sim/trade.mjs';
+import { makeShip, tickShip, sailTick } from '../src/sim/trade.mjs';
+import { TICKS_PER_DAY } from '../src/sim/clock.mjs';
 import { aiStep } from '../src/sim/ai.mjs';
 import fs from 'node:fs';
 const world=loadWorld(), historical=JSON.parse(fs.readFileSync(new URL('../data/population-1500.json',import.meta.url))).cities;
@@ -13,7 +14,10 @@ const traders=origins.map((at,i)=>({cash:2000,ship:makeShip(i,i%2?'caravel':'cog
 const arrivals=Object.fromEntries(world.cities.map((c)=>[c.id,0]));let clamps=0,samples=0,maxDayMs=0;
 for(let day=0;day<days;day++){
   const t=performance.now(); tickMarket(market,day,world);
-  for(const tr of traders){const was=!!tr.ship.voyage;tickShip(tr.ship);if(was&&!tr.ship.voyage)arrivals[tr.ship.at]++;aiStep(world,market,tr,tr.ship);}
+  for(const tr of traders){
+   for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);arrivals[tr.ship.at]++;aiStep(world,market,tr,tr.ship);} // act on the arrival tick
+   tickShip(tr.ship);aiStep(world,market,tr,tr.ship); // daily wear; docked traders decide once a day
+  }
   maxDayMs=Math.max(maxDayMs,performance.now()-t);
   for(const city of Object.values(market))for(const e of Object.values(city)){
     if(!Number.isInteger(e.stock)||e.stock<0)throw new Error('invalid stock');

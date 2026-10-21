@@ -19,17 +19,31 @@ export function buildWorld(w) {
   return { ...w, nodes, adj };
 }
 /** Dijkstra over the sea-lane graph. Returns {km, path} or null. */
-export function route(world, from, to) {
-  const dist = { [from]: 0 }, prev = {}, todo = new Set([from]);
-  while (todo.size) {
-    let u = null;
-    for (const n of todo) if (u === null || dist[n] < dist[u]) u = n;
-    todo.delete(u);
-    if (u === to) break;
-    for (const { to: v, km } of world.adj[u] ?? []) {
-      if (dist[v] === undefined || dist[u] + km < dist[v]) { dist[v] = dist[u] + km; prev[v] = u; todo.add(v); }
+// The lane graph never changes after buildWorld, so each source's search tree is
+// cached per world. Same distances and paths as a fresh run: with non-negative
+// weights a node's dist/prev are final once popped, and nodes on the path to `to`
+// pop before `to`, so skipping the early break changes nothing.
+const routeCache = new WeakMap(); // world -> Map(from -> {dist, prev})
+function searchTree(world, from) {
+  let byFrom = routeCache.get(world);
+  if (!byFrom) routeCache.set(world, (byFrom = new Map()));
+  let run = byFrom.get(from);
+  if (!run) {
+    const dist = { [from]: 0 }, prev = {}, todo = new Set([from]);
+    while (todo.size) {
+      let u = null;
+      for (const n of todo) if (u === null || dist[n] < dist[u]) u = n;
+      todo.delete(u);
+      for (const { to: v, km } of world.adj[u] ?? []) {
+        if (dist[v] === undefined || dist[u] + km < dist[v]) { dist[v] = dist[u] + km; prev[v] = u; todo.add(v); }
+      }
     }
+    byFrom.set(from, (run = { dist, prev }));
   }
+  return run;
+}
+export function route(world, from, to) {
+  const { dist, prev } = searchTree(world, from);
   if (dist[to] === undefined) return null;
   const path = [to];
   while (path[0] !== from) path.unshift(prev[path[0]]);
