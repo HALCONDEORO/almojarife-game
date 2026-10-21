@@ -23,7 +23,7 @@ export function accrueDay(g, ship) {
   (a.wages ??= {})[ship.id] = (a.wages[ship.id] ?? 0) + up.wages;
   if (gun) (a.cannons ??= {})[ship.id] = (a.cannons[ship.id] ?? 0) + gun;
 }
-export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0)+Object.values(g.accrued?.captains??{}).reduce((x,y)=>x+y,0);
+export const accruedTotal = (g) => Object.values(g.accrued?.ships ?? {}).reduce((x, y) => x + y, 0)+Object.values(g.accrued?.captains??{}).reduce((x,y)=>x+y,0)+Object.values(g.accrued?.buildings??{}).reduce((x,y)=>x+y,0);
 /** What the next settlement will ask for (accrued upkeep, interest on an overdraft, and loan interest due). */
 export const dueNow = (g) => r2(accruedTotal(g) + tollsDue(g) + overdraftInterest(g) + loanInterestRaw(g) + (g.weekLoanInterest ?? 0));
 
@@ -74,8 +74,9 @@ export function settleWeek(g) {
   g.cash = r2(g.cash - owed);
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, upkeep: r2(week), tolls, interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
-  a.ships = {}; a.cannons = {}; a.tolls = 0; a.wages = {}; a.captains = {};
+  const blines = Object.entries(a.buildings ?? {}).map(([plot, cost]) => ({ plot, cost: r2(cost) }));
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, buildings: blines, upkeep: r2(week), tolls, interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
+  a.ships = {}; a.cannons = {}; a.tolls = 0; a.wages = {}; a.captains = {}; a.buildings = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
   post(g, "report", { week: r.week, paid: r.paid, debt: r.debt });
