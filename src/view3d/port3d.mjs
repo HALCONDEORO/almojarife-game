@@ -131,13 +131,25 @@ export function makeHarborCrane(THREE) {
  *  The material keeps flatShading, whose per-face normals come from screen-space derivatives,
  *  so displaced waves shade correctly with no CPU vertex or normals work per frame.
  *  The time uniform lives on water.userData.time for the render loop to advance. */
-export function gpuWaves(water) {
+export function gpuWaves(water, { quayEdgeZ = QUAY_EDGE_Z } = {}) {
   const time = { value: 0 };
   water.material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = time;
-    shader.vertexShader = "uniform float uTime;\n" + shader.vertexShader.replace(
+    shader.vertexShader = "uniform float uTime;\nvarying vec3 vWorldPos;\n" + shader.vertexShader.replace(
       "#include <begin_vertex>",
-      "#include <begin_vertex>\ntransformed.z += sin((position.x * 6.2831853) / 7.0 + uTime * 1.2) * 0.09 + cos((position.y * 6.2831853) / 11.0 + uTime * 0.9) * 0.06;"
+      "#include <begin_vertex>\ntransformed.z += sin((position.x * 6.2831853) / 7.0 + uTime * 1.2) * 0.09 + cos((position.y * 6.2831853) / 11.0 + uTime * 0.9) * 0.06;\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;"
+    );
+    // Shore work in the fragment shader: a breathing foam band at the quay edge and
+    // slightly darker water right by the pier (art guide), both analytic - no depth texture.
+    shader.fragmentShader = ("uniform float uTime;\nvarying vec3 vWorldPos;\nconst float QUAY_EDGE_Z = " + quayEdgeZ.toFixed(1) + ";\n") + shader.fragmentShader.replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+      { float dQ = vWorldPos.z - QUAY_EDGE_Z;
+        float band = (1.0 - smoothstep(0.0, 2.4, dQ)) * (1.0 - smoothstep(28.0, 33.0, abs(vWorldPos.x))); // smoothstep with edge0 < edge1 only: reversed edges are undefined in GLSL
+        float pulse = 0.5 + 0.5 * sin(uTime * 1.6 + vWorldPos.x * 0.35 + vWorldPos.z * 1.1);
+        float foam = band * band * smoothstep(0.74, 0.98, pulse) * 0.55;
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.8, band * 0.35);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 0.94), foam); }`
     );
   };
   water.material.needsUpdate = true;
