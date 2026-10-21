@@ -116,26 +116,37 @@ export function sellQuote(world, market, city, good, qty) {
  *  (docs/design/city-builder.md piece 3 follow-up): at level batches/day the best port paid the
  *  building back in ~35 days; this pattern lands it at roughly a season. */
 export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 2: Object.freeze([1]), 3: Object.freeze([2, 1]) });
-/** Average batches a level produces per day when the margin holds, from WORKSHOP_BATCH_PATTERN. */
-export const workshopRate = (level) => { const p = WORKSHOP_BATCH_PATTERN[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
-/** One production day of a port's active workshops, run inside that port's (staggered) market tick so
- *  it sees fresh prices. Each workshop runs the largest batch count (up to its pattern cap) that still
- *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
- *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Producer definitions, keyed by building type: which market recipe it runs and what good it sells.
+ *  Adding a new processor-type producer is a row here plus a BUILDING_TYPES row; the tick and the
+ *  Buildings tab read from this table, never from hardcoded types. (Primary producers with no
+ *  inputs - farms, mines - are a later piece.) */
+export const PRODUCERS = Object.freeze({
+  workshop: Object.freeze({ recipe: "weave", output: "cloth", pattern: WORKSHOP_BATCH_PATTERN }),
+});
+/** Average batches a level produces per day when the margin holds, from the type's pattern. */
+export const producerRate = (type, level) => { const p = PRODUCERS[type]?.pattern?.[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
+/** Average batches a workshop level produces per day when the margin holds. */
+export const workshopRate = (level) => producerRate("workshop", level);
+/** One production day of a port's active producers, run inside that port's (staggered) market tick so
+ *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
+ *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
+ *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
 export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
   const day = Math.ceil(g.tick / TICKS_PER_DAY);
   for (const b of Object.values(plots)) {
-    if (b.state !== "active" || b.type !== "workshop") continue;
-    const pattern = WORKSHOP_BATCH_PATTERN[b.level] ?? WORKSHOP_BATCH_PATTERN[3];
+    if (b.state !== "active") continue;
+    const def = PRODUCERS[b.type];
+    if (!def) continue;
+    const pattern = def.pattern[b.level] ?? def.pattern[3];
     for (let batches = Math.min(b.level, pattern[day % pattern.length]); batches >= 1; batches--) {
-      const q = quoteRecipe(g.world, g.market, cityId, "weave", batches);
+      const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);
       if (!q.ok) continue; // not enough input stock for this size: try smaller
       if (g.cash < q.cost) continue;
-      const revenue = sellQuote(g.world, g.market, cityId, "cloth", q.outputs.cloth);
+      const revenue = sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]);
       if (revenue <= q.cost) continue; // margin gone at this size
-      const c = consumeRecipe(g.world, g.market, cityId, "weave", g.cash, batches); // wool stock down, cloth stock up
+      const c = consumeRecipe(g.world, g.market, cityId, def.recipe, g.cash, batches); // input stock down, output stock up
       if (!c.ok) break; // re-quoted inside; never mutate half-way
       g.cash += revenue - c.cost;
       b.produced = (b.produced ?? 0) + batches; // lifetime batches, for the Buildings tab (piece 4)
