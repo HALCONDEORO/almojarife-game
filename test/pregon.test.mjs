@@ -30,6 +30,16 @@ test("critical scarcity draws a pregón naming the alcalde and the good", () => 
   assert.ok(msg.txt.en.includes(r.mayor) && msg.txt.en.includes("grain"));
 });
 
+test("the EN pregón uses readable good names, never the raw key", () => {
+  const g = fresh();
+  g.market.cadiz.olive_oil.stock = 1;
+  const r = arrivalPregon(g, "cadiz");
+  assert.equal(r.good, "olive_oil");
+  const msg = g.inbox.find((m) => m.kind === "pregon");
+  assert.ok(msg.txt.en.includes("olive oil"));
+  assert.ok(!msg.txt.en.includes("olive_oil"));
+});
+
 test("the concejo does not cry every day: one pregón per city per cooldown", () => {
   const g = fresh();
   g.market.cadiz.grain.stock = 1;
