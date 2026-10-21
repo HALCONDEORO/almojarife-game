@@ -141,3 +141,35 @@ test("water foam: quay-edge band and darkening are injected into the fragment sh
   assert.ok(shader.fragmentShader.includes("0.93, 0.95, 0.94"), "foam colour");
   assert.ok(shader.fragmentShader.includes("uTime"), "foam breathes with time");
 });
+
+test("fuseStatic splits textured and plain meshes into one fused mesh per kind", async () => {
+  const { fuseStatic } = await import("../src/view3d/port3d.mjs");
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const root = new THREE.Group();
+  const plain = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  const tiled = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x9b4a2b }));
+  tiled.material.userData.texKind = "tiles@0.35";
+  root.add(plain, tiled);
+  const fused = fuseStatic(THREE, root);
+  assert.equal(fused, 2);
+  const kinds = root.children.map((o) => o.name).filter((n) => n === "fused" || n?.startsWith("fused:")).sort();
+  assert.deepEqual(kinds, ["fused", "fused:tiles@0.35"]);
+  const tiledMesh = root.children.find((o) => o.name === "fused:tiles@0.35");
+  assert.ok(tiledMesh.geometry.attributes.uv, "fused geometry keeps UVs");
+});
+
+test("boxUVmetres scales box UVs to metres per face", async () => {
+  const { boxUVmetres } = await import("../src/view3d/port3d.mjs");
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const g = boxUVmetres(new THREE.BoxGeometry(10, 2, 4), 10, 2, 4);
+  const uv = g.attributes.uv;
+  let maxU = 0, maxV = 0;
+  for (let i = 0; i < uv.count; i++) { maxU = Math.max(maxU, uv.getX(i)); maxV = Math.max(maxV, uv.getY(i)); }
+  assert.ok(maxU >= 4 && maxV >= 2, `uv span ${maxU}x${maxV} should reach the face metres`);
+});
+
+test("textures are null in Node (no DOM) and kinds are marked on materials", async () => {
+  const { makeTexture } = await import("../src/view3d/textures.mjs");
+  assert.equal(makeTexture(null, "tiles"), null);
+  assert.equal(makeTexture(null, "unknown"), null);
+});

@@ -2,6 +2,7 @@
 // Scale is stylised: buildings 1:1, ships 0.75. Units are metres. Water is y = 0, the quay top is y = 1.2.
 // `THREE` is passed in so this module loads in the browser and under Node tests alike.
 import { seeded } from "../view/cityscene.mjs";
+import { makeTexture } from "./textures.mjs";
 
 export const QUAY_TOP = 1.2, QUAY_EDGE_Z = -2, FRONT_Z = -9; // 7 m of quay between the edge and the building fronts
 /** Slope behind the quay: it rises 1 m for every 4 m towards negative z. */
@@ -59,24 +60,44 @@ export function cameraPose(zoom = 1, yaw = 0) {
   return { x: lx + (dx * c + dz * s) * z, y: ly + dy * z, z: lz + (-dx * s + dz * c) * z, look: CAMERA.look };
 }
 
+/** Shared runtime texture cache (null in Node: materials stay flat). */
+const texCache = new Map();
+function textureFor(THREE, kind, perMetre) {
+  const k = kind + "@" + perMetre;
+  if (!texCache.has(k)) texCache.set(k, makeTexture(THREE, kind, perMetre));
+  return texCache.get(k);
+}
+/** BoxGeometry UVs come 0..1 per face; scale them to metres so world-space textures tile evenly. */
+export function boxUVmetres(geo, w, h, d) {
+  const uv = geo.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  for (let f = 0; f < 6; f++) for (let v = 0; v < 4; v++) { const i = f * 4 + v; if (i < uv.count) uv.setXY(i, uv.getX(i) * dims[f][0], uv.getY(i) * dims[f][1]); }
+  uv.needsUpdate = true; return geo;
+}
+
 /**
  * Fuse the plain meshes under `root` into ONE mesh with per-vertex colours (one draw call). Meshes with emissive light stay apart so they keep glowing.
  * Pure geometry work, no GPU needed. Returns the number of meshes that were fused.
  */
 export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = true } = {}) {
   root.updateMatrixWorld(true);
-  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), pos = [], nor = [], col = [], dead = [], c = new THREE.Color();
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map(), dead = [], c = new THREE.Color();
+  const bucketOf = (kind) => { if (!buckets.has(kind)) buckets.set(kind, { pos: [], nor: [], col: [], uv: [], kind }); return buckets.get(kind); };
   root.traverse((o) => {
     if (!o.isMesh || o.userData.keep || (o.material.emissiveIntensity > 0 && o.material.emissive?.getHex() > 0)) return;
     const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
-    c.copy(o.material.color); const p = g.attributes.position, n = g.attributes.normal;
-    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); col.push(c.r, c.g, c.b); }
+    c.copy(o.material.color);
+    const p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv, B = bucketOf(o.material.userData.texKind ?? "plain");
+    for (let i = 0; i < p.count; i++) { B.pos.push(p.getX(i), p.getY(i), p.getZ(i)); B.nor.push(n.getX(i), n.getY(i), n.getZ(i)); B.col.push(c.r, c.g, c.b); B.uv.push(u ? u.getX(i) : 0, u ? u.getY(i) : 0); }
     dead.push(o); g.dispose();
   });
   if (!dead.length) return 0;
-  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  const fused = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide })); fused.castShadow = castShadow; fused.receiveShadow = receiveShadow; fused.name = "fused";
-  for (const o of dead) o.parent.remove(o); root.add(fused); return dead.length;
+  for (const B of buckets.values()) {
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(B.pos, 3)); geo.setAttribute("normal", new THREE.Float32BufferAttribute(B.nor, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(B.col, 3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(B.uv, 2));
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
+    if (B.kind !== "plain") { const [kind, pm] = B.kind.split("@"); const tex = textureFor(THREE, kind, +pm); if (tex) mat.map = tex; }
+    const fused = new THREE.Mesh(geo, mat); fused.castShadow = castShadow; fused.receiveShadow = receiveShadow; fused.name = B.kind === "plain" ? "fused" : "fused:" + B.kind; root.add(fused);
+  }
+  for (const o of dead) o.parent.remove(o); return dead.length;
 }
 
 /** A typed town building (inn, smithy, chapel): each type keeps its own silhouette in the same materials family as the houses. */
@@ -159,12 +180,12 @@ export function gpuWaves(water, { quayEdgeZ = QUAY_EDGE_Z } = {}) {
 
 export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {}, plots3d = [], marketStyle = MARKET_STYLE } = {}) {
   const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
-  const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o })); return mats.get(k); };
+  const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) { const { tex, perMetre, ...rest } = o; const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...rest }); if (tex) m.userData.texKind = tex + "@" + (perMetre ?? 0.4); mats.set(k, m); } return mats.get(k); };
   const add = (parent, geo, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; parent.add(m); return m; };
-  const box = (p, w, h, d, c, x, y, z, o) => add(p, new THREE.BoxGeometry(w, h, d), M(c, o), x, y, z);
+  const box = (p, w, h, d, c, x, y, z, o) => add(p, o?.tex ? boxUVmetres(new THREE.BoxGeometry(w, h, d), w, h, d) : new THREE.BoxGeometry(w, h, d), M(c, o), x, y, z);
   /** Low Arab-tile gable roof (about 22 degrees): a triangular prism along the depth. */
   const gable = (p, w, d, x, y, z, color = 0x9b4a2b) => { const rise = (w / 2) * Math.tan((22 * Math.PI) / 180), sh = new THREE.Shape(); sh.moveTo(-w / 2 - 0.3, 0); sh.lineTo(w / 2 + 0.3, 0); sh.lineTo(0, rise); sh.closePath();
-    const g = new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }); return add(p, g, M(color), x, y, z - d / 2 - 0.3); };
+    const g = new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }); return add(p, g, M(color, { tex: "tiles", perMetre: 0.35 }), x, y, z - d / 2 - 0.3); };
   const hip = (p, w, d, h, x, y, z, color = 0x7e3b22) => { const m = add(p, new THREE.ConeGeometry(1, 1, 4), M(color), x, y + h / 2, z); m.rotation.y = Math.PI / 4; m.scale.set((w / 2) * 1.42, h, (d / 2) * 1.42); return m; };
   scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(0xe6d8bc, 60, 180);
   scene.add(new THREE.HemisphereLight(0xffe9c4, 0x56625c, 0.4)); // lower: the environment map carries ambient now
@@ -174,7 +195,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   const water = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 96, 96), new THREE.MeshStandardMaterial({ color: 0x2f6f8f, roughness: 0.35, metalness: 0.1, flatShading: true }));
   water.rotation.x = -Math.PI / 2; water.name = "water"; water.receiveShadow = true; gpuWaves(water); scene.add(water);
   // quay: stone top and darker face, 7 m deep, 60 m long
-  box(scene, 60, QUAY_TOP, 7, 0xb9ad90, 0, QUAY_TOP / 2, -5.5); box(scene, 60, QUAY_TOP - 0.1, 0.12, 0x968b74, 0, (QUAY_TOP - 0.1) / 2, QUAY_EDGE_Z + 0.06);
+  box(scene, 60, QUAY_TOP, 7, 0xb9ad90, 0, QUAY_TOP / 2, -5.5, { tex: "stone", perMetre: 0.22 }); box(scene, 60, QUAY_TOP - 0.1, 0.12, 0x968b74, 0, (QUAY_TOP - 0.1) / 2, QUAY_EDGE_Z + 0.06, { tex: "stone", perMetre: 0.22 });
   // hillside: one sloped quad rising 1 m per 4 m
   { const far = -45, y1 = slopeY(far), g = new THREE.BufferGeometry(), v = [-60, QUAY_TOP, FRONT_Z, 60, QUAY_TOP, FRONT_Z, 60, y1, far, -60, y1, far];
     g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3)); g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals(); const hill = new THREE.Mesh(g, M(0x9a8b5a, { side: THREE.DoubleSide })); hill.receiveShadow = true; scene.add(hill); }
@@ -299,12 +320,12 @@ export function housesClearOf(houses, rects) {
   return houses.filter((h) => !rects.some((r) => Math.abs(h.x - r.x) < (r.w + h.w) / 2 + 0.6 && Math.abs(h.z - r.z) < (r.d + h.d) / 2 + 0.6));
 }
 
-const std = (THREE, color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o });
+const std = (THREE, color, o = {}) => { const { tex, perMetre, ...rest } = o; const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...rest }); if (tex) m.userData.texKind = tex + "@" + (perMetre ?? 0.4); return m; };
 const put = (THREE, parent, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
 const gable3 = (THREE, parent, w, d, x, y, z, color = 0x9b4a2b) => {
   const rise = (w / 2) * Math.tan((22 * Math.PI) / 180), sh = new THREE.Shape();
   sh.moveTo(-w / 2 - 0.3, 0); sh.lineTo(w / 2 + 0.3, 0); sh.lineTo(0, rise); sh.closePath();
-  return put(THREE, parent, new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }), std(THREE, color), x, y, z - d / 2 - 0.3);
+  return put(THREE, parent, new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }), std(THREE, color, { tex: "tiles", perMetre: 0.35 }), x, y, z - d / 2 - 0.3);
 };
 
 /** A player's building on its plot: house (whitewashed), workshop (timber shed with chimney),
