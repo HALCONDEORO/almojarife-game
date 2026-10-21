@@ -19,7 +19,7 @@ import { rollEvent } from "./events.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
-import { tickBuildings, accrueBuildings, workshopTick } from "./buildings.mjs";
+import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus } from "./buildings.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
 
@@ -108,6 +108,7 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
+    for (const e of Object.values(g.market[c.id])) e.pop = (c.pop ?? 8000) + housePopBonus(g, c.id); // houses add their people before demand is computed
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     const hist = (g.hist ??= {});
@@ -204,6 +205,8 @@ export function sellShip(g, ship) {
   return { ok: true, value: v };
 }
 export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
+/** Storage cap at a port: the base warehouse plus each active warehouse-building level (design doc piece 5). */
+export const warehouseCap = (g, city) => WAREHOUSE_CAP + warehouseCapBonus(g, city);
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
 export const warehouseOf = (g, city) => g.warehouses?.[city] ?? null;
 /** Buy a warehouse in the port where a ship is docked. One per port. */
@@ -221,7 +224,7 @@ export function storeGoods(g, ship, good, qty) {
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
-  qty = Math.min(Math.floor(qty), ship.cargo[good] ?? 0, WAREHOUSE_CAP - whUsed(w));
+  qty = Math.min(Math.floor(qty), ship.cargo[good] ?? 0, warehouseCap(g, ship.at) - whUsed(w));
   if (!(qty > 0)) return { ok: false, reason: "nothing to store" };
   const had=ship.cargo[good],paid=ship.basis?.[good]??0,transferred=Math.round(paid*qty/had);
   if(ship.basis)ship.basis[good]=paid-transferred;
