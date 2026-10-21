@@ -109,3 +109,22 @@ test('the buy fills up to the market stock even when stock < 2 * target',()=>{
  assert.equal(g.warehouses.cadiz.goods.grain,6,'bought every available unit');
  assert.equal(g.market.cadiz.grain.stock,0);
 });
+test('steward trades move port reputation like manual trades',async()=>{
+ const{portRep}=await import('../src/game/reputation.mjs');
+ const{g}=mk();
+ // Selling into a shortage earns reputation through the standing order too.
+ dear(g,'grain'); // stock=1: critically short
+ const w=g.warehouses.cadiz;w.goods.grain=10;w.basis={grain:100};
+ const sellP=price(world,{...g.market.cadiz.grain,stock:2},'grain');
+ assert.ok(setStewardRule(g,'cadiz','grain',{sellAbove:1,sellKeep:0},999).ok);
+ const did=stewardTick(g,'cadiz',999);
+ assert.ok(did?.[0]?.sold>0,'the order sold into the shortage');
+ assert.ok(portRep(g,'cadiz')>0,'selling what the port lacks earned reputation');
+ // Buying what is already scarce costs reputation through the standing order too.
+ const{g:g2}=mk();dear(g2,'grain');
+ const p2=price(world,g2.market.cadiz.grain,'grain');
+ assert.ok(setStewardRule(g2,'cadiz','grain',{buyBelow:p2,buyTo:1},999).ok);
+ const did2=stewardTick(g2,'cadiz',999);
+ assert.ok(did2?.[0]?.bought>0,'the order bought');
+ assert.ok(portRep(g2,'cadiz')<0,'buying a scarce good cost reputation');
+});

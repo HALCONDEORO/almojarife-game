@@ -6,6 +6,7 @@
 import { price } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
+import { repOnBuy, repOnSale, scarcityOf } from "./reputation.mjs";
 
 export const stewardOf = (g, city) => g.warehouses?.[city]?.admin ?? null;
 const GOOD_NAMES = {
@@ -58,11 +59,13 @@ export function stewardTick(g, city, cap) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
         while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; revenue += Math.floor(p * (1 - FEE)); n++; }
         if (n > 0) {
+          const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
           e.stock += n;
           const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = Math.round(paid * n / had);
           w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
           if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
           g.cash += revenue;
+          repOnSale(g, city, scarcity, revenue); // standing orders earn (and lose) reputation like manual trades
           did.push({ good, sold: n, revenue });
         }
       }
@@ -82,6 +85,7 @@ export function stewardTick(g, city, cap) {
         }
         if (n > 0) {
           g.cash -= cost;
+          repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
           w.goods[good] = (w.goods[good] ?? 0) + n;
           (w.basis ??= {})[good] = (w.basis[good] ?? 0) + cost;
           did.push({ good, bought: n, cost });
