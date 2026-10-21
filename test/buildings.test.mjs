@@ -136,7 +136,7 @@ function woolTown(g) { // cheap wool, dear cloth: the weave's natural home
   Object.assign(g.market.cadiz.cloth, { stock: 2, target: 100 });
 }
 
-test("profitable workshop runs one weave batch per level at its port tick", () => {
+test("profitable workshop runs batches per its level's daily pattern at its port tick", () => {
   const g = fundedWorkshop(1);
   woolTown(g);
   const cash = g.cash, wool = g.market.cadiz.wool.stock, cloth = g.market.cadiz.cloth.stock;
@@ -149,9 +149,20 @@ test("profitable workshop runs one weave batch per level at its port tick", () =
   assert.equal(buildingAt(g, "cadiz", PLOT.id).produced, 1);
   const g2 = fundedWorkshop(2);
   woolTown(g2);
-  workshopTick(g2, "cadiz");
-  assert.equal(buildingAt(g2, "cadiz", PLOT.id).produced, 2); // level 2 tries two batches
-  assert.equal(g2.market.cadiz.wool.stock, wool - 8);
+  workshopTick(g2, "cadiz"); // day 0: level 2 pattern is one batch every day
+  assert.equal(buildingAt(g2, "cadiz", PLOT.id).produced, 1);
+  assert.equal(g2.market.cadiz.wool.stock, wool - 4);
+  const g3 = fundedWorkshop(3);
+  woolTown(g3);
+  workshopTick(g3, "cadiz"); // day 0: level 3 alternates 2 and 1 batches, starting at 2
+  assert.equal(buildingAt(g3, "cadiz", PLOT.id).produced, 2);
+  assert.equal(g3.market.cadiz.wool.stock, wool - 8);
+  g3.tick = TICKS_PER_DAY; workshopTick(g3, "cadiz"); // day 1: the low half of the alternation
+  assert.equal(buildingAt(g3, "cadiz", PLOT.id).produced, 3);
+  const g1 = fundedWorkshop(1);
+  woolTown(g1);
+  g1.tick = TICKS_PER_DAY; workshopTick(g1, "cadiz"); // day 1: level 1 rests every other day
+  assert.equal(buildingAt(g1, "cadiz", PLOT.id).produced ?? 0, 0);
 });
 
 test("no stock, no cash, no margin, under construction: no production, no mutation", () => {
@@ -174,7 +185,7 @@ test("production runs inside the port's own staggered market tick, deterministic
   const ticks = slot === 0 ? TICKS_PER_DAY : slot;
   const a = newGame(world, "cadiz", { cash: 50000 }), b = newGame(world, "cadiz", { cash: 50000 });
   buyPlot(b, "cadiz", PLOT); startConstruction(b, "cadiz", PLOT.id, "workshop");
-  const bb = buildingAt(b, "cadiz", PLOT.id); bb.state = "active"; bb.level = 1; delete bb.nextLevel; delete bb.readyTick;
+  const bb = buildingAt(b, "cadiz", PLOT.id); bb.state = "active"; bb.level = 2; delete bb.nextTick; delete bb.nextLevel; delete bb.readyTick; // level 2 produces one batch every day, whatever the day parity
   for (const g of [a, b]) woolTown(g);
   for (let i = 0; i < ticks; i++) { advanceTick(a); advanceTick(b); } // both see cadiz's market tick once
   assert.equal(a.market.cadiz.wool.stock - b.market.cadiz.wool.stock, 4); // the weave is the only difference
@@ -191,7 +202,7 @@ test("production runs inside the port's own staggered market tick, deterministic
 
 test("hostile or malformed plot ids are rejected and can never reach Object internals", () => {
   const g = newGame(world, "cadiz", { cash: 10000 });
-  for (const id of ["__proto__", "constructor", "prototype", "CADIZ:1", "cadiz", "cadiz:x", "cadiz:-1", "cadiz:1:2", ""]) {
+  for (const id of ["__proto__", "constructor", "prototype", "CADIZ:1", "cadiz", "cadiz:x", "cadiz:-1", "cadiz:1:2", "", "cadiz:01", "cadiz:007", "cadiz:1000"]) {
     assert.equal(buyPlot(g, "cadiz", { id, type: "house", w: 3, d: 3 }).ok, false, id);
   }
   buyPlot(g, "cadiz", PLOT);

@@ -24,10 +24,13 @@ export function plotPrice(world, cityId, plot) {
 }
 
 const key = (cityId, plotId) => `${cityId}/${plotId}`;
-// Plot ids come from the seeded layout as `<city>:<index>`; anything else (including "__proto__"
-// and friends) is rejected. The maps are null-prototype so a hostile or malformed id can never
-// collide with Object internals. Layout existence is checked by the view layer, which owns cityPlots.
-export const PLOT_ID = /^[a-z0-9_-]+:\d+$/;
+// Plot ids come from the seeded layout as `<city>:<index>` with no leading zeros; anything else
+// (including "__proto__" and friends, and non-canonical forms like "cadiz:01", which would be a
+// phantom plot colliding with "cadiz:1") is rejected. The index is capped at 3 digits - the seeded
+// layout is grid-bound far below that; real existence is checked by the view layer, which owns
+// cityPlots. The maps are null-prototype so a hostile or malformed id can never collide with
+// Object internals.
+export const PLOT_ID = /^[a-z0-9_-]+:(0|[1-9]\d{0,2})$/;
 export function buildingAt(g, cityId, plotId) { return g.buildings?.[cityId]?.[plotId] ?? null; }
 
 /** Buy an empty plot. `plot` is the layout descriptor {id, type, w, d} from the (seeded, deterministic) city layout. */
@@ -44,7 +47,7 @@ export function buyPlot(g, cityId, plot) {
 }
 
 /** Quote for building or upgrading on an owned plot: materials at the local market plus the labor fee. No mutation.
- *  Upgrade policy (review-pinned): a new level pays the FULL level cost (materials x level, fee x level),
+ *  Upgrade policy: a new level pays the FULL level cost (materials x level, fee x level),
  *  not the difference from the previous one - a level-3 workshop is a bigger building, not a patch. */
 export function quoteConstruction(g, cityId, plotId, type) {
   const spec = BUILDING_TYPES[type];
@@ -88,7 +91,7 @@ export function tickBuildings(g) {
 }
 
 /** One day of upkeep per active building, accrued into the weekly book like ship upkeep. Runs in dayTick.
- *  Upkeep policy (review-pinned): a building under construction accrues nothing; the completion day
+ *  Upkeep policy: a building under construction accrues nothing; the completion day
  *  already accrues, matching how an arrival day counts as a day at sea. */
 export function accrueBuildings(g) {
   for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots)) {
@@ -112,12 +115,19 @@ function sellQuote(world, market, city, good, qty) {
  *  it sees fresh prices. Each workshop runs the largest batch count (up to its level) that still
  *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
  *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Loom throughput per level, keyed on the absolute day so it stays deterministic: level 1 runs one
+ *  batch every other day, level 2 one batch a day, level 3 alternates two and one. Measured balance
+ *  (docs/design/city-builder.md piece 3 follow-up): at level batches/day the best port paid the
+ *  building back in ~35 days; this pattern lands it at roughly a season. */
+export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 2: Object.freeze([1]), 3: Object.freeze([2, 1]) });
 export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
+  const day = Math.ceil(g.tick / TICKS_PER_DAY);
   for (const b of Object.values(plots)) {
     if (b.state !== "active" || b.type !== "workshop") continue;
-    for (let batches = b.level; batches >= 1; batches--) {
+    const pattern = WORKSHOP_BATCH_PATTERN[b.level] ?? WORKSHOP_BATCH_PATTERN[3];
+    for (let batches = Math.min(b.level, pattern[day % pattern.length]); batches >= 1; batches--) {
       const q = quoteRecipe(g.world, g.market, cityId, "weave", batches);
       if (!q.ok) continue; // not enough input stock for this size: try smaller
       if (g.cash < q.cost) continue;
