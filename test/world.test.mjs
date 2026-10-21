@@ -91,10 +91,11 @@ test("market 365 days: stocks never negative, prices stay bounded", () => {
   }
 });
 test("every good has at least one producer and one consumer", () => {
+  const madeByBuilding = new Set(Object.values(PRODUCERS).map((d) => d.output)); // processors build anywhere, so their output needs no maker city
+  const constructionOnly = new Set(["bricks"]); // bricks are demanded by construction quotes only, from the chains plan PR5 on; the PR9 guard test replaces this exemption
   for (const g of Object.keys(world.goods)) {
-    // a good is produced if a port makes it or a production building outputs it (the brewery builds anywhere, so beer has no maker city)
-    assert.ok(world.cities.some((c) => c.makes.includes(g)) || Object.values(PRODUCERS).some((p) => p.output === g), g + " has no producer");
-    assert.ok(world.cities.some((c) => c.needs.includes(g)), g + " has no consumer");
+    assert.ok(world.cities.some((c) => c.makes.includes(g)) || madeByBuilding.has(g), g + " has no producer");
+    assert.ok(world.cities.some((c) => c.needs.includes(g)) || constructionOnly.has(g), g + " has no consumer");
   }
 });
 test("no port both makes and needs the same good", () => {
