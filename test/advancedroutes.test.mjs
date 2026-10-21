@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, setRouteAdv, setRoute, clearRoute } from "../src/game/game.mjs";
+import { newGame, advanceDay, setRouteAdv, setRoute, clearRoute, doBuy, doSell, doSail } from "../src/game/game.mjs";
+import { processRoutes } from "../src/game/routes.mjs";
+import { price } from "../src/sim/market.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const game = () => { const g = newGame(world); g.eventsOn = false; return g; };
@@ -75,4 +77,17 @@ test("legacy and advanced routes run side by side; advanced routes survive savin
   assert.ok(g.ships[0].voyage && g.ships[1].voyage, "both sailed");
   const back = deserialize(serialize(g, "X"), world).g;
   assert.deepEqual(back.ships[1].route, g.ships[1].route);
+});
+
+test("buy limits compare to the market price, before the port fee", () => {
+  const g = game(), s = g.ships[0], [a, b] = ports(g, 2);
+  const market = price(world, g.market[a].grain, "grain");
+  setRouteAdv(g, s, [{ city: a, buy: [{ good: "grain", maxPrice: market }] }, { city: b }]); // cap = market price: the fee on top must not block the buy
+  processRoutes(g, { doBuy, doSell, doSail });
+  assert.ok((s.cargo.grain ?? 0) > 0, "bought at the market-price cap, fee ignored for the limit");
+  const g2 = game(), s2 = g2.ships[0], [a2, b2] = ports(g2, 2);
+  const m2 = price(world, g2.market[a2].grain, "grain");
+  setRouteAdv(g2, s2, [{ city: a2, buy: [{ good: "grain", maxPrice: m2 - 1 }] }, { city: b2 }]); // one below the market price: no buy
+  processRoutes(g2, { doBuy, doSell, doSail });
+  assert.equal(s2.cargo.grain ?? 0, 0, "one coin below the market price blocks the buy");
 });
