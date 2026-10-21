@@ -3,6 +3,7 @@
 // `THREE` is passed in so this module loads in the browser and under Node tests alike.
 import { seeded } from "../view/cityscene.mjs";
 import { makeTexture } from "./textures.mjs";
+import { makeHouse } from "./buildings/house.mjs";
 
 export const QUAY_TOP = 1.2, QUAY_EDGE_Z = -2, FRONT_Z = -9; // 7 m of quay between the edge and the building fronts
 /** Slope behind the quay: it rises 1 m for every 4 m towards negative z. */
@@ -204,7 +205,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   const walls = [0xece3cf, 0xe3d6b8, 0xefe8d8];
   for (const h of L.houses) {
     if (h.type !== "house") { const g = makeTownBuilding(THREE, h.type, h); g.name = "town:" + h.type; g.userData.building = "town:" + h.type; g.position.set(h.x, h.y, h.z); scene.add(g); continue; } // typed town buildings stay clickable
-    const g = new THREE.Group(); g.position.set(h.x, h.y, h.z); box(g, h.w, h.h, h.d, walls[Math.floor(h.tint * 3) % 3], 0, h.h / 2, 0); gable(g, h.w, h.d, 0, h.h, 0); box(g, 0.7, 1.2, 0.08, 0x2b2118, 0, 0.7, h.d / 2 + 0.04); scene.add(g);
+    const g = makeHouse(THREE, h); g.position.set(h.x, h.y, h.z); scene.add(g); // the house family lives in its own module now
   }
   // bell tower far back
   { const t = L.tower, g = new THREE.Group(); g.position.set(t.x, slopeY(t.z), t.z); box(g, 3.2, t.h - 3, 3.2, 0xece3cf, 0, (t.h - 3) / 2, 0); hip(g, 3.6, 3.6, 3, 0, t.h - 3, 0, 0x9b4a2b); box(g, 1.2, 1.6, 0.3, 0x2b2118, 0, t.h - 4.5, 1.6); box(g, 0.12, 1.8, 0.12, 0x6a4325, 0, t.h + 0.7, 0); const bf = makeFlag(THREE, { color: 0xb33a2a, len: 1.6, h: 0.42 }); bf.position.set(0.06, t.h + 1.35, 0); g.add(bf); scene.add(g); }
