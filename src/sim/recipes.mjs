@@ -20,6 +20,7 @@ export const RECIPES = Object.freeze({
   brewery: Object.freeze({ timber: 12, iron: 2 }),
   brickworks: Object.freeze({ timber: 12, iron: 2 }),
   esparto_field: Object.freeze({ timber: 8, iron: 1 }),
+  ranch: Object.freeze({ timber: 12, iron: 2 }),
   dock: Object.freeze({ timber: 10, iron: 2 }),
   fishery: Object.freeze({ timber: 8, cloth: 2 }),
   ironworks: Object.freeze({ timber: 14, iron: 4 }),

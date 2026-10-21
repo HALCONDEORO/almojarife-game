@@ -8,7 +8,8 @@
    "pop": 12000,
    "makes": [
     "salt",
-    "fish"
+    "fish",
+    "leather"
    ],
    "needs": [
     "wool",
@@ -25,7 +26,9 @@
    "pop": 40000,
    "makes": [
     "olive_oil",
-    "wine"
+    "wine",
+    "meat",
+    "leather"
    ],
    "needs": [
     "iron",
@@ -47,14 +50,16 @@
    "makes": [
     "sugar",
     "fish",
-    "pepper"
+    "pepper",
+    "leather"
    ],
    "needs": [
     "grain",
     "iron",
     "ironware",
     "beer",
-    "esparto"
+    "esparto",
+    "meat"
    ],
    "river": true
   },
@@ -73,7 +78,9 @@
     "wool",
     "fish",
     "ironware",
-    "beer"
+    "beer",
+    "meat",
+    "leather"
    ]
   },
   {
@@ -94,7 +101,8 @@
     "fish",
     "sugar",
     "beer",
-    "esparto"
+    "esparto",
+    "leather"
    ]
   },
   {
@@ -176,7 +184,8 @@
    "pop1500": 14000,
    "makes": [
     "wine",
-    "cloth"
+    "cloth",
+    "leather"
    ],
    "needs": [
     "grain",
@@ -610,6 +619,12 @@
   },
   "esparto": {
    "base": 30
+  },
+  "meat": {
+   "base": 25
+  },
+  "leather": {
+   "base": 50
   }
  },
  "waypoints": {

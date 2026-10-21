@@ -179,7 +179,8 @@ port (P3 draws raw materials from the trading office): one extra PR, only if the
 | ironware | bilbao, barcelona | sevilla, lisboa, valencia, malaga, cadiz, argel |
 | pottery | valencia, sevilla | lisboa, cadiz, palma, malaga, argel, oran |
 | bricks | about 10 ports with clay: TBD, source needed | every port (construction) |
-| meat, leather | TBD, source needed (dehesa and Atlantic pasture) | big ports |
+| meat | sevilla (sourced, section 8); no other port has a full-text source yet | lisboa, valencia |
+| leather | sevilla, cadiz, lisboa, porto (sourced, section 8; outside sevilla it is a trade good, the ranch builds only where the city makes meat) | barcelona, valencia |
 | esparto | cartagena, almeria (sourced, section 8) | ports with shipyards, and middle and rich classes |
 | soap | sevilla, cartagena (sourced, section 8) | every port with middle and rich classes |
 
@@ -336,4 +337,17 @@ Each claim below is what the cited source supports; it is a basis for the place 
   spread over the larger ports, and no city is named as a historical maker. Brewery siting is free. Beer stays a modest good.
 - Not sourced: the exact ports that make salt in the game today are the existing data
   (docs and world.json); this study does not change them.
-
+- Meat and leather, Seville: Gonzalez Arce, "Cria y consumo de carne en Sevilla, a partir de indicadores fiscales (1476-1505)",
+  HID 49 (2022): abundant cattle for meat from climate, pasture and under-farmed frontier land; cattle hides sold by the
+  butchers. https://revistascientificas.us.es/index.php/HID/article/download/22543/19779/95098 . Full text read for meat; the
+  Seville leather industry (Perez Gonzalez, Dialnet 1043468) has only the catalogue record, so hides at sevilla rest on the
+  Florentine 1461 freight list below.
+- Leather, Cadiz: the Florentine freight contract of 1461 lists hides loadable at Cadiz as coming from Seville, Jerez, Cadiz and
+  Sanlucar; a note adds that the Cadiz hides came mostly from the Jerez butcher shops. "El paisaje portuario en la Bahia de Cadiz a
+  finales de la Edad Media", Suplemento de Riparia 2 (2019), notes 24-25.
+  https://rodin.uca.es/xmlui/bitstream/handle/10498/21537/6.%20%28164-198%29%20El%20paisaje%20portuario%20en%20la%20Bah%c3%ada%20de%20C%c3%a1diz%20a%20finales%20de%20la%20Edad%20Media.pdf
+- Leather, Lisbon: Sequeira, e-Humanista 38, citing Melis (1990): in the 15th century Lisbon was the main export emporium for hides,
+  mostly to the Mediterranean, and the gateway for Portuguese, Galician and Irish hides. Lisbon is an export centre; the source does
+  not say the city tans them itself. https://ehumanista.ucsb.edu/sites/secure.lsit.ucsb.edu.span.d7_eh/files/sitefiles/ehumanista/volume38/Sequeira%2C%20Joana-Comprar%2C%20organizar%2C%20expedir.%20Mercadores%20pisanos%20no%20neg%C3%B3cio%20internacional%20dos%20couros%20portugueses%20e%20galegos%20no%20s%C3%A9culo%20XV.pdf
+- Leather, Porto: Melo, "A producao de couros em Portugal nos seculos XIV e XV", e-Humanista 49: urban tanning in Porto (the Couros
+  quarter, about 18 tanneries by the late 15th century), Guimaraes and Evora. https://ehumanista.ucsb.edu/sites/default/files/sitefiles/ehumanista/volume49/ehum49js.melo.pdf
