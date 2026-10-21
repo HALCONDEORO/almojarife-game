@@ -121,6 +121,24 @@ export function makeHarborCrane(THREE) {
   const wheel = put(THREE, g, new THREE.CylinderGeometry(1.15, 1.15, 0.3, 14), std(THREE, timber), -1.15, 1.5, 0.2); wheel.rotation.z = Math.PI / 2; // treadwheel
   return g;
 }
+/** GPU waves: the vertex shader displaces the water plane with the same two sines as waveHeight.
+ *  The material keeps flatShading, whose per-face normals come from screen-space derivatives,
+ *  so displaced waves shade correctly with no CPU vertex or normals work per frame.
+ *  The time uniform lives on water.userData.time for the render loop to advance. */
+export function gpuWaves(water) {
+  const time = { value: 0 };
+  water.material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = time;
+    shader.vertexShader = "uniform float uTime;\n" + shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\ntransformed.z += sin((position.x * 6.2831853) / 7.0 + uTime * 1.2) * 0.09 + cos((position.y * 6.2831853) / 11.0 + uTime * 0.9) * 0.06;"
+    );
+  };
+  water.material.needsUpdate = true;
+  water.userData.time = time;
+  return water;
+}
+
 export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {}, plots3d = [], marketStyle = MARKET_STYLE } = {}) {
   const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
   const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o })); return mats.get(k); };
@@ -136,7 +154,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -35, right: 35, top: 22.5, bottom: -22.5, near: 1, far: 160 }); sun.shadow.normalBias = 0.02; scene.add(sun);
   // sea
   const water = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 96, 96), new THREE.MeshStandardMaterial({ color: 0x2f6f8f, roughness: 0.35, metalness: 0.1, flatShading: true }));
-  water.rotation.x = -Math.PI / 2; water.name = "water"; water.receiveShadow = true; scene.add(water);
+  water.rotation.x = -Math.PI / 2; water.name = "water"; water.receiveShadow = true; gpuWaves(water); scene.add(water);
   // quay: stone top and darker face, 7 m deep, 60 m long
   box(scene, 60, QUAY_TOP, 7, 0xb9ad90, 0, QUAY_TOP / 2, -5.5); box(scene, 60, QUAY_TOP - 0.1, 0.12, 0x968b74, 0, (QUAY_TOP - 0.1) / 2, QUAY_EDGE_Z + 0.06);
   // hillside: one sloped quad rising 1 m per 4 m
@@ -231,6 +249,7 @@ export function makeShip(THREE, x, z, k = 0) {
 
 /** Waves: two sines, 0.15 m in total, wavelengths about 7 and 11 m. Pure geometry maths, testable without a GPU. */
 export function waveHeight(x, z, t) { return Math.sin((x * 2 * Math.PI) / 7 + t * 1.2) * 0.09 + Math.cos((z * 2 * Math.PI) / 11 + t * 0.9) * 0.06; }
+/** CPU reference path: same maths as the GPU wave shader, kept for tests and reduced embeds. The 3D view uses gpuWaves instead. */
 export function animateWater(water, t) {
   const p = water.geometry.attributes.position;
   for (let i = 0; i < p.count; i++) p.setZ(i, waveHeight(p.getX(i), p.getY(i), t));

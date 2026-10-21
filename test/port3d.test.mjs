@@ -100,3 +100,19 @@ test("fusing keeps the buildings clickable and keeps emissive lights apart", asy
   const t = scene.children.find((c) => c.userData.building === "tavern"); assert.ok(t.children.some((c) => c.name === "fused")); assert.ok(t.children.some((c) => c.isMesh && c.material.emissiveIntensity > 0));
   assert.equal(fuseStatic(THREE, new THREE.Group()), 0);
 });
+
+test("water waves run on the GPU: shader hook and time uniform are wired", async () => {
+  const { gpuWaves } = await import("../src/view3d/port3d.mjs");
+  const water = { material: { onBeforeCompile: null, needsUpdate: false }, userData: {} };
+  gpuWaves(water);
+  assert.equal(typeof water.material.onBeforeCompile, "function");
+  assert.equal(water.material.needsUpdate, true);
+  assert.ok(water.userData.time && water.userData.time.value === 0);
+  // the injected GLSL matches the pure waveHeight maths (same sines, same amplitudes)
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>" };
+  water.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("uniform float uTime"));
+  assert.ok(shader.vertexShader.includes("/ 7.0 + uTime * 1.2) * 0.09"));
+  assert.ok(shader.vertexShader.includes("/ 11.0 + uTime * 0.9) * 0.06"));
+  assert.equal(shader.uniforms.uTime, water.userData.time);
+});
