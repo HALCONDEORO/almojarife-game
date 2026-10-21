@@ -34,6 +34,9 @@ type gets its own model. Small PRs per piece.
     the building's cash share of the house. Production slows when inputs are dear,
     stops without stock or cash - the market decides, no magic numbers.
   - warehouse extension: +300 storage cap per level at that port (base 300).
+    It EXTENDS the port's base warehouse (the 1500 one): it does not replace it,
+    so it only helps where you already store goods. During an upgrade the bonus
+    is paused until the works finish (the level counts when active).
 - Construction: pay materials + coins, `readyTick = now + buildTicks(type, level)`.
   A scaffold model shows while `state === "construction"`. Upgrades 1-3 per type with
   rising cost and effect.
