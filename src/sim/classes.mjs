@@ -25,6 +25,8 @@ export const PER_1000 = {
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },
   iron:       { poor: 0.1, middle: 0.25, rich: 0.25 },
   ironware:   { poor: 0.1, middle: 0.3, rich: 0.2 },
+  meat:       { poor: 0.1, middle: 0.3, rich: 0.5 },
+  leather:    { poor: 0.05, middle: 0.2, rich: 0.4 },
   esparto:    { poor: 0.1, middle: 0.2, rich: 0.1 },
   wool:       { poor: 0.2, middle: 0.4, rich: 0.3 },
   cloth:      { poor: 0.05, middle: 0.4, rich: 0.9 },
