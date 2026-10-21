@@ -513,7 +513,7 @@ function open3d(s0) {
 addEventListener("message",e=>{
   const d=$("v3d");
   if(!d||e.origin!==location.origin||e.source!==d.querySelector("iframe").contentWindow)return;
-  if(e.data?.kind==="plot"){bldSelPlot=e.data.id;openCityPanel("plot");return;}
+  if(e.data?.kind==="plot"){if(bldSelPlot!==e.data.id){bldAction=null;bldError=null;}bldSelPlot=e.data.id;openCityPanel("plot");return;} // switching plots drops an armed action so confirm cannot hit the old plot
   if(e.data?.kind!=="building")return;
   if(String(e.data.id).startsWith("town:")){townSel=e.data.id.slice(5);openCityPanel("town");return;}
   const tb=tabForBuilding(e.data.id);if(tb)openCityPanel(tb);
