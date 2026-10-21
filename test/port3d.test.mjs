@@ -75,6 +75,17 @@ test("the largest port stays far inside the draw-call budget (150, shadows inclu
   let meshes = 0, tris = 0; scene.traverse((o) => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
   assert.ok(meshes * 2 <= 150, "meshes " + meshes); assert.ok(tris < 150000, "triangles " + tris);
 });
+test("the market is unmistakable in both styles and keeps opening the market panel", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene, makeHarborCrane } = await import("../src/view3d/port3d.mjs");
+  assert.equal(tabForBuilding("market"), "market");
+  const boxOf = (g) => { const b = new THREE.Box3().setFromObject(g); return { h: b.max.y - b.min.y }; };
+  const crane = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 0, marketStyle: "crane" }).scene.getObjectByName("building:market");
+  assert.ok(boxOf(crane).h > 7, "crane marks the market from the sea"); // mast plus jib over the awning hall
+  const lonja = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 0, marketStyle: "lonja" }).scene.getObjectByName("building:market");
+  const tris = (g) => { let n = 0; g.traverse((o) => { if (o.isMesh) { const geo = o.geometry; n += (geo.index ? geo.index.count : geo.attributes.position.count) / 3; } }); return n; };
+  assert.ok(lonja.children.some((c) => c.name === "fused") && Math.abs(tris(lonja) - tris(crane)) > 200, "lonja reads as an arcade, not the crane hall"); // the two styles are distinct models
+  assert.ok(boxOf(makeHarborCrane(THREE)).h > 6.5);
+});
 test("typed town buildings are pickable, fused on their own and keep the forge glowing", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
   const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 0 });
