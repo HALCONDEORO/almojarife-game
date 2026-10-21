@@ -17,6 +17,7 @@ import { captainSpeed } from "./captains.mjs";
 import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
+import { tickAlerts } from "./alerts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
@@ -103,6 +104,7 @@ function dayTick(g) {
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   rollEvent(g);
   tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
+  tickAlerts(g); // price alerts compare against today's market and fire once
   deliverOrders(g);
   refreshIntel(g);
   if (!g.freePlay) { // free play has no deadline and no goal: the world just goes on
