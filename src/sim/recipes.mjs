@@ -2,10 +2,10 @@
 import { price } from './market.mjs';
 import { FEE } from './trade.mjs';
 export const RECIPES = Object.freeze({
-  barca: Object.freeze({ timber: 10, iron: 3, cloth: 4 }),
-  cog: Object.freeze({ timber: 24, iron: 8, cloth: 12 }),
-  caravel: Object.freeze({ timber: 20, iron: 10, cloth: 18 }),
-  nao: Object.freeze({ timber: 42, iron: 16, cloth: 24 }),
+  barca: Object.freeze({ timber: 10, iron: 3, cloth: 3, esparto: 3 }),
+  cog: Object.freeze({ timber: 24, iron: 8, cloth: 10, esparto: 6 }),
+  caravel: Object.freeze({ timber: 20, iron: 10, cloth: 16, esparto: 6 }),
+  nao: Object.freeze({ timber: 42, iron: 16, cloth: 21, esparto: 9 }),
   warehouse: Object.freeze({ timber: 20, iron: 6 }),
   house: Object.freeze({ timber: 12, iron: 2, cloth: 2 }),
   workshop: Object.freeze({ timber: 18, iron: 5, cloth: 6 }),
@@ -19,6 +19,7 @@ export const RECIPES = Object.freeze({
   saltworks: Object.freeze({ timber: 10, iron: 2 }),
   brewery: Object.freeze({ timber: 12, iron: 2 }),
   brickworks: Object.freeze({ timber: 12, iron: 2 }),
+  esparto_field: Object.freeze({ timber: 8, iron: 1 }),
   dock: Object.freeze({ timber: 10, iron: 2 }),
   fishery: Object.freeze({ timber: 8, cloth: 2 }),
   ironworks: Object.freeze({ timber: 14, iron: 4 }),
