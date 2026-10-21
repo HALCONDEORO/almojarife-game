@@ -7,7 +7,7 @@ import { post } from "./ledger.mjs";
 import { isLive } from "./intel.mjs";
 import { price } from "../sim/market.mjs";
 export const NEWS_CHANCE = 0.7, NEWS_DEVIATION = 0.15;
-const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", dried_fish: "el pescado seco", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta" };
+export const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", dried_fish: "el pescado seco", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta" };
 /** Fair price: what the entry would charge at its target stock. */
 export const fairPrice = (world, e, good) => price(world, { ...e, stock: e.target }, good);
 /** Maybe post one price-news line on arrival at `at`. Returns {city, good, dear, price} or null. */
