@@ -12,8 +12,8 @@ import { recordSale } from "./voyages.mjs";
 
 export const stewardOf = (g, city) => g.warehouses?.[city]?.admin ?? null;
 const GOOD_NAMES = {
-  es: { grain: "trigo", fish: "pescado", salt: "sal", wool: "lana", iron: "hierro", timber: "madera", cloth: "paño", olive_oil: "aceite", wine: "vino", silk: "seda", sugar: "azúcar", pepper: "pimienta", beer: "cerveza" },
-  en: { grain: "grain", fish: "fish", salt: "salt", wool: "wool", iron: "iron", timber: "timber", cloth: "cloth", olive_oil: "olive oil", wine: "wine", silk: "silk", sugar: "sugar", pepper: "pepper", beer: "beer" },
+  es: { grain: "trigo", fish: "pescado", esparto: "esparto", salt: "sal", wool: "lana", iron: "hierro", timber: "madera", cloth: "paño", olive_oil: "aceite", wine: "vino", silk: "seda", sugar: "azúcar", pepper: "pimienta", beer: "cerveza" },
+  en: { grain: "grain", fish: "fish", esparto: "esparto", salt: "salt", wool: "wool", iron: "iron", timber: "timber", cloth: "cloth", olive_oil: "olive oil", wine: "wine", silk: "silk", sugar: "sugar", pepper: "pepper", beer: "beer" },
 };
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
 
