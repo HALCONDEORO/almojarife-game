@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, JOBS_PER_LEVEL, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
+import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe } from "../sim/recipes.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
@@ -11,13 +11,14 @@ export function buildingsRows(g, cityId) {
   const plots = g.buildings?.[cityId] ?? {};
   return Object.entries(plots).map(([plotId, b]) => {
     const spec = b.type ? BUILDING_TYPES[b.type] : null;
-    const row = { plotId, type: b.type, plotType: b.plotType, level: b.level, state: b.state, upkeep: b.state === "active" && spec ? spec.upkeep * b.level : 0 };
+    const halted = b.state === "active" && !!b.halted; // halted: workers walked for lack of cash, no costs and no output
+    const row = { plotId, type: b.type, plotType: b.plotType, level: b.level, state: b.state, halted, upkeep: b.state === "active" && !halted && spec ? spec.upkeep * b.level : 0 };
     if (b.state === "construction") {
       const total = spec.buildDays * b.nextLevel * TICKS_PER_DAY, left = Math.max(0, b.readyTick - g.tick);
       row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
       row.progress = total > 0 ? Math.min(1, Math.max(0, 1 - left / total)) : 1;
     }
-    if (b.state === "active" && PRODUCERS[b.type]) {
+    if (b.state === "active" && !halted && PRODUCERS[b.type]) {
       const def = PRODUCERS[b.type];
       row.produced = b.produced ?? 0;
       row.rate = producerRate(b.type, b.level); // average batches/day at full running
@@ -27,7 +28,10 @@ export function buildingsRows(g, cityId) {
         row.margin = q.ok ? sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]) - q.cost : null; // coins per batch right now
       }
     }
-    if (b.state === "active" && b.type) row.jobs = (JOBS_PER_LEVEL[b.type] ?? 0) * b.level; // workers this building hires from the port
+    if (b.state === "active" && !halted && b.type) {
+      row.jobs = (JOBS_PER_LEVEL[b.type] ?? 0) * b.level; // workers this building hires from the port
+      if (row.jobs) row.wages = row.jobs * WAGE_PER_WORKER; // coins per day, accrued with the upkeep
+    }
     if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
     if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
     return row;
@@ -76,7 +80,7 @@ export function parseBldAct(attr) {
   if (typeof attr !== "string") return null;
   const [kind, plotId, type] = attr.split("|");
   if (!plotId) return null;
-  if (kind === "buy") return { kind, plotId };
+  if (kind === "buy" || kind === "restart") return { kind, plotId };
   if ((kind === "build" || kind === "upgrade") && TYPE_KEYS.includes(type)) return { kind, plotId, type };
   return null;
 }
@@ -86,7 +90,8 @@ export function buildingLabel(t, row) {
   if (!row?.type) return t.bldState.plot;
   const name = t.bldTypes[row.type] ?? row.type;
   if (row.state === "construction") return `${name} (${row.nextLevel ?? 1})`;
-  return row.level > 1 ? `${name} ${row.level}` : name;
+  const base = row.level > 1 ? `${name} ${row.level}` : name;
+  return row.halted ? `${base} (${t.bldState.halted})` : base;
 }
 
 // What the single-plot view (a click in the 3D port) should show for a city/plot,
