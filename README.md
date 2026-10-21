@@ -25,15 +25,15 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Screenshots
 
-| Title | Create your house |
+| The 3D port | Trade in the market |
 |---|---|
-| ![Title screen](docs/img/title.png) | ![Character and coat of arms](docs/img/create.png) |
-| **Trade in the market** | **Sail and store goods** |
-| ![Market with icons and cheap/dear arrows](docs/img/market.png) | ![Warehouse tab](docs/img/warehouse.png) |
-| **Build ships at the slipway** | **Weekly ledger (Spanish UI)** |
-| ![Shipyard slipway scene](docs/img/shipyard.png) | ![Weekly report](docs/img/reports.png) |
-| **Message inbox (Spanish UI)** | |
-| ![Message inbox](docs/img/messages.png) | |
+| ![3D port view with the city toolbar](docs/img/port3d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
+| **The sea chart** | **Build ships at the slipway** |
+| ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard slipway scene](docs/img/shipyard.png) |
+| **Tavern: captains and news** | **Bank: loans and interest** |
+| ![Tavern tab](docs/img/tavern.png) | ![Bank tab](docs/img/bank.png) |
+| **Warehouse and steward** | **Create your house** |
+| ![Warehouse tab](docs/img/warehouse.png) | ![Character and coat of arms](docs/img/create.png) |
 
 ## How to play
 
@@ -52,12 +52,11 @@ The game is being built in public, in small pull requests with tests and review.
 
 **Still missing or in progress:**
 
-- **The campaign.** Today there is the opening goal (50,000 coins in 365 days) and a first tutorial chapter. The full mission arc (a data-driven mission engine, varied requirements, narrative, side missions and rewards) is being added mission by mission: the engine and the first missions are in open pull requests, the rest are queued.
+- **The campaign.** Today there is the opening goal (50,000 coins in 365 days) and three scripted campaign chapters, of which the first is playable. The full mission arc (a data-driven mission engine, varied requirements, narrative, side missions and rewards) is being added mission by mission: the engine and the first missions are in open pull requests, the rest are queued.
 - **Town-council contracts** (time-limited delivery jobs) are written and in review, not merged yet.
 - **A city-centred interface.** Clicking a port or a docked ship will open the city view, P3-style; navigation will show a selected ship's route. In progress.
-- **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs). The honest numbers today: the opening goal is too easy for optimal play (simulated traders win around day 36), loans carry no real risk, and silk dominates profits. Fixes are queued behind the harness.
-- **Difficulty selection** at the start of a game.
-- **Smaller mechanics** already written and in review: a proper bankruptcy flow, and importing building materials for construction.
+- **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs). The honest numbers today: the opening goal is too easy for optimal play (in 33 measured bot playthroughs, the faster strategies won on a median day 36), loans carry no real risk, and silk dominates profits. Fixes are queued behind the harness.
+- **Smaller mechanics** already written and in review: an improved bankruptcy flow (a basic one exists today), and importing building materials for construction.
 - **Sound, tutorial, full 3D for every city, world map by historical milestones.** Not started.
 - **The name** "Almojarife" is provisional.
 
