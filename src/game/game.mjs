@@ -11,7 +11,7 @@ const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed } from "../sim/trade.mjs";
+import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
 import { seeded } from "../view/cityscene.mjs";
@@ -23,6 +23,8 @@ import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.m
 import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus } from "./buildings.mjs";
 import { aiStep } from "../sim/ai.mjs";
+import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf } from "./reputation.mjs";
+export { feeMul } from "./reputation.mjs"; // the UI previews with the same fee the port will charge
 import { npcPlan } from "../sim/npcplan.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -142,15 +144,18 @@ export function waitUntilArrival(g, ship) {
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
-  const r = buy(g.world, g.market, ship, g.cash, good, qty);
-  if (r.ok) { g.cash -= r.cost; logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); }
+  const r = buy(g.world, g.market, ship, g.cash, good, qty, FEE * feeMul(g, ship.at));
+  // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
+  // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
+  if (r.ok) { g.cash -= r.cost; repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); }
   return r;
 }
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
-  const r = sell(g.world, g.market, ship, good, qty);
-  if (r.ok) { g.cash += r.revenue; recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
+  const r = sell(g.world, g.market, ship, good, qty, FEE * feeMul(g, ship.at));
+  if (r.ok) { g.cash += r.revenue; repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
@@ -195,9 +200,10 @@ export function deliverOrders(g) {
   }
 }
 export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
+export const repairPrice = (g, ship) => Math.ceil(repairCost(ship) * repairMul(g, ship.at)); // reputation discounts the shipyard bill
 export function repairShip(g, ship) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
-  const c = repairCost(ship);
+  const c = repairPrice(g, ship);
   if (c <= 0) return { ok: false, reason: "no damage" };
   if (g.cash < c) return { ok: false, reason: "no cash" };
   g.cash -= c; ship.hull = 100; return { ok: true, cost: c };
@@ -280,7 +286,7 @@ export function bestPorts(g, ship) {
     const there = { ...ship, at: c.id, voyage: null };
     let revenue = 0, profit = 0, any = false;
     for (const [good, q] of Object.entries(ship.cargo)) {
-      const p = previewSell(g.world, km, there, good, q);
+      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, there));
       if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
     }
     if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });

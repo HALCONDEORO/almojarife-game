@@ -44,8 +44,8 @@ export function tickShip(ship, force = false) {
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the
 // price against the trader and a buy-then-sell loop in one port always loses to fees.
-/** Buy up to qty, limited by stock, hold space and cash. */
-export function buy(world, market, ship, cash, good, qty) {
+/** Buy up to qty, limited by stock, hold space and cash. `fee` overrides the market fee (port reputation). */
+export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
   if (typeof cash !== "number" || !Number.isFinite(cash) || cash < 0) return { ok: false, reason: "bad cash" };
@@ -54,7 +54,7 @@ export function buy(world, market, ship, cash, good, qty) {
   qty = Math.min(qty, e.stock, SHIP_TYPES[ship.type].capacity - cargoUsed(ship));
   let n = 0, cost = 0;
   while (n < qty) {
-    const unit = Math.ceil(price(world, e, good) * (1 + FEE));
+    const unit = Math.ceil(price(world, e, good) * (1 + fee));
     if (cost + unit > cash) break;
     cost += unit; e.stock -= 1; n++;
   }
@@ -64,7 +64,7 @@ export function buy(world, market, ship, cash, good, qty) {
   ship.basis[good] = (ship.basis[good] ?? 0) + cost; // what this cargo cost, for profit display
   return { ok: true, qty: n, cost };
 }
-export function sell(world, market, ship, good, qty) {
+export function sell(world, market, ship, good, qty, fee = FEE) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
   const e = market[ship.at]?.[good];
@@ -72,7 +72,7 @@ export function sell(world, market, ship, good, qty) {
   qty = Math.min(qty, ship.cargo[good] ?? 0);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
-  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += Math.floor(price(world, e, good) * (1 - FEE)); }
+  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += Math.floor(price(world, e, good) * (1 - fee)); }
   const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
   const spent = Math.round(paid * qty / had); // share of the cost that leaves with the goods
   ship.cargo[good] -= qty;
@@ -81,25 +81,25 @@ export function sell(world, market, ship, good, qty) {
   return { ok: true, qty, revenue, profit: revenue - spent, spent };
 }
 /** What a buy of qty would do, without changing anything. Same rules as buy(). */
-export function previewBuy(world, market, ship, cash, good, qty) {
+export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good];
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
   const room = SHIP_TYPES[ship.type].capacity - cargoUsed(ship);
   const lim = Math.min(qty, e.stock, room);
   const sim = { ...e }; let n = 0, cost = 0;
   while (n < lim) {
-    const unit = Math.ceil(price(world, sim, good) * (1 + FEE));
+    const unit = Math.ceil(price(world, sim, good) * (1 + fee));
     if (cost + unit > cash) break;
     cost += unit; sim.stock -= 1; n++;
   }
   return { qty: n, cost, avg: n ? Math.round(cost / n) : 0, next: price(world, sim, good), limit: n < qty ? (e.stock < qty && n === e.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
 }
 /** What a sell of qty would do, without changing anything. Same rules as sell(). */
-export function previewSell(world, market, ship, good, qty) {
+export function previewSell(world, market, ship, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
-  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += Math.floor(price(world, sim, good) * (1 - FEE)); }
+  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += Math.floor(price(world, sim, good) * (1 - fee)); }
   const spent = Math.round((ship.basis?.[good] ?? 0) * n / have);
   return { qty: n, revenue, avg: Math.round(revenue / n), profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }
