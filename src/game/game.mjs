@@ -195,7 +195,8 @@ export function repairShip(g, ship) {
   if (g.cash < c) return { ok: false, reason: "no cash" };
   g.cash -= c; ship.hull = 100; return { ok: true, cost: c };
 }
-export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * SELL_RATE * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
+export const PRIZE_SELL_RATE = 0.4; // a captured pirate ship resells below the cared-for rate
+export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * (ship.prize ? PRIZE_SELL_RATE : SELL_RATE) * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
 export function sellShip(g, ship) {
   if(g.over||!g.ships.includes(ship))return {ok:false,reason:"not an active owned ship"};
   if (ship.voyage) return { ok: false, reason: "at sea" };
