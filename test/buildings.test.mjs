@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, advanceTick, TICKS_PER_DAY } from "../src/game/game.mjs";
-import { BUILDING_TYPES, plotPrice, buyPlot, quoteConstruction, startConstruction, buildingAt } from "../src/game/buildings.mjs";
+import { BUILDING_TYPES, plotPrice, buyPlot, quoteConstruction, startConstruction, buildingAt, buyOffice, hasOffice, OFFICE_PRICE } from "../src/game/buildings.mjs";
 import { accruedTotal } from "../src/game/ledger.mjs";
 import { RECIPES } from "../src/sim/recipes.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -281,4 +281,18 @@ test("warehouse buildings extend the port storage cap by level", () => {
   assert.equal(warehouseCap(g, "cadiz"), 900);
   s.cargo = { grain: 200 }; // refill the hold: the previous store left 50 in it
   assert.equal(storeGoods(g, s, "grain", 100).qty, 100); // room again
+});
+
+test("office gates construction: home port always, other ports after buying one", () => {
+  const g = newGame(world, "cadiz");
+  assert.equal(hasOffice(g, "cadiz"), true); // home office comes free
+  assert.equal(hasOffice(g, "lisboa"), false); // new games: no office abroad yet
+  const q0 = quoteConstruction(g, "lisboa", "lisboa:1", "house");
+  assert.equal(q0.ok, false); assert.equal(q0.reason, "office required");
+  const cash0 = g.cash, r = buyOffice(g, "lisboa");
+  assert.equal(r.ok, true); assert.equal(g.cash, cash0 - OFFICE_PRICE);
+  assert.equal(hasOffice(g, "lisboa"), true);
+  assert.equal(buyOffice(g, "lisboa").ok, false); // no double purchase
+  const legacy = { profile: { home: "cadiz" } }; // saves from before offices stay playable
+  assert.equal(hasOffice(legacy, "lisboa"), true);
 });

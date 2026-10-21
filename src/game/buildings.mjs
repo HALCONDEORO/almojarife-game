@@ -34,11 +34,25 @@ export const PLOT_ID = /^[a-z0-9_-]+:(0|[1-9]\d{0,2})$/;
 export function buildingAt(g, cityId, plotId) { return g.buildings?.[cityId]?.[plotId] ?? null; }
 
 /** Buy an empty plot. `plot` is the layout descriptor {id, type, w, d} from the (seeded, deterministic) city layout. */
+export const OFFICE_PRICE = 750; // one trading office per non-home port; it gates all construction there
+export function hasOffice(g, cityId) { // saves made before offices stay playable
+  return !Array.isArray(g.offices) || cityId === g.profile.home || g.offices.includes(cityId);
+}
+export function buyOffice(g, cityId) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
+  if (cityId === g.profile.home || g.offices.includes(cityId)) return { ok: false, reason: "already owned" };
+  if (g.cash < OFFICE_PRICE) return { ok: false, reason: "no cash", cost: OFFICE_PRICE };
+  g.cash -= OFFICE_PRICE; g.offices.push(cityId);
+  return { ok: true, cost: OFFICE_PRICE };
+}
+
 export function buyPlot(g, cityId, plot) {
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
   const price = plotPrice(g.world, cityId, plot);
   if (price === null || !PLOT_ID.test(plot.id)) return { ok: false, reason: "bad plot" };
+  if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   if (buildingAt(g, cityId, plot.id)) return { ok: false, reason: "already owned" };
   if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
   g.cash -= price;
@@ -50,6 +64,7 @@ export function buyPlot(g, cityId, plot) {
  *  Upgrade policy: a new level pays the FULL level cost (materials x level, fee x level),
  *  not the difference from the previous one - a level-3 workshop is a bigger building, not a patch. */
 export function quoteConstruction(g, cityId, plotId, type) {
+  if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   const spec = BUILDING_TYPES[type];
   if (!spec) return { ok: false, reason: "unknown type" };
   if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
