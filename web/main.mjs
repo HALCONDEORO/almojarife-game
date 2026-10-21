@@ -150,7 +150,7 @@ function spark(a, col) {
   return `<svg class="spark" width="${w}" height="${h + 2}" viewBox="0 -1 ${w} ${h + 2}"><polyline fill="none" stroke="${col === "inherit" ? "#654" : col}" stroke-width="1.2" points="${pts}"/></svg> `;
 }
 let tab = "market"; const qtys = {}; // per-good quantity chosen in the market table
-let bldAction = null, bldError = null, bldPickHint = false; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
+let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if (tab === "buildings" && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if (tab === "buildings" && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
@@ -233,7 +233,7 @@ function render() {
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
     const wh = warehouseOf(g, s.at);
-    h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["buildings", t.tabBuildings], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore]].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;
+    h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore]].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;
     const bldCard = () => { // armed buy/build/upgrade action: quote card with confirm/cancel
       if (!bldAction) return "";
       const layA = plotsCache[s.at];
@@ -281,18 +281,15 @@ function render() {
       const own = buildingsRows(g, s.at);
       if (!hasOffice(g, s.at)) h += `<p><i>${t.bldNeedOffice}</i></p>`; // building is office-gated
       else {
-        h += `<p><button data-bldact="pick">${t.bldBuild}</button></p>`;
-        if (bldPickHint) {
-          h += `<p><i>${$("v3d") ? t.bldHint : t.bldPick2d}</i></p>`;
-          if (own.length) h += `<p>` + own.map((r) => `<button data-bldact="sel|${r.plotId}">${buildingLabel(t, r)}</button>`).join(" ") + `</p>`; // also the no-WebGL path to build/upgrade
-          const lay = plotsCache[s.at];
-          if (lay === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
-          else if (!Array.isArray(lay)) h += `<p><i>${t.bldLoading}</i></p>`;
-          else {
-            const offers = plotOffers(world, g, s.at, lay);
-            if ($("v3d")) { if (offers.length) h += `<p><i>${t.bldFree3d.replace("{n}", offers.length)}</i></p>`; }
-            else h += offers.length ? `<p><b>${t.bldFree}</b></p><div class="yardcards">` + offers.map((o) => `<div class="card"><b>${o.id}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></div>`).join("") + `</div>` : "";
-          }
+        h += `<p><i>${$("v3d") ? t.bldHint : t.bldPick2d}</i></p>`;
+        if (own.length) h += `<p>` + own.map((r) => `<button data-bldact="sel|${r.plotId}">${buildingLabel(t, r)}</button>`).join(" ") + `</p>`; // also the no-WebGL path to build/upgrade
+        const lay = plotsCache[s.at];
+        if (lay === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
+        else if (!Array.isArray(lay)) h += `<p><i>${t.bldLoading}</i></p>`;
+        else {
+          const offers = plotOffers(world, g, s.at, lay);
+          if ($("v3d")) { if (offers.length) h += `<p><i>${t.bldFree3d.replace("{n}", offers.length)}</i></p>`; }
+          else h += offers.length ? `<p><b>${t.bldFree}</b></p><div class="yardcards">` + offers.map((o) => `<div class="card"><b>${o.id}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></div>`).join("") + `</div>` : "";
         }
       }
     } else if (tab === "plot") { // one building or plot, opened by clicking it in the 3D view
@@ -381,9 +378,8 @@ function render() {
   P.querySelectorAll("[data-3d]").forEach((e) => e.onclick = () => open3d(s));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; bldPickHint = false; render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
-    if (e.dataset.bldact === "pick") { bldPickHint = !bldPickHint; render(); return; } // Construir: open/close the pick view
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
     bldAction = parseBldAct(e.dataset.bldact); bldError = null; render();
@@ -430,15 +426,14 @@ let bldSelPlot=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;tab=tb;render();
   const w=d.querySelector(".city-window");w.hidden=false;
-  d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,buildings:t.tabBuildings,route:t.tabRoute,house:premises(g,ship().at,lang).label,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})()})[tb]||t.tabCity;
+  d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,buildings:t.bldBuild,route:t.tabRoute,house:premises(g,ship().at,lang).label,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})()})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.tabBuildings}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;
-  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
+  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
   d.querySelector("[data-map]").onclick=close3d;
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
