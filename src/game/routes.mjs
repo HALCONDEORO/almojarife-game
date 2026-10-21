@@ -3,6 +3,7 @@
 // Pure game logic, no DOM. The ship uses the normal buy/sell/sail rules, so prices, fees, hold space and cash all apply.
 import { post } from "./ledger.mjs";
 import { cargoUsed, SHIP_TYPES, FEE } from "../sim/trade.mjs";
+import { feeMul } from "./reputation.mjs";
 import { price } from "../sim/market.mjs";
 
 export function setRoute(g, ship, a, b, out, back = "") {
@@ -86,7 +87,7 @@ function planBuy(g, s, good, room, budget, maxPrice) {
   while (n < Math.min(room, sim.stock)) {
     const unit = price(g.world, sim, good);
     if (maxPrice != null && unit > maxPrice) break; // the limit compares to the market price, before the port fee
-    const charged = Math.ceil(unit * (1 + FEE)); // the fee is still paid; it just does not count against the limit
+    const charged = Math.ceil(unit * (1 + FEE * feeMul(g, s.at))); // plan with the REAL fee of this port (respect-scaled), so the cash brake never underestimates the charge
     if (cost + charged > budget) break; // cash brake
     cost += charged; sim.stock -= 1; n++;
   }
