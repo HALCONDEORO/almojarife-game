@@ -109,7 +109,7 @@ test("water waves run on the GPU: shader hook and time uniform are wired", async
   assert.equal(water.material.needsUpdate, true);
   assert.ok(water.userData.time && water.userData.time.value === 0);
   // the injected GLSL matches the pure waveHeight maths (same sines, same amplitudes)
-  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>" };
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>", fragmentShader: "#include <color_fragment>" };
   water.material.onBeforeCompile(shader);
   assert.ok(shader.vertexShader.includes("uniform float uTime"));
   assert.ok(shader.vertexShader.includes("/ 7.0 + uTime * 1.2) * 0.09"));
@@ -127,4 +127,17 @@ test("environment stops: zenith darker than horizon, colours in range", async ()
     }
     assert.ok(st.zenith[2] < st.horizon[2] || st.zenith[0] < st.horizon[0], "zenith dimmer than horizon");
   }
+});
+
+test("water foam: quay-edge band and darkening are injected into the fragment shader", async () => {
+  const { gpuWaves } = await import("../src/view3d/port3d.mjs");
+  const water = { material: { onBeforeCompile: null, needsUpdate: false }, userData: {} };
+  gpuWaves(water, { quayEdgeZ: -2 });
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>", fragmentShader: "#include <color_fragment>" };
+  water.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("vWorldPos"));
+  assert.ok(shader.fragmentShader.includes("QUAY_EDGE_Z = -2.0"));
+  assert.ok(shader.fragmentShader.includes("smoothstep(2.4, 0.0, dQ)"), "foam band falls off seaward");
+  assert.ok(shader.fragmentShader.includes("0.93, 0.95, 0.94"), "foam colour");
+  assert.ok(shader.fragmentShader.includes("uTime"), "foam breathes with time");
 });
