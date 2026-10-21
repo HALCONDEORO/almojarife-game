@@ -264,3 +264,21 @@ test("tavern family module: jetty upper floor at level 2, chimney and second sig
   let glow = 0; makeTavern(THREE, { level: 3 }).traverse((o) => { if (o.isMesh && o.material.emissiveIntensity > 0) glow++; });
   assert.ok(glow >= 2, "level 3 windows glow at night");
 });
+
+test("scene check: quay buildings stand behind the front line (Vida fail on #187/#188)", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { buildPortScene, FRONT_Z } = await import("../src/view3d/port3d.mjs");
+  const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 12000, ships: 0 });
+  scene.updateMatrixWorld(true);
+  let checked = 0;
+  for (const o of scene.children) {
+    if (typeof o.userData?.building !== "string" || o.userData.building.startsWith("town:")) continue;
+    // A building mounted at the wrong z shifts its WHOLE body: its back edge ends up on the quay walk
+    // (the #187/#188 regression: market back at -7.3, tavern back at -6.3 with FRONT_Z=-9). By design the
+    // body reaches metres behind the line; only props (crane jib, slipway, steps) cross it forward.
+    const box = new THREE.Box3().setFromObject(o);
+    checked++;
+    assert.ok(box.min.z <= FRONT_Z - 2, `${o.name}: back edge ${box.min.z.toFixed(2)} does not reach behind the front line ${FRONT_Z} (mounted at the wrong z?)`);
+  }
+  assert.ok(checked >= 4, "all quay buildings checked");
+});

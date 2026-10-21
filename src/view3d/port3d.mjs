@@ -204,7 +204,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     } else if (b.id === "market") {
       const mk = makeMarket(THREE, { level: lv, style: marketStyle }); mk.position.z = z0; g.add(mk); // market family module: built relative to its front line, mounted at FRONT_Z
     } else if (b.id === "tavern") {
-      const tv = makeTavern(THREE, { level: lv }); for (const c of [...tv.children]) g.add(c); // tavern family module
+      const tv = makeTavern(THREE, { level: lv }); tv.position.z = z0; g.add(tv); // tavern family module: built relative to its front line, mounted at FRONT_Z
     } else { // shipyard: open shed and a slipway running into the sea
       const w = lv >= 3 ? 12 : 10, d = lv >= 3 ? 22 : 8, zc = z0 - d / 2, ph = 4;
       for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) box(g, 0.3, ph, 0.3, timber, sx * (w / 2 - 0.3), ph / 2, z0 - 0.3 - (i * (d - 0.6)) / 3);
