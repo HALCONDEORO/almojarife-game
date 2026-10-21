@@ -274,6 +274,7 @@ function render() {
       h += `<p>${t.cityInfo}</p><div class="cityclasses">` + rows.map((r) => `<div class="card"><b>${cn[r.cls]}</b>: ${fmt(r.count)} ${t.cityCitizens} (${r.pct} %)<br>${t.cityBuys}: ${r.top.map((x) => goodIcon(x.good) + t.goods[x.good]).join(", ") || "-"}` + (r.priced_out.length ? `<br><i>${t.cityOut}: ${r.priced_out.map((k) => t.goods[k]).join(", ")}</i>` : "") + `</div>`).join("") + `</div>`;
     } else if (tab === "buildings") {
       ensurePlots(s.at);
+      if (bldAction && !bldAction.plotId.startsWith(s.at + ":")) { bldAction = null; bldError = null; } // sailed away with an armed action
       const eff = cityEffects(g, s.at);
       h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.pop + eff.popBonus)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
       h += bldCard();
@@ -292,6 +293,7 @@ function render() {
         }
       }
     } else if (tab === "plot") { // one building or plot, opened by clicking it in the 3D view
+      if (bldAction && (bldAction.plotId !== bldSelPlot || !bldAction.plotId.startsWith(s.at + ":"))) { bldAction = null; bldError = null; } // plot switched: never confirm on the old plot
       const r = buildingsRows(g, s.at).find((x) => x.plotId === bldSelPlot);
       if (!r) { // a free plot ("solar") clicked in the 3D view: show its buy offer
         const layP = plotsCache[s.at], o = Array.isArray(layP) ? plotOffers(world, g, s.at, layP).find((x) => x.id === bldSelPlot) : null;
