@@ -19,6 +19,7 @@ export const RECIPES = Object.freeze({
   saltworks: Object.freeze({ timber: 10, iron: 2 }),
   smokehouse: Object.freeze({ timber: 12, iron: 2 }),
   dock: Object.freeze({ timber: 10, iron: 2 }),
+  fishery: Object.freeze({ timber: 8, cloth: 2 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),
   // Primary producers take nothing from the market: the land yields the good (seasonal, see SEASON_PEAK).

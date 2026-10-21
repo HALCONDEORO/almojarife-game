@@ -2,6 +2,7 @@
 const S = {
   grain: '<path d="M12 22V9" stroke="#8a6a1f" stroke-width="1.6"/><g fill="#e0b73a"><ellipse cx="12" cy="5" rx="2" ry="3.2"/><ellipse cx="8.2" cy="8" rx="1.9" ry="3" transform="rotate(-35 8.2 8)"/><ellipse cx="15.8" cy="8" rx="1.9" ry="3" transform="rotate(35 15.8 8)"/><ellipse cx="8.2" cy="13" rx="1.9" ry="3" transform="rotate(-35 8.2 13)"/><ellipse cx="15.8" cy="13" rx="1.9" ry="3" transform="rotate(35 15.8 13)"/></g>',
   dried_fish: '<path d="M2 12c4-6 11-6 15 0-4 6-11 6-15 0z" fill="#9db4c0"/><path d="M17 12l5-4v8z" fill="#7c97a6"/><circle cx="7" cy="11" r="1.1" fill="#234"/><path d="M10 8v8M13 8.5v7" stroke="#6b8797" stroke-width="1"/>',
+  fish: '<path d="M3 13c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z" fill="#5a9a8a"/><circle cx="8" cy="11.5" r="1.1" fill="#123"/><path d="M12 9c2 1.5 2 6 0 7.5" stroke="#3d7364" stroke-width="1" fill="none"/>',
   salt: '<path d="M4 20l2-9h12l2 9z" fill="#eef2f4" stroke="#8fa3ad" stroke-width="1.2"/><path d="M7 11l5-7 5 7z" fill="#fff" stroke="#8fa3ad" stroke-width="1.2"/>',
   wool: '<g fill="#f2efe6" stroke="#b9b09a" stroke-width="1"><circle cx="8" cy="10" r="4"/><circle cx="14" cy="9" r="4.5"/><circle cx="17" cy="14" r="3.5"/><circle cx="9" cy="15" r="3.5"/><circle cx="13" cy="15" r="3.5"/></g>',
   iron: '<path d="M3 17h18v3H3z" fill="#4a4f55"/><path d="M5 17V12h12l3-3v-1H8L5 11z" fill="#7a828a"/><path d="M5 12h12" stroke="#a7aeb5" stroke-width="1"/>',
