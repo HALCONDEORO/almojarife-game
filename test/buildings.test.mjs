@@ -199,3 +199,75 @@ test("hostile or malformed plot ids are rejected and can never reach Object inte
   assert.equal(quoteConstruction(g, "cadiz", "__proto__", "house").reason, "plot not owned");
   assert.equal({}.polluted, undefined); // nothing polluted the global prototype
 });
+
+// Piece 5: houses raise effective population (more of the same demand), warehouse buildings extend storage.
+import { housePopBonus, warehouseCapBonus, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL } from "../src/game/buildings.mjs";
+import { warehouseCap, buyWarehouse, storeGoods, warehouseOf } from "../src/game/game.mjs";
+
+function activeBuilding(g, type, level = 1) {
+  buyPlot(g, "cadiz", PLOT);
+  startConstruction(g, "cadiz", PLOT.id, type);
+  const b = buildingAt(g, "cadiz", PLOT.id);
+  b.state = "active"; b.level = level; delete b.nextLevel; delete b.readyTick;
+  return b;
+}
+
+test("houses add their people to the port's effective population at its market tick", () => {
+  const cadizPop = world.cities.find((c) => c.id === "cadiz").pop;
+  const g = newGame(world, "cadiz", { cash: 50000 });
+  assert.equal(housePopBonus(g, "cadiz"), 0);
+  activeBuilding(g, "house", 2);
+  assert.equal(housePopBonus(g, "cadiz"), 2 * HOUSE_POP_PER_LEVEL);
+  for (let i = 0; i < TICKS_PER_DAY; i++) advanceTick(g); // cadiz slot is 0 (first city): its market tick runs at the day boundary
+  for (const e of Object.values(g.market.cadiz)) assert.equal(e.pop, cadizPop + 2 * HOUSE_POP_PER_LEVEL);
+  const plain = newGame(world);
+  for (let i = 0; i < TICKS_PER_DAY; i++) advanceTick(plain);
+  for (const e of Object.values(plain.market.cadiz)) assert.equal(e.pop, cadizPop); // untouched without houses
+});
+
+test("more people means real extra demand pressure that reaches equilibrium (small town, level 3 house)", () => {
+  const small = world.cities.reduce((m, c) => (c.pop < m.pop ? c : m)).id;
+  const P = { id: `${small}:3`, type: "house", w: 3, d: 4 };
+  const run = (withHouse) => {
+    const g = newGame(world, small, { cash: 50000 });
+    if (withHouse) {
+      buyPlot(g, small, P); startConstruction(g, small, P.id, "house");
+      const b = buildingAt(g, small, P.id);
+      b.state = "active"; b.level = 3; delete b.nextLevel; delete b.readyTick;
+    }
+    return g;
+  };
+  const idx = world.cities.findIndex((c) => c.id === small), slot = marketSlot(world, idx), first = slot === 0 ? TICKS_PER_DAY : slot;
+  const extraConsumed = (days) => {
+    const a = run(false), b = run(true);
+    for (let i = 0; i < first + (days - 1) * TICKS_PER_DAY; i++) { advanceTick(a); advanceTick(b); }
+    let agg = 0, wiggles = 0, moves = 0;
+    for (const [good, e] of Object.entries(b.market[small])) {
+      const d = a.market[small][good].stock - e.stock; agg += d;
+      if (d < 0) { assert.ok(Math.abs(d) <= 1, `${good} wiggle ${d} beyond one unit`); wiggles++; } // per-day demand rounding can swing one unit
+      if (d >= 2) moves++;
+    }
+    return { agg, moves };
+  };
+  const one = extraConsumed(1);
+  assert.ok(one.agg > 0, "the house town consumes more in aggregate");
+  assert.ok(one.moves >= 1, "at least one good is consumed clearly more");
+  const thirty = extraConsumed(30);
+  assert.equal(thirty.agg, one.agg); // scarcity feedback holds the new demand at a leaner equilibrium, not a growing drain
+});
+
+
+test("warehouse buildings extend the port storage cap by level", () => {
+  const g = newGame(world, "cadiz", { cash: 50000 });
+  assert.equal(warehouseCap(g, "cadiz"), 300);
+  assert.equal(buyWarehouse(g, "cadiz").ok, true);
+  const s = g.ships[0]; s.cargo = { grain: 100 };
+  assert.equal(storeGoods(g, s, "grain", 100).qty, 100);
+  warehouseOf(g, "cadiz").goods = { grain: 250 }; s.cargo = { grain: 100 };
+  assert.equal(storeGoods(g, s, "grain", 100).qty, 50); // base cap 300
+  activeBuilding(g, "warehouse", 2);
+  assert.equal(warehouseCapBonus(g, "cadiz"), 2 * WAREHOUSE_CAP_PER_LEVEL);
+  assert.equal(warehouseCap(g, "cadiz"), 900);
+  s.cargo = { grain: 200 }; // refill the hold: the previous store left 50 in it
+  assert.equal(storeGoods(g, s, "grain", 100).qty, 100); // room again
+});

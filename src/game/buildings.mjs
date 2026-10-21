@@ -131,3 +131,10 @@ export function workshopTick(g, cityId) {
     }
   }
 }
+
+/** Building effects (design doc piece 5). Houses raise the port's effective population a little
+ *  (more of the existing class demand, nothing new); warehouse buildings extend its storage cap. */
+export const HOUSE_POP_PER_LEVEL = 50, WAREHOUSE_CAP_PER_LEVEL = 300;
+const activeLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type === type ? b.level : 0), 0);
+export const housePopBonus = (g, cityId) => HOUSE_POP_PER_LEVEL * activeLevels(g, cityId, "house");
+export const warehouseCapBonus = (g, cityId) => WAREHOUSE_CAP_PER_LEVEL * activeLevels(g, cityId, "warehouse");
