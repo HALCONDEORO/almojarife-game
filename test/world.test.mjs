@@ -7,7 +7,7 @@ const land = loadLand();
 const world = loadWorld();
 test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
   assert.equal(world.cities.length, 33);
-  assert.equal(Object.keys(world.goods).length, 12);
+  assert.equal(Object.keys(world.goods).length, 13);
   for (const c of world.cities) {
     let near = false;
     for (let a = 0; a < 360 && !near; a += 30)
