@@ -8,8 +8,8 @@ import { newGame, advanceDay, netWorth } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, staffingRatio, jobsNeeded } from "../src/game/buildings.mjs";
 import { price } from "../src/sim/market.mjs";
 
-export const HORIZONS = [365, 1825, 3650, 10950]; // 1, 5, 10, 30 game years
-const days = Number(process.argv[2] ?? 10950);
+export const HORIZONS = [365, 1825, 3650, 10950, 18250, 36500]; // 1, 5, 10, 30, 50, 100 game years
+const days = Number(process.argv[2] ?? 36500);
 if (!Number.isSafeInteger(days) || days < 1) throw new Error("days must be a positive integer");
 const snaps = HORIZONS.filter((h) => h <= days);
 const world = loadWorld(), ids = world.cities.map((c) => c.id), goods = Object.keys(world.goods);
