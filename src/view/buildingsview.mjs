@@ -74,3 +74,11 @@ export function parseBldAct(attr) {
   if ((kind === "build" || kind === "upgrade") && TYPE_KEYS.includes(type)) return { kind, plotId, type };
   return null;
 }
+
+/** Short floating label over a building in the 3D view: type and level, or "empty plot". */
+export function buildingLabel(t, row) {
+  if (!row?.type) return t.bldState.plot;
+  const name = t.bldTypes[row.type] ?? row.type;
+  if (row.state === "construction") return `${name} (${row.nextLevel ?? 1})`;
+  return row.level > 1 ? `${name} ${row.level}` : name;
+}

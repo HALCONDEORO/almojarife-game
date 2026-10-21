@@ -19,8 +19,8 @@ export function buildingLevel(id, pop = 8000, upgrades = {}) {
   const bySize = pop >= 25000 ? 3 : pop >= 10000 ? 2 : 1, up = Number.isInteger(upgrades?.[id]) ? upgrades[id] : 1;
   return Math.max(1, Math.min(3, Math.max(bySize, up)));
 }
-/** Which game panel a building opens; null for anything else (houses, water, unknown ids). */
-export const tabForBuilding = (id) => BUILDINGS.find((b) => b.id === id)?.tab ?? null;
+/** Which game panel a building opens; the warehouse opens the store. null for anything else (houses, water, unknown ids). */
+export const tabForBuilding = (id) => (id === "warehouse" ? "store" : BUILDINGS.find((b) => b.id === id)?.tab ?? null);
 
 /** Pure layout: houses climb the hillside behind the building row, the bell tower stands far back. Same input, same layout. */
 export function portLayout(id, pop = 8000) {
@@ -134,7 +134,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     g.name = "plot:" + p.id; g.userData.plot = p.id; g.position.set(p.rect.x, p.rect.y, p.rect.z);
     scene.add(g);
   }
-  if (warehouse) { const g = new THREE.Group(); g.name = "warehouse"; g.position.set(28, QUAY_TOP, -5.5); box(g, 3.4, 2.4, 3, 0xc9a66b, 0, 1.2, 0); gable(g, 3.4, 3, 0, 2.4, 1.5); scene.add(g); }
+  if (warehouse) { const g = new THREE.Group(); g.name = "warehouse"; g.userData.building = "warehouse"; g.position.set(28, QUAY_TOP, -5.5); box(g, 3.4, 2.4, 3, 0xc9a66b, 0, 1.2, 0); gable(g, 3.4, 3, 0, 2.4, 1.5); scene.add(g); } // the owned warehouse is named and clickable like the quay buildings
   // quay props: bollards every 3 m at 0.5 m from the edge, barrels and crates
   for (let x = -27; x <= 27; x += 3) add(scene, new THREE.CylinderGeometry(0.18, 0.18, 0.5, 8), M(dark), x, QUAY_TOP + 0.25, QUAY_EDGE_Z - 0.5, false);
   for (let i = 0; i < 6; i++) { add(scene, new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8), M(timber), 1 + i * 0.7, QUAY_TOP + 0.4, -3.2, false); box(scene, 0.8, 0.8, 0.8, 0x9a7a4a, -14 - (i % 3) * 0.9, QUAY_TOP + 0.4 + Math.floor(i / 3) * 0.8, -3.4); }
