@@ -1,4 +1,5 @@
 import { post } from "./ledger.mjs";
+import { sisaMul } from "./council.mjs";
 
 // Reputation per port: a merchant who sells what a port lacks is welcome; one who buys up
 // what is already scarce is not. Reputation moves the market fee and the shipyard bill.
@@ -28,7 +29,7 @@ export const portRep = (g, city) => {
 export const repTierIndex = (pts) => { let i = 0; REP_TIERS.forEach((t, k) => { if (pts >= t.from) i = k; }); return i; };
 export const repTierOf = (g, city) => REP_TIERS[repTierIndex(portRep(g, city))];
 /** Market fee multiplier the port applies to the player. */
-export const feeMul = (g, city) => REP_FEE_MUL[repTierIndex(portRep(g, city))];
+export const feeMul = (g, city) => REP_FEE_MUL[repTierIndex(portRep(g, city))] * sisaMul(g, city); // the concejo moves the fee in discrete sisa steps
 /** Shipyard repair price multiplier in the port. */
 export const repairMul = (g, city) => REP_REPAIR_MUL[repTierIndex(portRep(g, city))];
 const TIER_NAMES = {

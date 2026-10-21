@@ -24,6 +24,7 @@ import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
+import { councilDay, creditCaja } from "./council.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
@@ -103,6 +104,7 @@ function dayTick(g) {
     accrueDay(g, s);
   }
   accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
@@ -179,18 +181,20 @@ export function waitUntilArrival(g, ship) {
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
-  const r = buy(g.world, g.market, ship, g.cash, good, qty, FEE * feeMul(g, ship.at));
+  const f = FEE * feeMul(g, ship.at);
+  const r = buy(g.world, g.market, ship, g.cash, good, qty, f);
   // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
   // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
-  if (r.ok) { g.cash -= r.cost; repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
+  if (r.ok) { g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
   return r;
 }
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
-  const r = sell(g.world, g.market, ship, good, qty, FEE * feeMul(g, ship.at));
-  if (r.ok) { g.cash += r.revenue; repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  const f = FEE * feeMul(g, ship.at);
+  const r = sell(g.world, g.market, ship, good, qty, f);
+  if (r.ok) { g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
