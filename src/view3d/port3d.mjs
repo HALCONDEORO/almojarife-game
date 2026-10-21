@@ -201,8 +201,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   // hillside: one sloped quad rising 1 m per 4 m
   { const far = -45, y1 = slopeY(far), g = new THREE.BufferGeometry(), v = [-60, QUAY_TOP, FRONT_Z, 60, QUAY_TOP, FRONT_Z, 60, y1, far, -60, y1, far];
     g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3)); g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals(); const hill = new THREE.Mesh(g, M(0x9a8b5a, { side: THREE.DoubleSide })); hill.receiveShadow = true; scene.add(hill); }
-  // houses: whitewashed walls, low terracotta roofs
-  const walls = [0xece3cf, 0xe3d6b8, 0xefe8d8];
+  // houses: the family module owns the walls now
   for (const h of L.houses) {
     if (h.type !== "house") { const g = makeTownBuilding(THREE, h.type, h); g.name = "town:" + h.type; g.userData.building = "town:" + h.type; g.position.set(h.x, h.y, h.z); scene.add(g); continue; } // typed town buildings stay clickable
     const g = makeHouse(THREE, h); g.position.set(h.x, h.y, h.z); scene.add(g); // the house family lives in its own module now

@@ -9,6 +9,5 @@ export const gable3 = (THREE, parent, w, d, x, y, z, color = 0x9b4a2b) => {
   return put(THREE, parent, new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }), std(THREE, color, { tex: "tiles", perMetre: 0.35 }), x, y, z - d / 2 - 0.3);
 };
 /** A box with metre-scaled UVs when textured (shared with the quay trick). */
-export const boxUV = (THREE, parent, w, h, d, mat, x, y, z) => put(THREE, parent, new THREE.BoxGeometry(w, h, d), mat, x, y, z);
 // Palette (from docs/design/port3d-art-guide.md): warm cream walls, terracotta roofs, timber, stone, dark openings.
 export const PAL = { walls: [0xece3cf, 0xe3d6b8, 0xefe8d8], roof: 0x9b4a2b, roofDark: 0x7e3b22, timber: 0x6a4325, dark: 0x2b2118, stone: 0xcfc4a8, base: 0xb9ad90 };
