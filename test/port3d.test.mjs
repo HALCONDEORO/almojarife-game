@@ -137,7 +137,7 @@ test("water foam: quay-edge band and darkening are injected into the fragment sh
   water.material.onBeforeCompile(shader);
   assert.ok(shader.vertexShader.includes("vWorldPos"));
   assert.ok(shader.fragmentShader.includes("QUAY_EDGE_Z = -2.0"));
-  assert.ok(shader.fragmentShader.includes("smoothstep(2.4, 0.0, dQ)"), "foam band falls off seaward");
+  assert.ok(shader.fragmentShader.includes("(1.0 - smoothstep(0.0, 2.4, dQ))"), "foam band falls off seaward (edge0 < edge1, defined GLSL)");
   assert.ok(shader.fragmentShader.includes("0.93, 0.95, 0.94"), "foam colour");
   assert.ok(shader.fragmentShader.includes("uTime"), "foam breathes with time");
 });

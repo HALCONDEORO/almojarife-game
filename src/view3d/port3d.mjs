@@ -145,7 +145,7 @@ export function gpuWaves(water, { quayEdgeZ = QUAY_EDGE_Z } = {}) {
       "#include <color_fragment>",
       `#include <color_fragment>
       { float dQ = vWorldPos.z - QUAY_EDGE_Z;
-        float band = smoothstep(2.4, 0.0, dQ) * smoothstep(33.0, 28.0, abs(vWorldPos.x));
+        float band = (1.0 - smoothstep(0.0, 2.4, dQ)) * (1.0 - smoothstep(28.0, 33.0, abs(vWorldPos.x))); // smoothstep with edge0 < edge1 only: reversed edges are undefined in GLSL
         float pulse = 0.5 + 0.5 * sin(uTime * 1.6 + vWorldPos.x * 0.35 + vWorldPos.z * 1.1);
         float foam = band * band * smoothstep(0.74, 0.98, pulse) * 0.55;
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.8, band * 0.35);
