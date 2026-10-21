@@ -2,6 +2,7 @@ import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/enco
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
+import { shipWindowHtml } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
@@ -115,9 +116,10 @@ function drawShips() {
       ang = headingDeg({ x: X(qb.lon), y: Y(qb.lat) }, { x: X(q.lon), y: Y(q.lat) }) ?? 0;
       wakes += wakeSvg(pushTrail(trails, id, pt));
     } else delete trails[id];
-    h += `<g data-mx="${pt.x}" data-my="${pt.y}">${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
+    h += `<g data-mx="${pt.x}" data-my="${pt.y}" ${mine ? `data-ship="${g.ships.indexOf(sh)}" style="cursor:pointer" pointer-events="all"` : ""}>${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
   }
   layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
+  layer.querySelectorAll("[data-ship]").forEach((el) => el.onclick = () => { sel = +el.dataset.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
 }
 function stepTicks(n) {
   for (let i = 0; i < n; i++) {
@@ -147,6 +149,7 @@ function spark(a, col) {
   return `<svg class="spark" width="${w}" height="${h + 2}" viewBox="0 -1 ${w} ${h + 2}"><polyline fill="none" stroke="${col === "inherit" ? "#654" : col}" stroke-width="1.2" points="${pts}"/></svg> `;
 }
 let tab = "market"; const qtys = {}; // per-good quantity chosen in the market table
+let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
 let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
@@ -389,7 +392,7 @@ function render() {
   $("panel").innerHTML = h;
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
-  P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; render(); });
+  P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
     const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;
     qtys[gd] = v === "max" ? Math.max(1, previewBuy(world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : Math.max(1, cur + +v);
@@ -405,13 +408,7 @@ function render() {
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
   });
-  P.querySelector("[data-captain-dismiss]")?.addEventListener("click",()=>{
-    const c=captainOf(s);if(!c)return;const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
-    el.innerHTML=`<div class="box"><h2 id="cap-heading"></h2><p>${t.dismissInfo}</p><button id="cap-confirm">${t.dismissConfirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div>`;
-    $("cap-heading").textContent=t.dismissConfirm+": "+c.name;
-    $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
-    $("cap-confirm").onclick=()=>{if(s.captain?.id!==c.id){$("cap-msg").textContent=t.failed;return;}const r=dismissCaptain(g,s);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
-  });
+  P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => act(() => buyRumor(g, P.querySelector("#rum").value, s.at));
   P.querySelectorAll("[data-chart]").forEach((e) => e.onclick = () => act(() => buyChart(g, e.dataset.chart, s.at)));
   const rrb = P.querySelector("#rrumbtn"); if (rrb) rrb.onclick = () => act(() => buyRouteRumor(g, s.at));
@@ -480,6 +477,47 @@ function render() {
   P.querySelectorAll("[data-caravel]").forEach((e) => e.onclick = () => act(() => { const r = buyCaravel(g, s.at); if (r.ok) sel = g.ships.length - 1; }));
   P.querySelectorAll("[data-wait]").forEach((e) => e.onclick = () => act(() => advanceDay(g)));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
+  renderShipWin();
+}
+
+// Ship window: floating .pwin dialog for the selected ship. Rebuilt on every render pass, so
+// ETAs update live at sea; every button runs through act() like its panel twin.
+function renderShipWin() {
+  document.getElementById("shipwin")?.remove();
+  if (!shipWin || !g || g.over || $("v3d") || !ship()) return;
+  const s = ship();
+  const d = document.createElement("section");
+  d.id = "shipwin"; d.className = "pwin"; d.setAttribute("role", "dialog");
+  d.setAttribute("aria-label", `${t.types[s.type]} ${s.id}`);
+  const hp = { fmt, cityName, types: t.types, goods: t.goods, eta: (sh) => etaText(g.tick + sh.voyage.ticksLeft) };
+  d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${t.types[s.type]} ${s.id}</span><button class="pwin-close" data-swclose="1">${t.close} (Esc)</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
+  document.body.appendChild(d);
+  const handle = d.querySelector(".pwin-handle"); let drag = null;
+  const move = (x, y) => { const q = clampWindow(x, y, d.offsetWidth, d.offsetHeight, innerWidth, innerHeight - 70); d.style.left = q.left + "px"; d.style.top = q.top + "px"; d.style.right = "auto"; };
+  handle.onpointerdown = (e) => { if (e.target.closest("button")) return; drag = [e.clientX - d.offsetLeft, e.clientY - d.offsetTop]; handle.setPointerCapture(e.pointerId); };
+  handle.onpointermove = (e) => { if (drag) move(e.clientX - drag[0], e.clientY - drag[1]); };
+  handle.onpointerup = handle.onpointercancel = () => drag = null;
+  handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
+  d.querySelector("[data-swclose]").onclick = () => { shipWin = null; render(); };
+  d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { shipWin.tab = e.dataset.swtab; render(); });
+  d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
+  d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
+  d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
+  d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
+  d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s)));
+  d.querySelectorAll("[data-cannon]").forEach((e) => e.onclick = () => act(() => buyCannon(g, s)));
+  d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s)));
+  d.querySelectorAll("[data-sellship]").forEach((e) => e.onclick = () => act(() => { const r = sellShip(g, s); if (r.ok) { sel = 0; shipWin = null; } }));
+  d.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
+}
+
+// Captain dismissal confirm dialog (shared by the tavern card and the ship window).
+function askDismissCaptain() {
+  const s = ship(), c = captainOf(s); if (!c) return; const el = $("title"), tc = CT[lang], was = playing; playing = false; el.hidden = false;
+  el.innerHTML = `<div class="box"><h2 id="cap-heading"></h2><p>${tc.dismissInfo}</p><button id="cap-confirm">${tc.dismissConfirm}</button><button id="cap-cancel">${tc.cancel}</button><p id="cap-msg"></p></div>`;
+  $("cap-heading").textContent = tc.dismissConfirm + ": " + c.name;
+  $("cap-cancel").onclick = () => { el.hidden = true; playing = was; render(); };
+  $("cap-confirm").onclick = () => { if (s.captain?.id !== c.id) { $("cap-msg").textContent = tc.failed; return; } const r = dismissCaptain(g, s); if (!r.ok) { $("cap-msg").textContent = tc.failed; return; } el.hidden = true; playing = was; autosave(); render(); };
 }
 
 function sailToTarget() { if (!target) return; const to = target; act(() => doSail(g, ship(), to)); target = null; render(); }
@@ -501,6 +539,7 @@ function openCityPanel(tb) {
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
+  shipWin=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
   d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
@@ -542,7 +581,7 @@ document.addEventListener("keydown", (e) => {
   if ($("title") && !$("title").hidden) return;
   if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
   if($("v3d"))return;
-  if (e.key === "Escape") { closeMenu(); target = null; render(); }
+  if (e.key === "Escape") { if (shipWin) { shipWin = null; render(); return; } closeMenu(); target = null; render(); }
   else if (e.key === "Enter" && target) { e.preventDefault(); sailToTarget(); }
   else if (e.key === " ") { e.preventDefault(); playing = !playing; render(); }
   else { const i = shipForKey(g, e.key); if (i !== null) { sel = i; target = null; render(); } }
