@@ -101,8 +101,8 @@ export function accrueBuildings(g) {
   }
 }
 
-/** Revenue of selling qty of a good into the local market, with per-unit price impact. No mutation. */
-function sellQuote(world, market, city, good, qty) {
+/** Revenue of selling qty of a good into the local market, with per-unit price impact. No mutation. Exported for the Buildings tab's margin preview. */
+export function sellQuote(world, market, city, good, qty) {
   const e = market[city]?.[good];
   if (!e) return 0;
   const sim = { ...e };
@@ -111,15 +111,17 @@ function sellQuote(world, market, city, good, qty) {
   return revenue;
 }
 
-/** One production day of a port's active workshops, run inside that port's (staggered) market tick so
- *  it sees fresh prices. Each workshop runs the largest batch count (up to its level) that still
- *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
- *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
 /** Loom throughput per level, keyed on the absolute day so it stays deterministic: level 1 runs one
  *  batch every other day, level 2 one batch a day, level 3 alternates two and one. Measured balance
  *  (docs/design/city-builder.md piece 3 follow-up): at level batches/day the best port paid the
  *  building back in ~35 days; this pattern lands it at roughly a season. */
 export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 2: Object.freeze([1]), 3: Object.freeze([2, 1]) });
+/** Average batches a level produces per day when the margin holds, from WORKSHOP_BATCH_PATTERN. */
+export const workshopRate = (level) => { const p = WORKSHOP_BATCH_PATTERN[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
+/** One production day of a port's active workshops, run inside that port's (staggered) market tick so
+ *  it sees fresh prices. Each workshop runs the largest batch count (up to its pattern cap) that still
+ *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
+ *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
 export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
