@@ -15,7 +15,8 @@
     "wool",
     "cloth",
     "ironware",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -28,7 +29,8 @@
     "olive_oil",
     "wine",
     "meat",
-    "leather"
+    "leather",
+    "soap"
    ],
    "needs": [
     "iron",
@@ -59,7 +61,8 @@
     "ironware",
     "beer",
     "esparto",
-    "meat"
+    "meat",
+    "soap"
    ],
    "river": true
   },
@@ -80,7 +83,8 @@
     "ironware",
     "beer",
     "meat",
-    "leather"
+    "leather",
+    "soap"
    ]
   },
   {
@@ -102,7 +106,8 @@
     "sugar",
     "beer",
     "esparto",
-    "leather"
+    "leather",
+    "soap"
    ]
   },
   {
@@ -119,7 +124,8 @@
     "grain",
     "cloth",
     "pepper",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -138,7 +144,8 @@
     "wine",
     "olive_oil",
     "sugar",
-    "salt"
+    "salt",
+    "soap"
    ],
    "river": true
   },
@@ -155,7 +162,8 @@
    "needs": [
     "cloth",
     "iron",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -167,7 +175,8 @@
    "makes": [
     "salt",
     "fish",
-    "esparto"
+    "esparto",
+    "soap"
    ],
    "needs": [
     "grain",
@@ -190,7 +199,8 @@
    "needs": [
     "grain",
     "salt",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -206,7 +216,8 @@
    ],
    "needs": [
     "wool",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -222,7 +233,8 @@
    ],
    "needs": [
     "cloth",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -238,7 +250,8 @@
    ],
    "needs": [
     "cloth",
-    "timber"
+    "timber",
+    "soap"
    ]
   },
   {
@@ -257,7 +270,8 @@
     "grain",
     "wool",
     "ironware",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -275,7 +289,8 @@
    ],
    "needs": [
     "grain",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -292,7 +307,8 @@
    ],
    "needs": [
     "wool",
-    "timber"
+    "timber",
+    "soap"
    ]
   },
   {
@@ -308,7 +324,8 @@
    ],
    "needs": [
     "grain",
-    "cloth"
+    "cloth",
+    "soap"
    ]
   },
   {
@@ -325,7 +342,8 @@
    ],
    "needs": [
     "wool",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -342,7 +360,8 @@
    ],
    "needs": [
     "wine",
-    "salt"
+    "salt",
+    "soap"
    ]
   },
   {
@@ -358,7 +377,8 @@
    ],
    "needs": [
     "wine",
-    "cloth"
+    "cloth",
+    "soap"
    ]
   },
   {
@@ -374,7 +394,8 @@
    ],
    "needs": [
     "wine",
-    "salt"
+    "salt",
+    "soap"
    ]
   },
   {
@@ -390,7 +411,8 @@
    ],
    "needs": [
     "cloth",
-    "olive_oil"
+    "olive_oil",
+    "soap"
    ]
   },
   {
@@ -406,7 +428,8 @@
    ],
    "needs": [
     "grain",
-    "cloth"
+    "cloth",
+    "soap"
    ]
   },
   {
@@ -421,7 +444,8 @@
    ],
    "needs": [
     "cloth",
-    "wine"
+    "wine",
+    "soap"
    ]
   },
   {
@@ -437,7 +461,8 @@
    ],
    "needs": [
     "iron",
-    "cloth"
+    "cloth",
+    "soap"
    ],
    "river": true
   },
@@ -453,7 +478,8 @@
    ],
    "needs": [
     "wool",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -469,7 +495,8 @@
    ],
    "needs": [
     "cloth",
-    "salt"
+    "salt",
+    "soap"
    ]
   },
   {
@@ -485,7 +512,8 @@
    ],
    "needs": [
     "iron",
-    "wine"
+    "wine",
+    "soap"
    ]
   },
   {
@@ -501,7 +529,8 @@
    ],
    "needs": [
     "cloth",
-    "sugar"
+    "sugar",
+    "soap"
    ]
   },
   {
@@ -517,7 +546,8 @@
    ],
    "needs": [
     "cloth",
-    "iron"
+    "iron",
+    "soap"
    ]
   },
   {
@@ -533,7 +563,8 @@
    ],
    "needs": [
     "iron",
-    "cloth"
+    "cloth",
+    "soap"
    ]
   },
   {
@@ -551,7 +582,8 @@
     "timber",
     "iron",
     "ironware",
-    "beer"
+    "beer",
+    "soap"
    ]
   },
   {
@@ -567,7 +599,8 @@
    ],
    "needs": [
     "cloth",
-    "timber"
+    "timber",
+    "soap"
    ]
   }
  ],
@@ -604,6 +637,9 @@
   },
   "olive_oil": {
    "base": 50
+  },
+  "soap": {
+   "base": 60
   },
   "wine": {
    "base": 45

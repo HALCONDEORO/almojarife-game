@@ -6,7 +6,7 @@ export const RECIPES = Object.freeze({
   cog: Object.freeze({ timber: 24, iron: 8, cloth: 10, esparto: 6 }),
   caravel: Object.freeze({ timber: 20, iron: 10, cloth: 16, esparto: 6 }),
   nao: Object.freeze({ timber: 42, iron: 16, cloth: 21, esparto: 9 }),
-  warehouse: Object.freeze({ timber: 12, bricks: 16, ironware: 1 }),
+warehouse: Object.freeze({ timber: 12, bricks: 16, ironware: 1 }),
   house: Object.freeze({ timber: 8, bricks: 8, cloth: 2 }),
   workshop: Object.freeze({ timber: 10, bricks: 10, ironware: 2, cloth: 6 }),
   farm: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }),
@@ -19,6 +19,7 @@ export const RECIPES = Object.freeze({
   saltworks: Object.freeze({ timber: 8, bricks: 3, ironware: 1 }),
   brewery: Object.freeze({ timber: 8, bricks: 5, ironware: 1 }),
   brickworks: Object.freeze({ timber: 8, bricks: 2, ironware: 2 }),
+  soapworks: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }),
   esparto_field: Object.freeze({ timber: 5, bricks: 1, ironware: 1 }),
   ranch: Object.freeze({ timber: 7, bricks: 2, ironware: 2 }),
   dock: Object.freeze({ timber: 10, bricks: 1, ironware: 1 }),
@@ -28,6 +29,7 @@ export const RECIPES = Object.freeze({
   weave: Object.freeze({ wool: 4 }),
   forge: Object.freeze({ iron: 2, timber: 1 }),
   brew: Object.freeze({ grain: 3 }),
+  boil: Object.freeze({ olive_oil: 1 }),
   firing: Object.freeze({ timber: 2 }),
   // Primary producers take nothing from the market: the land yields the good (seasonal, see SEASON_PEAK).
 });
@@ -35,6 +37,7 @@ export const OUTPUTS = Object.freeze({
   weave: Object.freeze({ cloth: 2 }),
   forge: Object.freeze({ ironware: 2 }),
   brew: Object.freeze({ beer: 2 }),
+  boil: Object.freeze({ soap: 2 }),
   firing: Object.freeze({ bricks: 2 }),
 });
 /** Cost and availability for purchasing recipe inputs directly at a local market. No mutation. */

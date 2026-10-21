@@ -17,6 +17,7 @@ const S = {
   silk: '<path d="M3 17c4-8 6 4 9-2s5-8 9-4v6c-4-4-6 2-9 8s-5-8-9 0z" fill="#b0276b"/><path d="M3 12c4-8 6 4 9-2s5-6 9-3" stroke="#e86aa6" stroke-width="1.5" fill="none"/>',
   sugar: '<path d="M12 3l8 5v8l-8 5-8-5V8z" fill="#fbfbfb" stroke="#a9b2b8" stroke-width="1.2"/><path d="M12 3v18M4 8l16 8M20 8L4 16" stroke="#d7dde0" stroke-width="1"/>',
   pepper: '<path d="M12 6c5 0 8 4 7 9-1 4-4 6-7 6" fill="#c4332a" stroke="#7d1a14" stroke-width="1"/><path d="M12 6c-5 0-8 4-7 9 1 4 4 6 7 6z" fill="#d94a3a" stroke="#7d1a14" stroke-width="1"/><path d="M12 6V3c0-1 1-1.5 3-1" stroke="#3d7a2a" stroke-width="2" fill="none"/>',
+  soap: '<rect x="4" y="9" width="16" height="10" rx="5" fill="#e8e2d0" stroke="#b8b09a" stroke-width="1"/><ellipse cx="12" cy="14" rx="4" ry="2" fill="#d4ccb4"/><circle cx="17" cy="6" r="2" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/><circle cx="20" cy="3.5" r="1.4" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/><circle cx="14" cy="4" r="1.1" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/>',
   beer: '<path d="M6 8h10v11a2 2 0 01-2 2H8a2 2 0 01-2-2z" fill="#d99a2b" stroke="#8a6a1f" stroke-width="1"/><path d="M16 10h2a3 3 0 010 6h-2" fill="none" stroke="#8a6a1f" stroke-width="1.6"/><path d="M6 8c-1-3 2-4 3-3 1-2 4-2 5 0 1-1 3 0 2 3z" fill="#f5ead0"/>',
 };
 export const goodIcon = (id, size = 22) =>
