@@ -22,6 +22,7 @@ export const PER_1000 = {
   dried_fish: { poor: 0.8, middle: 0.5, rich: 0.2 },
   fish:       { poor: 0.6, middle: 0.3, rich: 0.1 },
   salt:       { poor: 0.4, middle: 0.4, rich: 0.3 },
+  beer:       { poor: 0.3, middle: 0.3, rich: 0.1 },
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },
   iron:       { poor: 0.1, middle: 0.25, rich: 0.25 },
   ironware:   { poor: 0.1, middle: 0.3, rich: 0.2 },

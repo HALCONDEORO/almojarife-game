@@ -13,7 +13,8 @@
    "needs": [
     "wool",
     "cloth",
-    "ironware"
+    "ironware",
+    "beer"
    ]
   },
   {
@@ -31,7 +32,8 @@
     "timber",
     "silk",
     "fish",
-    "ironware"
+    "ironware",
+    "beer"
    ],
    "river": true
   },
@@ -49,7 +51,8 @@
    "needs": [
     "grain",
     "iron",
-    "ironware"
+    "ironware",
+    "beer"
    ],
    "river": true
   },
@@ -68,7 +71,8 @@
     "wool",
     "dried_fish",
     "fish",
-    "ironware"
+    "ironware",
+    "beer"
    ]
   },
   {
@@ -88,7 +92,8 @@
     "pepper",
     "dried_fish",
     "sugar",
-    "fish"
+    "fish",
+    "beer"
    ]
   },
   {
@@ -104,7 +109,8 @@
    "needs": [
     "grain",
     "cloth",
-    "pepper"
+    "pepper",
+    "beer"
    ]
   },
   {
@@ -139,7 +145,8 @@
    ],
    "needs": [
     "cloth",
-    "iron"
+    "iron",
+    "beer"
    ]
   },
   {
@@ -171,7 +178,8 @@
    ],
    "needs": [
     "grain",
-    "salt"
+    "salt",
+    "beer"
    ]
   },
   {
@@ -237,7 +245,8 @@
    "needs": [
     "grain",
     "wool",
-    "ironware"
+    "ironware",
+    "beer"
    ]
   },
   {
@@ -529,7 +538,8 @@
    "needs": [
     "timber",
     "iron",
-    "ironware"
+    "ironware",
+    "beer"
    ]
   },
   {
@@ -560,6 +570,9 @@
    "base": 20
   },
   "salt": {
+   "base": 40
+  },
+  "beer": {
    "base": 40
   },
   "wool": {

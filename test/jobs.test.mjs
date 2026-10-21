@@ -61,3 +61,8 @@ test('staffing of 1 reproduces the pre-jobs pattern exactly',()=>{
  for(let day=0;day<6;day++){g.tick=day*240+1;const b4=g.market.cadiz.salt.stock;workshopTick(g,'cadiz');if(g.market.cadiz.salt.stock>b4)days.push(day);}
  assert.deepEqual(days,[1,3,5],'the old alternate-day rhythm is untouched at full staffing');
 });
+test('chain merges keep every jobs row in one line (no dead duplicate rows)',()=>{
+ assert.equal(JOBS_PER_LEVEL.fishery,4,'fishery keeps its 4 town jobs');
+ assert.equal(JOBS_PER_LEVEL.ironworks,6,'ironworks keeps its 6 town jobs');
+ assert.equal(JOBS_PER_LEVEL.brewery,6,'brewery keeps its 6 town jobs');
+});
