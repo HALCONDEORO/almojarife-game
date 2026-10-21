@@ -29,7 +29,8 @@
     "iron",
     "timber",
     "silk",
-    "fish"
+    "fish",
+    "bread"
    ],
    "river": true
   },
@@ -46,7 +47,8 @@
    ],
    "needs": [
     "grain",
-    "iron"
+    "iron",
+    "bread"
    ],
    "river": true
   },
@@ -58,7 +60,8 @@
    "pop": 30000,
    "makes": [
     "grain",
-    "silk"
+    "silk",
+    "bread"
    ],
    "needs": [
     "timber",
@@ -83,7 +86,8 @@
     "pepper",
     "dried_fish",
     "sugar",
-    "fish"
+    "fish",
+    "bread"
    ]
   },
   {
@@ -501,7 +505,8 @@
    "pop1500": null,
    "makes": [
     "wool",
-    "grain"
+    "grain",
+    "bread"
    ],
    "needs": [
     "iron",
@@ -544,6 +549,9 @@
  "goods": {
   "grain": {
    "base": 22
+  },
+  "bread": {
+   "base": 30
   },
   "fish": {
    "base": 13

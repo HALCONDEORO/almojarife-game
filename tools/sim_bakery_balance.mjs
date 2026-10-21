@@ -1,0 +1,47 @@
+// Bakery balance measurement (docs/design/bakery.md, bakery). The bakery is now a
+// PROCESSOR: it buys fish + salt at the local market and sells dried_fish locally, keeping the
+// margin in cash (unlike primary producers). A/B per seed: one game year at the chosen city (grain
+// AND salt, so inputs sit near the floor and dried_fish is dear) WITHOUT and WITH a bakery
+// (levels 1-3). Net building contribution = cash delta vs baseline + one-off cost is reported
+// separately. Run: node tools/sim_bakery_balance.mjs
+import fs from "node:fs";
+import { buildWorld } from "../src/sim/world.mjs";
+import { newGame, advanceDay } from "../src/game/game.mjs";
+import { buyOffice, buyPlot, quoteConstruction, startConstruction, buildingAt, BUILDING_TYPES, JOBS_PER_LEVEL, WAGE_PER_WORKER } from "../src/game/buildings.mjs";
+
+const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
+const CITYX = process.env.CITY ?? "valencia";
+const PLOT = { id: CITYX + ":13", type: "workshop", w: 4, d: 5 };
+const DAYS = 365, SEEDS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+function runYear(seed, level) {
+  const g = newGame(world, "cadiz", { cash: 100000, freePlay: true });
+  g.seed = seed; g.eventsOn = false;
+  let oneOff = 0;
+  if (level > 0) {
+    (g.rep ??= {})[CITYX] = 25;
+    oneOff += buyOffice(g, CITYX).cost ?? 0;
+    oneOff += buyPlot(g, CITYX, PLOT).cost ?? 0;
+    for (;;) {
+      const b = buildingAt(g, CITYX, PLOT.id);
+      if (b && b.level >= level && b.state === "active") break;
+      if (!b || b.state !== "construction") { const q = quoteConstruction(g, CITYX, PLOT.id, "bakery"); if (!q.ok) throw new Error("quote: " + q.reason); startConstruction(g, CITYX, PLOT.id, "bakery"); oneOff += q.cost; }
+      advanceDay(g); if (g.day > 400) throw new Error("construction stuck");
+    }
+  }
+  const cash0 = g.cash, day0 = g.day;
+  while (g.day - day0 < DAYS && !g.over) advanceDay(g);
+  const b = level > 0 ? buildingAt(g, CITYX, PLOT.id) : null;
+  return { net: Math.round(g.cash - cash0), produced: b?.produced ?? 0, oneOff: Math.round(oneOff) };
+}
+
+const out = { days: DAYS, seeds: SEEDS, at: CITYX, scenarios: {} };
+for (const level of [0, 1, 2, 3]) {
+  const runs = SEEDS.map((s) => runYear(s, level));
+  const avg = (k) => Math.round((runs.reduce((a, r) => a + r[k], 0) / runs.length) * 100) / 100;
+  out.scenarios["L" + level] = { netYear: avg("net"), batches: avg("produced"), oneOff: avg("oneOff") };
+}
+console.log(JSON.stringify(out, null, 1));
+const base = out.scenarios.L0.netYear;
+for (const [k, v] of Object.entries(out.scenarios))
+  console.error(`${k}: net ${v.netYear}/y (${v.batches} batches), building net +${Math.round(v.netYear - base)}/y vs one-off ${v.oneOff}`);

@@ -20,6 +20,7 @@ export function classCounts(pop) {
 export const PER_1000 = {
   grain:      { poor: 1.3, middle: 1.1, rich: 0.7 },
   dried_fish: { poor: 0.8, middle: 0.5, rich: 0.2 },
+  bread: { poor: 0.5, middle: 0.5, rich: 0.3 },
   fish:       { poor: 0.6, middle: 0.3, rich: 0.1 },
   salt:       { poor: 0.4, middle: 0.4, rich: 0.3 },
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },
