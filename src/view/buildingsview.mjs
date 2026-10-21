@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, workshopRate, WORKSHOP_BATCH_PATTERN } from "../game/buildings.mjs";
+import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, workshopRate, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL } from "../game/buildings.mjs";
 import { quoteRecipe } from "../sim/recipes.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
@@ -23,8 +23,8 @@ export function buildingsRows(g, cityId) {
       const q = quoteRecipe(g.world, g.market, cityId, "weave", 1);
       row.margin = q.ok ? sellQuote(g.world, g.market, cityId, "cloth", 2) - q.cost : null; // coins per batch right now
     }
-    if (b.state === "active" && b.type === "house") row.popBonus = 50 * b.level;
-    if (b.state === "active" && b.type === "warehouse") row.capBonus = 300 * b.level;
+    if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
+    if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
     return row;
   }).sort((a, b2) => a.plotId.localeCompare(b2.plotId, undefined, { numeric: true }));
 }
@@ -63,3 +63,14 @@ export function cityEffects(g, cityId) {
   return { pop: base, popBonus: housePopBonus(g, cityId), capBonus: warehouseCapBonus(g, cityId) };
 }
 export { WORKSHOP_BATCH_PATTERN };
+
+/** Parse a data-bldact attribute: "buy|<plotId>", "build|<plotId>|<type>", "upgrade|<plotId>|<type>".
+ *  Plot ids contain ":", never "|". Returns null on anything malformed. */
+export function parseBldAct(attr) {
+  if (typeof attr !== "string") return null;
+  const [kind, plotId, type] = attr.split("|");
+  if (!plotId) return null;
+  if (kind === "buy") return { kind, plotId };
+  if ((kind === "build" || kind === "upgrade") && TYPE_KEYS.includes(type)) return { kind, plotId, type };
+  return null;
+}

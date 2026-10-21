@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
-import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects } from "../src/view/buildingsview.mjs";
+import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 };
@@ -73,4 +73,21 @@ test("build offers quote all three types on an empty plot; upgrade offer quotes 
   b.level = 3;
   const maxed = upgradeOffer(g, "cadiz", PLOT.id);
   assert.equal(maxed.ok, false); assert.equal(maxed.reason, "max level");
+});
+
+test("parseBldAct: the armed-action wiring, including upgrade carrying its type", () => {
+  assert.deepEqual(parseBldAct("buy|cadiz:7"), { kind: "buy", plotId: "cadiz:7" });
+  assert.deepEqual(parseBldAct("build|cadiz:7|house"), { kind: "build", plotId: "cadiz:7", type: "house" });
+  assert.deepEqual(parseBldAct("upgrade|cadiz:7|workshop"), { kind: "upgrade", plotId: "cadiz:7", type: "workshop" }); // the upgrade arm must carry the type: startConstruction needs it
+  assert.equal(parseBldAct("upgrade|cadiz:7"), null); // without the type the confirm would no-op (review defect)
+  assert.equal(parseBldAct("build|cadiz:7|castle"), null);
+  assert.equal(parseBldAct(""), null);
+  assert.equal(parseBldAct(null), null);
+  // end to end: an armed upgrade parses and startConstruction accepts it
+  const g = funded();
+  buyPlot(g, "cadiz", PLOT); startConstruction(g, "cadiz", PLOT.id, "workshop");
+  const b = buildingAt(g, "cadiz", PLOT.id); b.state = "active"; b.level = 1; delete b.nextLevel; delete b.readyTick;
+  const a = parseBldAct(`upgrade|${PLOT.id}|workshop`);
+  const r = startConstruction(g, "cadiz", a.plotId, a.type);
+  assert.ok(r.ok); assert.equal(r.level, 2);
 });
