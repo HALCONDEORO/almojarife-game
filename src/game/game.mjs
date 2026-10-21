@@ -17,7 +17,8 @@ import { captainSpeed } from "./captains.mjs";
 import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { defaultProfile } from "./profile.mjs";
-import { refreshIntel, knownMarket } from "./intel.mjs";
+import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
+import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus } from "./buildings.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -55,6 +56,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
   const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? defaultProfile(), eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
+  startingChart(g, start); // a new trader knows his home coast
   return g;
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
@@ -124,6 +126,7 @@ export function advanceTick(g) {
   if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
+  for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
   for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
@@ -249,7 +252,14 @@ export function takeGoods(g, ship, good, qty) {
 }
 export function quote(g, city, good) { return price(g.world, g.market[city][good], good); }
 export { cargoUsed, SHIP_TYPES };
-export { buyRumor, RUMOR_PRICE, isLive } from "./intel.mjs";
+/** A tavern rumour also puts the named port on the chart: now the trader knows where it is. */
+export function buyRumor(g, city, at) {
+  const r = buyRumorIntel(g, city, at);
+  if (r.ok && discover(g, city)) say(g, "discovered", { city });
+  return r;
+}
+export { RUMOR_PRICE, isLive } from "./intel.mjs";
+export { isDiscovered } from "./fog.mjs";
 
 /**
  * Where would the whole hold sell best at today's prices? One row per other port, best first:
