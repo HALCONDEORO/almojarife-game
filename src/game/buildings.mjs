@@ -139,6 +139,25 @@ export function sellQuote(world, market, city, good, qty) {
   return revenue;
 }
 
+/** Employment (city-builder follow-up: jobs). The workers ARE the port's inhabitants: the town's own
+ *  economy (fishing, farming, shops, the harbour) already employs most of the base population, and the
+ *  player's active building levels hire from whoever is left - which includes every inhabitant of the
+ *  player's houses, all of them newcomers looking for work. When jobs outnumber free inhabitants, EVERY
+ *  producer in the port runs at the same staffing ratio - a labour shortage slows the whole port, not
+ *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
+export const JOBS_PER_LEVEL = Object.freeze({
+  house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
+  oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5,
+});
+/** Share of the base population already working the town's own economy; the rest can be hired. */
+export const TOWN_JOBS_SHARE = 0.9;
+/** Total workers the port's active buildings want. */
+export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
+/** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
+export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
+/** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
+export const staffingRatio = (g, cityId) => { const need = jobsNeeded(g, cityId); return need < 1 ? 1 : Math.min(1, freeLabor(g, cityId) / need); };
+
 /** Loom throughput per level, keyed on the absolute day so it stays deterministic: level 1 runs one
  *  batch every other day, level 2 one batch a day, level 3 alternates two and one. Measured balance
  *  (docs/design/city-builder.md piece 3 follow-up): at level batches/day the best port paid the
@@ -185,13 +204,21 @@ export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
   const day = Math.ceil(g.tick / TICKS_PER_DAY);
+  const staff = staffingRatio(g, cityId); // one ratio per port and day; a shortage slows everyone equally
+  if (staff <= 0) return;
+  // Staffing multiplies production. Fractional batches are spread across days deterministically:
+  // batches today = staffed cumulative output through today minus through yesterday, so a 90%
+  // staffing runs nine days in ten instead of flooring every day's batch to zero. Fully staffed
+  // (staff = 1) this is exactly pattern[day % length], the pre-jobs behaviour.
+  const staffed = (pattern, d) => { const P = pattern.length; let t = Math.floor(d / P) * pattern.reduce((a, x) => a + x, 0); for (let i = 0; i < d % P; i++) t += pattern[i]; return t; };
+  const batchesFor = (pattern, level) => Math.min(level, Math.floor(staff * staffed(pattern, day + 1)) - Math.floor(staff * staffed(pattern, day)));
   for (const b of Object.values(plots)) {
     if (b.state !== "active") continue;
     const def = PRODUCERS[b.type];
     if (!def) continue;
     if (def.primary) { // the land yields the good: no inputs, no margin check, only upkeep (accrued weekly)
       const pattern = def.pattern[b.level] ?? def.pattern[3];
-      const batches = Math.min(b.level, pattern[day % pattern.length]);
+      const batches = batchesFor(pattern, b.level);
       if (batches < 1) continue;
       const e = g.market[cityId]?.[def.output];
       if (!e) continue;
@@ -201,7 +228,7 @@ export function workshopTick(g, cityId) {
       continue;
     }
     const pattern = def.pattern[b.level] ?? def.pattern[3];
-    for (let batches = Math.min(b.level, pattern[day % pattern.length]); batches >= 1; batches--) {
+    for (let batches = batchesFor(pattern, b.level); batches >= 1; batches--) {
       const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);
       if (!q.ok) continue; // not enough input stock for this size: try smaller
       if (g.cash < q.cost) continue;
