@@ -209,7 +209,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
       box(g, n * 1.6, 0.4, 2, stone, 0, h - 0.4, z0 + 1.0); if (lv >= 2) box(g, 1.2, 1.2, 0.2, 0xb33a2a, 0, h - 1.4, z0 + 0.05);
       if (lv >= 3) { for (let i = 0; i < 3; i++) box(g, w * 0.5, 0.2, 0.35, stone, 0, 0.1 + i * 0.2, z0 + 2.2 - i * 0.35); box(g, w * 0.8, 0.14, 0.14, 0xc9962a, 0, h + 1.8, zc, { emissive: 0xc9962a, emissiveIntensity: 0.15 }); for (const sx of [-1, 1]) add(g, new THREE.ConeGeometry(0.3, 1, 6), M(0xc9962a, { emissive: 0xc9962a, emissiveIntensity: 0.15 }), sx * (w / 2 - 0.4), h + 0.5, zc); }
     } else if (b.id === "market") {
-      const mk = makeMarket(THREE, { level: lv, style: marketStyle }); for (const c of [...mk.children]) g.add(c); // market family module (crane hall or lonja)
+      const mk = makeMarket(THREE, { level: lv, style: marketStyle }); mk.position.z = z0; g.add(mk); // market family module: built relative to its front line, mounted at FRONT_Z
     } else if (b.id === "tavern") {
       const w = 8, d = 6, h = lv >= 3 ? 7 : 4, zc = z0 - d / 2; box(g, w, h, d, wall, 0, h / 2, zc); gable(g, w, d, 0, h, zc);
       box(g, w * 0.6, 0.15, 1.2, timber, 0, 2.8, z0 + 0.6); box(g, 0.08, 0.08, 1.2, timber, w / 2 + 0.4, 3.0, z0 + 0.1); box(g, 0.9, 0.6, 0.08, 0x8a5a1e, w / 2 + 1.0, 2.7, z0 + 0.1);
