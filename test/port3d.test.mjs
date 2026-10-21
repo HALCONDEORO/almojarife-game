@@ -173,3 +173,20 @@ test("textures are null in Node (no DOM) and kinds are marked on materials", asy
   assert.equal(makeTexture(null, "tiles"), null);
   assert.equal(makeTexture(null, "unknown"), null);
 });
+
+test("flags wave on the GPU, survive fusing and share the scene time", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { buildPortScene, makeFlag, advanceTime } = await import("../src/view3d/port3d.mjs");
+  const f = makeFlag(THREE, { len: 1.2 });
+  assert.equal(f.userData.keep, true, "flags must not be fused (they animate)");
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>" };
+  f.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("uniform float uTime") && shader.vertexShader.includes("FLAG_LEN = 1.20"));
+  assert.equal(shader.uniforms.uTime, f.userData.time);
+  const { scene, water } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 3 });
+  const flags = []; scene.traverse((o) => { if (o.name === "flag") flags.push(o); });
+  assert.ok(flags.length >= 4, "pennants on 3 masts minimum plus the tower banner, got " + flags.length);
+  advanceTime(scene, 3.5);
+  assert.equal(water.userData.time.value, 3.5);
+  for (const fl of flags) assert.equal(fl.userData.time.value, 3.5);
+});
