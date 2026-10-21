@@ -4,13 +4,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, advanceTick } from "../src/game/game.mjs";
-import { BUILDING_TYPES, PRODUCERS, buyOffice, buyPlot, quoteConstruction, startConstruction, buildingAt, cityAllowsProducer, producerRate } from "../src/game/buildings.mjs";
+import { BUILDING_TYPES, PRODUCERS, buyOffice, buyPlot, quoteConstruction, startConstruction, buildingAt, cityAllowsProducer, producerRate, workshopTick } from "../src/game/buildings.mjs";
 import { RECIPES } from "../src/sim/recipes.mjs";
 import { totalDemand } from "../src/sim/classes.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "malaga:13", type: "warehouse", w: 4, d: 5 };
+const PLOT2 = { id: "cadiz:14", type: "workshop", w: 4, d: 5 };
 const FISH_TOWNS = world.cities.filter((c) => c.makes.includes("fish")).map((c) => c.id);
 const NO_FISH = world.cities.filter((c) => !c.makes.includes("fish")).map((c) => c.id);
 
@@ -61,4 +62,40 @@ test("fishery state survives a save round-trip", () => {
   const r = deserialize(serialize(g, "T"), world).g;
   assert.deepEqual(buildingAt(r, "malaga", PLOT.id), buildingAt(g, "malaga", PLOT.id));
   assert.ok(r.market.cadiz.fish);
+});
+
+test("smokehouse is a processor: fish + salt become dried_fish when the margin holds", () => {
+  assert.deepEqual(RECIPES.smoke, { fish: 2, salt: 1 });
+  const def = PRODUCERS.smokehouse;
+  assert.equal(def.primary, false); assert.equal(def.output, "dried_fish"); assert.equal(def.recipe, "smoke");
+  // processors build anywhere, not only where the output is made
+  for (const c of world.cities) assert.ok(cityAllowsProducer(world, c.id, "smokehouse"), c.id);
+});
+
+test("a smokehouse buys local fish and salt, sells dried_fish and earns the margin", () => {
+  const g = newGame(world, "cadiz", { cash: 100000 });
+  buyPlot(g, "cadiz", PLOT2);
+  g.buildings.cadiz[PLOT2.id] = { type: "smokehouse", level: 3, state: "active", plotType: "workshop" };
+  g.market.cadiz.fish.stock = g.market.cadiz.fish.target * 4; // a ship just unloaded the catch: cheap fish
+  g.market.cadiz.salt.stock = g.market.cadiz.salt.target * 4;
+  g.market.cadiz.dried_fish.stock = 0; // and no dried fish in town: dear output
+  const fish0 = g.market.cadiz.fish.stock, salt0 = g.market.cadiz.salt.stock, cash0 = g.cash;
+  g.tick = 1; workshopTick(g, "cadiz");
+  const b = g.buildings.cadiz[PLOT2.id];
+  assert.ok(g.market.cadiz.fish.stock < fish0, "fish consumed");
+  assert.ok(g.market.cadiz.salt.stock < salt0, "salt consumed");
+  assert.ok(g.market.cadiz.dried_fish.stock > 0, "dried fish produced");
+  assert.ok(g.cash > cash0, "the margin lands in cash");
+  assert.ok((b.produced ?? 0) > 0, "batches counted");
+});
+
+test("a smokehouse stands idle when fish is scarce or the margin is gone", () => {
+  const g = newGame(world, "cadiz", { cash: 100000 });
+  buyPlot(g, "cadiz", PLOT2);
+  g.buildings.cadiz[PLOT2.id] = { type: "smokehouse", level: 3, state: "active", plotType: "workshop" };
+  g.market.cadiz.fish.stock = 0; // no catch landed: nothing to smoke
+  const dried0 = g.market.cadiz.dried_fish.stock, cash0 = g.cash;
+  g.tick = 1; workshopTick(g, "cadiz");
+  assert.equal(g.market.cadiz.dried_fish.stock, dried0, "no inputs, no batches");
+  assert.equal(g.cash, cash0, "no cash moved");
 });

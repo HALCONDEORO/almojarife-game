@@ -201,7 +201,7 @@ export const PRODUCERS = Object.freeze({
   oil_mill: Object.freeze({ output: "olive_oil", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   vineyard: Object.freeze({ output: "wine", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   saltworks: Object.freeze({ output: "salt", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
-  smokehouse: Object.freeze({ output: "dried_fish", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),
+  smokehouse: Object.freeze({ recipe: "smoke", output: "dried_fish", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   fishery: Object.freeze({ output: "fish", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
 });
 /** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields

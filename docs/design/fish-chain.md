@@ -51,3 +51,20 @@ redundant (those towns restock their makes goods). Corrected before delivery.
 - `npm test`: 460/460 PASS.
 - Economy gate: `sim_buildings_economy.mjs` 10 years -> `sim_balance_check.mjs` 38/38 PASS,
   3 pre-existing WARNs (workshop upgrade materials, halted-building bot, level-1 cap).
+
+## Step 2: the smokehouse becomes a processor
+
+`smokehouse` was a primary producer (free dried_fish). It is now a processor like the workshop:
+recipe `smoke` = 2 fish + 1 salt -> 3 dried_fish per batch, bought and sold at the local market,
+margin paid to the owner in cash, buildable in any port. Construction cost is unchanged.
+
+Measured (tools/sim_smokehouse_balance.mjs, 8 seeds, 1 year at almeria, A/B vs no building,
+upkeep and wages included):
+
+| Output per batch | L1 net/y | L2 net/y | L3 net/y | One-off L1 / L3 |
+|---|---|---|---|---|
+| 4 (first try) | +10285 | +18673 | +25897 | 1523 / 5903 |
+| 3 (shipped) | +5729 | +10800 | +14818 | 1523 / 5903 |
+
+Four outputs paid L1 back in about 55 days, too fast. Three pays back in roughly 100 days at L1
+when fish and salt sit near the floor, and the margin falls once inputs must be shipped in.
