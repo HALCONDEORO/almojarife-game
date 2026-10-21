@@ -84,10 +84,11 @@ function planBuy(g, s, good, room, budget, maxPrice) {
   const sim = { ...e };
   let n = 0, cost = 0;
   while (n < Math.min(room, sim.stock)) {
-    const unit = Math.ceil(price(g.world, sim, good) * (1 + FEE));
-    if (maxPrice != null && unit > maxPrice) break; // too dear under the rule: stop here
-    if (cost + unit > budget) break; // cash brake
-    cost += unit; sim.stock -= 1; n++;
+    const unit = price(g.world, sim, good);
+    if (maxPrice != null && unit > maxPrice) break; // the limit compares to the market price, before the port fee
+    const charged = Math.ceil(unit * (1 + FEE)); // the fee is still paid; it just does not count against the limit
+    if (cost + charged > budget) break; // cash brake
+    cost += charged; sim.stock -= 1; n++;
   }
   return n;
 }
