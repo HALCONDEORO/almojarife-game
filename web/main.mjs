@@ -1,4 +1,4 @@
-import {resolvePirates,dismissEncounterReport} from '../src/game/encounterdaily.mjs';
+import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
@@ -175,6 +175,7 @@ function render() {
    playing=false;const modal=document.createElement('div');modal.id='sea-modal';modal.innerHTML=encounterDialogHtml(g,lang);document.body.appendChild(modal);
    modal.querySelectorAll('[data-sea]').forEach(b=>b.onclick=()=>act(()=>resolvePirates(g,b.dataset.sea)));
    modal.querySelector('[data-sea-close]')?.addEventListener('click',()=>act(()=>dismissEncounterReport(g)));
+   modal.querySelectorAll('[data-sea-claim]').forEach(b=>b.onclick=()=>act(()=>claimPrize(g,b.dataset.seaClaim==='keep')));
    modal.querySelector('button')?.focus();
   }
 
