@@ -16,14 +16,18 @@ test('campaign: crossing the overdraft limit still loses the game',()=>{
 test('free play: bankruptcy seizes assets, writes off the debt and the game goes on',()=>{
  const g=newGame(world,'cadiz',{cash:-OVERDRAFT_LIMIT-2500,freePlay:true});
  g.buildings={cadiz:{'cadiz:1':{type:'workshop',level:1,state:'active',halted:true}}};
- g.ships[0].cargo={cloth:10};
+ g.warehouses={cadiz:{goods:{salt:5},basis:{salt:40}}};
+ g.ships[0].cargo={cloth:10}; g.ships[0].basis={cloth:250};
  g.loans=[{id:1,left:1000}];
  advanceDay(g);
  assert.equal(g.over,null,'no game over in free play');
  assert.equal(g.bankruptcies,1);
  assert.ok(g.cash>=0,'debt written off, never below zero after the seizure');
  assert.equal(g.buildings.cadiz['cadiz:1'],undefined,'building seized');
- assert.equal(g.ships[0].cargo.cloth,0,'cargo seized');
+ assert.equal(g.warehouses.cadiz.goods.salt,undefined,'warehouse stock seized');
+ assert.equal(g.warehouses.cadiz.basis?.salt,undefined,'warehouse basis cleared too');
+ assert.equal(g.ships[0].cargo.cloth,undefined,'cargo seized: the key is deleted, like after a real sale');
+ assert.equal(g.ships[0].basis?.cloth,undefined,'and its cost basis goes with it (no orphan basis distorting later voyages)');
  assert.equal(g.loans.length,0,'loans written off');
  assert.equal((g.inbox??[]).filter((m)=>m.kind==='bankrupt').length,1,'bankruptcy message posted');
 });
