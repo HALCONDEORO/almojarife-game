@@ -58,14 +58,19 @@ test("plot offers exclude owned plots and come cheapest first", () => {
   assert.ok(offers.every((o) => Number.isSafeInteger(o.price) && o.price > 0));
 });
 
-test("build offers quote every type on an empty plot (ineligible ones carry the reason); upgrade offer quotes the next full level", () => {
+test("build offers quote every type on an empty plot; producers quote only where the city makes the good; upgrade offer quotes the next full level", () => {
   const g = funded();
   buyPlot(g, "cadiz", PLOT);
   const offers = buildOffers(g, "cadiz", PLOT.id);
-  assert.equal(offers.length, Object.keys(BUILDING_TYPES).length);
-  assert.deepEqual(offers.filter((o) => o.ok).map((o) => o.type).sort(), ["house", "warehouse", "workshop"]); // cadiz makes salt and dried fish: no farm/mine there; processors and services build anywhere
-  assert.ok(offers.filter((o) => !o.ok).every((o) => o.reason === "good not producible in this city"));
-  assert.ok(offers.filter((o) => o.ok).every((o) => o.days === BUILDING_TYPES[o.type].buildDays && o.cost > 0));
+  assert.equal(offers.length, Object.keys(BUILDING_TYPES).length); // one entry per type, refused ones carry their reason
+  for (const t of ["house", "workshop", "warehouse", "saltworks", "smokehouse"]) { // cadiz makes salt and dried_fish
+    const o = offers.find((x) => x.type === t);
+    assert.ok(o.ok && o.days === BUILDING_TYPES[t].buildDays && o.cost > 0, t + " quotes");
+  }
+  for (const t of ["oil_mill", "vineyard", "farm", "pasture", "sawmill", "mine"]) {
+    const o = offers.find((x) => x.type === t);
+    assert.equal(o.ok, false); assert.equal(o.reason, "good not producible in this city");
+  }
   assert.equal(upgradeOffer(g, "cadiz", PLOT.id), null); // nothing built yet
   startConstruction(g, "cadiz", PLOT.id, "workshop");
   const b = buildingAt(g, "cadiz", PLOT.id); b.state = "active"; b.level = 1; delete b.nextLevel; delete b.readyTick;
