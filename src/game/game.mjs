@@ -2,6 +2,8 @@
 import { setRoute, setRouteAdv, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
+import { RANKS } from "./rank.mjs";
+import { chronicleWeek, chronicleTick } from "./chronicle.mjs";
 import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
 export const buyCannon = buyCannonShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
 import { openVoyage, recordSale } from "./voyages.mjs";
@@ -99,7 +101,9 @@ function dayTick(g) {
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
-  settleWeek(g);
+  const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
+  chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year
+  chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   rollEvent(g);

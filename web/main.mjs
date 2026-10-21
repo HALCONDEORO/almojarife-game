@@ -27,7 +27,7 @@ import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgrade
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
 import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
-import { reportsHtml, inboxHtml, LT, badge } from "../src/view/ledgerview.mjs";
+import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
 import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
@@ -599,7 +599,7 @@ $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render
 $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
-  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
+  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + chronicleHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
   const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
     $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
