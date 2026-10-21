@@ -22,6 +22,8 @@ export const BUILDING_TYPES = Object.freeze({
   vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   smokehouse: Object.freeze({ recipe: "smokehouse", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  // Private dock: your ships pay less port toll in this city per active level (docs/design/dock-building.md).
+  dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
 });
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
@@ -163,7 +165,7 @@ export function sellQuote(world, market, city, good, qty) {
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
-  oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5,
+  oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5, dock: 0,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -268,3 +270,8 @@ export const HOUSE_POP_PER_LEVEL = 50, WAREHOUSE_CAP_PER_LEVEL = 300;
 const activeLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type === type ? b.level : 0), 0);
 export const housePopBonus = (g, cityId) => HOUSE_POP_PER_LEVEL * activeLevels(g, cityId, "house");
 export const warehouseCapBonus = (g, cityId) => WAREHOUSE_CAP_PER_LEVEL * activeLevels(g, cityId, "warehouse");
+/** Dock: share of the port toll your ships still pay there, by summed ACTIVE dock levels (capped at 3:
+ *  one good dock is enough; extra piers add nothing). Like the warehouse cap it is a passive effect:
+ *  a halted dock keeps it (no workers needed to tie a rope), consistent with the storage bonus. */
+export const DOCK_TOLL_DISCOUNT = Object.freeze([0, 0.5, 0.75, 1]); // by level: 0, 1, 2, 3
+export const dockTollFactor = (g, cityId) => 1 - DOCK_TOLL_DISCOUNT[Math.min(3, activeLevels(g, cityId, "dock"))];

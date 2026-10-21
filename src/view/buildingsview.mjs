@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
+import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe } from "../sim/recipes.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
@@ -34,6 +34,7 @@ export function buildingsRows(g, cityId) {
     }
     if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
     if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
+    if (b.state === "active" && b.type === "dock") row.tollCut = Math.round(DOCK_TOLL_DISCOUNT[b.level] * 100);
     return row;
   }).sort((a, b2) => a.plotId.localeCompare(b2.plotId, undefined, { numeric: true }));
 }
