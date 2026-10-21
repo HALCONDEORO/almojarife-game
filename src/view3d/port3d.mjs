@@ -249,7 +249,7 @@ export function makeScaffold(THREE, w = 4, d = 4, progress = 0.5) {
 
 /** An owned but empty plot in the 3D scene: a low stone slab with corner posts, ready to build on. */
 export function makePlotSlab(THREE, w = 4, d = 4) {
-  const g = new THREE.Group(), stone = std(THREE, 0xb9ad90), post = std(THREE, 0x6a4325);
+  const g = new THREE.Group(), stone = std(THREE, 0xb9ad90), post = std(THREE, 0xd9b45a); // gold posts: owned and ready to build
   put(THREE, g, new THREE.BoxGeometry(w + 0.5, 2.4, d + 0.5), stone, 0, -1.05, 0); // footing against the slope
   put(THREE, g, new THREE.BoxGeometry(w, 0.15, d), stone, 0, 0.075, 0);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.16, 0.5, 0.16), post, sx * (w / 2 - 0.1), 0.25, sz * (d / 2 - 0.1));
