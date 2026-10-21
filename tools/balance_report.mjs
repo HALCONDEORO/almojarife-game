@@ -14,6 +14,8 @@ import { knownMarket, buyRumor, RUMOR_PRICE } from '../src/game/intel.mjs';
 import { buyPlot, startConstruction, restartBuilding, buildingAt } from '../src/game/buildings.mjs';
 import { resolveEvent } from '../src/game/events.mjs';
 import { resolvePirates, dismissEncounterReport } from '../src/game/encounterdaily.mjs';
+import { MISSIONS, campaignEvent } from '../src/game/campaigns.mjs';
+import { MISSION as MISSION_HOOKS } from '../src/game/game.mjs';
 
 const w = loadWorld(), games = Number(process.argv[2] ?? 24), competition = process.argv[3] ?? 'default';
 if (!['default', 'planned'].includes(competition)) throw new Error('competition must be default or planned');
@@ -37,6 +39,7 @@ const STYLES = {
   foggy: { repairBelow: 75, fog: true, buffer: 200, pirate: 'flee' }, // no perfect prices: decides on remembered/rumoured prices
   clumsy: { repairBelow: 65, clumsy: true, pirate: 'flee' }, // greedy human: idles, forgets repairs, mis-picks, under-buys
   industrial: { repairBelow: 65, industrial: true, pirate: 'flee' }, // trades until it can build, then lives off a workshop at home
+  errand: { repairBelow: 65, errand: true, pirate: 'flee' }, // mission runner: does the active mission first, then trades greedy
 };
 const CORE = ['greedy-preview', 'random-destination'], EXTRA = Object.keys(STYLES).filter((s) => s !== 'random-destination');
 const ROSTERS = { core: CORE.map((s) => [s, false]), styles: EXTRA.map((s) => [s, true]), all: [...CORE.map((s) => [s, false]), ...EXTRA.map((s) => [s, true])] };
@@ -92,6 +95,7 @@ function run(start, seed, style, mode, events) {
   const home = start, plotId = home + ':1';
   const byGood = {}, byRoute = {}, costBasis = {}, origin = {};
   let trips = 0, minCash = g.cash, firstBankruptDay = null, leftoverCost = 0, built = 0, loans = 0, stalls = 0, phase = 'trade';
+  const missionDays = {}; // mission id -> day first seen completed
   const addProfit = (good, at, revenue) => {
     const cost = costBasis[good] ?? 0, profit = revenue - cost;
     (byGood[good] ??= { revenue: 0, cost: 0, profit: 0 }).revenue += revenue; byGood[good].cost += cost; byGood[good].profit += profit;
@@ -114,6 +118,21 @@ function run(start, seed, style, mode, events) {
         else if (b?.state === 'active' && !b.halted && b.level < 3 && g.cash > 4000) { if (startConstruction(g, home, plotId, 'workshop').ok) built++; }
         else if (b?.halted && g.cash > 1000) restartBuilding(g, home, plotId);
       } else if (!(st.clumsy && rng.next() < 0.1)) { // clumsy idles one day in ten
+        if (st.errand && g.campaign) { // mission runner: work the current mission step first
+          const mid = g.campaign.active[0], mst = g.campaign.missions[mid];
+          if (mst && !mst.done && !mst.failed && mid === 'm1-oficio') {
+            const cur = () => g.campaign.missions['m1-oficio'].step;
+            if (cur() === 0) { // buy salt here, or sail to the port with most stock
+              const want = 40 - mst.count;
+              const b = previewBuy(w, g.market, ship, g.cash, 'salt', Math.min(want, SHIP_TYPES[ship.type].capacity));
+              if (b.qty > 0) { const r = doBuy(g, ship, 'salt', b.qty); if (r.ok) { costBasis.salt = (costBasis.salt ?? 0) + r.cost; origin.salt = ship.at; } }
+              if (cur() === 1) { if (doSail(g, ship, 'sevilla').ok) trips++; }
+              else if (b.qty === 0) { const best = w.cities.filter((c) => c.id !== ship.at).sort((x, y) => (g.market[y.id]?.salt?.stock ?? 0) - (g.market[x.id]?.salt?.stock ?? 0))[0]; if (best && doSail(g, ship, best.id).ok) trips++; }
+            } else if (cur() === 1) { if (doSail(g, ship, 'sevilla').ok) trips++; }
+            else if (cur() === 3 && ship.at === 'sevilla') { const q = ship.cargo.salt ?? 0; if (q > 0) { const r = doSell(g, ship, 'salt', q); if (r.ok) addProfit('salt', ship.at, r.revenue); } }
+            else if (cur() === 4) campaignEvent(g, { kind: 'readReport' }, MISSION_HOOKS);
+          }
+        }
         const cashForBuying = g.cash + (st.leverage ? loanRoom(g, netWorth(g)) : 0);
         const best = plan(g, ship, style, rng, cashForBuying);
         if (best && st.leverage && best.cost > g.cash) {
@@ -136,12 +155,14 @@ function run(start, seed, style, mode, events) {
     if (!g.over) advanceDay(g);
     if (g.day === prevDay && !g.over) { if (++stalls > 3) break; } else stalls = 0;
     if (firstBankruptDay === null && (g.bankruptcies ?? 0) > prevB) firstBankruptDay = g.day;
+    for (const [mid, mst] of Object.entries(g.campaign?.missions ?? {})) if (mst.done && !(mid in missionDays)) missionDays[mid] = g.day;
     if (g.cash < minCash) minCash = g.cash;
   }
   for (const cost of Object.values(costBasis)) leftoverCost += cost; // bought but unsold at the end
   const round = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { revenue: Math.round(v.revenue), cost: Math.round(v.cost), profit: Math.round(v.profit) }]));
   const roundR = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { profit: Math.round(v.profit), trips: v.trips }]));
-  return { start, day: g.day, outcome: g.over, reason: g.overReason ?? null, cash: Math.round(g.cash), netWorth: Math.round(netWorth(g)), trips, minCash: Math.round(minCash), bankruptcies: g.bankruptcies ?? 0, firstBankruptDay, leftoverCost: Math.round(leftoverCost), built, loansTaken: loans, stalled: stalls > 3 || undefined, byGood: round(byGood), byRoute: roundR(byRoute) };
+  const missions = Object.fromEntries(MISSIONS.map((m) => [m.id, { offered: !!g.campaign?.missions?.[m.id], done: g.campaign?.missions?.[m.id]?.done ?? false, failed: g.campaign?.missions?.[m.id]?.failed ?? false, doneDay: missionDays[m.id] ?? null }]));
+  return { missions, start, day: g.day, outcome: g.over, reason: g.overReason ?? null, cash: Math.round(g.cash), netWorth: Math.round(netWorth(g)), trips, minCash: Math.round(minCash), bankruptcies: g.bankruptcies ?? 0, firstBankruptDay, leftoverCost: Math.round(leftoverCost), built, loansTaken: loans, stalled: stalls > 3 || undefined, byGood: round(byGood), byRoute: roundR(byRoute) };
 }
 const known_market_has = (g, city) => { const k = knownMarket(g); return k.market[city] && k.age[city].days <= 45; };
 
@@ -176,6 +197,7 @@ for (const c of cells) {
     medianEndDay: med(rs.map((r) => r.day)),
     medianMinCash: med(rs.map((r) => r.minCash)),
     totalTradingProfit: Math.round(totalProfit),
+    missions: Object.fromEntries(MISSIONS.map((m) => [m.id, { offered: rs.filter((r) => r.missions[m.id]?.offered).length, done: rs.filter((r) => r.missions[m.id]?.done).length, failed: rs.filter((r) => r.missions[m.id]?.failed).length, medianDoneDay: med(rs.filter((r) => r.missions[m.id]?.doneDay !== null && r.missions[m.id]?.doneDay !== undefined).map((r) => r.missions[m.id].doneDay)) }])),
     buildingsBuilt: rs.reduce((a, r) => a + r.built, 0), loansTaken: rs.reduce((a, r) => a + r.loansTaken, 0), stalledRuns: rs.filter((r) => r.stalled).length,
     topGood: topGood ? { good: topGood[0], profit: Math.round(topGood[1].profit), share: totalProfit > 0 ? +(topGood[1].profit / totalProfit).toFixed(3) : null } : null,
     profitByGood: Object.fromEntries(Object.entries(byGood).sort((a, b) => b[1].profit - a[1].profit).map(([k, v]) => [k, Math.round(v.profit)])),
