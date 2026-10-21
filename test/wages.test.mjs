@@ -39,7 +39,9 @@ test('a halted building produces nothing, needs no workers and accrues nothing',
  assert.equal(staffingRatio(g,'cadiz'),1,'no shortage without jobs');
  g.tick=241;const before=g.market.cadiz.salt.stock;workshopTick(g,'cadiz');
  assert.equal(g.market.cadiz.salt.stock,before,'no production while halted');
+ g.cash=0; // broke: no auto-restart either
  accrueBuildings(g);
+ assert.equal(g.buildings.cadiz['cadiz:1'].halted,true,'stays halted while broke');
  assert.equal(g.accrued?.buildings?.['cadiz/cadiz:1']??0,0,'and no costs');
 });
 test('restartBuilding needs cash and clears the halt',()=>{
@@ -50,6 +52,19 @@ test('restartBuilding needs cash and clears the halt',()=>{
  assert.deepEqual(restartBuilding(g,'cadiz','cadiz:1'),{ok:true});
  assert.equal(g.buildings.cadiz['cadiz:1'].halted,false);
  assert.equal(restartBuilding(g,'cadiz','cadiz:1').ok,false,'cannot restart what is not halted');
+});
+test('a halted building auto-restarts when cash covers its day again',()=>{
+ const g=newGame(world);
+ g.buildings={cadiz:{'cadiz:1':{type:'workshop',level:1,state:'active',halted:true}}};
+ g.cash=1;
+ accrueBuildings(g);
+ assert.equal(g.buildings.cadiz['cadiz:1'].halted,true,'stays halted without cash');
+ assert.equal((g.inbox??[]).filter((m)=>m.kind==='restart').length,0,'no restart message');
+ g.cash=5000;
+ accrueBuildings(g);
+ assert.equal(g.buildings.cadiz['cadiz:1'].halted,false,'restarts on its own with cash');
+ assert.equal((g.inbox??[]).filter((m)=>m.kind==='restart').length,1,'restart message posted');
+ assert.ok((g.accrued?.buildings?.['cadiz/cadiz:1']??0)>0,'and accrues its cost again');
 });
 test('rows show wages and the halted state; parseBldAct reads restart',()=>{
  const g=newGame(world);

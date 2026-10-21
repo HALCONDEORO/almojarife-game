@@ -124,8 +124,12 @@ export function tickBuildings(g) {
 export function accrueBuildings(g) {
   let committed = 0; // today's charges commit in order, so several buildings share the one cash figure
   for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots)) {
-    if (b.state !== "active" || b.halted) continue; // a halted building produces nothing and accrues nothing
+    if (b.state !== "active") continue;
     const cost = BUILDING_TYPES[b.type].upkeep * b.level + (JOBS_PER_LEVEL[b.type] ?? 0) * b.level * WAGE_PER_WORKER;
+    if (b.halted) { // free play: a halted building resumes on its own as soon as cash covers its day again
+      if (g.cash - committed < cost) continue;
+      b.halted = false; post(g, "restart", { city: cityId, plot: plotId });
+    }
     if (g.cash - committed < cost) { b.halted = true; post(g, "halt", { city: cityId, plot: plotId }); continue; } // no cash at charge time: the workers walk
     const a = (g.accrued ??= { ships: {} });
     (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + cost;
