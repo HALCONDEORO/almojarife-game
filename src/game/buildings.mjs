@@ -2,7 +2,7 @@
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
 import { quoteRecipe, consumeRecipe, RECIPES } from "../sim/recipes.mjs";
-import { price } from "../sim/market.mjs";
+import { price, seasonMul } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
@@ -13,6 +13,10 @@ export const BUILDING_TYPES = Object.freeze({
   house: Object.freeze({ recipe: "house", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   workshop: Object.freeze({ recipe: "workshop", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
   warehouse: Object.freeze({ recipe: "warehouse", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  farm: Object.freeze({ recipe: "farm", fee: 200, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  pasture: Object.freeze({ recipe: "pasture", fee: 200, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  sawmill: Object.freeze({ recipe: "sawmill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  mine: Object.freeze({ recipe: "mine", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
 });
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
@@ -141,6 +145,12 @@ export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 
  *  inputs - farms, mines - are a later piece.) */
 export const PRODUCERS = Object.freeze({
   workshop: Object.freeze({ recipe: "weave", output: "cloth", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
+  // Primary producers: the land yields the good, no inputs. yield = units per batch; seasonal goods
+  // follow the market's own seasonMul (harvest/shearing peaks), the rest produce evenly all year.
+  farm: Object.freeze({ output: "grain", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),
+  pasture: Object.freeze({ output: "wool", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
+  sawmill: Object.freeze({ output: "timber", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
+  mine: Object.freeze({ output: "iron", primary: true, yield: 1, pattern: WORKSHOP_BATCH_PATTERN }),
 });
 /** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields
  *  the good) only go where the city MAKES that good - local resources per city, the rest is imported,
@@ -170,6 +180,17 @@ export function workshopTick(g, cityId) {
     if (b.state !== "active") continue;
     const def = PRODUCERS[b.type];
     if (!def) continue;
+    if (def.primary) { // the land yields the good: no inputs, no margin check, only upkeep (accrued weekly)
+      const pattern = def.pattern[b.level] ?? def.pattern[3];
+      const batches = Math.min(b.level, pattern[day % pattern.length]);
+      if (batches < 1) continue;
+      const e = g.market[cityId]?.[def.output];
+      if (!e) continue;
+      const amount = Math.max(1, Math.round(def.yield * batches * seasonMul(def.output, day)));
+      e.stock = Math.max(e.stock, Math.min(e.target * 4, e.stock + amount)); // same stock cap as city production, but never clip stock already above it
+      b.produced = (b.produced ?? 0) + amount; // lifetime units, for the Buildings tab
+      continue;
+    }
     const pattern = def.pattern[b.level] ?? def.pattern[3];
     for (let batches = Math.min(b.level, pattern[day % pattern.length]); batches >= 1; batches--) {
       const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);

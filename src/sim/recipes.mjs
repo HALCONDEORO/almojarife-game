@@ -9,6 +9,10 @@ export const RECIPES = Object.freeze({
   warehouse: Object.freeze({ timber: 20, iron: 6 }),
   house: Object.freeze({ timber: 12, iron: 2, cloth: 2 }),
   workshop: Object.freeze({ timber: 18, iron: 5, cloth: 6 }),
+  farm: Object.freeze({ timber: 14, iron: 2 }),
+  pasture: Object.freeze({ timber: 12, iron: 2 }),
+  sawmill: Object.freeze({ timber: 10, iron: 4 }),
+  mine: Object.freeze({ timber: 16, iron: 6 }),
   office: Object.freeze({ timber: 16, iron: 4, cloth: 6 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),

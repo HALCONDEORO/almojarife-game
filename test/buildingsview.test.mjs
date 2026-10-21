@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
-import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
+import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, whyText } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 };
@@ -58,12 +58,14 @@ test("plot offers exclude owned plots and come cheapest first", () => {
   assert.ok(offers.every((o) => Number.isSafeInteger(o.price) && o.price > 0));
 });
 
-test("build offers quote all three types on an empty plot; upgrade offer quotes the next full level", () => {
+test("build offers quote every type on an empty plot (ineligible ones carry the reason); upgrade offer quotes the next full level", () => {
   const g = funded();
   buyPlot(g, "cadiz", PLOT);
   const offers = buildOffers(g, "cadiz", PLOT.id);
-  assert.equal(offers.length, 3);
-  assert.ok(offers.every((o) => o.ok && o.days === BUILDING_TYPES[o.type].buildDays && o.cost > 0));
+  assert.equal(offers.length, Object.keys(BUILDING_TYPES).length);
+  assert.deepEqual(offers.filter((o) => o.ok).map((o) => o.type).sort(), ["house", "warehouse", "workshop"]); // cadiz makes salt and dried fish: no farm/mine there; processors and services build anywhere
+  assert.ok(offers.filter((o) => !o.ok).every((o) => o.reason === "good not producible in this city"));
+  assert.ok(offers.filter((o) => o.ok).every((o) => o.days === BUILDING_TYPES[o.type].buildDays && o.cost > 0));
   assert.equal(upgradeOffer(g, "cadiz", PLOT.id), null); // nothing built yet
   startConstruction(g, "cadiz", PLOT.id, "workshop");
   const b = buildingAt(g, "cadiz", PLOT.id); b.state = "active"; b.level = 1; delete b.nextLevel; delete b.readyTick;
@@ -114,4 +116,19 @@ test("single-plot view state: an empty cache is loading (a 3D click must trigger
   const r = buyPlot(g, "cadiz", PLOT);
   assert.ok(r.ok);
   assert.equal(plotViewState({ cadiz: [PLOT] }, world, g, "cadiz", "cadiz:7").kind, "owned");
+});
+
+test("whyText translates a known build-offer reason and falls back to the raw reason for unknown ones", () => {
+  const t = { bldWhy: { "office required": "necesitas una oficina comercial en este puerto" } };
+  assert.equal(whyText(t, "office required"), "necesitas una oficina comercial en este puerto");
+  assert.equal(whyText(t, "plot not owned"), "plot not owned");
+  assert.equal(whyText({}, "max level"), "max level");
+});
+
+test("both locales translate every build/upgrade offer reason the game can emit", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const locales = src.match(/bldWhy: \{[^}]*\}/g);
+  assert.equal(locales.length, 2);
+  const reasons = ["office required", "respect required", "good not producible in this city"];
+  for (const l of locales) for (const r of reasons) assert.ok(l.includes(`"${r}"`), `missing ${r} in ${l.slice(0, 40)}`);
 });
