@@ -69,8 +69,8 @@ export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = tru
   for (const o of dead) o.parent.remove(o); root.add(fused); return dead.length;
 }
 
-export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {} } = {}) {
-  const scene = new THREE.Scene(), L = portLayout(id, pop), sk = skyFor(tod);
+export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {}, plots3d = [] } = {}) {
+  const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
   const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o })); return mats.get(k); };
   const add = (parent, geo, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; parent.add(m); return m; };
   const box = (p, w, h, d, c, x, y, z, o) => add(p, new THREE.BoxGeometry(w, h, d), M(c, o), x, y, z);
@@ -125,6 +125,15 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     }
     scene.add(g);
   }
+  // player plots on the hillside: active building, scaffold while under construction, slab for a bare owned plot
+  for (const p of plots3d) {
+    if (!p?.rect || !p.id) continue;
+    const g = p.state === "construction" ? makeScaffold(THREE, p.rect.w, p.rect.d, p.progress ?? 0.5)
+      : p.type ? makePlayerBuilding(THREE, p.type, p.level ?? 1, p.rect.w, p.rect.d)
+      : makePlotSlab(THREE, p.rect.w, p.rect.d);
+    g.name = "plot:" + p.id; g.userData.plot = p.id; g.position.set(p.rect.x, p.rect.y, p.rect.z);
+    scene.add(g);
+  }
   if (warehouse) { const g = new THREE.Group(); g.name = "warehouse"; g.position.set(28, QUAY_TOP, -5.5); box(g, 3.4, 2.4, 3, 0xc9a66b, 0, 1.2, 0); gable(g, 3.4, 3, 0, 2.4, 1.5); scene.add(g); }
   // quay props: bollards every 3 m at 0.5 m from the edge, barrels and crates
   for (let x = -27; x <= 27; x += 3) add(scene, new THREE.CylinderGeometry(0.18, 0.18, 0.5, 8), M(dark), x, QUAY_TOP + 0.25, QUAY_EDGE_Z - 0.5, false);
@@ -132,9 +141,9 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   for (let i = 0; i < Math.min(3, ships); i++) scene.add(makeShip(THREE, -4 + i * 14, 2.5, i));
   // performance: the town (houses, tower, quay props), each building and each ship become one mesh each
   const town = new THREE.Group(); town.name = "town";
-  for (const o of [...scene.children]) if (!o.userData.building && o.name !== "ship" && o.name !== "water" && o.name !== "sun" && !o.isLight && o !== water) { if (o.isGroup || o.isMesh) { town.add(o); } }
+  for (const o of [...scene.children]) if (!o.userData.building && !o.userData.plot && o.name !== "ship" && o.name !== "water" && o.name !== "sun" && !o.isLight && o !== water) { if (o.isGroup || o.isMesh) { town.add(o); } }
   scene.add(town); fuseStatic(THREE, town);
-  for (const o of scene.children) if (o.userData.building || o.name === "ship") fuseStatic(THREE, o);
+  for (const o of scene.children) if (o.userData.building || o.userData.plot || o.name === "ship") fuseStatic(THREE, o);
   return { scene, layout: L, water, mats };
 }
 
@@ -164,7 +173,7 @@ export function setHover(group, on) {
   group.traverse((o) => { if (!o.isMesh || !o.material) return; if (on) { o.userData.emis ??= o.material.emissive?.getHex(); o.material = o.material.clone(); o.material.emissive?.setHex(0xf1e8cf); o.material.emissiveIntensity = 0.12; } });
 }
 /** Walk up from a hit object to the building group it belongs to; returns the building id or null. */
-export function buildingOf(obj) { for (let o = obj; o; o = o.parent) if (o.userData?.building) return o.userData.building; return null; }
+export function buildingOf(obj) { for (let o = obj; o; o = o.parent) { if (o.userData?.building) return o.userData.building; if (o.userData?.plot) return "plot:" + o.userData.plot; } return null; }
 /** Which building is under the pointer? ndc in -1..1. Returns an id or null. */
 export function pickBuilding(THREE, scene, camera, ndcX, ndcY) {
   const rc = new THREE.Raycaster(); rc.setFromCamera({ x: ndcX, y: ndcY }, camera);
@@ -198,6 +207,7 @@ const gable3 = (THREE, parent, w, d, x, y, z, color = 0x9b4a2b) => {
 export function makePlayerBuilding(THREE, type, level = 1, w = 4, d = 4) {
   const g = new THREE.Group(), lv = Math.max(1, Math.min(3, level)), bw = w * (0.7 + lv * 0.1), bd = d * (0.7 + lv * 0.1);
   const wall = 0xece3cf, timber = 0x6a4325, dark = 0x2b2118;
+  put(THREE, g, new THREE.BoxGeometry(bw + 0.5, 2.4, bd + 0.5), std(THREE, 0xb9ad90), 0, -1.05, 0); // stone footing: absorbs the hillside slope (up to ~1 m of grade change across the plot)
   if (type === "house") {
     const h = 2.6 + lv * 0.9;
     put(THREE, g, new THREE.BoxGeometry(bw, h, bd), std(THREE, wall), 0, h / 2, 0);
@@ -229,9 +239,19 @@ export function makePlayerBuilding(THREE, type, level = 1, w = 4, d = 4) {
 /** Scaffolding while a building is under construction: corner poles, cross planks and a wall stub. */
 export function makeScaffold(THREE, w = 4, d = 4, progress = 0.5) {
   const g = new THREE.Group(), timber = std(THREE, 0x8a6a4a), h = 3.2;
+  put(THREE, g, new THREE.BoxGeometry(w + 0.5, 2.4, d + 0.5), std(THREE, 0xb9ad90), 0, -1.05, 0); // footing against the slope, as in makePlayerBuilding
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.18, h, 0.18), timber, sx * w / 2, h / 2, sz * d / 2);
   for (const yy of [1.1, 2.2]) { put(THREE, g, new THREE.BoxGeometry(w + 0.3, 0.12, 0.12), timber, 0, yy, d / 2); put(THREE, g, new THREE.BoxGeometry(w + 0.3, 0.12, 0.12), timber, 0, yy, -d / 2); }
   const stub = Math.max(0.4, 2.6 * Math.min(1, Math.max(0, progress)));
   put(THREE, g, new THREE.BoxGeometry(w * 0.8, stub, d * 0.8), std(THREE, 0xe3d6b8), 0, stub / 2, 0); // walls rise with the works
+  return g;
+}
+
+/** An owned but empty plot in the 3D scene: a low stone slab with corner posts, ready to build on. */
+export function makePlotSlab(THREE, w = 4, d = 4) {
+  const g = new THREE.Group(), stone = std(THREE, 0xb9ad90), post = std(THREE, 0x6a4325);
+  put(THREE, g, new THREE.BoxGeometry(w + 0.5, 2.4, d + 0.5), stone, 0, -1.05, 0); // footing against the slope
+  put(THREE, g, new THREE.BoxGeometry(w, 0.15, d), stone, 0, 0.075, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.16, 0.5, 0.16), post, sx * (w / 2 - 0.1), 0.25, sz * (d / 2 - 0.1));
   return g;
 }

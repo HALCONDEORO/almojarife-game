@@ -412,7 +412,7 @@ function openCityPanel(tb) {
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
-  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }) });
+  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank }), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick) });
   const d=document.createElement("div");d.id="v3d";
   d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.tabBuildings}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title"></span><button data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host"></div></section>`;
   document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
@@ -433,7 +433,9 @@ function open3d(s0) {
 }
 addEventListener("message",e=>{
   const d=$("v3d");
-  if(!d||e.origin!==location.origin||e.source!==d.querySelector("iframe").contentWindow||e.data?.kind!=="building")return;
+  if(!d||e.origin!==location.origin||e.source!==d.querySelector("iframe").contentWindow)return;
+  if(e.data?.kind==="plot"){openCityPanel("buildings");return;}
+  if(e.data?.kind!=="building")return;
   const tb=tabForBuilding(e.data.id);if(tb)openCityPanel(tb);
 });
 function closeMenu() { document.getElementById("ctx")?.remove(); }

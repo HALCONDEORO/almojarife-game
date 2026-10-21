@@ -40,8 +40,9 @@ test("each building type builds a model that grows with level and stays near its
 
 test("scaffold: four poles, planks, and a wall stub that rises with progress", () => {
   const low = makeScaffold(THREE, 4, 4, 0.1), high = makeScaffold(THREE, 4, 4, 0.9);
-  assert.ok(bounds(low).h <= 3.4 && bounds(high).h <= 3.4); // poles cap the height
-  assert.ok(bounds(high).h > 3.0); // poles present
+  const above = (g) => { const b = new THREE.Box3().setFromObject(g); return b.max.y; }; // footing reaches below grade; poles cap what shows
+  assert.ok(above(low) <= 3.3 && above(high) <= 3.3);
+  assert.ok(above(high) > 3.0); // poles present
   const stubH = (g) => { let mx = 0; g.traverse((o) => { if (o.isMesh && o.geometry.parameters?.width > 3 && o.geometry.parameters?.depth > 3) mx = Math.max(mx, o.position.y); }); return mx; }; // the wall stub is the only deep, wide piece
   assert.ok(stubH(high) > stubH(low));
 });
