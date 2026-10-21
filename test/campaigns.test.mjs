@@ -65,3 +65,16 @@ test('save/restore retains mission progress',()=>{
  assert.equal(r.campaign.missions['m1-oficio'].count,25);assert.notEqual(r.campaign,g.campaign);
  const v=missionView({...r,day:3},'es');assert.equal(v[0].title,'La prueba del oficio');assert.ok(v[0].stepLabel.includes('40'));assert.equal(v[0].daysLeft,57);
 });
+
+test("old flat campaign saves are normalised on load instead of crashing the engine", async () => {
+  const { campaignShapeOk, newCampaign, campaignEvent, campaignTick, missionView } = await import("../src/game/campaigns.mjs");
+  const { deserialize } = await import("../src/game/gamesave.mjs");
+  const save = { version: 3, savedAt: 0, company: "casa", state: { day: 1, tick: 0, cash: 100, ships: [], market: {}, profile: { home: "cadiz" },
+    campaign: { id: "m1-oficio", bought: 12, sailed: true, arrived: false, sold: 0 } } }; // the pre-engine flat shape
+  const { g } = deserialize(save, {});
+  assert.ok(campaignShapeOk(g.campaign), "campaign is normalised to the mission shape");
+  assert.deepEqual(g.campaign.active, ["m1-oficio"], "the arc restarts cleanly");
+  assert.doesNotThrow(() => campaignTick(g));
+  assert.doesNotThrow(() => campaignEvent(g, { kind: "buy", good: "salt", qty: 40 }));
+  assert.ok(Array.isArray(missionView(g, "es")));
+});
