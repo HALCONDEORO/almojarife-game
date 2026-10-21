@@ -216,3 +216,17 @@ test("the sky dome grades horizon to zenith and stays out of the fusing", async 
   assert.ok(scene.getObjectByName("sky"), "the dome is in the scene");
   assert.ok(!scene.getObjectByName("town")?.getObjectByName("sky"), "the dome is not fused into the town");
 });
+
+test("house family module: levels, construction state and palette stay in family", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { makeHouse } = await import("../src/view3d/buildings/house.mjs");
+  const h1 = makeHouse(THREE, { tint: 0.2 }), h3 = makeHouse(THREE, { tint: 0.2, level: 3 });
+  const tall = (g) => { const b = new THREE.Box3().setFromObject(g); return b.max.y - b.min.y; };
+  assert.ok(tall(h3) > tall(h1) + 1, "level 3 is taller than level 1");
+  const con = makeHouse(THREE, { tint: 0.2, state: "construction" });
+  let walls = 0, posts = 0;
+  con.traverse((o) => { if (o.isMesh) { const s = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); if (s.x > 3 && s.y > 3) walls++; if (s.x < 0.3 && s.y > 3) posts++; } });
+  assert.equal(walls, 0, "under construction there are no walls yet");
+  assert.ok(posts >= 4, "the timber skeleton stands first");
+  assert.equal(con.userData.buildingType, "house");
+});
