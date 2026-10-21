@@ -24,6 +24,7 @@ export const PER_1000 = {
   salt:       { poor: 0.4, middle: 0.4, rich: 0.3 },
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },
   iron:       { poor: 0.1, middle: 0.25, rich: 0.25 },
+  ironware:   { poor: 0.1, middle: 0.3, rich: 0.2 },
   wool:       { poor: 0.2, middle: 0.4, rich: 0.3 },
   cloth:      { poor: 0.05, middle: 0.4, rich: 0.9 },
   olive_oil:  { poor: 0.25, middle: 0.5, rich: 0.8 },

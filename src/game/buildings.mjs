@@ -26,6 +26,8 @@ export const BUILDING_TYPES = Object.freeze({
   dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
   // Fishery: huts, nets and small boats; yields fresh fish where the city catches it (docs/design/fish-chain.md).
   fishery: Object.freeze({ recipe: "fishery", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  // Ironworks: processor, iron and timber into ironware (docs/design/production-chains-study.md).
+  ironworks: Object.freeze({ recipe: "ironworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
 });
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
@@ -168,6 +170,7 @@ export function sellQuote(world, market, city, good, qty) {
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5, dock: 0, fishery: 4,
+  oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5, dock: 0, ironworks: 6,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -203,6 +206,7 @@ export const PRODUCERS = Object.freeze({
   saltworks: Object.freeze({ output: "salt", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   smokehouse: Object.freeze({ output: "dried_fish", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),
   fishery: Object.freeze({ output: "fish", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
+  ironworks: Object.freeze({ recipe: "forge", output: "ironware", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
 });
 /** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields
  *  the good) only go where the city MAKES that good - local resources per city, the rest is imported,

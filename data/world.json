@@ -12,7 +12,8 @@
    ],
    "needs": [
     "wool",
-    "cloth"
+    "cloth",
+    "ironware"
    ]
   },
   {
@@ -29,7 +30,8 @@
     "iron",
     "timber",
     "silk",
-    "fish"
+    "fish",
+    "ironware"
    ],
    "river": true
   },
@@ -46,7 +48,8 @@
    ],
    "needs": [
     "grain",
-    "iron"
+    "iron",
+    "ironware"
    ],
    "river": true
   },
@@ -64,7 +67,8 @@
     "timber",
     "wool",
     "dried_fish",
-    "fish"
+    "fish",
+    "ironware"
    ]
   },
   {
@@ -75,7 +79,8 @@
    "pop": 35000,
    "makes": [
     "cloth",
-    "iron"
+    "iron",
+    "ironware"
    ],
    "needs": [
     "grain",
@@ -111,7 +116,8 @@
    "makes": [
     "iron",
     "wool",
-    "timber"
+    "timber",
+    "ironware"
    ],
    "needs": [
     "wine",
@@ -230,7 +236,8 @@
    ],
    "needs": [
     "grain",
-    "wool"
+    "wool",
+    "ironware"
    ]
   },
   {
@@ -521,7 +528,8 @@
    ],
    "needs": [
     "timber",
-    "iron"
+    "iron",
+    "ironware"
    ]
   },
   {
@@ -559,6 +567,9 @@
   },
   "iron": {
    "base": 70
+  },
+  "ironware": {
+   "base": 110
   },
   "timber": {
    "base": 25
