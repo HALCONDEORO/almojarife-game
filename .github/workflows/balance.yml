@@ -1,0 +1,13 @@
+name: Balance
+on:
+  pull_request:
+jobs:
+  balance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: sh tools/fetch_data.sh
+      - run: node tools/sim_balance_check.mjs
