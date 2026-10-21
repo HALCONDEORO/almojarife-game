@@ -66,7 +66,7 @@ if (Math.abs(aEnd.idlePlayerCash ?? 0) > 1e6)
 if ((B.upgrades ?? 0) === 0)
   warn("B: workshop never upgrades", B.upgrades, "Upgrading needs materials from the local market (36 timber vs ~26 stocked in Casablanca): ports without stock can never level buildings, and the bot does not stockpile.");
 if (C.resumedDay == null && C.haltedEnd)
-  warn("C: a halted building never resumes", null, "restartBuilding exists but nothing calls it: once wages halt a building it stays dead for the whole run (no partial wages, no recovery path).");
+  warn("C: a halted building never resumes", null, "Auto-restart (with two-day hysteresis) exists since the halt fix; C still never resumes because the broke bot never earns again: a terminal halt is expected here, but watch it in long horizons.");
 const npcA0 = A.npcCash?.[0], npcAEnd = A.horizons?.[Math.max(...H)]?.npcCash;
 if (Number.isFinite(npcA0) && Number.isFinite(npcAEnd) && npcAEnd < npcA0)
   warn("A: NPC traders bleed cash over the long run", npcA0 + " -> " + npcAEnd, "The 3 NPC traders boom then bust: 13k at day 0, ~194k at 50y, ~12k at 100y. Over a century the NPC economy dies, so a free-play world runs out of trading partners.");

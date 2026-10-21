@@ -53,16 +53,21 @@ test('restartBuilding needs cash and clears the halt',()=>{
  assert.equal(g.buildings.cadiz['cadiz:1'].halted,false);
  assert.equal(restartBuilding(g,'cadiz','cadiz:1').ok,false,'cannot restart what is not halted');
 });
-test('a halted building auto-restarts when cash covers its day again',()=>{
+test('a halted building auto-restarts with hysteresis: two days of cost, not one',()=>{
  const g=newGame(world);
- g.buildings={cadiz:{'cadiz:1':{type:'workshop',level:1,state:'active',halted:true}}};
+ g.buildings={cadiz:{'cadiz:1':{type:'workshop',level:1,state:'active',halted:true}}}; // 11/day
  g.cash=1;
  accrueBuildings(g);
  assert.equal(g.buildings.cadiz['cadiz:1'].halted,true,'stays halted without cash');
  assert.equal((g.inbox??[]).filter((m)=>m.kind==='restart').length,0,'no restart message');
- g.cash=5000;
+ g.cash=11; // one day of cost: not enough, hysteresis asks for two
  accrueBuildings(g);
- assert.equal(g.buildings.cadiz['cadiz:1'].halted,false,'restarts on its own with cash');
+ assert.equal(g.buildings.cadiz['cadiz:1'].halted,true,'one day of cash does not restart it (no daily flapping)');
+ assert.equal((g.inbox??[]).filter((m)=>m.kind==='restart').length,0,'still no restart message');
+ g.cash=22; // two days of cost
+ accrueBuildings(g);
+ accrueBuildings(g);
+ assert.equal(g.buildings.cadiz['cadiz:1'].halted,false,'restarts on its own once cash covers two days');
  assert.equal((g.inbox??[]).filter((m)=>m.kind==='restart').length,1,'restart message posted');
  assert.ok((g.accrued?.buildings?.['cadiz/cadiz:1']??0)>0,'and accrues its cost again');
 });
