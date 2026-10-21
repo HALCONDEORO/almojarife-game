@@ -190,3 +190,29 @@ test("flags wave on the GPU, survive fusing and share the scene time", async () 
   assert.equal(water.userData.time.value, 3.5);
   for (const fl of flags) assert.equal(fl.userData.time.value, 3.5);
 });
+
+test("the visible sun disc sits along the light direction and is DOM-gated", async () => {
+  const { sunPose, makeSunDisc, skyFor } = await import("../src/view3d/port3d.mjs");
+  for (const tod of [0, 0.25, 0.5, 0.75, 1]) {
+    const [x, y, z] = sunPose(skyFor(tod));
+    assert.ok(Math.abs(Math.hypot(x, y, z) - 350) < 1e-6, "sun disc stays at 350 m, inside the camera far plane");
+    assert.ok(y > 0, "disc above the horizon at tod " + tod);
+    assert.ok(x < 0 && z > 0, "disc on the light side (west, seaward)");
+  }
+  assert.equal(makeSunDisc(null, skyFor(0.5)), null, "no DOM in Node, no disc");
+});
+
+test("the sky dome grades horizon to zenith and stays out of the fusing", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { buildPortScene, makeSkyDome, skyGradient, skyFor, envStops } = await import("../src/view3d/port3d.mjs");
+  const st = envStops(skyFor(0.5));
+  assert.deepEqual(skyGradient(st, 0.5), st.zenith, "overhead is the zenith colour");
+  const mid = skyGradient(st, 0.1);
+  assert.ok(Math.abs(mid[2] - (st.horizon[2] + st.zenith[2]) / 2) < 60, "low sky sits between horizon and zenith");
+  const dome = makeSkyDome(THREE, skyFor(0.5));
+  assert.equal(dome.name, "sky");
+  assert.ok(dome.geometry.attributes.color, "vertex colours carry the gradient");
+  const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 1 });
+  assert.ok(scene.getObjectByName("sky"), "the dome is in the scene");
+  assert.ok(!scene.getObjectByName("town")?.getObjectByName("sky"), "the dome is not fused into the town");
+});

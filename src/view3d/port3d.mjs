@@ -187,10 +187,11 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   const gable = (p, w, d, x, y, z, color = 0x9b4a2b) => { const rise = (w / 2) * Math.tan((22 * Math.PI) / 180), sh = new THREE.Shape(); sh.moveTo(-w / 2 - 0.3, 0); sh.lineTo(w / 2 + 0.3, 0); sh.lineTo(0, rise); sh.closePath();
     const g = new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }); return add(p, g, M(color, { tex: "tiles", perMetre: 0.35 }), x, y, z - d / 2 - 0.3); };
   const hip = (p, w, d, h, x, y, z, color = 0x7e3b22) => { const m = add(p, new THREE.ConeGeometry(1, 1, 4), M(color), x, y + h / 2, z); m.rotation.y = Math.PI / 4; m.scale.set((w / 2) * 1.42, h, (d / 2) * 1.42); return m; };
-  scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(0xe6d8bc, 60, 180);
+  scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(0xe6d8bc, 60, 180); scene.add(makeSkyDome(THREE, sk));
   scene.add(new THREE.HemisphereLight(0xffe9c4, 0x56625c, 0.4)); // lower: the environment map carries ambient now
   const sun = new THREE.DirectionalLight(hex(sk.sun), sk.sunPower); sun.position.set(-40, sk.sunHeight, 55); sun.castShadow = true; sun.name = "sun";
   sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -35, right: 35, top: 22.5, bottom: -22.5, near: 1, far: 160 }); sun.shadow.normalBias = 0.02; scene.add(sun);
+  const disc = makeSunDisc(THREE, sk); if (disc) scene.add(disc);
   // sea
   const water = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 96, 96), new THREE.MeshStandardMaterial({ color: 0x2f6f8f, roughness: 0.35, metalness: 0.1, flatShading: true }));
   water.rotation.x = -Math.PI / 2; water.name = "water"; water.receiveShadow = true; gpuWaves(water); scene.add(water);
@@ -266,7 +267,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
   for (let i = 0; i < Math.min(3, ships); i++) scene.add(makeShip(THREE, -4 + i * 14, 2.5, i));
   // performance: the town (houses, tower, quay props), each building and each ship become one mesh each
   const town = new THREE.Group(); town.name = "town";
-  for (const o of [...scene.children]) if (!o.userData.building && !o.userData.plot && o.name !== "ship" && o.name !== "water" && o.name !== "sun" && !o.isLight && o !== water) { if (o.isGroup || o.isMesh) { town.add(o); } }
+  for (const o of [...scene.children]) if (!o.userData.building && !o.userData.plot && o.name !== "ship" && o.name !== "water" && o.name !== "sun" && o.name !== "sky" && o.name !== "sun-disc" && !o.isLight && o !== water) { if (o.isGroup || o.isMesh) { town.add(o); } }
   scene.add(town); fuseStatic(THREE, town);
   for (const o of scene.children) if (o.userData.building || o.userData.plot || o.name === "ship") fuseStatic(THREE, o);
   return { scene, layout: L, water, mats };
@@ -303,6 +304,38 @@ export function makeShip(THREE, x, z, k = 0) {
     const pen = makeFlag(THREE, { color: i === 0 ? 0xb33a2a : 0xd9a441, len: 1.2, h: 0.26 }); pen.position.set(mx, 1.8 + mh - 0.2, 0); g.add(pen); }); // sails furled: a bundle under the yard; a pennant flies from each mast top
   for (let c = 0; c < T.castle; c++) { const cs = new THREE.Mesh(new THREE.BoxGeometry(T.len * 0.2, 1.6, T.wid * 0.85), wood); cs.position.set(c ? half * 0.75 : -half * 0.72, 2.6, 0); cs.castShadow = true; g.add(cs); }
   g.scale.setScalar(0.75); g.position.set(x, 0.2, z); g.name = "ship"; g.userData.baseY = 0.2; return g;
+}
+
+/** Sky colour at a height: horizon near the water line, zenith overhead, deep below. Pure maths, testable without a GPU. */
+export function skyGradient(st, t) {
+  const mix3 = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
+  if (t <= 0) return mix3(st.deep, st.horizon, Math.max(0, 1 + t * 3));
+  return mix3(st.horizon, st.zenith, Math.min(1, t * 2.2));
+}
+/** Gradient sky dome: a big inside-out sphere vertex-coloured with the same stops the environment map uses. Works in Node (no DOM). */
+export function makeSkyDome(THREE, sk, radius = 300) {
+  const st = envStops(sk), geo = new THREE.SphereGeometry(radius, 32, 16), pos = geo.attributes.position, col = [];
+  for (let i = 0; i < pos.count; i++) { const [r, g, b] = skyGradient(st, pos.getY(i) / radius); col.push(r / 255, g / 255, b / 255); }
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+  m.name = "sky"; m.userData.keep = true; m.renderOrder = -1; return m;
+}
+
+/** Where the visible sun disc sits: far along the directional light direction. Pure maths, testable without a GPU. */
+export function sunPose(sk) { const d = [-40, sk.sunHeight, 55], n = Math.hypot(...d); return d.map((v) => (v / n) * 350); }
+/** Visible sun: a soft additive disc drawn on a canvas (own work, no assets). Returns null in Node (no DOM). */
+export function makeSunDisc(THREE, sk) {
+  if (typeof document === "undefined") return null;
+  const cv = document.createElement("canvas"); cv.width = cv.height = 128;
+  const ctx = cv.getContext("2d");
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(255,244,220,1)"); g.addColorStop(0.25, "rgba(255,225,170,0.9)"); g.addColorStop(1, "rgba(255,200,120,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  sp.name = "sun-disc"; sp.userData.keep = true;
+  const [x, y, z] = sunPose(sk); sp.position.set(x, y, z); sp.scale.setScalar(90 + sk.sunPower * 10);
+  return sp;
 }
 
 /** Waves: two sines, 0.15 m in total, wavelengths about 7 and 11 m. Pure geometry maths, testable without a GPU. */
