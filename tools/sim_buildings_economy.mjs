@@ -17,18 +17,21 @@ const world = loadWorld(), ids = world.cities.map((c) => c.id), goods = Object.k
 
 const priceIndex = (g) => { let s = 0, n = 0; for (const c of ids) for (const good of goods) { s += price(world, g.market[c][good], good) / world.goods[good].base; n++; } return +(s / n).toFixed(4); };
 const npcCash = (g) => Math.round(g.ai.reduce((a, t) => a + t.cash, 0));
+// NPC worth = cash + cargo valued at base prices. Ships are at sea at most snapshots with their cash spent on cargo, so cash alone looks like a collapse.
+const npcWorth = (g) => Math.round(g.ai.reduce((a, t) => a + t.cash + Object.entries(t.ship?.cargo ?? {}).reduce((x, [k, v]) => x + v * (world.goods[k]?.base ?? 0), 0), 0));
 const paidBuildings = (g) => Math.round((g.reports ?? []).reduce((a, r) => a + (r.buildings ?? []).reduce((x, l) => x + l.cost, 0), 0));
 const halts = (g) => (g.inbox ?? []).filter((m) => m.kind === "halt").length;
-const base = (g) => ({ priceIndex: priceIndex(g), npcCash: npcCash(g) });
+const base = (g) => ({ priceIndex: priceIndex(g), npcCash: npcCash(g), npcWorth: npcWorth(g) });
 
 function scenarioA() {
   const g = newGame(world, "cadiz", { freePlay: true });
   const s0 = base(g);
   const horizons = {};
-  const st = {};
-  for (let d = 1; d <= days; d++) { advanceDay(g); campaignAt365(g, st); if (snaps.includes(d)) horizons[d] = { ...base(g), idlePlayerCash: Math.round(g.cash) }; }
+  const st = {}, worthYears = []; // one NPC worth sample per game year over the last 10 years of the run
+  for (let d = 1; d <= days; d++) { advanceDay(g); campaignAt365(g, st); if (d % 365 === 0 && d > days - 3650) worthYears.push(npcWorth(g)); if (snaps.includes(d)) horizons[d] = { ...base(g), idlePlayerCash: Math.round(g.cash) }; }
   const s1 = base(g);
-  return { priceIndex: [s0.priceIndex, s1.priceIndex], npcCash: [s0.npcCash, s1.npcCash], idlePlayerCashEnd: Math.round(g.cash), campaignEnd: st.firstOver ?? null, horizons };
+  const npcWorthMean10y = worthYears.length ? Math.round(worthYears.reduce((a, b) => a + b, 0) / worthYears.length) : s1.npcWorth;
+  return { priceIndex: [s0.priceIndex, s1.priceIndex], npcCash: [s0.npcCash, s1.npcCash], npcWorth: [s0.npcWorth, s1.npcWorth], npcWorthMean10y, idlePlayerCashEnd: Math.round(g.cash), campaignEnd: st.firstOver ?? null, horizons };
 }
 
 function scenarioB() {
