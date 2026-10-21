@@ -139,22 +139,23 @@ export function sellQuote(world, market, city, good, qty) {
   return revenue;
 }
 
-/** Employment (city-builder follow-up: jobs). Every active building level needs workers, hired from
- *  the port itself; houses need none. The port supplies labour from its effective population at the
- *  unemployment share below. When jobs outnumber free hands, EVERY producer in the port runs at the
- *  same staffing ratio - a labour shortage slows the whole port, not one unlucky building. The ratio
- *  is computed from live state on each tick, never stored. */
+/** Employment (city-builder follow-up: jobs). The workers ARE the port's inhabitants: the town's own
+ *  economy (fishing, farming, shops, the harbour) already employs most of the base population, and the
+ *  player's active building levels hire from whoever is left - which includes every inhabitant of the
+ *  player's houses, all of them newcomers looking for work. When jobs outnumber free inhabitants, EVERY
+ *  producer in the port runs at the same staffing ratio - a labour shortage slows the whole port, not
+ *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5,
 });
-/** Share of the effective population looking for work at any time (structural unemployment). */
-export const UNEMPLOYED_SHARE = 0.12;
+/** Share of the base population already working the town's own economy; the rest can be hired. */
+export const TOWN_JOBS_SHARE = 0.9;
 /** Total workers the port's active buildings want. */
 export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
-/** Free hands in the port: unemployment share of the effective population (city pop + house bonus). */
-export const freeLabor = (g, cityId) => Math.floor(((g.world?.nodes?.[cityId]?.pop ?? 8000) + housePopBonus(g, cityId)) * UNEMPLOYED_SHARE);
-/** Staffing ratio for the whole port: 1 when there are enough hands, free/needed below that. */
+/** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
+export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
+/** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
 export const staffingRatio = (g, cityId) => { const need = jobsNeeded(g, cityId); return need < 1 ? 1 : Math.min(1, freeLabor(g, cityId) / need); };
 
 /** Loom throughput per level, keyed on the absolute day so it stays deterministic: level 1 runs one
