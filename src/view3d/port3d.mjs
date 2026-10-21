@@ -4,6 +4,8 @@
 import { seeded } from "../view/cityscene.mjs";
 import { makeTexture } from "./textures.mjs";
 import { makeHouse } from "./buildings/house.mjs";
+import { makeMarket } from "./buildings/market.mjs";
+export { makeHarborCrane } from "./buildings/market.mjs";
 
 export const QUAY_TOP = 1.2, QUAY_EDGE_Z = -2, FRONT_Z = -9; // 7 m of quay between the edge and the building fronts
 /** Slope behind the quay: it rises 1 m for every 4 m towards negative z. */
@@ -137,18 +139,6 @@ export function makeTownBuilding(THREE, type, { w = 4, d = 4, h = 3.6, tint = 0 
   return g;
 }
 
-/** Treadwheel harbour crane on the quay: mast, jib over the water, rope and hook, wheel at the side. */
-export function makeHarborCrane(THREE) {
-  const g = new THREE.Group(), timber = 0x6a4325, dark = 0x3d2715, rope = 0x8a7a5a;
-  put(THREE, g, new THREE.BoxGeometry(2.6, 0.3, 2.6), std(THREE, 0x9a8b5a), 0, 0.15, 0); // stone foot
-  put(THREE, g, new THREE.BoxGeometry(0.45, 6, 0.45), std(THREE, timber), 0, 3, 0); // mast
-  for (const sx of [-1, 1]) { const leg = put(THREE, g, new THREE.BoxGeometry(0.25, 4.4, 0.25), std(THREE, timber), sx * 0.9, 2.1, 0); leg.rotation.z = sx * 0.42; } // A-braces
-  const jib = put(THREE, g, new THREE.BoxGeometry(0.25, 5.4, 0.25), std(THREE, timber), 0.9, 5.6, 1.5); jib.rotation.x = 0.72; jib.rotation.z = -0.28; // jib over the water
-  put(THREE, g, new THREE.CylinderGeometry(0.03, 0.03, 3.4, 4), std(THREE, rope), 1.75, 4.4, 3.4); // rope down from the jib tip
-  put(THREE, g, new THREE.BoxGeometry(0.35, 0.4, 0.35), std(THREE, dark), 1.75, 2.6, 3.4); // hook block
-  const wheel = put(THREE, g, new THREE.CylinderGeometry(1.15, 1.15, 0.3, 14), std(THREE, timber), -1.15, 1.5, 0.2); wheel.rotation.z = Math.PI / 2; // treadwheel
-  return g;
-}
 /** GPU waves: the vertex shader displaces the water plane with the same two sines as waveHeight.
  *  The material keeps flatShading, whose per-face normals come from screen-space derivatives,
  *  so displaced waves shade correctly with no CPU vertex or normals work per frame.
@@ -219,23 +209,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
       box(g, n * 1.6, 0.4, 2, stone, 0, h - 0.4, z0 + 1.0); if (lv >= 2) box(g, 1.2, 1.2, 0.2, 0xb33a2a, 0, h - 1.4, z0 + 0.05);
       if (lv >= 3) { for (let i = 0; i < 3; i++) box(g, w * 0.5, 0.2, 0.35, stone, 0, 0.1 + i * 0.2, z0 + 2.2 - i * 0.35); box(g, w * 0.8, 0.14, 0.14, 0xc9962a, 0, h + 1.8, zc, { emissive: 0xc9962a, emissiveIntensity: 0.15 }); for (const sx of [-1, 1]) add(g, new THREE.ConeGeometry(0.3, 1, 6), M(0xc9962a, { emissive: 0xc9962a, emissiveIntensity: 0.15 }), sx * (w / 2 - 0.4), h + 0.5, zc); }
     } else if (b.id === "market") {
-      const d = 7, h = lv >= 2 ? 5.5 : 4.5, w = 12, zc = z0 - d / 2;
-      if (marketStyle === "lonja") { // open arcade hall: two colonnades, frieze and gable roof; unmistakable on the quay
-        const cols = lv >= 2 ? 6 : 5, hh = lv >= 3 ? h + 1 : h;
-        box(g, w - 2.5, hh - 1.6, d - 2.5, wall, 0, (hh - 1.6) / 2, zc); // inner hall behind the arcade
-        for (const sx of [-1, 1]) for (let i = 0; i < cols; i++) add(g, new THREE.CylinderGeometry(0.22, 0.26, hh - 0.8, 8), M(wall), sx * (w / 2 - 0.5), (hh - 0.8) / 2, zc - d / 2 + 0.8 + (i * (d - 1.6)) / (cols - 1));
-        box(g, w, 0.6, d, stone, 0, hh - 0.5, zc); // frieze over the arches
-        gable(g, w, d, 0, hh, zc);
-        const na = lv >= 2 ? 6 : 4, aw = w / na; for (let i = 0; i < na; i++) { const a = box(g, aw * 0.96, 0.1, 1.5, awn[i % 2], -w / 2 + aw / 2 + i * aw, 3.0, z0 + 0.7); a.rotation.x = 0.35; }
-        if (lv >= 2) for (let i = 0; i < 3; i++) { box(g, 2, 0.9, 1.5, timber, -4 + i * 4, 0.45, z0 + 3.5); const a = box(g, 2.2, 0.08, 1.7, awn[i % 2], -4 + i * 4, 2.1, z0 + 3.5); a.rotation.x = 0.2; }
-        if (lv >= 3) { box(g, 0.06, 1.2, 0.06, dark, 0, hh + 2.2, zc); box(g, 0.7, 0.45, 0.05, 0xb33a2a, 0.4, hh + 2.4, zc); box(g, 0.3, 0.45, 0.3, 0xffd27a, 2, 2.6, z0 + 0.2, { emissive: 0xffb860, emissiveIntensity: 0.8 }); }
-      } else { // awning hall, and the harbour crane that marks the market from the sea
-        box(g, w, h, d, wall, 0, h / 2, zc); gable(g, w, d, 0, h, zc);
-        const na = lv >= 2 ? 6 : 4, aw = w / na; for (let i = 0; i < na; i++) { const a = box(g, aw * 0.96, 0.1, 1.5, awn[i % 2], -w / 2 + aw / 2 + i * aw, 3.0, z0 + 0.7); a.rotation.x = 0.35; }
-        if (lv >= 2) for (let i = 0; i < 3; i++) { box(g, 2, 0.9, 1.5, timber, -4 + i * 4, 0.45, z0 + 3.5); const a = box(g, 2.2, 0.08, 1.7, awn[i % 2], -4 + i * 4, 2.1, z0 + 3.5); a.rotation.x = 0.2; }
-        if (lv >= 3) { box(g, w * 0.7, 3, d * 0.7, wall, 0, h + 1.5, zc); box(g, 0.8, 2, 0.06, 0xb33a2a, w / 2 - 1, h + 4, zc + d / 2); box(g, 0.3, 0.45, 0.3, 0xffd27a, 2, 2.6, z0 + 0.2, { emissive: 0xffb860, emissiveIntensity: 0.8 }); }
-        const crane = makeHarborCrane(THREE); crane.position.set(w / 2 + 1.3, 0, z0 + 2.2); g.add(crane); // the crane stands in the gap before the tavern
-      }
+      const mk = makeMarket(THREE, { level: lv, style: marketStyle }); for (const c of [...mk.children]) g.add(c); // market family module (crane hall or lonja)
     } else if (b.id === "tavern") {
       const w = 8, d = 6, h = lv >= 3 ? 7 : 4, zc = z0 - d / 2; box(g, w, h, d, wall, 0, h / 2, zc); gable(g, w, d, 0, h, zc);
       box(g, w * 0.6, 0.15, 1.2, timber, 0, 2.8, z0 + 0.6); box(g, 0.08, 0.08, 1.2, timber, w / 2 + 0.4, 3.0, z0 + 0.1); box(g, 0.9, 0.6, 0.08, 0x8a5a1e, w / 2 + 1.0, 2.7, z0 + 0.1);

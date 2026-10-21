@@ -230,3 +230,20 @@ test("house family module: levels, construction state and palette stay in family
   assert.ok(posts >= 4, "the timber skeleton stands first");
   assert.equal(con.userData.buildingType, "house");
 });
+
+test("market family module: two distinct styles, construction frame and crow-step gable", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { makeMarket } = await import("../src/view3d/buildings/market.mjs");
+  const tris = (g) => { let n = 0; g.traverse((o) => { if (o.isMesh) { const geo = o.geometry; n += (geo.index ? geo.index.count : geo.attributes.position.count) / 3; } }); return n; };
+  const lonja = makeMarket(THREE, { style: "lonja", level: 2 }), crane = makeMarket(THREE, { style: "crane", level: 2 });
+  assert.ok(Math.abs(tris(lonja) - tris(crane)) > 200, "the two styles stay unmistakable");
+  const tall = (g) => { const b = new THREE.Box3().setFromObject(g); return b.max.y; };
+  assert.ok(tall(makeMarket(THREE, { level: 3 })) > tall(makeMarket(THREE, { level: 1 })), "level grows the hall");
+  const con = makeMarket(THREE, { state: "construction" });
+  let walls = 0; con.traverse((o) => { if (o.isMesh) { const s = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); if (s.x > 10 && s.y > 3) walls++; } });
+  assert.equal(walls, 0, "under construction the hall is not walled yet");
+  // crow-step gable: a staircase of small stones climbing the gable face
+  lonja.updateMatrixWorld(true);
+  let steps = 0; lonja.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o), s = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3()); if (s.x < 0.8 && s.y < 0.9 && s.z < 0.6 && c.y > 5) steps++; } });
+  assert.ok(steps >= 8, "crow steps climb the gable, got " + steps);
+});
