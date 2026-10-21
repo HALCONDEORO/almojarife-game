@@ -23,6 +23,7 @@ import { tickAlerts } from "./alerts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
+import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
@@ -112,6 +113,7 @@ function dayTick(g) {
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   rollEvent(g);
   tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
+  tickContacts(g); // hired contacts send their inexact price reports (presence re-wins the port below)
   tickAlerts(g); // price alerts compare against today's market and fire once
   deliverOrders(g);
   refreshIntel(g);
