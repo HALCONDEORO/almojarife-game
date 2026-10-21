@@ -122,11 +122,23 @@ export function tickBuildings(g) {
  *  Upkeep policy: a building under construction accrues nothing; the completion day
  *  already accrues, matching how an arrival day counts as a day at sea. */
 export function accrueBuildings(g) {
+  let committed = 0; // today's charges commit in order, so several buildings share the one cash figure
   for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots)) {
-    if (b.state !== "active") continue;
+    if (b.state !== "active" || b.halted) continue; // a halted building produces nothing and accrues nothing
+    const cost = BUILDING_TYPES[b.type].upkeep * b.level + (JOBS_PER_LEVEL[b.type] ?? 0) * b.level * WAGE_PER_WORKER;
+    if (g.cash - committed < cost) { b.halted = true; post(g, "halt", { city: cityId, plot: plotId }); continue; } // no cash at charge time: the workers walk
     const a = (g.accrued ??= { ships: {} });
-    (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + BUILDING_TYPES[b.type].upkeep * b.level;
+    (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + cost;
+    committed += cost;
   }
+}
+/** Restart a halted building once there is cash to pay its upkeep and people again. */
+export function restartBuilding(g, cityId, plotId) {
+  const b = buildingAt(g, cityId, plotId);
+  if (!b || !b.halted) return { ok: false, reason: "not halted" };
+  if (g.cash <= 0) return { ok: false, reason: "no cash" };
+  b.halted = false;
+  return { ok: true };
 }
 
 /** Revenue of selling qty of a good into the local market, with per-unit price impact. No mutation. Exported for the Buildings tab's margin preview. */
@@ -151,8 +163,11 @@ export const JOBS_PER_LEVEL = Object.freeze({
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
+/** Wages: one coin per worker per day, accrued daily together with the upkeep into the weekly
+ *  book (employment piece c). A building that cannot be paid halts until the player restarts it. */
+export const WAGE_PER_WORKER = 1;
 /** Total workers the port's active buildings want. */
-export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
+export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
 /** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
 export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
 /** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
@@ -213,7 +228,7 @@ export function workshopTick(g, cityId) {
   const staffed = (pattern, d) => { const P = pattern.length; let t = Math.floor(d / P) * pattern.reduce((a, x) => a + x, 0); for (let i = 0; i < d % P; i++) t += pattern[i]; return t; };
   const batchesFor = (pattern, level) => Math.min(level, Math.floor(staff * staffed(pattern, day + 1)) - Math.floor(staff * staffed(pattern, day)));
   for (const b of Object.values(plots)) {
-    if (b.state !== "active") continue;
+    if (b.state !== "active" || b.halted) continue; // halted: no workers, no production
     const def = PRODUCERS[b.type];
     if (!def) continue;
     if (def.primary) { // the land yields the good: no inputs, no margin check, only upkeep (accrued weekly)
