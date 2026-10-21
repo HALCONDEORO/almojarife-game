@@ -69,3 +69,12 @@ test('buyRouteRumor refuses when the map is complete',()=>{
  assert.equal(routeRumorTarget(g,g.profile.home),null);
  assert.equal(buyRouteRumor(g,g.profile.home).reason,'nothing to discover');
 });
+
+test('the tavern UI wires charts and the route rumour with strings in both languages',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const src=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');
+ assert.ok(src.includes('data-chart="${k}"'),'chart buttons rendered');
+ assert.ok(src.includes('buyChart(g, e.dataset.chart, s.at)'),'chart handler wired');
+ assert.ok(src.includes('buyRouteRumor(g, s.at)'),'route rumour handler wired');
+ for(const k of Object.keys(COASTS))assert.equal((src.match(new RegExp(k+': "',"g"))||[]).length,2,k+' named in ES and EN');
+});
