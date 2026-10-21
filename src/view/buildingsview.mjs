@@ -99,3 +99,9 @@ export function plotViewState(plotsCache, world, g, cityId, selPlot) {
   const offer = plotOffers(world, g, cityId, lay).find((x) => x.id === selPlot);
   return offer ? { kind: "offer", offer } : { kind: "none" };
 }
+
+// Localised "why not" for a failed build/upgrade offer; falls back to the raw reason
+// so a missing locale key can never throw inside the confirm card.
+export function whyText(t, reason) {
+  return t.bldWhy?.[reason] ?? reason;
+}

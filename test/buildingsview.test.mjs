@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
-import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
+import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, whyText } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 };
@@ -116,4 +116,19 @@ test("single-plot view state: an empty cache is loading (a 3D click must trigger
   const r = buyPlot(g, "cadiz", PLOT);
   assert.ok(r.ok);
   assert.equal(plotViewState({ cadiz: [PLOT] }, world, g, "cadiz", "cadiz:7").kind, "owned");
+});
+
+test("whyText translates a known build-offer reason and falls back to the raw reason for unknown ones", () => {
+  const t = { bldWhy: { "office required": "necesitas una oficina comercial en este puerto" } };
+  assert.equal(whyText(t, "office required"), "necesitas una oficina comercial en este puerto");
+  assert.equal(whyText(t, "plot not owned"), "plot not owned");
+  assert.equal(whyText({}, "max level"), "max level");
+});
+
+test("both locales translate every build/upgrade offer reason the game can emit", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const locales = src.match(/bldWhy: \{[^}]*\}/g);
+  assert.equal(locales.length, 2);
+  const reasons = ["office required", "respect required", "good not producible in this city"];
+  for (const l of locales) for (const r of reasons) assert.ok(l.includes(`"${r}"`), `missing ${r} in ${l.slice(0, 40)}`);
 });
