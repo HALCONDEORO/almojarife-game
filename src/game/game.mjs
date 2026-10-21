@@ -16,6 +16,7 @@ import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR } from "../sim/clo
 import { captainSpeed } from "./captains.mjs";
 import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
+import { tickShocks, portClosed } from "./shocks.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
@@ -81,6 +82,7 @@ function dayTick(g) {
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
   rollEvent(g);
+  tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
   deliverOrders(g);
   refreshIntel(g);
   if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
@@ -136,12 +138,14 @@ export function waitUntilArrival(g, ship) {
 }
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
+  if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
   const r = buy(g.world, g.market, ship, g.cash, good, qty);
   if (r.ok) { g.cash -= r.cost; logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); }
   return r;
 }
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
+  if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
   const r = sell(g.world, g.market, ship, good, qty);
   if (r.ok) { g.cash += r.revenue; recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
   return r;
