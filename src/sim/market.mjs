@@ -13,6 +13,17 @@ export function makeMarket(world) {
   }
   return m;
 }
+/** Bring a loaded market up to the current world: any city or good added since the save was written
+ *  gets a fresh row (stock at target, like a new game). Existing rows are never touched. Returns how many rows were added. */
+export function fillMissingMarketRows(world, market) {
+  if (!world?.cities || !world?.goods || !market) return 0; // partial worlds in old or malformed saves are left to the callers' own checks
+  const fresh = makeMarket(world); let added = 0;
+  for (const [city, goods] of Object.entries(fresh)) {
+    const row = (market[city] ??= {});
+    for (const [good, e] of Object.entries(goods)) if (!row[good]) { row[good] = e; added++; }
+  }
+  return added;
+}
 /** price = base * (target/stock)^elasticity, clamped to 0.4x-3x. */
 export function price(world, entry, good, elasticity = 0.6) {
   const ratio = entry.target / Math.max(1, entry.stock);
