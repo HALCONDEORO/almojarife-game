@@ -6,6 +6,7 @@ import { price } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
+import { repOf } from "./rank.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
 export const BUILDING_TYPES = Object.freeze({
@@ -34,11 +35,27 @@ export const PLOT_ID = /^[a-z0-9_-]+:(0|[1-9]\d{0,2})$/;
 export function buildingAt(g, cityId, plotId) { return g.buildings?.[cityId]?.[plotId] ?? null; }
 
 /** Buy an empty plot. `plot` is the layout descriptor {id, type, w, d} from the (seeded, deterministic) city layout. */
+export const OFFICE_MIN_RESPECT = 20; // respect "known" in the port before it sells you an office
+export const OFFICE_PRICE = 750; // one trading office per non-home port; it gates all construction there
+export function hasOffice(g, cityId) { // saves made before offices stay playable
+  return !Array.isArray(g.offices) || cityId === g.profile.home || g.offices.includes(cityId);
+}
+export function buyOffice(g, cityId) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
+  if (cityId === g.profile.home || g.offices.includes(cityId)) return { ok: false, reason: "already owned" };
+  if (repOf(g, cityId) < OFFICE_MIN_RESPECT) return { ok: false, reason: "respect required", need: OFFICE_MIN_RESPECT };
+  if (g.cash < OFFICE_PRICE) return { ok: false, reason: "no cash", cost: OFFICE_PRICE };
+  g.cash -= OFFICE_PRICE; g.offices.push(cityId);
+  return { ok: true, cost: OFFICE_PRICE };
+}
+
 export function buyPlot(g, cityId, plot) {
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
   const price = plotPrice(g.world, cityId, plot);
   if (price === null || !PLOT_ID.test(plot.id)) return { ok: false, reason: "bad plot" };
+  if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   if (buildingAt(g, cityId, plot.id)) return { ok: false, reason: "already owned" };
   if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
   g.cash -= price;
@@ -50,8 +67,10 @@ export function buyPlot(g, cityId, plot) {
  *  Upgrade policy: a new level pays the FULL level cost (materials x level, fee x level),
  *  not the difference from the previous one - a level-3 workshop is a bigger building, not a patch. */
 export function quoteConstruction(g, cityId, plotId, type) {
+  if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   const spec = BUILDING_TYPES[type];
   if (!spec) return { ok: false, reason: "unknown type" };
+  if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
   if (b.state === "construction") return { ok: false, reason: "already building" };
@@ -116,26 +135,49 @@ export function sellQuote(world, market, city, good, qty) {
  *  (docs/design/city-builder.md piece 3 follow-up): at level batches/day the best port paid the
  *  building back in ~35 days; this pattern lands it at roughly a season. */
 export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 2: Object.freeze([1]), 3: Object.freeze([2, 1]) });
-/** Average batches a level produces per day when the margin holds, from WORKSHOP_BATCH_PATTERN. */
-export const workshopRate = (level) => { const p = WORKSHOP_BATCH_PATTERN[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
-/** One production day of a port's active workshops, run inside that port's (staggered) market tick so
- *  it sees fresh prices. Each workshop runs the largest batch count (up to its pattern cap) that still
- *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
- *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Producer definitions, keyed by building type: which market recipe it runs and what good it sells.
+ *  Adding a new processor-type producer is a row here plus a BUILDING_TYPES row; the tick and the
+ *  Buildings tab read from this table, never from hardcoded types. (Primary producers with no
+ *  inputs - farms, mines - are a later piece.) */
+export const PRODUCERS = Object.freeze({
+  workshop: Object.freeze({ recipe: "weave", output: "cloth", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
+});
+/** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields
+ *  the good) only go where the city MAKES that good - local resources per city, the rest is imported,
+ *  like the classic Hansa model. Processors (primary: false) run on market inputs and build anywhere.
+ *  Makes-lists come from world.json; no city list is hardcoded here. */
+export const producerCities = (world, type) => {
+  const def = PRODUCERS[type];
+  if (!def) return [];
+  if (!def.primary) return world.cities.map((c) => c.id);
+  return world.cities.filter((c) => c.makes.includes(def.output)).map((c) => c.id);
+};
+/** Whether a producer type may be built in a city (see producerCities). */
+export const cityAllowsProducer = (world, cityId, type) => producerCities(world, type).includes(cityId);
+/** Average batches a level produces per day when the margin holds, from the type's pattern. */
+export const producerRate = (type, level) => { const p = PRODUCERS[type]?.pattern?.[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
+/** Average batches a workshop level produces per day when the margin holds. */
+export const workshopRate = (level) => producerRate("workshop", level);
+/** One production day of a port's active producers, run inside that port's (staggered) market tick so
+ *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
+ *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
+ *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
 export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
   const day = Math.ceil(g.tick / TICKS_PER_DAY);
   for (const b of Object.values(plots)) {
-    if (b.state !== "active" || b.type !== "workshop") continue;
-    const pattern = WORKSHOP_BATCH_PATTERN[b.level] ?? WORKSHOP_BATCH_PATTERN[3];
+    if (b.state !== "active") continue;
+    const def = PRODUCERS[b.type];
+    if (!def) continue;
+    const pattern = def.pattern[b.level] ?? def.pattern[3];
     for (let batches = Math.min(b.level, pattern[day % pattern.length]); batches >= 1; batches--) {
-      const q = quoteRecipe(g.world, g.market, cityId, "weave", batches);
+      const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);
       if (!q.ok) continue; // not enough input stock for this size: try smaller
       if (g.cash < q.cost) continue;
-      const revenue = sellQuote(g.world, g.market, cityId, "cloth", q.outputs.cloth);
+      const revenue = sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]);
       if (revenue <= q.cost) continue; // margin gone at this size
-      const c = consumeRecipe(g.world, g.market, cityId, "weave", g.cash, batches); // wool stock down, cloth stock up
+      const c = consumeRecipe(g.world, g.market, cityId, def.recipe, g.cash, batches); // input stock down, output stock up
       if (!c.ok) break; // re-quoted inside; never mutate half-way
       g.cash += revenue - c.cost;
       b.produced = (b.produced ?? 0) + batches; // lifetime batches, for the Buildings tab (piece 4)

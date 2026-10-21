@@ -53,7 +53,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? defaultProfile(), eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
   return g;
 }
