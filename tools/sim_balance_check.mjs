@@ -51,8 +51,8 @@ for (const h of H) {
     check(`B@${tag}: workshop never halted`, bH.haltEvents, bH.haltEvents === 0, "0");
     const prev = H[H.indexOf(h) - 1], pH = prev ? B.horizons?.[prev] : null;
     if (pH) {
-      check(`B@${tag}: production grows vs previous horizon`, bH.produced - pH.produced, bH.produced > pH.produced, "> " + pH.produced);
-      check(`B@${tag}: cash grows vs previous horizon`, bH.cash - pH.cash, bH.cash > pH.cash, "> " + pH.cash);
+      check(`B@${tag}: production grows vs previous horizon`, bH.produced, bH.produced > pH.produced, "> " + pH.produced);
+      check(`B@${tag}: cash grows vs previous horizon`, bH.cash, bH.cash > pH.cash, "> " + pH.cash);
     }
   }
   if (cH) check(`C@${tag}: poor bot stays halted (no silent recovery)`, cH.halted, cH.halted === true, "true");
