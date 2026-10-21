@@ -56,6 +56,11 @@ test('styles roster: every style cell runs clean in both modes (live 1-seed run)
   assert.equal(r.roster, 'styles');
   assert.equal(Object.keys(r.summaries).length, 18); // 9 styles x 2 modes
   assert.equal(r.results.length, 18);
+  // Live harness check (Automejora fail on #175): the errand runner must really complete M1 and M2,
+  // so the committed styles baseline means what it says.
+  const errand = r.results.find((x) => x.strategy === 'errand' && x.mode === 'campaign' && x.events);
+  assert.ok(errand.missions['m1-oficio'].done, 'errand completes M1');
+  assert.ok(errand.missions['m2-nombre'].done, 'errand completes M2');
   for (const [key, s] of Object.entries(r.summaries)) {
     assert.ok(key.endsWith('+events'), key); // style cells always run with events on
     assert.equal(s.games, 1, key);

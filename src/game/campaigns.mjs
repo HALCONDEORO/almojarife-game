@@ -110,7 +110,7 @@ function conditionMet(g, step, h) {
 }
 /** Ports whose respect reaches the step's bar: the engine counts them for respectPorts steps. */
 function portsWithRespect(g, step, h) {
-  return Object.keys(g.markets ?? g.market ?? {}).filter((city) => h.repOf(g, city) >= step.atLeast).length;
+  return Object.keys(g.market ?? {}).filter((city) => h.repOf(g, city) >= step.atLeast).length;
 }
 /** Daily: deadlines fail missions, condition steps complete themselves, new missions activate. */
 export function campaignTick(g, h = NO_HELPERS) {
