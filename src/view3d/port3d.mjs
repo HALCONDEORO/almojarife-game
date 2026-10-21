@@ -206,7 +206,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     const g = new THREE.Group(); g.position.set(h.x, h.y, h.z); box(g, h.w, h.h, h.d, walls[Math.floor(h.tint * 3) % 3], 0, h.h / 2, 0); gable(g, h.w, h.d, 0, h.h, 0); box(g, 0.7, 1.2, 0.08, 0x2b2118, 0, 0.7, h.d / 2 + 0.04); scene.add(g);
   }
   // bell tower far back
-  { const t = L.tower, g = new THREE.Group(); g.position.set(t.x, slopeY(t.z), t.z); box(g, 3.2, t.h - 3, 3.2, 0xece3cf, 0, (t.h - 3) / 2, 0); hip(g, 3.6, 3.6, 3, 0, t.h - 3, 0, 0x9b4a2b); box(g, 1.2, 1.6, 0.3, 0x2b2118, 0, t.h - 4.5, 1.6); scene.add(g); }
+  { const t = L.tower, g = new THREE.Group(); g.position.set(t.x, slopeY(t.z), t.z); box(g, 3.2, t.h - 3, 3.2, 0xece3cf, 0, (t.h - 3) / 2, 0); hip(g, 3.6, 3.6, 3, 0, t.h - 3, 0, 0x9b4a2b); box(g, 1.2, 1.6, 0.3, 0x2b2118, 0, t.h - 4.5, 1.6); box(g, 0.12, 1.8, 0.12, 0x6a4325, 0, t.h + 0.7, 0); const bf = makeFlag(THREE, { color: 0xb33a2a, len: 1.6, h: 0.42 }); bf.position.set(0.06, t.h + 1.35, 0); g.add(bf); scene.add(g); }
   // clickable buildings
   const stone = 0xcfc4a8, wall = 0xece3cf, awn = [0xb33a2a, 0xf1e8cf], dark = 0x2b2118, timber = 0x6a4325;
   for (const b of BUILDINGS) {
@@ -273,6 +273,24 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
 }
 
 /** Docked ship: parallel to the quay, sails furled, scale 0.75. `k` picks the type (0 cog, 1 caravel, 2 carrack). */
+/** Waving pennant: a plane that ripples in the wind on the GPU. userData.time drives it (same contract as the water) and userData.keep keeps it out of the static fusing (it animates). */
+export function makeFlag(THREE, { color = 0xb33a2a, len = 1.1, h = 0.3 } = {}) {
+  const geo = new THREE.PlaneGeometry(len, h, 10, 1); geo.translate(len / 2, 0, 0);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 1, side: THREE.DoubleSide });
+  const time = { value: 0 };
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = time;
+    shader.vertexShader = "uniform float uTime;\nconst float FLAG_LEN = " + len.toFixed(2) + ";\n" + shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\nfloat fl = position.x / FLAG_LEN;\ntransformed.z += sin(position.x * 7.0 + uTime * 5.2) * 0.09 * fl;\ntransformed.y += sin(position.x * 4.5 + uTime * 3.4) * 0.03 * fl;"
+    );
+  };
+  mat.needsUpdate = true;
+  const m = new THREE.Mesh(geo, mat); m.name = "flag"; m.userData.time = time; m.userData.keep = true; return m;
+}
+/** Advance every GPU-time uniform under root (water, flags, ...): one call from the render loop. */
+export function advanceTime(root, t) { root.traverse((o) => { if (o.userData?.time) o.userData.time.value = t; }); }
+
 export function makeShip(THREE, x, z, k = 0) {
   const T = [{ len: 15, wid: 5, mast: [13], castle: 1 }, { len: 17, wid: 5, mast: [15, 13], castle: 0 }, { len: 24, wid: 7, mast: [16, 18, 14], castle: 2 }][k % 3];
   const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.8 }), band = new THREE.MeshStandardMaterial({ color: 0x3d2715, roughness: 0.8 }), sailM = new THREE.MeshStandardMaterial({ color: 0xf1e8cf, roughness: 1 });
@@ -281,7 +299,8 @@ export function makeShip(THREE, x, z, k = 0) {
   const stripe = new THREE.Mesh(new THREE.BoxGeometry(T.len * 0.95, 0.25, T.wid * 0.92), band); stripe.position.set(0, 1.4, 0); g.add(stripe);
   T.mast.forEach((mh, i) => { const mx = (i - (T.mast.length - 1) / 2) * (T.len * 0.28), m = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, mh, 6), wood); m.position.set(mx, 1.8 + mh / 2, 0); m.castShadow = true; g.add(m);
     const yd = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, T.wid * 0.9, 5), wood); yd.rotation.x = Math.PI / 2; yd.position.set(mx, 1.8 + mh * 0.85, 0); g.add(yd);
-    const furl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, T.wid * 0.85, 8), sailM); furl.rotation.x = Math.PI / 2; furl.position.set(mx, 1.8 + mh * 0.85 - 0.3, 0); g.add(furl); }); // sails furled: a bundle under the yard
+    const furl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, T.wid * 0.85, 8), sailM); furl.rotation.x = Math.PI / 2; furl.position.set(mx, 1.8 + mh * 0.85 - 0.3, 0); g.add(furl);
+    const pen = makeFlag(THREE, { color: i === 0 ? 0xb33a2a : 0xd9a441, len: 1.2, h: 0.26 }); pen.position.set(mx, 1.8 + mh - 0.2, 0); g.add(pen); }); // sails furled: a bundle under the yard; a pennant flies from each mast top
   for (let c = 0; c < T.castle; c++) { const cs = new THREE.Mesh(new THREE.BoxGeometry(T.len * 0.2, 1.6, T.wid * 0.85), wood); cs.position.set(c ? half * 0.75 : -half * 0.72, 2.6, 0); cs.castShadow = true; g.add(cs); }
   g.scale.setScalar(0.75); g.position.set(x, 0.2, z); g.name = "ship"; g.userData.baseY = 0.2; return g;
 }
