@@ -4,6 +4,8 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, advanceTick, doBuy, TICKS_PER_DAY } from "../src/game/game.mjs";
 import { serialize, deserialize, SAVE_VERSION } from "../src/game/gamesave.mjs";
+import { calendarOf, START_YEAR } from "../src/sim/clock.mjs";
+import { seasonOf } from "../src/sim/market.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 
@@ -61,4 +63,17 @@ test("version 1 saves are refused clearly", () => {
   const noTick = JSON.parse(JSON.stringify(serialize(newGame(world), "X")));
   delete noTick.state.tick; // a v2-shaped save without a tick is a test build
   assert.throws(() => deserialize(noTick, world), /not kept/);
+});
+
+test("calendar: day 0 is 1 January of the start year, dates roll over exactly", () => {
+  assert.equal(seasonOf(0), "winter"); // the calendar start must stay in deep winter
+  assert.deepEqual(calendarOf(0), { year: START_YEAR, month: 0, day: 1 });
+  assert.deepEqual(calendarOf(30), { year: START_YEAR, month: 0, day: 31 });
+  assert.deepEqual(calendarOf(31), { year: START_YEAR, month: 1, day: 1 });
+  assert.deepEqual(calendarOf(58), { year: START_YEAR, month: 1, day: 28 }); // February has 28, no leap years
+  assert.deepEqual(calendarOf(59), { year: START_YEAR, month: 2, day: 1 });
+  assert.deepEqual(calendarOf(364), { year: START_YEAR, month: 11, day: 31 });
+  assert.deepEqual(calendarOf(365), { year: START_YEAR + 1, month: 0, day: 1 });
+  assert.deepEqual(calendarOf(365 * 4 + 182), { year: START_YEAR + 4, month: 6, day: 2 });
+  for (let d = 0; d < 365 * 8; d++) { const c = calendarOf(d); assert.ok(c.month >= 0 && c.month < 12 && c.day >= 1 && c.day <= 31); }
 });
