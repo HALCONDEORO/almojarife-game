@@ -21,7 +21,7 @@ try {
     return { id: pid, rect: plotSceneRect(lp, layout.size), state: b.state, type: b.type, level: b.level || 1, progress };
   }).filter((p) => p && p.rect);
 } catch { plots3d = []; } // a survey failure shows no plots; the Buildings tab still works
-const { scene, water } = buildPortScene(THREE, { id: city, pop: popN, ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: +(q.get("tod") || 0.5), plots3d });
+const { scene, water } = buildPortScene(THREE, { id: city, pop: popN, ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: +(q.get("tod") || 0.5), plots3d, marketStyle: q.get("marketstyle") || undefined });
 const cam = new THREE.PerspectiveCamera(CAMERA.fov, 1, 0.5, 400); let yaw = 0, zoom = 1.3;
 const place = () => { const p = cameraPose(zoom, yaw); cam.position.set(p.x, p.y, p.z); cam.lookAt(...p.look); };
 const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 1 ? CAMERA.fovPortrait : CAMERA.fov; cam.updateProjectionMatrix(); }; addEventListener("resize", resize); resize(); place();
