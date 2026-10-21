@@ -15,8 +15,9 @@ const arrivals=Object.fromEntries(world.cities.map((c)=>[c.id,0]));let clamps=0,
 for(let day=0;day<days;day++){
   const t=performance.now(); tickMarket(market,day,world);
   for(const tr of traders){
-   for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);arrivals[tr.ship.at]++;aiStep(world,market,tr,tr.ship);} // act on the arrival tick
-   tickShip(tr.ship);aiStep(world,market,tr,tr.ship); // daily wear; docked traders decide once a day
+   let acted=false; // decided on the arrival tick already (same rule as sim_1000y/sim_economy)
+   for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);arrivals[tr.ship.at]++;aiStep(world,market,tr,tr.ship);acted=true;} // act on the arrival tick
+   tickShip(tr.ship);if(!acted)aiStep(world,market,tr,tr.ship); // daily wear; docked traders decide once a day
   }
   maxDayMs=Math.max(maxDayMs,performance.now()-t);
   for(const city of Object.values(market))for(const e of Object.values(city)){

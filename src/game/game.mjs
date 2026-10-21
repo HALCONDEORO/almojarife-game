@@ -83,7 +83,6 @@ function dayTick(g) {
   refreshIntel(g);
   if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
   else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
-  if(!g.over)for(const s of g.ships)automaticEncounter(g,s);
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
@@ -122,6 +121,7 @@ export function advanceTick(g) {
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }

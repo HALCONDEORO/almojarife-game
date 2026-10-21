@@ -1,23 +1,28 @@
 import {speedFactor} from './crew.mjs';
-// Automatic encounter cadence. Versioned state prevents same-day replay for each ship.
+// Automatic encounter cadence: one seeded roll per tick at sea, keyed on the absolute tick,
+// so a tick can never be rerolled after a save/reload. Per-tick chance keeps the daily exposure
+// exactly as under the day model. Versioned state prevents rolling the same tick twice.
 import {seeded} from '../view/cityscene.mjs';
+import {TICKS_PER_DAY,hourOf} from '../sim/clock.mjs';
 import {encounterOutcome,applyEncounter,encounterText} from './encounters.mjs';
 import {post} from './ledger.mjs';
-export const SEA_ENCOUNTER_CHANCE=0.025;
+export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
+// Per tick: P(at least one encounter in a full day at sea) = 1-(1-p_tick)^240 = SEA_ENCOUNTER_CHANCE exactly.
+export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS_PER_DAY);
 export function automaticEncounter(g,ship){
  if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage)return null;
- const key=String(ship.id);if(g.encounterDays?.[key]===g.day)return null;
- (g.encounterDays??={})[key]=g.day;
- const r=seeded(`sea-v1:${g.seed??0}:${g.day}:${ship.id}`);
- if(r()>=SEA_ENCOUNTER_CHANCE)return null;
+ const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
+ (g.encounterTicks??={})[key]=g.tick;
+ const r=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);
+ if(r()>=SEA_ENCOUNTER_CHANCE_TICK)return null;
  const kind=r()<0.5?'pirates':'storm';
  if(kind==='pirates'){
-  g.pending={event:'sea-pirates',ship:ship.id,day:g.day,id:`sea-v1:${g.day}:${ship.id}`,escapeChance:escapeChance(ship)};
+  g.pending={event:'sea-pirates',ship:ship.id,day:g.day,hour:hourOf(g.tick),id:`sea-v2:${g.tick}:${ship.id}`,escapeChance:escapeChance(ship)};
   return g.pending;
  }
  const out=encounterOutcome(ship,kind,r()),applied=applyEncounter(g,ship,out);
  if(!applied.ok)return null;
- const e={...applied,id:`sea-v1:${g.day}:${ship.id}`,day:g.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to};
+ const e={...applied,id:`sea-v2:${g.tick}:${ship.id}`,day:g.day,hour:hourOf(g.tick),ship:ship.id,from:ship.voyage.from,to:ship.voyage.to};
  (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
  g.log.unshift({day:g.day,key:'event',txt:{es:encounterText(e,'es'),en:encounterText(e,'en')},ship:ship.id});if(g.log.length>30)g.log.pop();
  post(g,'event',{txt:{es:encounterText(e,'es'),en:encounterText(e,'en')},ship:ship.id});
