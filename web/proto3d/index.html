@@ -4,12 +4,14 @@
 <script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from "three";
-import { buildPortScene, animateWater, pickBuilding, cameraPose, CAMERA, setHover, buildingOf, plotSceneRect } from "../../src/view3d/port3d.mjs";
+import { buildPortScene, pickBuilding, cameraPose, CAMERA, setHover, buildingOf, plotSceneRect, skyFor, envStops, advanceTime } from "../../src/view3d/port3d.mjs";
 import { cityPlots } from "../../src/view3d/cityplots.mjs";
 import { BUILDING_TYPES } from "../../src/game/buildings.mjs";
 import { TICKS_PER_DAY } from "../../src/sim/clock.mjs";
 const q = new URLSearchParams(location.search); document.getElementById("hud").textContent = q.get("hud") || "Drag to look around, wheel to zoom, click a building to open it."; const city = q.get("city") || "cadiz";
 const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
+const perfOn = q.get("fps") === "1", perfEl = perfOn ? Object.assign(document.body.appendChild(document.createElement("div")), { style: "position:fixed;right:10px;top:8px;background:#000a;padding:3px 8px;border-radius:4px;font:12px monospace;z-index:9" }) : null;
+window.__perf = { fps: 0, ms: 0, calls: 0, triangles: 0, frames: 0 }; let lastMs = performance.now(), emaMs = 16.7;
 const popN = +(q.get("pop") || 12000), bldState = JSON.parse(q.get("bld") || "{}"), tickNow = +(q.get("tick") || 0);
 let plots3d = [];
 try {
@@ -21,7 +23,16 @@ try {
     return { id: pid, rect: plotSceneRect(lp, layout.size), state: b.state, type: b.type, level: b.level || 1, progress };
   }).filter((p) => p && p.rect);
 } catch { plots3d = []; } // a survey failure shows no plots; the Buildings tab still works
-const { scene, water } = buildPortScene(THREE, { id: city, pop: popN, ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: +(q.get("tod") || 0.5), plots3d, marketStyle: q.get("marketstyle") || undefined });
+const todV = +(q.get("tod") || 0.5);
+const { scene, water } = buildPortScene(THREE, { id: city, pop: popN, ships: +(q.get("ships") || 3), warehouse: q.get("wh") === "1", tod: todV, plots3d, marketStyle: q.get("marketstyle") || undefined });
+// Environment light (IBL): a tiny procedural sky gradient for the time of day, PMREM-filtered,
+// so standard materials pick up sky colour and the water reflects the sky. Built once per load.
+{ const stops = envStops(skyFor(todV)), css = (a) => "rgb(" + a.join(",") + ")", c = document.createElement("canvas"); c.width = 64; c.height = 32;
+  const ctx = c.getContext("2d"), g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, css(stops.zenith)); g.addColorStop(0.55, css(stops.horizon)); g.addColorStop(0.62, css(stops.ground)); g.addColorStop(1, css(stops.deep));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 32);
+  const eq = new THREE.CanvasTexture(c); eq.mapping = THREE.EquirectangularReflectionMapping; eq.colorSpace = THREE.SRGBColorSpace;
+  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromEquirectangular(eq).texture; scene.environmentIntensity = 0.55; eq.dispose(); pm.dispose(); }
 const cam = new THREE.PerspectiveCamera(CAMERA.fov, 1, 0.5, 400); let yaw = 0, zoom = 1.3;
 const place = () => { const p = cameraPose(zoom, yaw); cam.position.set(p.x, p.y, p.z); cam.lookAt(...p.look); };
 const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 1 ? CAMERA.fovPortrait : CAMERA.fov; cam.updateProjectionMatrix(); }; addEventListener("resize", resize); resize(); place();
@@ -40,5 +51,5 @@ const labV = new THREE.Vector3(), labBox = new THREE.Box3();
 const labObj = ({ id, kind }) => kind === "plot" ? scene.getObjectByName("plot:" + id) : scene.getObjectByName("building:" + id) || scene.getObjectByName(id); // the warehouse group keeps its plain name
 const placeLabels = () => { for (const { el, ...L } of labEls) { const o = labObj(L); if (!o) { el.style.display = "none"; continue; } labBox.setFromObject(o); labV.set((labBox.min.x + labBox.max.x) / 2, labBox.max.y, (labBox.min.z + labBox.max.z) / 2); labV.project(cam); if (labV.z > 1 || labV.z < -1) { el.style.display = "none"; continue; } el.style.display = "block"; el.style.left = ((labV.x * 0.5 + 0.5) * innerWidth) + "px"; el.style.top = ((-labV.y * 0.5 + 0.5) * innerHeight) + "px"; } };
 window.__scene = scene; window.__cam = cam; // verification handles (tests, screenshots)
-renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; animateWater(water, t); placeLabels(); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.2 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.026; }); renderer.render(scene, cam); window.__ready = true; });
+renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; advanceTime(scene, t); placeLabels(); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.2 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.026; }); const _now = performance.now(); emaMs = emaMs * 0.95 + (_now - lastMs) * 0.05; lastMs = _now; renderer.render(scene, cam); window.__perf.ms = emaMs; window.__perf.fps = 1000 / emaMs; window.__perf.calls = renderer.info.render.calls; window.__perf.triangles = renderer.info.render.triangles; window.__perf.frames++; if (perfEl && window.__perf.frames % 30 === 0) perfEl.textContent = window.__perf.fps.toFixed(0) + " fps · " + emaMs.toFixed(1) + " ms · " + renderer.info.render.calls + " calls"; window.__ready = true; });
 </script></body></html>

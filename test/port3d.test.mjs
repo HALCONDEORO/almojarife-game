@@ -100,3 +100,150 @@ test("fusing keeps the buildings clickable and keeps emissive lights apart", asy
   const t = scene.children.find((c) => c.userData.building === "tavern"); assert.ok(t.children.some((c) => c.name === "fused")); assert.ok(t.children.some((c) => c.isMesh && c.material.emissiveIntensity > 0));
   assert.equal(fuseStatic(THREE, new THREE.Group()), 0);
 });
+
+test("water waves run on the GPU: shader hook and time uniform are wired", async () => {
+  const { gpuWaves } = await import("../src/view3d/port3d.mjs");
+  const water = { material: { onBeforeCompile: null, needsUpdate: false }, userData: {} };
+  gpuWaves(water);
+  assert.equal(typeof water.material.onBeforeCompile, "function");
+  assert.equal(water.material.needsUpdate, true);
+  assert.ok(water.userData.time && water.userData.time.value === 0);
+  // the injected GLSL matches the pure waveHeight maths (same sines, same amplitudes)
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>", fragmentShader: "#include <color_fragment>" };
+  water.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("uniform float uTime"));
+  assert.ok(shader.vertexShader.includes("/ 7.0 + uTime * 1.2) * 0.09"));
+  assert.ok(shader.vertexShader.includes("/ 11.0 + uTime * 0.9) * 0.06"));
+  assert.equal(shader.uniforms.uTime, water.userData.time);
+});
+
+test("environment stops: zenith darker than horizon, colours in range", async () => {
+  const { envStops, skyFor } = await import("../src/view3d/port3d.mjs");
+  for (const tod of [0, 0.25, 0.5, 0.75, 1]) {
+    const st = envStops(skyFor(tod));
+    for (const key of ["zenith", "horizon", "ground", "deep"]) {
+      assert.equal(st[key].length, 3);
+      for (const v of st[key]) assert.ok(Number.isInteger(v) && v >= 0 && v <= 255, `${key} channel ${v} at tod ${tod}`);
+    }
+    assert.ok(st.zenith[2] < st.horizon[2] || st.zenith[0] < st.horizon[0], "zenith dimmer than horizon");
+  }
+});
+
+test("water foam: quay-edge band and darkening are injected into the fragment shader", async () => {
+  const { gpuWaves } = await import("../src/view3d/port3d.mjs");
+  const water = { material: { onBeforeCompile: null, needsUpdate: false }, userData: {} };
+  gpuWaves(water, { quayEdgeZ: -2 });
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>", fragmentShader: "#include <color_fragment>" };
+  water.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("vWorldPos"));
+  assert.ok(shader.fragmentShader.includes("QUAY_EDGE_Z = -2.0"));
+  assert.ok(shader.fragmentShader.includes("(1.0 - smoothstep(0.0, 2.4, dQ))"), "foam band falls off seaward (edge0 < edge1, defined GLSL)");
+  assert.ok(shader.fragmentShader.includes("0.93, 0.95, 0.94"), "foam colour");
+  assert.ok(shader.fragmentShader.includes("uTime"), "foam breathes with time");
+});
+
+test("fuseStatic splits textured and plain meshes into one fused mesh per kind", async () => {
+  const { fuseStatic } = await import("../src/view3d/port3d.mjs");
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const root = new THREE.Group();
+  const plain = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  const tiled = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x9b4a2b }));
+  tiled.material.userData.texKind = "tiles@0.35";
+  root.add(plain, tiled);
+  const fused = fuseStatic(THREE, root);
+  assert.equal(fused, 2);
+  const kinds = root.children.map((o) => o.name).filter((n) => n === "fused" || n?.startsWith("fused:")).sort();
+  assert.deepEqual(kinds, ["fused", "fused:tiles@0.35"]);
+  const tiledMesh = root.children.find((o) => o.name === "fused:tiles@0.35");
+  assert.ok(tiledMesh.geometry.attributes.uv, "fused geometry keeps UVs");
+});
+
+test("boxUVmetres scales box UVs to metres per face", async () => {
+  const { boxUVmetres } = await import("../src/view3d/port3d.mjs");
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const g = boxUVmetres(new THREE.BoxGeometry(10, 2, 4), 10, 2, 4);
+  const uv = g.attributes.uv;
+  let maxU = 0, maxV = 0;
+  for (let i = 0; i < uv.count; i++) { maxU = Math.max(maxU, uv.getX(i)); maxV = Math.max(maxV, uv.getY(i)); }
+  assert.ok(maxU >= 4 && maxV >= 2, `uv span ${maxU}x${maxV} should reach the face metres`);
+});
+
+test("textures are null in Node (no DOM) and kinds are marked on materials", async () => {
+  const { makeTexture } = await import("../src/view3d/textures.mjs");
+  assert.equal(makeTexture(null, "tiles"), null);
+  assert.equal(makeTexture(null, "unknown"), null);
+});
+
+test("flags wave on the GPU, survive fusing and share the scene time", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { buildPortScene, makeFlag, advanceTime } = await import("../src/view3d/port3d.mjs");
+  const f = makeFlag(THREE, { len: 1.2 });
+  assert.equal(f.userData.keep, true, "flags must not be fused (they animate)");
+  const shader = { uniforms: {}, vertexShader: "#include <begin_vertex>" };
+  f.material.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes("uniform float uTime") && shader.vertexShader.includes("FLAG_LEN = 1.20"));
+  assert.equal(shader.uniforms.uTime, f.userData.time);
+  const { scene, water } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 3 });
+  const flags = []; scene.traverse((o) => { if (o.name === "flag") flags.push(o); });
+  assert.ok(flags.length >= 4, "pennants on 3 masts minimum plus the tower banner, got " + flags.length);
+  advanceTime(scene, 3.5);
+  assert.equal(water.userData.time.value, 3.5);
+  for (const fl of flags) assert.equal(fl.userData.time.value, 3.5);
+});
+
+test("the visible sun disc sits along the light direction and is DOM-gated", async () => {
+  const { sunPose, makeSunDisc, skyFor } = await import("../src/view3d/port3d.mjs");
+  for (const tod of [0, 0.25, 0.5, 0.75, 1]) {
+    const [x, y, z] = sunPose(skyFor(tod));
+    assert.ok(Math.abs(Math.hypot(x, y, z) - 350) < 1e-6, "sun disc stays at 350 m, inside the camera far plane");
+    assert.ok(y > 0, "disc above the horizon at tod " + tod);
+    assert.ok(x < 0 && z > 0, "disc on the light side (west, seaward)");
+  }
+  assert.equal(makeSunDisc(null, skyFor(0.5)), null, "no DOM in Node, no disc");
+});
+
+test("the sky dome grades horizon to zenith and stays out of the fusing", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { buildPortScene, makeSkyDome, skyGradient, skyFor, envStops } = await import("../src/view3d/port3d.mjs");
+  const st = envStops(skyFor(0.5));
+  assert.deepEqual(skyGradient(st, 0.5), st.zenith, "overhead is the zenith colour");
+  const mid = skyGradient(st, 0.1);
+  assert.ok(Math.abs(mid[2] - (st.horizon[2] + st.zenith[2]) / 2) < 60, "low sky sits between horizon and zenith");
+  const dome = makeSkyDome(THREE, skyFor(0.5));
+  assert.equal(dome.name, "sky");
+  assert.ok(dome.geometry.attributes.color, "vertex colours carry the gradient");
+  const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 1 });
+  assert.ok(scene.getObjectByName("sky"), "the dome is in the scene");
+  assert.ok(!scene.getObjectByName("town")?.getObjectByName("sky"), "the dome is not fused into the town");
+});
+
+test("house family module: levels, construction state and palette stay in family", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { makeHouse } = await import("../src/view3d/buildings/house.mjs");
+  const h1 = makeHouse(THREE, { tint: 0.2 }), h3 = makeHouse(THREE, { tint: 0.2, level: 3 });
+  const tall = (g) => { const b = new THREE.Box3().setFromObject(g); return b.max.y - b.min.y; };
+  assert.ok(tall(h3) > tall(h1) + 1, "level 3 is taller than level 1");
+  const con = makeHouse(THREE, { tint: 0.2, state: "construction" });
+  let walls = 0, posts = 0;
+  con.traverse((o) => { if (o.isMesh) { const s = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); if (s.x > 3 && s.y > 3) walls++; if (s.x < 0.3 && s.y > 3) posts++; } });
+  assert.equal(walls, 0, "under construction there are no walls yet");
+  assert.ok(posts >= 4, "the timber skeleton stands first");
+  assert.equal(con.userData.buildingType, "house");
+});
+
+test("market family module: two distinct styles, construction frame and crow-step gable", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js");
+  const { makeMarket } = await import("../src/view3d/buildings/market.mjs");
+  const tris = (g) => { let n = 0; g.traverse((o) => { if (o.isMesh) { const geo = o.geometry; n += (geo.index ? geo.index.count : geo.attributes.position.count) / 3; } }); return n; };
+  const lonja = makeMarket(THREE, { style: "lonja", level: 2 }), crane = makeMarket(THREE, { style: "crane", level: 2 });
+  assert.ok(Math.abs(tris(lonja) - tris(crane)) > 200, "the two styles stay unmistakable");
+  const tall = (g) => { const b = new THREE.Box3().setFromObject(g); return b.max.y; };
+  assert.ok(tall(makeMarket(THREE, { level: 3 })) > tall(makeMarket(THREE, { level: 1 })), "level grows the hall");
+  const con = makeMarket(THREE, { state: "construction" });
+  let walls = 0; con.traverse((o) => { if (o.isMesh) { const s = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); if (s.x > 10 && s.y > 3) walls++; } });
+  assert.equal(walls, 0, "under construction the hall is not walled yet");
+  // crow-step gable: a staircase of small stones climbing the gable face
+  lonja.updateMatrixWorld(true);
+  let steps = 0; lonja.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o), s = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3()); if (s.x < 0.8 && s.y < 0.9 && s.z < 0.6 && c.y > 5) steps++; } });
+  assert.ok(steps >= 8, "crow steps climb the gable, got " + steps);
+});
