@@ -1,7 +1,7 @@
 // Construction engine, sim slice (docs/design/city-builder.md piece 2): plot ownership,
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
-import { quoteRecipe, consumeRecipe, quoteUnits, consumeUnits, RECIPES } from "../sim/recipes.mjs";
+import { quoteRecipe, consumeRecipe, quoteUnitsImport, consumeUnitsImport, RECIPES } from "../sim/recipes.mjs";
 import { price, seasonMul } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
@@ -124,10 +124,10 @@ export function quoteConstruction(g, cityId, plotId, type) {
     fromStore[good] = Math.min(inputs[good], Math.max(0, store[good] ?? 0));
     missing[good] = inputs[good] - fromStore[good];
   }
-  const q = quoteUnits(g.world, g.market, cityId, missing);
+  const q = quoteUnitsImport(g.world, g.market, cityId, missing); // warehouse first, then the market; what the port lacks is imported at IMPORT_MUL
   if (!q.ok) return q;
   const fee = spec.fee * level, ticks = spec.buildDays * level * TICKS_PER_DAY;
-  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing };
+  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing, imported: q.imported };
 }
 
 /** Pay and start construction; the building turns active exactly at readyTick (tickBuildings). */
@@ -137,7 +137,7 @@ export function startConstruction(g, cityId, plotId, type) {
   if (!q.ok) return q;
   if (g.cash < q.cost) return { ok: false, reason: "no cash", cost: q.cost };
   const spec = BUILDING_TYPES[type];
-  const c = consumeUnits(g.world, g.market, cityId, q.missing, g.cash - q.fee);
+  const c = consumeUnitsImport(g.world, g.market, cityId, q.missing, g.cash - q.fee); // local stock down; imported units never touch the market
   if (!c.ok) return c; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
   const w = g.warehouses?.[cityId];
   for (const [good, qty] of Object.entries(q.fromStore)) {
@@ -148,6 +148,7 @@ export function startConstruction(g, cityId, plotId, type) {
     if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
   }
   g.cash -= q.cost;
+
   const b = buildingAt(g, cityId, plotId);
   Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks });
   post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${type} nivel ${q.level})`, en: `Construction started in ${cityId} (${type} level ${q.level})` } });

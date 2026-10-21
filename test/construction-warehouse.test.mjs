@@ -44,14 +44,23 @@ test('insufficient cash or market materials consumes neither warehouse nor marke
   assert.equal(startConstruction(g, 'cadiz', 'cadiz:7', 'workshop').ok, false);
   assert.equal(JSON.stringify([g.market, g.warehouses, g.buildings, g.cash]), snapshot);
   g.cash = 50000; g.market.cadiz.bricks.stock = 0;
-  const before = JSON.stringify([g.market, g.warehouses, g.buildings, g.cash]);
-  assert.equal(startConstruction(g, 'cadiz', 'cadiz:7', 'workshop').ok, false);
-  assert.equal(JSON.stringify([g.market, g.warehouses, g.buildings, g.cash]), before);
+  // Since the materials-import change, empty shelves no longer block the works: the shortfall is imported at a premium.
+  const cash0 = g.cash;
+  const q = quoteConstruction(g, 'cadiz', 'cadiz:7', 'workshop');
+  assert.ok(q.ok, 'import covers the missing bricks');
+  assert.ok((q.imported?.bricks ?? 0) > 0, 'bricks are the imported part');
+  assert.ok(startConstruction(g, 'cadiz', 'cadiz:7', 'workshop').ok);
+  assert.equal(g.market.cadiz.bricks.stock, 0, 'imported bricks never touch the market');
+  assert.equal(g.cash, cash0 - q.cost, 'pays the quoted import-inclusive price, not more');
 });
 test('construction requotes warehouse stock, never trusting a stale quote', () => {
   const g = setup(); stock(g, 'timber', 10);
   const q = quoteConstruction(g, 'cadiz', 'cadiz:7', 'workshop'); assert.ok(q.ok);
   g.warehouses.cadiz.goods.timber = 0; g.market.cadiz.timber.stock = 0;
-  assert.equal(startConstruction(g, 'cadiz', 'cadiz:7', 'workshop').ok, false);
-  assert.equal(g.buildings.cadiz['cadiz:7'].state, 'plot');
+  // With imports the works still start, but the price must be the FRESH re-quote (warehouse gone, timber imported), not the stale cheap one.
+  const fresh = quoteConstruction(g, 'cadiz', 'cadiz:7', 'workshop'); assert.ok(fresh.ok);
+  assert.ok(fresh.cost > q.cost, 'the fresh quote sees the empty warehouse and market');
+  const cash0 = g.cash;
+  assert.ok(startConstruction(g, 'cadiz', 'cadiz:7', 'workshop').ok);
+  assert.equal(g.cash, cash0 - fresh.cost, 'pays the re-quoted price, never the stale one');
 });
