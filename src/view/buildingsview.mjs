@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL } from "../game/buildings.mjs";
+import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, JOBS_PER_LEVEL, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe } from "../sim/recipes.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
@@ -27,6 +27,7 @@ export function buildingsRows(g, cityId) {
         row.margin = q.ok ? sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]) - q.cost : null; // coins per batch right now
       }
     }
+    if (b.state === "active" && b.type) row.jobs = (JOBS_PER_LEVEL[b.type] ?? 0) * b.level; // workers this building hires from the port
     if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
     if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
     return row;
@@ -64,7 +65,8 @@ export function upgradeOffer(g, cityId, plotId) {
 /** Headline numbers for the tab: effective population with the house bonus, storage cap with the warehouse bonus. */
 export function cityEffects(g, cityId) {
   const base = g.world.nodes[cityId]?.pop ?? 8000;
-  return { pop: base, popBonus: housePopBonus(g, cityId), capBonus: warehouseCapBonus(g, cityId) };
+  const jobs = jobsNeeded(g, cityId), free = freeLabor(g, cityId);
+  return { pop: base, popBonus: housePopBonus(g, cityId), capBonus: warehouseCapBonus(g, cityId), jobs, free, staffing: staffingRatio(g, cityId) };
 }
 export { WORKSHOP_BATCH_PATTERN };
 
