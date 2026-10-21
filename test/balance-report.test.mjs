@@ -88,8 +88,12 @@ test('styles baseline (33 seeds per cell) holds the balance limits', () => {
   const m1e = S['errand/campaign+events'].missions['m1-oficio'];
   assert.ok(m1e.done / 33 >= 0.9, `errand M1 done ${m1e.done}/33`);
   assert.ok(m1e.medianDoneDay !== null && m1e.medianDoneDay <= 20, `errand M1 median day ${m1e.medianDoneDay}`);
+  const m2e = S['errand/campaign+events'].missions['m2-nombre'];
+  assert.ok(m2e.done / 33 >= 0.9, `errand M2 done ${m2e.done}/33`);
+  assert.ok(m2e.medianDoneDay !== null && m2e.medianDoneDay <= 20, `errand M2 median day ${m2e.medianDoneDay}`);
   for (const k of ['greedy-preview', 'conservative', 'leveraged', 'specialist', 'short-haul', 'foggy', 'clumsy', 'industrial']) {
     assert.equal(S[`${k}/campaign+events`].missions['m1-oficio'].done, 0, `${k} completes M1 incidentally`);
+    assert.equal(S[`${k}/campaign+events`].missions['m2-nombre'].done, 0, `${k} completes M2 incidentally`);
   }
   // Known weak strategies, pinned so a rebalance changes the baseline on purpose:
   // specialist (one good only) starves and never wins; industrial (build at home) rarely wins.

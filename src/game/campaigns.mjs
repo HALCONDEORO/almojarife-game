@@ -18,9 +18,18 @@ export const MISSIONS = Object.freeze([
       Object.freeze({ kind: 'readReport', label: { es: 'Lee tu informe semanal', en: 'Read your weekly report' } }),
     ]),
     reward: Object.freeze({ coins: 300, respect: { sevilla: 5 } }) }),
-  Object.freeze({ id: 's1-gremio', chain: 'side', requires: ['m1-oficio'], optional: true, deadline: null,
+  Object.freeze({ id: 'm2-nombre', chain: 'main', requires: ['m1-oficio'], optional: false, deadline: null,
     title: { es: 'Nombre y palabra', en: 'Name and word' },
-    intro: { es: 'El escribano del concejo te lo dice claro: sin nombre no hay crédito, ni encargos, ni licencias. Haz que tu palabra pese en tu propia casa (respeto 20 en tu puerto de origen).', en: 'The council clerk spells it out: without a name there is no credit, no contracts, no licences. Make your word count at home (respect 20 in your home port).' },
+    intro: { es: 'El escribano del concejo te lo dice claro: un nombre que solo pesa en casa no basta; sin nombre no hay crédito, ni encargos, ni licencias. Haz que en dos puertos distintos te conozcan y te respeten (respeto 20 en cada uno) y vuelve con esa palabra.', en: 'The council clerk spells it out: a name that only counts at home is not enough; without a name there is no credit, no contracts, no licences. Make yourself known and respected in two different ports (respect 20 in each) and come back with that word.' },
+    done: { es: 'Dos puertos, dos libros con tu nombre. El escribano asiente: ya hay firma con peso para un crédito. El concejo empieza a contar contigo.', en: 'Two ports, two books with your name. The clerk nods: there is now a signature with weight behind a loan. The council is starting to count on you.' },
+    failed: { es: '', en: '' },
+    steps: Object.freeze([
+      Object.freeze({ kind: 'respectPorts', atLeast: 20, ports: 2, label: { es: 'Respeto {n} en {ports} puertos distintos', en: 'Respect {n} in {ports} different ports' } }),
+    ]),
+    reward: Object.freeze({ coins: 400, respect: { home: 3 } }) }),
+  Object.freeze({ id: 's1-gremio', chain: 'side', requires: ['m1-oficio'], optional: true, deadline: null,
+    title: { es: 'Nombre en casa', en: 'A name at home' },
+    intro: { es: 'El gremio de tu villa mira cómo trabajas en casa antes de hablar de ti fuera. Alcanza respeto 20 en tu puerto de origen y te saludarán por tu nombre.', en: 'Your town guild watches how you work at home before speaking of you abroad. Reach respect 20 in your home port and they will greet you by name.' },
     done: { es: 'En tu puerto ya no preguntan quién eres: preguntan qué traes. El gremio te saluda por tu nombre.', en: 'In your port they no longer ask who you are: they ask what you carry. The guild greets you by name.' },
     failed: { es: '', en: '' },
     steps: Object.freeze([
@@ -92,11 +101,16 @@ export function campaignEvent(g, event, h = NO_HELPERS) {
 }
 function conditionMet(g, step, h) {
   if (step.kind === 'respect') return h.repOf(g, step.city === 'home' ? g.profile?.home : step.city) >= step.atLeast;
+  if (step.kind === 'respectPorts') return portsWithRespect(g, step, h) >= step.ports;
   if (step.kind === 'worth') return h.netWorth(g) >= step.atLeast;
   if (step.kind === 'fleet') return (g.ships ?? []).length >= step.ships;
   if (step.kind === 'build') return Object.values(g.buildings ?? {}).some((plots) => Object.values(plots).some((b) => b.type === step.type && b.state === 'active'));
   if (step.kind === 'warehouse') return Object.keys(g.warehouses ?? {}).length > 0;
   return false;
+}
+/** Ports whose respect reaches the step's bar: the engine counts them for respectPorts steps. */
+function portsWithRespect(g, step, h) {
+  return Object.keys(g.markets ?? g.market ?? {}).filter((city) => h.repOf(g, city) >= step.atLeast).length;
 }
 /** Daily: deadlines fail missions, condition steps complete themselves, new missions activate. */
 export function campaignTick(g, h = NO_HELPERS) {
@@ -117,14 +131,15 @@ export function campaignSteps(g, id = g.campaign?.active?.[0]) {
   return m.steps.map((_, i) => st.done || i < st.step);
 }
 /** What the UI shows: active missions with their current step and deadline countdown. */
-export function missionView(g, lang) {
+export function missionView(g, lang, h = NO_HELPERS) {
   const c = g.campaign; if (!c) return [];
   return c.active.map((id) => {
     const m = campaignById(id), st = c.missions[id];
     const step = m.steps[Math.min(st.step, m.steps.length - 1)];
     return { id, optional: m.optional, title: m.title[lang] ?? m.title.es,
-      stepLabel: st.done ? '' : (step.label[lang] ?? step.label.es).replace('{qty}', step.qty ?? '').replace('{n}', step.atLeast ?? ''),
-      progress: step.qty && !st.done ? Math.min(st.count ?? 0, step.qty) + '/' + step.qty : '',
+      stepLabel: st.done ? '' : (step.label[lang] ?? step.label.es).replace('{qty}', step.qty ?? '').replace('{n}', step.atLeast ?? '').replace('{ports}', step.ports ?? ''),
+      progress: step.qty && !st.done ? Math.min(st.count ?? 0, step.qty) + '/' + step.qty
+        : step.kind === 'respectPorts' && !st.done ? portsWithRespect(g, step, h) + '/' + step.ports : '',
       daysLeft: m.deadline && !st.done && !st.failed ? m.deadline - g.day : null,
       done: st.done, failed: st.failed };
   });

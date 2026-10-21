@@ -197,7 +197,7 @@ function render() {
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${t.speed} ${speed}x`;
   $("new").textContent = t.menu; $("lang").textContent = lang === "es" ? "EN" : "ES";
-  const missions = missionView(g, lang).filter((m) => !m.done && !m.failed);
+  const missions = missionView(g, lang, MISSION_HOOKS).filter((m) => !m.done && !m.failed);
   const missionLine = missions.length ? "⚑ " + missions.map((m) => `${m.title}: ${m.stepLabel}${m.progress ? " (" + m.progress + ")" : ""}${m.daysLeft !== null ? " · " + (lang === "es" ? "quedan" : "left") + " " + m.daysLeft + " " + (lang === "es" ? "días" : "days") : ""}`).join(" · ") : null;
   $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
     s.voyage ? t.hintSea : (missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
