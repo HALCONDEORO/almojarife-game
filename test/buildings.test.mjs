@@ -289,6 +289,9 @@ test("office gates construction: home port always, other ports after buying one"
   assert.equal(hasOffice(g, "lisboa"), false); // new games: no office abroad yet
   const q0 = quoteConstruction(g, "lisboa", "lisboa:1", "house");
   assert.equal(q0.ok, false); assert.equal(q0.reason, "office required");
+  const r0 = buyOffice(g, "lisboa"); // respect below Known blocks the sale
+  assert.equal(r0.ok, false); assert.equal(r0.reason, "respect required");
+  g.rep = { lisboa: 2500 }; // 25 points: 2,500 coins of sales / 100
   const cash0 = g.cash, r = buyOffice(g, "lisboa");
   assert.equal(r.ok, true); assert.equal(g.cash, cash0 - OFFICE_PRICE);
   assert.equal(hasOffice(g, "lisboa"), true);

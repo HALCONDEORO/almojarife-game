@@ -6,6 +6,7 @@ import { price } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
+import { repOf } from "./rank.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
 export const BUILDING_TYPES = Object.freeze({
@@ -34,6 +35,7 @@ export const PLOT_ID = /^[a-z0-9_-]+:(0|[1-9]\d{0,2})$/;
 export function buildingAt(g, cityId, plotId) { return g.buildings?.[cityId]?.[plotId] ?? null; }
 
 /** Buy an empty plot. `plot` is the layout descriptor {id, type, w, d} from the (seeded, deterministic) city layout. */
+export const OFFICE_MIN_RESPECT = 20; // respect "known" in the port before it sells you an office
 export const OFFICE_PRICE = 750; // one trading office per non-home port; it gates all construction there
 export function hasOffice(g, cityId) { // saves made before offices stay playable
   return !Array.isArray(g.offices) || cityId === g.profile.home || g.offices.includes(cityId);
@@ -42,6 +44,7 @@ export function buyOffice(g, cityId) {
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
   if (cityId === g.profile.home || g.offices.includes(cityId)) return { ok: false, reason: "already owned" };
+  if (repOf(g, cityId) < OFFICE_MIN_RESPECT) return { ok: false, reason: "respect required", need: OFFICE_MIN_RESPECT };
   if (g.cash < OFFICE_PRICE) return { ok: false, reason: "no cash", cost: OFFICE_PRICE };
   g.cash -= OFFICE_PRICE; g.offices.push(cityId);
   return { ok: true, cost: OFFICE_PRICE };
