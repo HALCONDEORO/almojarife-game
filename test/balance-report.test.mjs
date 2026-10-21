@@ -54,8 +54,8 @@ test('balance report rejects bad arguments', () => {
 test('styles roster: every style cell runs clean in both modes (live 1-seed run)', () => {
   const r = JSON.parse(execFileSync(process.execPath, ['tools/balance_report.mjs', '1', 'default', '0', 'styles'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
   assert.equal(r.roster, 'styles');
-  assert.equal(Object.keys(r.summaries).length, 16); // 8 styles x 2 modes
-  assert.equal(r.results.length, 16);
+  assert.equal(Object.keys(r.summaries).length, 18); // 9 styles x 2 modes
+  assert.equal(r.results.length, 18);
   for (const [key, s] of Object.entries(r.summaries)) {
     assert.ok(key.endsWith('+events'), key); // style cells always run with events on
     assert.equal(s.games, 1, key);
@@ -67,8 +67,8 @@ test('styles roster: every style cell runs clean in both modes (live 1-seed run)
 test('styles baseline (33 seeds per cell) holds the balance limits', () => {
   const r = JSON.parse(readFileSync(new URL('../docs/design/balance-styles-2026-10-21.json', import.meta.url)));
   assert.equal(r.gamesPerCell, 33);
-  assert.equal(Object.keys(r.summaries).length, 16);
-  assert.equal(r.results.length, 528);
+  assert.equal(Object.keys(r.summaries).length, 18);
+  assert.equal(r.results.length, 594);
   const S = r.summaries;
   // Every trading style wins the campaign most of the time (with events on).
   for (const k of ['greedy-preview', 'conservative', 'leveraged', 'short-haul', 'foggy', 'clumsy']) {
@@ -82,6 +82,14 @@ test('styles baseline (33 seeds per cell) holds the balance limits', () => {
     const s = S[`${k}/freeplay+events`];
     assert.ok(s.medianFinalNetWorth > 2000, `${k} freeplay median NW ${s.medianFinalNetWorth}`);
     assert.ok(s.seedsWithBankruptcy / 33 <= 0.5, `${k} freeplay bankrupt share ${s.seedsWithBankruptcy}/33`);
+  }
+  // Missions enter the report automatically: the mission runner completes M1 fast and often;
+  // pure trading styles never complete it incidentally (a pinned design property).
+  const m1e = S['errand/campaign+events'].missions['m1-oficio'];
+  assert.ok(m1e.done / 33 >= 0.9, `errand M1 done ${m1e.done}/33`);
+  assert.ok(m1e.medianDoneDay !== null && m1e.medianDoneDay <= 20, `errand M1 median day ${m1e.medianDoneDay}`);
+  for (const k of ['greedy-preview', 'conservative', 'leveraged', 'specialist', 'short-haul', 'foggy', 'clumsy', 'industrial']) {
+    assert.equal(S[`${k}/campaign+events`].missions['m1-oficio'].done, 0, `${k} completes M1 incidentally`);
   }
   // Known weak strategies, pinned so a rebalance changes the baseline on purpose:
   // specialist (one good only) starves and never wins; industrial (build at home) rarely wins.

@@ -7,6 +7,8 @@ import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
+import { missionView, campaignEvent } from "../src/game/campaigns.mjs";
+import { MISSION as MISSION_HOOKS } from "../src/game/game.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
@@ -194,8 +196,10 @@ function render() {
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${t.speed} ${speed}x`;
   $("new").textContent = t.menu; $("lang").textContent = lang === "es" ? "EN" : "ES";
+  const missions = missionView(g, lang).filter((m) => !m.done && !m.failed);
+  const missionLine = missions.length ? "⚑ " + missions.map((m) => `${m.title}: ${m.stepLabel}${m.progress ? " (" + m.progress + ")" : ""}${m.daysLeft !== null ? " · " + (lang === "es" ? "quedan" : "left") + " " + m.daysLeft + " " + (lang === "es" ? "días" : "days") : ""}`).join(" · ") : null;
   $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
-    s.voyage ? t.hintSea : t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS);
+    s.voyage ? t.hintSea : (missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
   // map
   let m = "";
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
@@ -591,6 +595,7 @@ $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render
 $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
+  if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
   const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
   const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
     $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
