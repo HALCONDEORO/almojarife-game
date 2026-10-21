@@ -91,3 +91,21 @@ test("buy limits compare to the market price, before the port fee", () => {
   processRoutes(g2, { doBuy, doSell, doSail });
   assert.equal(s2.cargo.grain ?? 0, 0, "one coin below the market price blocks the buy");
 });
+
+test("the cash brake plans with the port's REAL respect-scaled fee (BO conditional PASS on #135)", () => {
+  const g = game(), s = g.ships[0];
+  const badPort = world.cities.find((c) => c.id !== g.profile.home); // rep 0 -> feeMul 1.5
+  s.at = badPort.id;
+  const good = Object.keys(g.market[s.at]).filter((k) => g.market[s.at][k].stock > 5).sort((a, b) => price(g.world, g.market[s.at][b], b) - price(g.world, g.market[s.at][a], a))[0];
+  const unit = price(g.world, g.market[s.at][good], good);
+  const flat = Math.ceil(unit * (1 + 0.02)), real = Math.ceil(unit * (1 + 0.02 * 1.5)); // FEE = 2%
+  assert.ok(real > flat, `bad-rep port really charges more (${good} at ${unit})`);
+  const minCash = 100;
+  g.cash = minCash + flat * 2; // flat planning would take 2 units; real charging affords only 1
+  assert.ok(g.cash - minCash < real * 2, "setup: 2 real units do not fit the brake");
+  setRouteAdv(g, s, [{ city: s.at, buy: [{ good }] }, { city: g.profile.home, sell: [{ good }] }], { minCash });
+  const before = g.cash;
+  processRoutes(g, { doBuy, doSell, doSail });
+  assert.ok(g.cash >= minCash, `cash ${g.cash} must respect the brake ${minCash} (was ${before})`);
+  assert.ok((s.cargo[good] ?? 0) <= 1, "at most one unit fits the real fee");
+});
