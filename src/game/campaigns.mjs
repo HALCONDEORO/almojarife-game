@@ -7,7 +7,7 @@
 export const MISSIONS = Object.freeze([
   Object.freeze({ id: 'm1-oficio', chain: 'main', requires: [], optional: false, deadline: 60,
     title: { es: 'La prueba del oficio', en: 'The test of the trade' },
-    intro: { es: 'El viejo almojarife ha muerto sin heredero y el concejo busca sucesor. Tu tío, marino retirado, te deja su coca y una condición: demuestra oficio antes de hablar de nombramientos. Compra 40 de sal, llévala a Sevilla y véndela allí antes del día 60; luego mira tu informe semanal y entenderás el oficio.', en: 'The old almojarife has died without an heir and the council is looking for a successor. Your uncle, a retired sailor, leaves you his cog and one condition: prove your trade before any talk of appointments. Buy 40 salt, take it to Seville and sell it there before day 60; then read your weekly report and you will understand the trade.' },
+    intro: { es: 'El viejo almojarife ha muerto sin heredero y el concejo busca sucesor. Tu tío, marino retirado, te deja su coca y una condición: demuestra oficio antes de hablar de nombramientos. Compra 40 de sal, llévala a Sevilla y véndela allí a más tardar el día 60; luego mira tu informe semanal y entenderás el oficio.', en: 'The old almojarife has died without an heir and the council is looking for a successor. Your uncle, a retired sailor, leaves you his cog and one condition: prove your trade before any talk of appointments. Buy 40 salt, take it to Seville and sell it there by day 60 at the latest; then read your weekly report and you will understand the trade.' },
     done: { es: 'El concejo ha visto tu nombre en el libro de Sevilla: compra, viaje, venta y cuentas claras. El oficio está probado; ahora viene lo difícil: que el nombre pese.', en: 'The council has seen your name in Seville\'s book: purchase, voyage, sale and clear accounts. The trade is proven; now the hard part: making that name carry weight.' },
     failed: { es: 'El día 60 llegó sin venta en Sevilla. El concejo pierde interés en tu nombre; la casa sigue, pero el nombramiento se aleja.', en: 'Day 60 arrived with no sale in Seville. The council loses interest in your name; the house goes on, but the appointment drifts away.' },
     steps: Object.freeze([
@@ -42,6 +42,8 @@ export function campaignById(id) { return MISSIONS.find((m) => m.id === id) ?? n
 
 const EVENT_KINDS = new Set(['buy', 'sell', 'sail', 'arrive', 'readReport']);
 const NO_HELPERS = Object.freeze({ post: () => {}, addRespect: () => {}, repOf: () => 0, netWorth: () => 0 });
+/** Current saved campaign shape; anything else is a pre-engine save and must be normalised or ignored, never crash. */
+export function campaignShapeOk(c) { return !!c && Array.isArray(c.active) && !!c.missions && typeof c.missions === 'object'; }
 
 export function newCampaign(id = 'm1-oficio') {
   if (!campaignById(id)) throw Error('unknown campaign');
@@ -51,7 +53,7 @@ export function newCampaign(id = 'm1-oficio') {
 /** Activate missions whose requirements are met and that were never offered. Branches are
  *  just several missions requiring the same parent. */
 function activate(g, post) {
-  const c = g.campaign; if (!c) return;
+  const c = g.campaign; if (!campaignShapeOk(c)) return;
   for (const m of MISSIONS) {
     if (c.missions[m.id]) continue;
     if (m.requires.every((r) => c.missions[r]?.done)) {
@@ -71,7 +73,7 @@ function complete(g, m, h) {
 
 /** Explicit successful player-action events only; no parsing translated logs. No general game side effects. */
 export function campaignEvent(g, event, h = NO_HELPERS) {
-  const c = g.campaign; if (!c || !event || typeof event.kind !== 'string') return false;
+  const c = g.campaign; if (!campaignShapeOk(c) || !event || typeof event.kind !== 'string') return false;
   let changed = false;
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
@@ -98,7 +100,7 @@ function conditionMet(g, step, h) {
 }
 /** Daily: deadlines fail missions, condition steps complete themselves, new missions activate. */
 export function campaignTick(g, h = NO_HELPERS) {
-  const c = g.campaign; if (!c) return;
+  const c = g.campaign; if (!campaignShapeOk(c)) return;
   activate(g, h.post);
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
