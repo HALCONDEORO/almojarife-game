@@ -7,6 +7,7 @@
 // mechanics issues without failing CI (see the warnings section).
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { OVERDRAFT_LIMIT } from "../src/game/ledger.mjs";
 
 const report = process.argv[2]
   ? JSON.parse(readFileSync(process.argv[2], "utf8"))
@@ -18,9 +19,19 @@ const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
 const H = [365, 1825, 3650, 10950, 18250, 36500].filter((h) => report.horizons?.includes(h));
 
-// The campaign deadline still ends the game at day 365 (sandbox reports it, then keeps running).
-for (const [key, sc] of Object.entries(report.scenarios ?? {}))
+// The campaign deadline still ends the game at day 365 (free-play scenarios record the would-be result).
+for (const [key, sc] of Object.entries(report.scenarios ?? {})) {
+  if (key === "D_freeplay_idle") continue; // D has no campaign: free play never ends
   check(`${key}: campaign ends at day 365`, sc.campaignEnd?.day ?? "never", sc.campaignEnd?.day === 365, "365");
+}
+
+// Scenario D (free play, idle): bankruptcy resolves instead of ending the game; debt stays bounded.
+const D = report.scenarios?.D_freeplay_idle ?? {};
+check("D: free play runs to the end", D.dayEnd ?? "missing", D.dayEnd === report.days, String(report.days));
+check("D: no game over in free play", D.over ?? "null", D.over === null, "null");
+check("D: debt stays bounded", D.cashMin ?? "missing", Number.isFinite(D.cashMin) && D.cashMin > -(OVERDRAFT_LIMIT + 500), `> -${OVERDRAFT_LIMIT + 500}`);
+check("D: cash stays finite", D.cashEnd ?? "missing", Number.isFinite(D.cashEnd), "finite");
+if ((report.days ?? 0) > 365) check("D: bankruptcy actually resolves", D.bankruptcies ?? 0, (D.bankruptcies ?? 0) >= 1, ">= 1"); // the idle trader needs a few years to hit the limit
 
 const A = report.scenarios?.A_no_player ?? {};
 check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], within(A.priceIndex?.[1], 0.7, 1.6), "0.70-1.60");
@@ -61,8 +72,7 @@ for (const h of H) {
 // Known long-term mechanics issues, measured: reported as WARN so the log shows them
 // without turning CI red. Tighten to hard checks when the mechanics get fixed.
 const aEnd = A.horizons?.[Math.max(...H)] ?? {};
-if (Math.abs(aEnd.idlePlayerCash ?? 0) > 1e6)
-  warn("A: debt compounds without bound", aEnd.idlePlayerCash, "Negative cash grows exponentially (interest on debt, no bankruptcy resolution); masked in campaign by the day-365 deadline, but any free-play mode inherits it.");
+// (was WARN A: "debt compounds without bound" - fixed by free-play bankruptcy resolution; D's hard checks now guard it)
 if ((B.upgrades ?? 0) === 0)
   warn("B: workshop never upgrades", B.upgrades, "Upgrading needs materials from the local market (36 timber vs ~26 stocked in Casablanca): ports without stock can never level buildings, and the bot does not stockpile.");
 if (C.resumedDay == null && C.haltedEnd)

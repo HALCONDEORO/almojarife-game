@@ -4,7 +4,8 @@
 // workshop in his home port. C: poor bot (little cash) builds a saltworks: when do wages halt it?
 // Run: node tools/sim_buildings_economy.mjs [days=10950]   Prints one JSON report. Own design.
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, netWorth } from "../src/game/game.mjs";
+import { newGame, advanceDay, netWorth, GOAL_CASH } from "../src/game/game.mjs";
+import { loansOwed } from "../src/game/bank.mjs";
 import { buyPlot, startConstruction, staffingRatio, jobsNeeded } from "../src/game/buildings.mjs";
 import { price } from "../src/sim/market.mjs";
 
@@ -21,18 +22,18 @@ const halts = (g) => (g.inbox ?? []).filter((m) => m.kind === "halt").length;
 const base = (g) => ({ priceIndex: priceIndex(g), npcCash: npcCash(g) });
 
 function scenarioA() {
-  const g = newGame(world, "cadiz");
+  const g = newGame(world, "cadiz", { freePlay: true });
   const s0 = base(g);
   const horizons = {};
   const st = {};
-  for (let d = 1; d <= days; d++) { advanceDay(g); sandbox(g, st); if (snaps.includes(d)) horizons[d] = { ...base(g), idlePlayerCash: Math.round(g.cash) }; }
+  for (let d = 1; d <= days; d++) { advanceDay(g); campaignAt365(g, st); if (snaps.includes(d)) horizons[d] = { ...base(g), idlePlayerCash: Math.round(g.cash) }; }
   const s1 = base(g);
   return { priceIndex: [s0.priceIndex, s1.priceIndex], npcCash: [s0.npcCash, s1.npcCash], idlePlayerCashEnd: Math.round(g.cash), campaignEnd: st.firstOver ?? null, horizons };
 }
 
 function scenarioB() {
   const home = "casablanca"; // best cloth margin near the start (+125/batch at day 0): the market picks the place
-  const g = newGame(world, home, { cash: 2500 }); // 4,500 total: a trader who saved up for his first workshop
+  const g = newGame(world, home, { cash: 2500, freePlay: true }); // 4,500 total: a trader who saved up for his first workshop
   const s0 = base(g);
   const bp = buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
   const build = startConstruction(g, home, home + ":1", "workshop");
@@ -49,7 +50,7 @@ function scenarioB() {
     if (b?.state === "active") { staffSum += staffingRatio(g, home); staffDays++; if (b.halted) haltDays++; }
     if ((d === 90 || d === 210) && b?.state === "active" && !b.halted && b.level < 3 && g.cash > 1500) { const r = startConstruction(g, home, home + ":1", "workshop"); if (r.ok) upgrades++; }
     minCash = Math.min(minCash, g.cash);
-    sandbox(g, st);
+    campaignAt365(g, st);
     if (snaps.includes(d)) snapB(d);
   }
   const b = g.buildings[home][home + ":1"];
@@ -70,10 +71,10 @@ function scenarioC() {
   for (let d = 1; d <= days; d++) {
     const wasHalted = !!g.buildings?.cadiz?.["cadiz:1"]?.halted;
     advanceDay(g);
-    sandbox(g, st);
     const b = g.buildings?.cadiz?.["cadiz:1"];
     if (firstHaltDay === null && b?.halted) firstHaltDay = g.day;
     if (firstHaltDay !== null && resumedDay === null && wasHalted && !b?.halted) resumedDay = g.day;
+    if (g.over && !st.firstOver) st.firstOver = { day: g.day, result: g.over, reason: g.overReason ?? null };
     if (snaps.includes(d)) horizons[d] = { cash: Math.round(g.cash), halted: !!b?.halted, produced: b?.produced ?? 0 };
   }
   const b = g.buildings?.cadiz?.["cadiz:1"] ?? {};
@@ -81,11 +82,18 @@ function scenarioC() {
     haltedEnd: !!b.halted, cashEnd: Math.round(g.cash), produced: b.produced ?? 0, priceIndex: [s0.priceIndex, priceIndex(g)], campaignEnd: st.firstOver ?? null, horizons };
 }
 
-// Sandbox: the campaign end (win/lose at the deadline) is a game rule, not an economy rule.
-// To observe long-horizon mechanics we clear g.over each day and record the first campaign end instead.
-const sandbox = (g, st) => { if (g.over) { if (!st.firstOver) st.firstOver = { day: g.day, result: g.over, reason: g.overReason ?? null }; g.over = null; g.overReason = null; } };
+// Long horizons run in free play (no deadline, bankruptcy resolves instead of ending the game).
+// The would-be campaign result is recorded at day 365: win if the goal was met, lose otherwise.
+const campaignAt365 = (g, st) => { if (g.day === 365 && !st.firstOver) st.firstOver = { day: 365, result: g.cash - loansOwed(g) >= GOAL_CASH ? "win" : "lose", reason: null }; };
+
+function scenarioD() {
+  const g = newGame(world, "cadiz", { freePlay: true }); // idle free-play trader: the debt-spiral stress test
+  let minCash = g.cash;
+  for (let d = 1; d <= days; d++) { advanceDay(g); minCash = Math.min(minCash, g.cash); }
+  return { dayEnd: g.day, over: g.over, bankruptcies: g.bankruptcies ?? 0, cashMin: Math.round(minCash), cashEnd: Math.round(g.cash) };
+}
 
 const t0 = Date.now();
-const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC() }, seconds: +((Date.now() - t0) / 1000).toFixed(1),
+const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seconds: +((Date.now() - t0) / 1000).toFixed(1),
   scope: "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd." };
 console.log(JSON.stringify(report, null, 1));
