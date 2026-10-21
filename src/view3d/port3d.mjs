@@ -171,3 +171,67 @@ export function pickBuilding(THREE, scene, camera, ndcX, ndcY) {
   const hits = rc.intersectObjects(scene.children, true);
   return hits.length ? buildingOf(hits[0].object) : null;
 }
+
+/** Where a gen-city plot (x, y, w, d in the 0..size layout grid) sits in the port scene:
+ *  on the hillside behind the building row. Deterministic, pure. */
+export function plotSceneRect(plot, size) {
+  if (!plot || !Number.isFinite(plot.x) || !Number.isFinite(plot.y) || !Number.isFinite(size) || size <= 0) return null;
+  const w = Math.max(2, Math.min(8, plot.w * 0.9)), d = Math.max(2, Math.min(8, (plot.d ?? plot.w) * 0.9));
+  const x = (plot.x / size - 0.5) * 56, z = -12 - (plot.y / size) * 30;
+  return { x, z, y: slopeY(z), w, d };
+}
+/** Decorative houses that overlap any plot rectangle come out (same rule as the fixed buildings in portLayout). */
+export function housesClearOf(houses, rects) {
+  return houses.filter((h) => !rects.some((r) => Math.abs(h.x - r.x) < (r.w + h.w) / 2 + 0.6 && Math.abs(h.z - r.z) < (r.d + h.d) / 2 + 0.6));
+}
+
+const std = (THREE, color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o });
+const put = (THREE, parent, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const gable3 = (THREE, parent, w, d, x, y, z, color = 0x9b4a2b) => {
+  const rise = (w / 2) * Math.tan((22 * Math.PI) / 180), sh = new THREE.Shape();
+  sh.moveTo(-w / 2 - 0.3, 0); sh.lineTo(w / 2 + 0.3, 0); sh.lineTo(0, rise); sh.closePath();
+  return put(THREE, parent, new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }), std(THREE, color), x, y, z - d / 2 - 0.3);
+};
+
+/** A player's building on its plot: house (whitewashed), workshop (timber shed with chimney),
+ *  warehouse (long shed, wide door). Level 1-3 grows it; the plot footprint caps the size. */
+export function makePlayerBuilding(THREE, type, level = 1, w = 4, d = 4) {
+  const g = new THREE.Group(), lv = Math.max(1, Math.min(3, level)), bw = w * (0.7 + lv * 0.1), bd = d * (0.7 + lv * 0.1);
+  const wall = 0xece3cf, timber = 0x6a4325, dark = 0x2b2118;
+  if (type === "house") {
+    const h = 2.6 + lv * 0.9;
+    put(THREE, g, new THREE.BoxGeometry(bw, h, bd), std(THREE, wall), 0, h / 2, 0);
+    gable3(THREE, g, bw, bd, 0, h, 0);
+    put(THREE, g, new THREE.BoxGeometry(0.7, 1.2, 0.08), std(THREE, dark), 0, 0.6, bd / 2 + 0.04);
+    if (lv >= 2) put(THREE, g, new THREE.BoxGeometry(bw * 0.5, 1.4, bd * 0.55), std(THREE, 0xe3d6b8), bw * 0.55, 0.7, -bd * 0.1); // side annex
+    if (lv >= 3) put(THREE, g, new THREE.BoxGeometry(0.5, 1.4, 0.5), std(THREE, 0xcfc4a8), -bw / 2 + 0.5, h + 0.6, -bd / 2 + 0.5); // chimney
+  } else if (type === "warehouse") {
+    const h = 2.4 + lv * 0.5;
+    put(THREE, g, new THREE.BoxGeometry(bw * 1.25, h, bd), std(THREE, 0xc9a66b), 0, h / 2, 0);
+    gable3(THREE, g, bw * 1.25, bd, 0, h, 0, 0x6b4a2a);
+    put(THREE, g, new THREE.BoxGeometry(bw * 0.5, h * 0.75, 0.1), std(THREE, dark), 0, h * 0.375, bd / 2 + 0.05); // wide door
+    if (lv >= 2) put(THREE, g, new THREE.BoxGeometry(bw * 0.4, h * 0.8, bd * 0.6), std(THREE, 0xc9a66b), -bw * 0.8, h * 0.4, 0); // second nave
+    if (lv >= 3) put(THREE, g, new THREE.BoxGeometry(1.2, 1.6, 1.2), std(THREE, timber), bw * 0.75, 0.8, bd / 2 + 0.8); // hoist tower
+  } else { // workshop: shed, loom frame and a tall chimney for the dye vats
+    const h = 2.4 + lv * 0.6;
+    put(THREE, g, new THREE.BoxGeometry(bw, h, bd), std(THREE, 0xdcc9a8), 0, h / 2, 0);
+    gable3(THREE, g, bw, bd, 0, h, 0, 0x7e3b22);
+    for (const sx of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.18, h, 0.18), std(THREE, timber), sx * (bw / 2 - 0.1), h / 2, bd / 2 + 0.02); // timber frame
+    put(THREE, g, new THREE.BoxGeometry(0.7, 1.2, 0.08), std(THREE, dark), -bw / 4, 0.6, bd / 2 + 0.04);
+    put(THREE, g, new THREE.BoxGeometry(0.6, h + 1.6, 0.6), std(THREE, 0x8a6a4a), bw / 2 - 0.6, (h + 1.6) / 2, -bd / 2 + 0.6); // chimney
+    if (lv >= 2) put(THREE, g, new THREE.BoxGeometry(bw * 0.7, 0.14, 1.4), std(THREE, timber), 0, 2.0, bd / 2 + 0.8); // loom canopy
+    if (lv >= 3) for (const sx of [-0.8, 0, 0.8]) put(THREE, g, new THREE.CylinderGeometry(0.35, 0.35, 0.8, 8), std(THREE, 0x5a6a8a), sx, 0.4, bd / 2 + 1.0); // dye vats
+  }
+  g.userData.buildingType = type; g.userData.level = lv;
+  return g;
+}
+
+/** Scaffolding while a building is under construction: corner poles, cross planks and a wall stub. */
+export function makeScaffold(THREE, w = 4, d = 4, progress = 0.5) {
+  const g = new THREE.Group(), timber = std(THREE, 0x8a6a4a), h = 3.2;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.18, h, 0.18), timber, sx * w / 2, h / 2, sz * d / 2);
+  for (const yy of [1.1, 2.2]) { put(THREE, g, new THREE.BoxGeometry(w + 0.3, 0.12, 0.12), timber, 0, yy, d / 2); put(THREE, g, new THREE.BoxGeometry(w + 0.3, 0.12, 0.12), timber, 0, yy, -d / 2); }
+  const stub = Math.max(0.4, 2.6 * Math.min(1, Math.max(0, progress)));
+  put(THREE, g, new THREE.BoxGeometry(w * 0.8, stub, d * 0.8), std(THREE, 0xe3d6b8), 0, stub / 2, 0); // walls rise with the works
+  return g;
+}
