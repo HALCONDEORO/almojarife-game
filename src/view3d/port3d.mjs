@@ -5,6 +5,7 @@ import { seeded } from "../view/cityscene.mjs";
 import { makeTexture } from "./textures.mjs";
 import { makeHouse } from "./buildings/house.mjs";
 import { makeMarket } from "./buildings/market.mjs";
+import { makeTavern, makeInn } from "./buildings/tavern.mjs";
 export { makeHarborCrane } from "./buildings/market.mjs";
 
 export const QUAY_TOP = 1.2, QUAY_EDGE_Z = -2, FRONT_Z = -9; // 7 m of quay between the edge and the building fronts
@@ -106,16 +107,8 @@ export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = tru
 /** A typed town building (inn, smithy, chapel): each type keeps its own silhouette in the same materials family as the houses. */
 export function makeTownBuilding(THREE, type, { w = 4, d = 4, h = 3.6, tint = 0 } = {}) {
   const g = new THREE.Group(), wall = [0xece3cf, 0xe3d6b8, 0xefe8d8][Math.floor(tint * 3) % 3], timber = 0x6a4325, dark = 0x2b2118, stone = 0xcfc4a8;
-  if (type === "inn") { // two floors, timber gallery and a hanging sign
-    const hh = h + 1.8;
-    put(THREE, g, new THREE.BoxGeometry(w + 1, hh, d + 0.5), std(THREE, wall), 0, hh / 2, 0);
-    gable3(THREE, g, w + 1, d + 0.5, 0, hh, 0);
-    put(THREE, g, new THREE.BoxGeometry(w * 0.8, 0.15, 0.9), std(THREE, timber), 0, 2.6, d / 2 + 0.6);
-    for (const sx of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.15, 2.6, 0.15), std(THREE, timber), sx * w * 0.32, 1.3, d / 2 + 0.9);
-    put(THREE, g, new THREE.BoxGeometry(0.08, 0.8, 0.08), std(THREE, timber), w / 2 + 0.6, 2.4, d / 2 + 0.3);
-    put(THREE, g, new THREE.BoxGeometry(0.7, 0.5, 0.06), std(THREE, 0x8a5a1e), w / 2 + 0.6, 1.9, d / 2 + 0.3);
-    put(THREE, g, new THREE.BoxGeometry(0.8, 1.3, 0.08), std(THREE, dark), 0, 0.75, (d + 0.5) / 2 + 0.04);
-  } else if (type === "smithy") { // soot-stained, stone chimney, the forge window keeps its glow (never fused)
+  if (type === "inn") return makeInn(THREE, { w, d, h, tint }); // the inn lives in the tavern family module
+  if (type === "smithy") { // soot-stained, stone chimney, the forge window keeps its glow (never fused)
     const hh = Math.max(2.6, h - 0.4);
     put(THREE, g, new THREE.BoxGeometry(w, hh, d), std(THREE, 0x9c8a70), 0, hh / 2, 0);
     gable3(THREE, g, w, d, 0, hh, 0, 0x5a4632);
@@ -211,10 +204,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     } else if (b.id === "market") {
       const mk = makeMarket(THREE, { level: lv, style: marketStyle }); mk.position.z = z0; g.add(mk); // market family module: built relative to its front line, mounted at FRONT_Z
     } else if (b.id === "tavern") {
-      const w = 8, d = 6, h = lv >= 3 ? 7 : 4, zc = z0 - d / 2; box(g, w, h, d, wall, 0, h / 2, zc); gable(g, w, d, 0, h, zc);
-      box(g, w * 0.6, 0.15, 1.2, timber, 0, 2.8, z0 + 0.6); box(g, 0.08, 0.08, 1.2, timber, w / 2 + 0.4, 3.0, z0 + 0.1); box(g, 0.9, 0.6, 0.08, 0x8a5a1e, w / 2 + 1.0, 2.7, z0 + 0.1);
-      if (lv >= 2) { box(g, 5, 3.2, 5, wall, 0, 1.6, z0 - d - 2.5); gable(g, 5, 5, 0, 3.2, z0 - d - 2.5); }
-      if (lv >= 3) { box(g, 0.8, 2, 0.8, stone, -w / 2 + 1, h + 1.2, zc); box(g, 0.9, 0.6, 0.08, 0x8a5a1e, -w / 2 - 1.0, 2.7, z0 + 0.1); for (const sx of [-2, 2]) box(g, 0.8, 1.0, 0.06, 0xffb860, sx, 5.2, z0 + 0.04, { emissive: 0xffb860, emissiveIntensity: 0.6 }); }
+      const tv = makeTavern(THREE, { level: lv }); tv.position.z = z0; g.add(tv); // tavern family module: built relative to its front line, mounted at FRONT_Z
     } else { // shipyard: open shed and a slipway running into the sea
       const w = lv >= 3 ? 12 : 10, d = lv >= 3 ? 22 : 8, zc = z0 - d / 2, ph = 4;
       for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) box(g, 0.3, ph, 0.3, timber, sx * (w / 2 - 0.3), ph / 2, z0 - 0.3 - (i * (d - 0.6)) / 3);
