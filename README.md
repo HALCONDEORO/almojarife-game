@@ -10,7 +10,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Why you might like it
 
-- **A living market.** 9 ports, 12 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
+- **A living market.** 33 ports, 12 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
 - **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time.
 - **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
 - **Port panel.** Market, shipyard and warehouse tabs. The shipyard is an illustrated slipway: pick a ship class, build it (it takes days), repair hull wear, sell.
@@ -50,13 +50,13 @@ Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to 
 
 | Works now | Planned |
 |---|---|
-| Trading loop, 9 ports, 12 goods, stock-level signal, AI traders | Campaign of 2 acts, 12 missions |
-| Sea chart with pan and zoom, moving ships, click-to-sail | Crew wages in the weekly ledger |
-| Company and character creation | Town halls and building permits |
-| Market, shipyard with ship classes, warehouse, saves | Standing ranks |
-| City building: plots, houses, workshops, warehouses, 3D build affordance | More uses for reports and messages (profit per route, price history) |
-| Captains with skills, pirate prizes, events, rumours, weekly settlement, reports and messages | Full 3D ports for every city |
-| ES and EN, 3D port prototype | Sound, tutorial, more ports, world map by historical milestones |
+| Trading loop, 33 ports, 12 goods, stock-level signal, AI traders | Campaign of 2 acts, 12 missions |
+| Sea chart with pan and zoom, moving ships, click-to-sail | Town halls and building permits |
+| Company and character creation | More uses for reports and messages (profit per route, price history) |
+| Market, shipyard with ship classes, warehouse, saves | Full 3D ports for every city |
+| City building: plots, houses, workshops, warehouses, 3D build affordance | Sound, tutorial, world map by historical milestones |
+| Captains with skills, pirate prizes, events, rumours, weekly settlement with crew wages, reports and messages | |
+| Ranks by net worth with loan perks, ES and EN, 3D port prototype | |
 
 Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
 
