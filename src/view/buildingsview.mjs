@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, workshopRate, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL } from "../game/buildings.mjs";
+import { BUILDING_TYPES, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL } from "../game/buildings.mjs";
 import { quoteRecipe } from "../sim/recipes.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
@@ -17,11 +17,15 @@ export function buildingsRows(g, cityId) {
       row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
       row.progress = total > 0 ? Math.min(1, Math.max(0, 1 - left / total)) : 1;
     }
-    if (b.state === "active" && b.type === "workshop") {
+    if (b.state === "active" && PRODUCERS[b.type]) {
+      const def = PRODUCERS[b.type];
       row.produced = b.produced ?? 0;
-      row.rate = workshopRate(b.level); // average batches/day when the margin holds
-      const q = quoteRecipe(g.world, g.market, cityId, "weave", 1);
-      row.margin = q.ok ? sellQuote(g.world, g.market, cityId, "cloth", 2) - q.cost : null; // coins per batch right now
+      row.rate = producerRate(b.type, b.level); // average batches/day at full running
+      row.primary = def.primary;
+      if (!def.primary) {
+        const q = quoteRecipe(g.world, g.market, cityId, def.recipe, 1);
+        row.margin = q.ok ? sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]) - q.cost : null; // coins per batch right now
+      }
     }
     if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
     if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
