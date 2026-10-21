@@ -27,9 +27,11 @@ export function portLayout(id, pop = 8000) {
   const rnd = seeded("3d:" + id), n = Math.max(8, Math.min(48, Math.round(pop / 600))), houses = [];
   for (let i = 0; i < n; i++) {
     const row = i % 4, z = -19 - row * 5.5 - rnd() * 1.5, w = 4 + rnd() * 2.5, d = 4 + rnd() * 2, x = -34 + ((i + 0.5) / n) * 68 + (rnd() - 0.5) * 2;
-    houses.push({ x, z, w, d, h: 3 + rnd() * 1.6, y: slopeY(z), tint: rnd() });
+    houses.push({ x, z, w, d, h: 3 + rnd() * 1.6, y: slopeY(z), tint: rnd(), row, type: "house" });
   }
   const free = houses.filter((h) => !BUILDINGS.some((b) => Math.abs(h.x - b.x) < (b.w + h.w) / 2 + 1 && h.z + h.d / 2 > FRONT_Z - b.d - 1)); // keep the plots clear
+  // Typed buildings by district: the artisan quarter sits on the quay rows, the chapel stands on the top row. Bigger towns keep more of them.
+  for (const [type, row, min] of [["inn", 0, 8], ["smithy", 1, 12], ["chapel", 3, 16]]) { const h = free.length >= min ? free.find((x) => x.row === row && x.type === "house") : null; if (h) h.type = type; }
   return { houses: free, tower: { x: 12, z: -45, h: 18 }, quayZ: QUAY_EDGE_Z };
 }
 
@@ -69,6 +71,42 @@ export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = tru
   for (const o of dead) o.parent.remove(o); root.add(fused); return dead.length;
 }
 
+/** A typed town building (inn, smithy, chapel): each type keeps its own silhouette in the same materials family as the houses. */
+export function makeTownBuilding(THREE, type, { w = 4, d = 4, h = 3.6, tint = 0 } = {}) {
+  const g = new THREE.Group(), wall = [0xece3cf, 0xe3d6b8, 0xefe8d8][Math.floor(tint * 3) % 3], timber = 0x6a4325, dark = 0x2b2118, stone = 0xcfc4a8;
+  if (type === "inn") { // two floors, timber gallery and a hanging sign
+    const hh = h + 1.8;
+    put(THREE, g, new THREE.BoxGeometry(w + 1, hh, d + 0.5), std(THREE, wall), 0, hh / 2, 0);
+    gable3(THREE, g, w + 1, d + 0.5, 0, hh, 0);
+    put(THREE, g, new THREE.BoxGeometry(w * 0.8, 0.15, 0.9), std(THREE, timber), 0, 2.6, d / 2 + 0.6);
+    for (const sx of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.15, 2.6, 0.15), std(THREE, timber), sx * w * 0.32, 1.3, d / 2 + 0.9);
+    put(THREE, g, new THREE.BoxGeometry(0.08, 0.8, 0.08), std(THREE, timber), w / 2 + 0.6, 2.4, d / 2 + 0.3);
+    put(THREE, g, new THREE.BoxGeometry(0.7, 0.5, 0.06), std(THREE, 0x8a5a1e), w / 2 + 0.6, 1.9, d / 2 + 0.3);
+    put(THREE, g, new THREE.BoxGeometry(0.8, 1.3, 0.08), std(THREE, dark), 0, 0.75, (d + 0.5) / 2 + 0.04);
+  } else if (type === "smithy") { // soot-stained, stone chimney, the forge window keeps its glow (never fused)
+    const hh = Math.max(2.6, h - 0.4);
+    put(THREE, g, new THREE.BoxGeometry(w, hh, d), std(THREE, 0x9c8a70), 0, hh / 2, 0);
+    gable3(THREE, g, w, d, 0, hh, 0, 0x5a4632);
+    put(THREE, g, new THREE.BoxGeometry(0.7, hh + 1.6, 0.7), std(THREE, stone), w / 2 - 0.5, (hh + 1.6) / 2, -d / 2 + 0.6);
+    put(THREE, g, new THREE.BoxGeometry(0.9, 0.7, 0.08), std(THREE, 0xffb860, { emissive: 0xff9540, emissiveIntensity: 0.8 }), -w / 4, 0.9, d / 2 + 0.04);
+    put(THREE, g, new THREE.BoxGeometry(0.8, 1.2, 0.08), std(THREE, dark), w / 4, 0.7, d / 2 + 0.04);
+  } else if (type === "chapel") { // tall pale nave with a bell-cote over the door
+    const hh = h + 2.6;
+    put(THREE, g, new THREE.BoxGeometry(w * 0.8, hh, d * 0.9), std(THREE, 0xf3ead6), 0, hh / 2, 0);
+    gable3(THREE, g, w * 0.8, d * 0.9, 0, hh, 0, 0x7e3b22);
+    for (const sx of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.2, 1.1, 0.2), std(THREE, 0xf3ead6), sx * 0.5, hh + 0.9, d * 0.45 - 0.1);
+    put(THREE, g, new THREE.BoxGeometry(1.2, 0.25, 0.25), std(THREE, 0xf3ead6), 0, hh + 1.5, d * 0.45 - 0.1);
+    put(THREE, g, new THREE.BoxGeometry(0.35, 0.4, 0.12), std(THREE, 0x8a6a3a), 0, hh + 0.65, d * 0.45 - 0.1);
+    put(THREE, g, new THREE.BoxGeometry(0.9, 1.5, 0.08), std(THREE, dark), 0, 0.85, d * 0.45 + 0.04);
+  } else { // house: whitewashed walls, low terracotta roof
+    put(THREE, g, new THREE.BoxGeometry(w, h, d), std(THREE, wall), 0, h / 2, 0);
+    gable3(THREE, g, w, d, 0, h, 0);
+    put(THREE, g, new THREE.BoxGeometry(0.7, 1.2, 0.08), std(THREE, dark), 0, 0.7, d / 2 + 0.04);
+  }
+  g.userData.buildingType = type;
+  return g;
+}
+
 export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {}, plots3d = [] } = {}) {
   const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
   const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o })); return mats.get(k); };
@@ -92,7 +130,10 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3)); g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals(); const hill = new THREE.Mesh(g, M(0x9a8b5a, { side: THREE.DoubleSide })); hill.receiveShadow = true; scene.add(hill); }
   // houses: whitewashed walls, low terracotta roofs
   const walls = [0xece3cf, 0xe3d6b8, 0xefe8d8];
-  for (const h of L.houses) { const g = new THREE.Group(); g.position.set(h.x, h.y, h.z); box(g, h.w, h.h, h.d, walls[Math.floor(h.tint * 3) % 3], 0, h.h / 2, 0); gable(g, h.w, h.d, 0, h.h, 0); box(g, 0.7, 1.2, 0.08, 0x2b2118, 0, 0.7, h.d / 2 + 0.04); scene.add(g); }
+  for (const h of L.houses) {
+    if (h.type !== "house") { const g = makeTownBuilding(THREE, h.type, h); g.name = "town:" + h.type; g.userData.building = "town:" + h.type; g.position.set(h.x, h.y, h.z); scene.add(g); continue; } // typed town buildings stay clickable
+    const g = new THREE.Group(); g.position.set(h.x, h.y, h.z); box(g, h.w, h.h, h.d, walls[Math.floor(h.tint * 3) % 3], 0, h.h / 2, 0); gable(g, h.w, h.d, 0, h.h, 0); box(g, 0.7, 1.2, 0.08, 0x2b2118, 0, 0.7, h.d / 2 + 0.04); scene.add(g);
+  }
   // bell tower far back
   { const t = L.tower, g = new THREE.Group(); g.position.set(t.x, slopeY(t.z), t.z); box(g, 3.2, t.h - 3, 3.2, 0xece3cf, 0, (t.h - 3) / 2, 0); hip(g, 3.6, 3.6, 3, 0, t.h - 3, 0, 0x9b4a2b); box(g, 1.2, 1.6, 0.3, 0x2b2118, 0, t.h - 4.5, 1.6); scene.add(g); }
   // clickable buildings
