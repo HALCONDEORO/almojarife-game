@@ -8,6 +8,7 @@ import { clampWindow } from "../src/view/floating.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
 import { missionView, campaignEvent } from "../src/game/campaigns.mjs";
+import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS } from "../src/game/game.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
@@ -122,7 +123,11 @@ function drawShips() {
     h += `<g data-mx="${pt.x}" data-my="${pt.y}" ${mine ? `data-ship="${g.ships.indexOf(sh)}" style="cursor:pointer" pointer-events="all"` : ""}>${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
   }
   layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
-  layer.querySelectorAll("[data-ship]").forEach((el) => el.onclick = () => { sel = +el.dataset.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  layer.querySelectorAll("[data-ship]").forEach((el) => el.onclick = () => {
+    const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
+    if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
+    if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+  });
 }
 function stepTicks(n) {
   for (let i = 0; i < n; i++) {
@@ -130,7 +135,9 @@ function stepTicks(n) {
     advanceTick(g);
     if (g.day !== dayBefore) autosave();
     if (g.pending || g.encounterReport) playing = false;
-    if (g.ships.some((x, j) => before[j] && !x.voyage)) playing = false; // pause when your ship arrives
+    const arrivedAt = g.ships.findIndex((x, j) => before[j] && !x.voyage);
+    if (arrivedAt >= 0) { playing = false; // pause when your ship arrives
+      if (!g.pending && !g.encounterReport && !g.over) { sel = arrivedAt; open3d(g.ships[arrivedAt]); } } // docking opens the city, P3-style
   }
   render();
 }
@@ -164,7 +171,7 @@ const routeDrafts = {}; // advanced-route editor drafts, per ship id
 const newRouteDraft = (at, ids) => ({ minCash: "", stops: [{ city: ids[0] ?? at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }] });
 function start(prof, save = true) {
   const p = cleanProfile({ ...prof, company: prof?.company || T[lang].defCo }, cityIds);
-  g = newGame(world, p.home, { ...startBonus(p), profile: p, events: true }); sel = 0; company = p.company; if (save) autosave(); render();
+  g = newGame(world, p.home, { ...startBonus(p), profile: p, events: true }); sel = 0; company = p.company; if (save) autosave(); render(); if (prof && !ship().voyage) open3d(ship()); // city opens for a real new game, not for the background boot game
 }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
@@ -205,6 +212,12 @@ function render() {
   let m = "";
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
+  if (s.voyage?.path?.length) { // selected ship under way: its route in red with live ETA (P3 select-ship)
+    const cur = shipPosition(world, s, tickAcc / MS_PER_TICK);
+    const pts = [`${X(cur.lon)},${Y(cur.lat)}`, ...s.voyage.path.filter((id) => world.nodes[id]).map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`)].join(" ");
+    const last = s.voyage.path.filter((id) => world.nodes[id]).pop();
+    if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(world.nodes[last].lon) + 10}" y="${Y(world.nodes[last].lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${cityName(s.voyage.to)} · ${etaText(g.tick + s.voyage.ticksLeft)}</text>`;
+  }
   const est = target && !s.voyage ? travelEstimate(world, s, target) : null;
   if (est?.ok) {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
@@ -218,17 +231,24 @@ function render() {
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => {
-    el.onclick = () => { target = el.dataset.c; closeMenu(); render(); };
+    el.onclick = () => {
+      const a = portClickAction(g, el.dataset.c); // own ship docked there -> enter the city; else destination
+      if (a.kind === "city") { sel = a.ship; closeMenu(); open3d(g.ships[a.ship]); return; }
+      target = a.city; closeMenu(); render();
+    };
     el.oncontextmenu = (ev) => { ev.preventDefault(); openMenu(el.dataset.c, ev.clientX, ev.clientY); };
     el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
     el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
   });
   const logLine = (l) => l.key === "event" ? `${t.day} ${l.day}: ${l.txt?.[lang] ?? ""}` : t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
   $("log").innerHTML = g.log.map((l) => `<div>${logLine(l)}</div>`).join("");
-  // panel
+  // panel: in navigation mode the map stands alone (P3); the panel only pops up for a pending
+  // event. In the city view it carries the port services inside the city window.
   let h = "";
-  const pe = pendingEvent(g);
+  const pe = pendingEvent(g), inCity = !!document.getElementById("v3d");
+  document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
+  if (inCity || pe) {
   h += g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
   h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}<br>`;
   h += assignedCaptainHtml(s,lang);
@@ -237,7 +257,6 @@ function render() {
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
     const nd = world.nodes[s.at];
     h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).length, day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
-    h += `<div><button data-3d="1">${t.view3d}</button></div>`;
     const bp = bestPorts(g, s).slice(0, 3);
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
@@ -399,6 +418,7 @@ function render() {
       h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (!g.over) h += `<div><button data-wait="1">${t.wait}</button>${s.voyage ? `<button data-arrive="1">${t.arrive}</button>` : ""}</div>`;
+  }
   $("panel").innerHTML = h;
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
@@ -424,7 +444,6 @@ function render() {
   const rrb = P.querySelector("#rrumbtn"); if (rrb) rrb.onclick = () => act(() => buyRouteRumor(g, s.at));
   P.querySelector("[data-local-store]")?.addEventListener("click",()=>{if($("v3d"))openCityPanel("store");else{tab="store";render();}});
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
-  P.querySelectorAll("[data-3d]").forEach((e) => e.onclick = () => open3d(s));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
   P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
@@ -532,7 +551,7 @@ function askDismissCaptain() {
   $("cap-confirm").onclick = () => { if (s.captain?.id !== c.id) { $("cap-msg").textContent = tc.failed; return; } const r = dismissCaptain(g, s); if (!r.ok) { $("cap-msg").textContent = tc.failed; return; } el.hidden = true; playing = was; autosave(); render(); };
 }
 
-function sailToTarget() { if (!target) return; const to = target; act(() => doSail(g, ship(), to)); target = null; render(); }
+function sailToTarget() { if (!target) return; const to = target; close3d(); act(() => doSail(g, ship(), to)); target = null; render(); }
 function closeCityWindow() {
   const d=$("v3d"); if (!d) return;
   const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.querySelector("[data-open-panel]")?.focus();}
@@ -540,7 +559,7 @@ function closeCityWindow() {
 function close3d() {
   const d=$("v3d"); if(!d)return;
   const p=$("panel"), home=$("panel-home"); if(p&&home)home.appendChild(p);
-  d.remove();document.body.classList.remove("in-city-3d"); document.querySelector("[data-3d]")?.focus();
+  d.remove();document.body.classList.remove("in-city-3d");
 }
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
