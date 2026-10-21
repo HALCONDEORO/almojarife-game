@@ -5,6 +5,8 @@ import {setStewardRule,clearStewardRule,setStewardReserve,stewardOf,stewardTick}
 import {FEE} from '../src/sim/trade.mjs';
 import {price} from '../src/sim/market.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
+import {repOf} from '../src/game/rank.mjs';
+import {openVoyage,voyageLog} from '../src/game/voyages.mjs';
 const world=loadWorld();
 const mk=()=>{const g=newGame(world);const s=g.ships[0];g.cash=100000;assert.ok(buyWarehouse(g,'cadiz').ok);return{g,s};};
 const cheap=(g,good='grain')=>{const e=g.market.cadiz[good];e.stock=e.target*4;return price(world,e,good);}; // clamp-low price
@@ -127,4 +129,27 @@ test('steward trades move port reputation like manual trades',async()=>{
  const did2=stewardTick(g2,'cadiz',999);
  assert.ok(did2?.[0]?.bought>0,'the order bought');
  assert.ok(portRep(g2,'cadiz')<0,'buying a scarce good cost reputation');
+});
+test('steward sales earn respect like manual trades, and count for the docked ship\'s voyage',()=>{
+ const{g,s}=mk();
+ const w=g.warehouses.cadiz;w.goods={grain:50};w.basis={grain:500}; // 10 per unit of cost basis
+ const p=dear(g);assert.ok(p>10,'dear market beats the basis');
+ assert.ok(setStewardRule(g,'cadiz','grain',{sellAbove:p-1,sellKeep:0},999).ok);
+ openVoyage(g,s,'lisboa','cadiz'); // the ship that brought the goods is docked here
+ const before=repOf(g,'cadiz');
+ const did=stewardTick(g,'cadiz',warehouseCap(g,'cadiz'));
+ assert.ok(did?.[0]?.sold>0,'the sale happened');
+ assert.ok(repOf(g,'cadiz')>before,'respect rose with the sale revenue, as in doSell');
+ const v=voyageLog(g,s.id)[0];
+ assert.ok(v&&v.sold===did[0].sold&&v.revenue===did[0].revenue,'the sale counts for the docked ship\'s voyage');
+ assert.equal(v.profit,did[0].revenue-Math.round(500*did[0].sold/50),'with its cost-basis profit');
+});
+test('steward sale with no ship in port still works: respect rises, no voyage entry',()=>{
+ const{g}=mk();g.ships=[]; // nobody docked
+ const w=g.warehouses.cadiz;w.goods={grain:20};w.basis={grain:200};
+ const p=dear(g);
+ assert.ok(setStewardRule(g,'cadiz','grain',{sellAbove:p-1,sellKeep:0},999).ok);
+ const did=stewardTick(g,'cadiz',warehouseCap(g,'cadiz'));
+ assert.ok(did?.[0]?.sold>0,'sale fine without any ship');
+ assert.deepEqual(g.voyages??[],[],'and nothing recorded');
 });
