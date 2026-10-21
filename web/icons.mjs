@@ -1,7 +1,6 @@
 // Flat SVG icons for trade goods. Own work (see CREDITS.md), 24x24, same on every device.
 const S = {
   grain: '<path d="M12 22V9" stroke="#8a6a1f" stroke-width="1.6"/><g fill="#e0b73a"><ellipse cx="12" cy="5" rx="2" ry="3.2"/><ellipse cx="8.2" cy="8" rx="1.9" ry="3" transform="rotate(-35 8.2 8)"/><ellipse cx="15.8" cy="8" rx="1.9" ry="3" transform="rotate(35 15.8 8)"/><ellipse cx="8.2" cy="13" rx="1.9" ry="3" transform="rotate(-35 8.2 13)"/><ellipse cx="15.8" cy="13" rx="1.9" ry="3" transform="rotate(35 15.8 13)"/></g>',
-  dried_fish: '<path d="M2 12c4-6 11-6 15 0-4 6-11 6-15 0z" fill="#9db4c0"/><path d="M17 12l5-4v8z" fill="#7c97a6"/><circle cx="7" cy="11" r="1.1" fill="#234"/><path d="M10 8v8M13 8.5v7" stroke="#6b8797" stroke-width="1"/>',
   fish: '<path d="M3 13c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z" fill="#5a9a8a"/><circle cx="8" cy="11.5" r="1.1" fill="#123"/><path d="M12 9c2 1.5 2 6 0 7.5" stroke="#3d7364" stroke-width="1" fill="none"/>',
   ironware: '<path d="M3 18h16v3H3z" fill="#4a4f55"/><path d="M6 18v-5h9l3-3V8H9L6 12z" fill="#6c737b"/><path d="M12 6l2 2" stroke="#b9c0c7" stroke-width="1.4"/>',
   salt: '<path d="M4 20l2-9h12l2 9z" fill="#eef2f4" stroke="#8fa3ad" stroke-width="1.2"/><path d="M7 11l5-7 5 7z" fill="#fff" stroke="#8fa3ad" stroke-width="1.2"/>',

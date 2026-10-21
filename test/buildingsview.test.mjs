@@ -63,7 +63,7 @@ test("build offers quote every type on an empty plot; producers quote only where
   buyPlot(g, "cadiz", PLOT);
   const offers = buildOffers(g, "cadiz", PLOT.id);
   assert.equal(offers.length, Object.keys(BUILDING_TYPES).length); // one entry per type, refused ones carry their reason
-  for (const t of ["house", "workshop", "warehouse", "saltworks", "smokehouse"]) { // cadiz makes salt and dried_fish
+  for (const t of ["house", "workshop", "warehouse", "saltworks", "fishery"]) { // cadiz makes salt and fish
     const o = offers.find((x) => x.type === t);
     assert.ok(o.ok && o.days === BUILDING_TYPES[t].buildDays && o.cost > 0, t + " quotes");
   }

@@ -36,7 +36,7 @@ export function price(world, entry, good, elasticity = 0.6) {
  * sticking at the price ceiling. Stock stays a whole number and never negative.
  */
 /** Day of the year on which each good is most plentiful (harvest, catch, shearing). Goods not listed are made all year. */
-export const SEASON_PEAK = { grain: 225, wine: 270, olive_oil: 330, sugar: 100, pepper: 150, wool: 150, dried_fish: 110, salt: 200 };
+export const SEASON_PEAK = { grain: 225, wine: 270, olive_oil: 330, sugar: 100, pepper: 150, wool: 150, fish: 110, salt: 200 };
 export const SEASON_AMPLITUDE = 0.35;
 /** Production multiplier for a good on a day: 1 on average over the year, 1.35 at peak, 0.65 at the low. */
 export function seasonMul(good, day) {

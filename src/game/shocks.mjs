@@ -14,7 +14,7 @@ export const REGIONS = {
 export const regionOf = (city) => Object.keys(REGIONS).find((r) => REGIONS[r].includes(city)) ?? null;
 export const SHOCK_CHANCE = 0.05, SHOCK_MIN_DAY = 30, SHOCK_MAX_ACTIVE = 2;
 /** Goods a poor harvest can hit (the grown ones; manufactures and imports are spared). */
-export const HARVEST_GOODS = ["grain", "wine", "olive_oil", "sugar", "wool", "dried_fish", "salt"];
+export const HARVEST_GOODS = ["grain", "wine", "olive_oil", "sugar", "wool", "fish", "salt"];
 export const SHOCK_TYPES = [
   { id: "poor_harvest", weight: 0.4, days: [14, 28] },
   { id: "new_demand", weight: 0.4, days: [14, 28] },
@@ -28,7 +28,7 @@ export const activeShocks = (g, city) => (g.shocks ?? []).filter((s) => s.untilD
 export const portClosed = (g, city) => activeShocks(g, city).some((s) => s.type === "port_closed");
 
 const REGION_NAMES = { es: { atlantico: "el Atlántico", estrecho: "el Estrecho", mediterraneo: "el Mediterráneo" }, en: { atlantico: "the Atlantic", estrecho: "the Strait", mediterraneo: "the Mediterranean" } };
-const GOOD_NAMES = { es: { grain: "el grano", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", dried_fish: "el pescado seco", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", beer: "la cerveza" } };
+const GOOD_NAMES = { es: { grain: "el grano", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", beer: "la cerveza" } };
 /** "de" + the name, contracted: del grano, de la lana. */
 const DE_GOOD = Object.fromEntries(Object.entries(GOOD_NAMES.es).map(([k, v]) => [k, v.replace(/^el /, "del ").replace(/^la /, "de la ")]));
 /** Plain text of a shock (start or end), ES/EN. */

@@ -7,7 +7,7 @@ Edit `data/world.json`, in `cities`. A port looks like this:
 
     {
       "id": "cadiz", "name": "Cádiz", "lat": 36.53, "lon": -6.29, "pop": 12000,
-      "makes": ["salt", "dried_fish"],
+      "makes": ["salt", "fish"],
       "needs": ["wool", "cloth"]
     }
 

@@ -19,6 +19,28 @@ export function migrate(save) {
   while (s.version < SAVE_VERSION) { const step = MIGRATIONS[s.version]; if (!step) throw new Error("no migration for v" + s.version); s = step(s); }
   return s;
 }
+// Ids retired from the catalogue and what they became. Saves written before the retirement keep loading:
+// market rows are renamed (or dropped when a row for the new id exists), every other count (cargo, warehouses,
+// cost basis) is added to the new id, and building types and stray id strings are renamed.
+export const RETIRED_GOODS = Object.freeze({ dried_fish: "fish" });
+export const RETIRED_BUILDINGS = Object.freeze({ smokehouse: "fishery" });
+export function migrateRetired(g) {
+  const addInto = (a, b) => (typeof a === "number" && typeof b === "number" ? a + b : a && b && typeof a === "object" && typeof b === "object" ? Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, addInto(a[k], b[k])])) : a ?? b);
+  for (const [city, row] of Object.entries(g.market ?? {})) for (const [from, to] of Object.entries(RETIRED_GOODS)) if (row && from in row) { if (!row[to]) row[to] = row[from]; delete row[from]; }
+  const walk = (o, inMarket) => {
+    if (Array.isArray(o)) { o.forEach((v, i) => { if (typeof v === "string") o[i] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v); }); return; }
+    if (!o || typeof o !== "object") return;
+    for (const [from, to] of Object.entries(RETIRED_GOODS)) if (from in o) { o[to] = addInto(o[to], o[from]); delete o[from]; }
+    for (const k of Object.keys(o)) {
+      if (k === "market" || k === "world") continue;
+      const v = o[k];
+      if (typeof v === "string") o[k] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v);
+    }
+  };
+  for (const k of Object.keys(g)) if (k !== "market" && k !== "world") { const v = g[k]; if (typeof v === "string") g[k] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v); }
+  return g;
+}
+
 export function deserialize(save, world) {
   const s = migrate(save);
   const st = s.state;
@@ -31,6 +53,7 @@ export function deserialize(save, world) {
   for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
   for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
+  migrateRetired(g);
   fillMissingMarketRows(world, g.market); // goods or ports added since the save was written get a fresh market row, so old saves keep loading
   return { g, company: cleanCompany(s.company) };
 }

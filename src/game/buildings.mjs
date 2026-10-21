@@ -21,7 +21,6 @@ export const BUILDING_TYPES = Object.freeze({
   oil_mill: Object.freeze({ recipe: "oil_mill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  smokehouse: Object.freeze({ recipe: "smokehouse", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   brewery: Object.freeze({ recipe: "brewery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   // Private dock: your ships pay less port toll in this city per active level (docs/design/dock-building.md).
   dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
@@ -170,7 +169,7 @@ export function sellQuote(world, market, city, good, qty) {
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
-  oil_mill: 6, vineyard: 6, saltworks: 5, smokehouse: 5, brewery: 6, dock: 0, fishery: 4, ironworks: 6,
+  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, dock: 0, fishery: 4, ironworks: 6,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -205,7 +204,6 @@ export const PRODUCERS = Object.freeze({
   oil_mill: Object.freeze({ output: "olive_oil", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   vineyard: Object.freeze({ output: "wine", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   saltworks: Object.freeze({ output: "salt", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
-  smokehouse: Object.freeze({ output: "dried_fish", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),
   fishery: Object.freeze({ output: "fish", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
   ironworks: Object.freeze({ recipe: "forge", output: "ironware", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
 });
