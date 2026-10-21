@@ -14,7 +14,7 @@ const funded = () => newGame(world, "cadiz", { cash: 30000 });
 test("empty city: no rows, no bonuses", () => {
   const g = funded();
   assert.deepEqual(buildingsRows(g, "cadiz"), []);
-  assert.deepEqual(cityEffects(g, "cadiz"), { pop: world.nodes.cadiz.pop ?? 8000, popBonus: 0, capBonus: 0 });
+  assert.deepEqual(cityEffects(g, "cadiz"), { pop: world.nodes.cadiz.pop ?? 8000, popBonus: 0, capBonus: 0, jobs: 0, free: Math.max(0, (world.nodes.cadiz.pop ?? 8000) - Math.round((world.nodes.cadiz.pop ?? 8000) * 0.9)), staffing: 1 });
 });
 
 test("a bare plot row has state plot, no upkeep; a construction row carries progress and ready day", () => {
@@ -136,4 +136,34 @@ test("both locales translate every build/upgrade offer reason the game can emit"
   assert.equal(locales.length, 2);
   const reasons = ["office required", "respect required", "good not producible in this city"];
   for (const l of locales) for (const r of reasons) assert.ok(l.includes(`"${r}"`), `missing ${r} in ${l.slice(0, 40)}`);
+});
+
+test("cityEffects reports the port's employment: jobs, free citizens and staffing", () => {
+  const g = newGame(world);
+  g.buildings = { cadiz: { "cadiz:1": { type: "workshop", level: 2, state: "active" }, "cadiz:2": { type: "house", level: 1, state: "active" } } };
+  const eff = cityEffects(g, "cadiz");
+  const pop = world.nodes.cadiz.pop ?? 8000;
+  assert.equal(eff.jobs, 16, "two workshop levels want 16 workers");
+  assert.equal(eff.free, Math.max(0, pop + 50 - Math.round(pop * 0.9)), "the house feeds the pool");
+  assert.equal(eff.staffing, 1, "a real port staffs this easily");
+  const g2 = newGame(world); // no houses: a hamlet cannot staff the workshop
+  g2.buildings = { cadiz: { "cadiz:1": { type: "workshop", level: 2, state: "active" } } };
+  const node = g2.world.nodes.cadiz, orig = node.pop;
+  try { node.pop = 60; const short = cityEffects(g2, "cadiz"); assert.equal(short.free, 6, "60 vecinos menos 54 del pueblo"); assert.ok(short.staffing < 1 && short.staffing > 0, "a hamlet runs short-staffed"); }
+  finally { node.pop = orig; }
+});
+
+test("active rows carry the workers they hire", () => {
+  const g = newGame(world);
+  g.buildings = { cadiz: { "cadiz:1": { type: "mine", level: 2, state: "active" }, "cadiz:2": { type: "house", level: 3, state: "active" } } };
+  const rows = buildingsRows(g, "cadiz");
+  assert.equal(rows.find((r) => r.plotId === "cadiz:1").jobs, 20, "mine level 2 hires 20");
+  assert.equal(rows.find((r) => r.plotId === "cadiz:2").jobs, 0, "houses hire nobody");
+});
+
+test("the buildings tab carries the employment strings in both languages", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  assert.equal((src.match(/bldJobsLine:/g) || []).length, 2, "ES and EN");
+  assert.equal((src.match(/bldJobsShort:/g) || []).length, 2);
+  assert.ok(src.includes("eff.staffing < 1"), "short-staffing warning rendered");
 });
