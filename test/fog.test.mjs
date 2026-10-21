@@ -88,3 +88,13 @@ test("the chart survives saving; a pre-fog save is seeded from intel and routes"
   assert.ok(isDiscovered(old, "sevilla"), "route endpoint from the route");
   assert.ok(!isDiscovered(old, "bilbao"), "the rest stays covered");
 });
+
+test("a complete chart is a no-op and discovery survives a save round-trip", () => {
+  const g = game();
+  for (const c of g.world.cities) g.discovered[c.id] = g.day; // chart complete
+  assert.deepEqual(refreshDiscovery(g), []);
+  const raw = JSON.parse(JSON.stringify(serialize(g, "Casa Prueba")));
+  assert.ok(raw.state.discovered && typeof raw.state.discovered === "object"); // serialize keeps g.discovered
+  const { g: back } = deserialize(raw, world);
+  assert.deepEqual(back.discovered, g.discovered);
+});

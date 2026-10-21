@@ -52,14 +52,15 @@ export function startingChart(g, home) {
  * returns the newly discovered ports so the caller can log them. */
 export function refreshDiscovery(g) {
   g.discovered ??= seedDiscovery(g);
+  const remaining = g.world.cities.filter((c) => g.discovered[c.id] === undefined);
+  if (!remaining.length) return []; // chart complete: nothing to do
+  const underway = g.ships.filter((s) => s.voyage).map((s) => shipPosition(g.world, s)); // once per ship per tick
   const found = [];
-  for (const c of g.world.cities) {
-    if (g.discovered[c.id] !== undefined) continue;
+  for (const c of remaining) {
     let hit = isLive(g, c.id);
     if (!hit)
-      for (const s of g.ships) {
-        if (!s.voyage) continue;
-        if (haversineKm(shipPosition(g.world, s), c) <= DISCOVERY_KM) { hit = true; break; }
+      for (const p of underway) {
+        if (haversineKm(p, c) <= DISCOVERY_KM) { hit = true; break; }
       }
     if (hit) { g.discovered[c.id] = g.day; found.push(c.id); }
   }
