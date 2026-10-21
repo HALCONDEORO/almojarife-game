@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Almojarife - 3D port prototype</title>
-<style>html,body{margin:0;height:100%;background:#1b2a33;font:14px sans-serif;color:#fff}canvas{display:block;width:100%;height:100%}#hud{position:fixed;left:10px;top:8px;text-shadow:0 1px 2px #000}</style></head>
+<style>html,body{margin:0;height:100%;background:#1b2a33;font:14px sans-serif;color:#fff}canvas{display:block;width:100%;height:100%}#hud{position:fixed;left:10px;top:8px;text-shadow:0 1px 2px #000}.bldlab{position:fixed;display:none;transform:translate(-50%,-115%);background:#1b2a33cc;color:#ffe9b0;padding:1px 7px;border-radius:4px;font-size:12px;pointer-events:auto;cursor:pointer;text-shadow:0 1px 2px #000;white-space:nowrap}</style></head>
 <body><div id="tip" style="position:fixed;display:none;padding:3px 8px;background:#000b;border-radius:4px;pointer-events:none"></div><div id="hud"></div>
 <script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
 <script type="module">
@@ -34,6 +34,11 @@ addEventListener("pointermove", (e) => { const b = drag ? null : pickBuilding(TH
 addEventListener("pointermove", (e) => { if (drag) { moved += Math.abs(e.clientX - drag[0]); yaw = Math.max(-CAMERA.yawMax, Math.min(CAMERA.yawMax, yaw + (e.clientX - drag[0]) * 0.003)); drag[0] = e.clientX; place(); } });
 addEventListener("wheel", (e) => { zoom = Math.max(CAMERA.zoom[0], Math.min(CAMERA.zoom[1], zoom * (e.deltaY > 0 ? 1.06 : 0.94))); place(); });
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Floating name labels over owned plots and public buildings (names arrive localized in the URL).
+const labEls = [...Object.entries(JSON.parse(q.get("labels") || "{}")).map(([id, txt]) => ({ id, kind: "plot", txt })), ...Object.entries(JSON.parse(q.get("names") || "{}")).map(([id, txt]) => ({ id, kind: "building", txt }))].map(({ id, kind, txt }) => { const el = document.createElement("div"); el.className = "bldlab"; el.textContent = txt; el.title = txt; el.addEventListener("click", () => parent.postMessage({ kind, id }, location.origin)); document.body.appendChild(el); return { id, kind, el }; }); // labels stay clickable even when scenery hides the building
+const labV = new THREE.Vector3(), labBox = new THREE.Box3();
+const labObj = ({ id, kind }) => kind === "plot" ? scene.getObjectByName("plot:" + id) : scene.getObjectByName("building:" + id) || scene.getObjectByName(id); // the warehouse group keeps its plain name
+const placeLabels = () => { for (const { el, ...L } of labEls) { const o = labObj(L); if (!o) { el.style.display = "none"; continue; } labBox.setFromObject(o); labV.set((labBox.min.x + labBox.max.x) / 2, labBox.max.y, (labBox.min.z + labBox.max.z) / 2); labV.project(cam); if (labV.z > 1 || labV.z < -1) { el.style.display = "none"; continue; } el.style.display = "block"; el.style.left = ((labV.x * 0.5 + 0.5) * innerWidth) + "px"; el.style.top = ((-labV.y * 0.5 + 0.5) * innerHeight) + "px"; } };
 window.__scene = scene; window.__cam = cam; // verification handles (tests, screenshots)
-renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; animateWater(water, t); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.2 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.026; }); renderer.render(scene, cam); window.__ready = true; });
+renderer.setAnimationLoop((ms) => { const t = still ? 0 : ms / 1000; animateWater(water, t); placeLabels(); scene.getObjectByName("ship"); scene.children.filter((c) => c.name === "ship").forEach((s, i) => { s.position.y = 0.2 + Math.sin(t * 1.3 + i) * 0.08; s.rotation.z = Math.sin(t * 0.9 + i) * 0.026; }); renderer.render(scene, cam); window.__ready = true; });
 </script></body></html>

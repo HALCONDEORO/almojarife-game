@@ -25,6 +25,7 @@ import { BUILDINGS, tabForBuilding, buildingOf, portLayout as pl, FRONT_Z, slope
 test("every building opens a real game panel and unknown ids open nothing", () => {
   assert.deepEqual(BUILDINGS.map((b) => b.tab).sort(), ["bank", "market", "tavern", "yard"]);
   assert.equal(tabForBuilding("shipyard"), "yard"); assert.equal(tabForBuilding("market"), "market");
+  assert.equal(tabForBuilding("warehouse"), "store"); // the owned warehouse opens the store panel
   for (const bad of ["", "house", "__proto__", "constructor", undefined, null]) assert.equal(tabForBuilding(bad), null);
 });
 test("a hit part resolves to its building by walking up the parents", () => {
@@ -62,6 +63,7 @@ test("every level builds a clickable building", async () => {
 test("the largest port stays far inside the draw-call budget (150, shadows included)", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
   const { scene } = buildPortScene(THREE, { id: "lisboa", pop: 50000, ships: 3, warehouse: true, upgrades: { market: 3, tavern: 3, bank: 3, shipyard: 3 } });
+  assert.equal(scene.getObjectByName("warehouse")?.userData.building, "warehouse"); // named and clickable like the quay buildings
   let meshes = 0, tris = 0; scene.traverse((o) => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
   assert.ok(meshes * 2 <= 150, "meshes " + meshes); assert.ok(tris < 150000, "triangles " + tris);
 });

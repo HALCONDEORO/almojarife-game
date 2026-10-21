@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
-import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct } from "../src/view/buildingsview.mjs";
+import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 };
@@ -90,4 +90,15 @@ test("parseBldAct: the armed-action wiring, including upgrade carrying its type"
   const a = parseBldAct(`upgrade|${PLOT.id}|workshop`);
   const r = startConstruction(g, "cadiz", a.plotId, a.type);
   assert.ok(r.ok); assert.equal(r.level, 2);
+});
+
+test("buildingLabel: short floating names for the 3D view", () => {
+  const t = { bldTypes: { house: "Casa", workshop: "Taller", warehouse: "Almacén" }, bldState: { plot: "solar" } };
+  assert.equal(buildingLabel(t, { type: null }), "solar");
+  assert.equal(buildingLabel(t, { type: "house", state: "active", level: 1 }), "Casa");
+  assert.equal(buildingLabel(t, { type: "house", state: "active", level: 2 }), "Casa 2");
+  assert.equal(buildingLabel(t, { type: "workshop", state: "construction", nextLevel: 3 }), "Taller (3)");
+  const en = { bldTypes: { warehouse: "Warehouse" }, bldState: { plot: "empty plot" } };
+  assert.equal(buildingLabel(en, { type: null }), "empty plot");
+  assert.equal(buildingLabel(en, { type: "warehouse", state: "active", level: 1 }), "Warehouse");
 });
