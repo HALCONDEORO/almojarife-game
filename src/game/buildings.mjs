@@ -17,6 +17,11 @@ export const BUILDING_TYPES = Object.freeze({
   pasture: Object.freeze({ recipe: "pasture", fee: 200, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   sawmill: Object.freeze({ recipe: "sawmill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   mine: Object.freeze({ recipe: "mine", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
+  // Primary producers (PR3 of the materials plan): buildable only where the city makes the good.
+  oil_mill: Object.freeze({ recipe: "oil_mill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  smokehouse: Object.freeze({ recipe: "smokehouse", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
 });
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
@@ -151,6 +156,10 @@ export const PRODUCERS = Object.freeze({
   pasture: Object.freeze({ output: "wool", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   sawmill: Object.freeze({ output: "timber", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
   mine: Object.freeze({ output: "iron", primary: true, yield: 1, pattern: WORKSHOP_BATCH_PATTERN }),
+  oil_mill: Object.freeze({ output: "olive_oil", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
+  vineyard: Object.freeze({ output: "wine", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
+  saltworks: Object.freeze({ output: "salt", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
+  smokehouse: Object.freeze({ output: "dried_fish", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),
 });
 /** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields
  *  the good) only go where the city MAKES that good - local resources per city, the rest is imported,
