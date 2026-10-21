@@ -15,6 +15,7 @@ import { buyPlot, startConstruction, restartBuilding, buildingAt } from '../src/
 import { resolveEvent } from '../src/game/events.mjs';
 import { resolvePirates, dismissEncounterReport } from '../src/game/encounterdaily.mjs';
 import { MISSIONS, campaignEvent } from '../src/game/campaigns.mjs';
+import { repOf } from '../src/game/rank.mjs';
 import { MISSION as MISSION_HOOKS } from '../src/game/game.mjs';
 
 const w = loadWorld(), games = Number(process.argv[2] ?? 24), competition = process.argv[3] ?? 'default';
@@ -45,11 +46,12 @@ const CORE = ['greedy-preview', 'random-destination'], EXTRA = Object.keys(STYLE
 const ROSTERS = { core: CORE.map((s) => [s, false]), styles: EXTRA.map((s) => [s, true]), all: [...CORE.map((s) => [s, false]), ...EXTRA.map((s) => [s, true])] };
 
 // One policy decision for an idle ship: the same planning as tools/sim_player.mjs.
-function plan(g, ship, style, rng, cashForBuying) {
+function plan(g, ship, style, rng, cashForBuying, onlyDests = null) {
   const st = STYLES[style];
   let best = null; const positives = [];
   const known = st.fog ? knownMarket(g) : null;
   let candidates = st.random ? [w.cities[Math.floor(rng.next() * w.cities.length)]] : w.cities;
+  if (onlyDests) candidates = candidates.filter((c) => onlyDests.has(c.id)); // mission work restricts destinations
   for (const city of candidates) {
     if (city.id === ship.at) continue;
     if (st.fog && !(known.market[city.id] && known.age[city.id].days <= 45)) continue; // fog: unknown or stale ports do not exist
@@ -131,6 +133,17 @@ function run(start, seed, style, mode, events) {
             } else if (cur() === 1) { if (doSail(g, ship, 'sevilla').ok) trips++; }
             else if (cur() === 3 && ship.at === 'sevilla') { const q = ship.cargo.salt ?? 0; if (q > 0) { const r = doSell(g, ship, 'salt', q); if (r.ok) addProfit('salt', ship.at, r.revenue); } }
             else if (cur() === 4) campaignEvent(g, { kind: 'readReport' }, MISSION_HOOKS);
+          } else if (mst && !mst.done && !mst.failed && mid === 'm2-nombre') {
+            // reputation mission: trade deliberately into the ports nearest the respect bar
+            const targets = Object.keys(g.market).map((c) => [c, repOf(g, c)]).filter(([, r]) => r < 20).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([c]) => c);
+            if (targets.length) {
+              const best = plan(g, ship, style, rng, g.cash, new Set(targets));
+              if (best) {
+                const r = doBuy(g, ship, best.good, best.qty);
+                if (r.ok) { costBasis[best.good] = (costBasis[best.good] ?? 0) + r.cost; origin[best.good] = ship.at; if (doSail(g, ship, best.city).ok) trips++; }
+              }
+              continue;
+            }
           }
         }
         const cashForBuying = g.cash + (st.leverage ? loanRoom(g, netWorth(g)) : 0);

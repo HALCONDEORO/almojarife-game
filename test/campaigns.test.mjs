@@ -50,7 +50,7 @@ test('mission data stays data: ids unique, steps known kinds, stories in both la
   assert.ok(!ids.has(m.id));ids.add(m.id);
   for(const r of m.requires)assert.ok(MISSIONS.some((x)=>x.id===r),`${m.id} requires unknown ${r}`);
   assert.ok(m.title.es&&m.title.en&&m.intro.es&&m.intro.en&&m.done.es&&m.done.en,`${m.id} stories`);
-  for(const s of m.steps){assert.ok(s.label.es&&s.label.en,`${m.id} step labels`);assert.ok(['buy','sell','sail','arrive','readReport','respect','worth','fleet','build','warehouse'].includes(s.kind),`${m.id} kind ${s.kind}`);}
+  for(const s of m.steps){assert.ok(s.label.es&&s.label.en,`${m.id} step labels`);assert.ok(['buy','sell','sail','arrive','readReport','respect','respectPorts','worth','fleet','build','warehouse'].includes(s.kind),`${m.id} kind ${s.kind}`);}
  }
 });
 test('unknown ids fail and games without campaign are unaffected',()=>{
@@ -77,4 +77,26 @@ test("old flat campaign saves are normalised on load instead of crashing the eng
   assert.doesNotThrow(() => campaignTick(g));
   assert.doesNotThrow(() => campaignEvent(g, { kind: "buy", good: "salt", qty: 40 }));
   assert.ok(Array.isArray(missionView(g, "es")));
+});
+test('M2 (main chain) needs respect in TWO distinct ports and pays out',()=>{
+ const posts=[],resp=[];const reps={sevilla:25,cadiz:25,lisboa:0};
+ const h={post:(g,k,p)=>posts.push(p.txt?.es),addRespect:(g,c,a)=>resp.push([c,a]),repOf:(g,c)=>reps[c]??0,netWorth:()=>0};
+ const g={day:1,cash:100,profile:{home:'cadiz'},market:{sevilla:{},cadiz:{},lisboa:{}},campaign:newCampaign()};
+ for(const e of [{kind:'buy',good:'salt',qty:40},{kind:'sail',to:'sevilla'},{kind:'arrive',city:'sevilla'},{kind:'sell',good:'salt',qty:40,city:'sevilla'},{kind:'readReport'}])campaignEvent(g,e,h);
+ assert.ok(g.campaign.active.includes('m2-nombre')); // main chain continues
+ campaignTick(g,h);
+ assert.equal(g.campaign.missions['m2-nombre'].done,true); // sevilla+cadiz both >=20
+ assert.equal(g.cash,1000); // +400 M2 reward +200 s1 (home respect 25 completes it too)
+ assert.deepEqual(resp,[['sevilla',5],['cadiz',3]]); // M1 sevilla + M2 home respect, resolved from 'home'
+ assert.ok(posts.some((t)=>t.includes('Dos puertos')));
+});
+test('M2 stays open with respect in only one port; missionView shows port progress',()=>{
+ const reps={sevilla:30,cadiz:5};
+ const h={post:()=>{},addRespect:()=>{},repOf:(g,c)=>reps[c]??0,netWorth:()=>0};
+ const g={day:1,cash:0,profile:{home:'cadiz'},market:{sevilla:{},cadiz:{}},campaign:{active:['m2-nombre'],missions:{'m2-nombre':{step:0,count:0,done:false,failed:false}}}};
+ campaignTick(g,h);assert.equal(g.campaign.missions['m2-nombre'].done,false);
+ const v=missionView(g,'es',h)[0];
+ assert.equal(v.title,'Nombre y palabra');
+ assert.equal(v.stepLabel,'Respeto 20 en 2 puertos distintos');
+ assert.equal(v.progress,'1/2');
 });
