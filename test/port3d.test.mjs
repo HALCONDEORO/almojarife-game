@@ -116,3 +116,15 @@ test("water waves run on the GPU: shader hook and time uniform are wired", async
   assert.ok(shader.vertexShader.includes("/ 11.0 + uTime * 0.9) * 0.06"));
   assert.equal(shader.uniforms.uTime, water.userData.time);
 });
+
+test("environment stops: zenith darker than horizon, colours in range", async () => {
+  const { envStops, skyFor } = await import("../src/view3d/port3d.mjs");
+  for (const tod of [0, 0.25, 0.5, 0.75, 1]) {
+    const st = envStops(skyFor(tod));
+    for (const key of ["zenith", "horizon", "ground", "deep"]) {
+      assert.equal(st[key].length, 3);
+      for (const v of st[key]) assert.ok(Number.isInteger(v) && v >= 0 && v <= 255, `${key} channel ${v} at tod ${tod}`);
+    }
+    assert.ok(st.zenith[2] < st.horizon[2] || st.zenith[0] < st.horizon[0], "zenith dimmer than horizon");
+  }
+});

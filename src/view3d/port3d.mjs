@@ -43,6 +43,12 @@ export function skyFor(t) {
   const mix = (a, b) => [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * k));
   return { sky: mix([0xe0, 0x8a, 0x5e], [0x9c, 0xc3, 0xd6]), sun: mix([0xff, 0x9a, 0x50], [0xff, 0xd2, 0x9a]), sunPower: 1 + 1.2 * k, sunHeight: 18 + 22 * k };
 }
+/** Environment gradient stops for a time-of-day sky: zenith, horizon and ground bounce.
+ *  Pure colours, testable; the browser turns them into an equirect canvas + PMREM (needs WebGL). */
+export function envStops(sk) {
+  const dim = (a, f) => a.map((v) => Math.round(v * f));
+  return { zenith: dim(sk.sky, 0.7), horizon: sk.sky, ground: [0x35, 0x47, 0x3c], deep: [0x1b, 0x26, 0x22] };
+}
 const hex = ([r, g, b]) => (r << 16) | (g << 8) | b;
 
 /** Camera set-up from the art guide: FOV 35, at (0,22,42) looking at (0,4,-9); zoom 0.7..1.3, yaw within +-20 degrees. */
@@ -149,7 +155,7 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     const g = new THREE.ExtrudeGeometry(sh, { depth: d + 0.6, bevelEnabled: false }); return add(p, g, M(color), x, y, z - d / 2 - 0.3); };
   const hip = (p, w, d, h, x, y, z, color = 0x7e3b22) => { const m = add(p, new THREE.ConeGeometry(1, 1, 4), M(color), x, y + h / 2, z); m.rotation.y = Math.PI / 4; m.scale.set((w / 2) * 1.42, h, (d / 2) * 1.42); return m; };
   scene.background = new THREE.Color(hex(sk.sky)); scene.fog = new THREE.Fog(0xe6d8bc, 60, 180);
-  scene.add(new THREE.HemisphereLight(0xffe9c4, 0x56625c, 0.6));
+  scene.add(new THREE.HemisphereLight(0xffe9c4, 0x56625c, 0.4)); // lower: the environment map carries ambient now
   const sun = new THREE.DirectionalLight(hex(sk.sun), sk.sunPower); sun.position.set(-40, sk.sunHeight, 55); sun.castShadow = true; sun.name = "sun";
   sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -35, right: 35, top: 22.5, bottom: -22.5, near: 1, far: 160 }); sun.shadow.normalBias = 0.02; scene.add(sun);
   // sea
