@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, setRoute, clearRoute } from "../src/game/game.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -68,4 +69,12 @@ test("a hold full of an unrelated good does not shuttle without trading", () => 
   run(g, 3);
   assert.ok(!s.voyage, "stays in port");
   assert.ok(g.inbox.some((m) => m.kind === "routeStuck"));
+});
+
+test("route tab source: goods is declared before the advanced-route editor uses it (TDZ regression)", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
+  const use = route.indexOf("goods.map");
+  const decl = route.indexOf("const goods = Object.keys(world.goods)");
+  assert.ok(use > 0 && decl > 0 && decl < use, "goods must be declared before first use in the route tab");
 });

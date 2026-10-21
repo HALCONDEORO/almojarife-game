@@ -278,6 +278,7 @@ function render() {
       } else {
   
       }
+      const goods = Object.keys(world.goods);
       const d = (routeDrafts[s.id] ??= newRouteDraft(s.at, others.map((c) => c.id)));
       h += `<p><b>${t.routeAdv}</b></p><p>${t.routeAdvInfo}</p>`;
       d.stops.forEach((st, i) => {
@@ -287,7 +288,6 @@ function render() {
       });
       h += `<div class="rumor"><button id="rts-add">${t.routeAddStop}</button> ${t.routeMinCash}: <input id="rts-mincash" type="number" min="0" step="1" size="6" value="${d.minCash}"> <button id="rts-set2">${t.routeSetAdv}</button></div>`;
       h += rt ? `<div class="card">${t.routeNow.replace("{a}", cityName(rt.a)).replace("{b}", cityName(rt.b)).replace("{out}", gn(rt.out)).replace("{back}", rt.back ? t.routeBackTxt.replace("{g}", gn(rt.back)) : "").replace("{n}", rt.legs)}<br><button id="rt-cancel">${t.routeCancel}</button></div>` : `<p><i>${t.routeNone}</i></p>`;
-      const goods = Object.keys(world.goods);
       h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
     } else if (tab === "city") {
       const nd2 = world.nodes[s.at], pop2 = nd2.pop ?? 8000, ks = Object.keys(world.goods), ent = g.market[s.at];
