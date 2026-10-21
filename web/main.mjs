@@ -270,7 +270,6 @@ function render() {
         const v = st.sell.map((x) => `${t.routeSellW} ${gn(x.good)}${x.minPrice != null ? " " + t.routeIfGe.replace("{p}", x.minPrice) : ""}`).join(", ") || t.routeNoSell;
         return `${cityName(st.city)}: ${b} · ${v}`;
       };
-      h += `<p>${t.routeInfo}</p>`;
       if (rt?.v === 2) {
         h += `<div class="card">${t.routeNow2.replace("{n}", rt.stops.length).replace("{l}", rt.legs).replace("{m}", rt.minCash)}<br>` +
           rt.stops.map((st, i) => `${i + 1}. ${stopLine(st)}`).join("<br>") +

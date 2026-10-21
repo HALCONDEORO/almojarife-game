@@ -78,3 +78,10 @@ test("route tab source: goods is declared before the advanced-route editor uses 
   const decl = route.indexOf("const goods = Object.keys(world.goods)");
   assert.ok(use > 0 && decl > 0 && decl < use, "goods must be declared before first use in the route tab");
 });
+
+test("the route tab shows its explainer line exactly once", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const uses = src.split("t.routeInfo}").length - 1;
+  assert.equal(uses, 1, "routeInfo renders once in the route tab (regression: it was concatenated twice)");
+});
