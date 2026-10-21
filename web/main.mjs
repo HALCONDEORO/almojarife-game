@@ -255,6 +255,7 @@ function render() {
         if (r.rate !== undefined) return t.bldFxP.replace("{r}", r.rate).replace("{n}", fmt(r.produced)); // primary producers: rate and units, no margin
         if (r.type === "house") return t.bldFxH.replace("{n}", fmt(r.popBonus));
         if (r.type === "warehouse") return t.bldFxS.replace("{n}", fmt(r.capBonus));
+        if (r.type === "dock") return t.bldFxD.replace("{n}", r.tollCut);
       }
       return "-";
     };
