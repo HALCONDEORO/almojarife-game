@@ -5,8 +5,8 @@ import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruc
 import {RECIPES,OUTPUTS} from '../src/sim/recipes.mjs';
 import {SEASON_PEAK} from '../src/sim/market.mjs';
 const world=loadWorld();
-const TYPES=['oil_mill','vineyard','saltworks','smokehouse'];
-const OUT={oil_mill:'olive_oil',vineyard:'wine',saltworks:'salt',smokehouse:'dried_fish'};
+const TYPES=['oil_mill','vineyard','saltworks','fishery'];
+const OUT={oil_mill:'olive_oil',vineyard:'wine',saltworks:'salt',fishery:'fish'};
 test('every PR3 producer has its three rows wired to real goods and recipes',()=>{
  for(const t of TYPES){
   assert.ok(BUILDING_TYPES[t],t+' in BUILDING_TYPES');
@@ -61,7 +61,7 @@ test('spec numbers from the materials table',()=>{
  assert.deepEqual(BUILDING_TYPES.oil_mill,{recipe:'oil_mill',fee:250,buildDays:4,upkeep:2,maxLevel:3});
  assert.deepEqual(BUILDING_TYPES.vineyard,{recipe:'vineyard',fee:250,buildDays:4,upkeep:2,maxLevel:3});
  assert.deepEqual(BUILDING_TYPES.saltworks,{recipe:'saltworks',fee:200,buildDays:3,upkeep:1,maxLevel:3});
- assert.deepEqual(BUILDING_TYPES.smokehouse,{recipe:'smokehouse',fee:200,buildDays:3,upkeep:1,maxLevel:3});
- assert.equal(PRODUCERS.smokehouse.yield,4);
+ assert.deepEqual(BUILDING_TYPES.fishery,{recipe:'fishery',fee:150,buildDays:3,upkeep:1,maxLevel:3});
+ assert.equal(PRODUCERS.fishery.yield,3);
  for(const t of ['oil_mill','vineyard','saltworks'])assert.equal(PRODUCERS[t].yield,2);
 });

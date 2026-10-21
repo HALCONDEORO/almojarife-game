@@ -8,7 +8,7 @@
    "pop": 12000,
    "makes": [
     "salt",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "wool",
@@ -45,7 +45,7 @@
    "pop": 50000,
    "makes": [
     "sugar",
-    "dried_fish",
+    "fish",
     "pepper"
    ],
    "needs": [
@@ -69,7 +69,6 @@
    "needs": [
     "timber",
     "wool",
-    "dried_fish",
     "fish",
     "ironware",
     "beer"
@@ -90,9 +89,8 @@
     "grain",
     "salt",
     "pepper",
-    "dried_fish",
-    "sugar",
     "fish",
+    "sugar",
     "beer"
    ]
   },
@@ -157,7 +155,7 @@
    "pop": 6000,
    "makes": [
     "salt",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "grain",
@@ -191,7 +189,7 @@
    "pop1500": 6000,
    "makes": [
     "salt",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "wool",
@@ -206,7 +204,7 @@
    "pop": 4000,
    "pop1500": 4000,
    "makes": [
-    "dried_fish",
+    "fish",
     "salt"
    ],
    "needs": [
@@ -223,7 +221,7 @@
    "pop1500": null,
    "makes": [
     "wine",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "cloth",
@@ -342,7 +340,7 @@
    "pop1500": null,
    "makes": [
     "iron",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "wine",
@@ -357,7 +355,7 @@
    "pop": 3000,
    "pop1500": 3000,
    "makes": [
-    "dried_fish",
+    "fish",
     "timber"
    ],
    "needs": [
@@ -373,7 +371,7 @@
    "pop": 5000,
    "pop1500": 5000,
    "makes": [
-    "dried_fish",
+    "fish",
     "timber"
    ],
    "needs": [
@@ -389,7 +387,7 @@
    "pop": 2500,
    "pop1500": null,
    "makes": [
-    "dried_fish",
+    "fish",
     "salt"
    ],
    "needs": [
@@ -437,7 +435,7 @@
    "pop": 2000,
    "pop1500": null,
    "makes": [
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "wool",
@@ -551,7 +549,7 @@
    "pop1500": null,
    "makes": [
     "grain",
-    "dried_fish"
+    "fish"
    ],
    "needs": [
     "cloth",
@@ -564,9 +562,6 @@
    "base": 22
   },
   "fish": {
-   "base": 13
-  },
-  "dried_fish": {
    "base": 20
   },
   "salt": {

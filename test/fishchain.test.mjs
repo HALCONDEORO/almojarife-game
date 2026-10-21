@@ -14,21 +14,18 @@ const PLOT = { id: "malaga:13", type: "warehouse", w: 4, d: 5 };
 const FISH_TOWNS = world.cities.filter((c) => c.makes.includes("fish")).map((c) => c.id);
 const NO_FISH = world.cities.filter((c) => !c.makes.includes("fish")).map((c) => c.id);
 
-test("fish is a trade good: base price, market rows everywhere, fishing towns are not the dried-fish towns", () => {
-  assert.equal(world.goods.fish.base, 13);
-  const dried = world.cities.filter((c) => c.makes.includes("dried_fish")).map((c) => c.id);
-  for (const t of FISH_TOWNS) assert.ok(!dried.includes(t), `${t}: fresh supply sits away from the smokehouses so the chain needs shipping`);
-  assert.equal(FISH_TOWNS.length, 6); assert.ok(NO_FISH.length > 0);
+test("fish is the one fish good: base price, market rows everywhere, dried fish is retired", () => {
+  assert.equal(world.goods.fish.base, 20);
+  assert.equal(world.goods.dried_fish, undefined);
+  assert.equal(FISH_TOWNS.length, 18); assert.ok(NO_FISH.length > 0);
   const g = newGame(world, "cadiz", { cash: 10000 });
   for (const c of world.cities) assert.ok(g.market[c.id].fish, `market row in ${c.id}`);
-  assert.ok(!g.market.cadiz.fish.makes);
+  assert.ok(!g.market.sevilla.fish.makes);
   assert.ok(g.market.malaga.fish.makes);
 });
 
-test("citizens demand fresh fish (a cheap staple, below dried fish)", () => {
-  const dFish = totalDemand(10000, "fish", 1), dDried = totalDemand(10000, "dried_fish", 1);
-  assert.ok(dFish > 0 && dDried > 0);
-  assert.ok(dFish < dDried, "fresh fish moves less volume than the staple");
+test("citizens demand fish (a cheap staple, poor classes most)", () => {
+  assert.ok(totalDemand(10000, "fish", 1) > 0);
 });
 
 test("fishery is a primary producer buildable only where the city catches fish", () => {

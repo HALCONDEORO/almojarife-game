@@ -51,3 +51,13 @@ redundant (those towns restock their makes goods). Corrected before delivery.
 - `npm test`: 460/460 PASS.
 - Economy gate: `sim_buildings_economy.mjs` 10 years -> `sim_balance_check.mjs` 38/38 PASS,
   3 pre-existing WARNs (workshop upgrade materials, halted-building bot, level-1 cap).
+
+## Step 1b: dried fish and the smokehouse are retired
+
+The 20-good catalogue has one fish good. `dried_fish` is removed: its 12 towns now make `fish`
+(base 20, demand poor 0.8 / middle 0.5 / rich 0.2, the old dried-fish numbers, so the staple keeps its
+volume), and the smokehouse is removed from the building list. Old saves migrate on load
+(`migrateRetired` in `src/game/gamesave.mjs`): market rows, cargo, warehouse stock and cost basis move from
+`dried_fish` to `fish` one to one, and smokehouses become fisheries (a fishery yields 3 per batch, the
+smokehouse 4, so a converted building is slightly weaker). The six fishery ports are still the ones where
+a fishery adds supply that is not already restocked by `makes`.

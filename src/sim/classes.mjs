@@ -19,8 +19,7 @@ export function classCounts(pop) {
 /** Units bought per 1000 citizens per day, by class. Staples for everyone, comforts for the middle, luxuries for the rich. */
 export const PER_1000 = {
   grain:      { poor: 1.3, middle: 1.1, rich: 0.7 },
-  dried_fish: { poor: 0.8, middle: 0.5, rich: 0.2 },
-  fish:       { poor: 0.6, middle: 0.3, rich: 0.1 },
+  fish:       { poor: 0.8, middle: 0.5, rich: 0.2 },
   salt:       { poor: 0.4, middle: 0.4, rich: 0.3 },
   beer:       { poor: 0.3, middle: 0.3, rich: 0.1 },
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },

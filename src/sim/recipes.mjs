@@ -17,7 +17,6 @@ export const RECIPES = Object.freeze({
   oil_mill: Object.freeze({ timber: 16, iron: 4, cloth: 2 }),
   vineyard: Object.freeze({ timber: 14, iron: 2, cloth: 2 }),
   saltworks: Object.freeze({ timber: 10, iron: 2 }),
-  smokehouse: Object.freeze({ timber: 12, iron: 2 }),
   brewery: Object.freeze({ timber: 12, iron: 2 }),
   dock: Object.freeze({ timber: 10, iron: 2 }),
   fishery: Object.freeze({ timber: 8, cloth: 2 }),
