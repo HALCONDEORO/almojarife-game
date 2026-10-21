@@ -10,12 +10,14 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Why you might like it
 
-- **A living market.** 9 ports, 12 goods, prices that move with supply and demand. Selling a big load crashes the price. AI traders compete with you.
+- **A living market.** 9 ports, 12 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
 - **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time.
 - **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
 - **Port panel.** Market, shipyard and warehouse tabs. The shipyard is an illustrated slipway: pick a ship class, build it (it takes days), repair hull wear, sell.
 - **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
-- **Events and rumours.** Storms, pirates, fair winds and drifting cargo bring choices at sea. Prices of ports you have not visited are rumours with an age and an error margin; buy news at the tavern.
+- **A town to grow.** Buy plots in a port and build houses, workshops and warehouses: houses add citizens (more demand), workshops weave wool into cloth at local prices, warehouses add storage. Construction takes days and upkeep settles in the weekly ledger.
+- **Captains.** Hire a captain in the tavern: navigation, weather and defence skills change how fast a ship sails, how it weathers storms and how it fights pirates. The hire fee and daily wage scale with skill.
+- **Events and rumours.** Storms, pirates, fair winds and drifting cargo bring choices at sea; win a pirate fight and you may keep the enemy ship as a prize (damaged hull, no crew, sells cheap). Prices of ports you have not visited are rumours with an age and an error margin; buy news at the tavern.
 - **A 3D port (prototype).** A three.js harbour built from your game state: docked ships, warehouse, time of day. Desktop first.
 - **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file. Until launch the save format can change without migration: test saves from earlier builds are not preserved.
 - **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your browser.
@@ -48,11 +50,12 @@ Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to 
 
 | Works now | Planned |
 |---|---|
-| Trading loop, 9 ports, 12 goods, AI traders | Campaign of 2 acts, 12 missions |
-| Sea chart with pan and zoom, moving ships, click-to-sail | Crew wages and building upkeep in the weekly ledger |
-| Company and character creation | Town halls, building permits, city logic |
-| Market, shipyard with ship classes, warehouse, saves | Tavern, workshops, standing ranks |
-| Events at sea, market rumours, weekly settlement, reports and messages | More uses for reports and messages (profit per route, price history) |
+| Trading loop, 9 ports, 12 goods, stock-level signal, AI traders | Campaign of 2 acts, 12 missions |
+| Sea chart with pan and zoom, moving ships, click-to-sail | Crew wages in the weekly ledger |
+| Company and character creation | Town halls and building permits |
+| Market, shipyard with ship classes, warehouse, saves | Standing ranks |
+| City building: plots, houses, workshops, warehouses, 3D build affordance | More uses for reports and messages (profit per route, price history) |
+| Captains with skills, pirate prizes, events, rumours, weekly settlement, reports and messages | Full 3D ports for every city |
 | ES and EN, 3D port prototype | Sound, tutorial, more ports, world map by historical milestones |
 
 Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
