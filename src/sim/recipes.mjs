@@ -7,6 +7,8 @@ export const RECIPES = Object.freeze({
   caravel: Object.freeze({ timber: 20, iron: 10, cloth: 18 }),
   nao: Object.freeze({ timber: 42, iron: 16, cloth: 24 }),
   warehouse: Object.freeze({ timber: 20, iron: 6 }),
+  house: Object.freeze({ timber: 12, iron: 2, cloth: 2 }),
+  workshop: Object.freeze({ timber: 18, iron: 5, cloth: 6 }),
   office: Object.freeze({ timber: 16, iron: 4, cloth: 6 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),
