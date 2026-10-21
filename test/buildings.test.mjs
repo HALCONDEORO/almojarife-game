@@ -116,3 +116,75 @@ test("guards: unowned plot, unknown type, over game", () => {
   assert.equal(buyPlot(g, "cadiz", { id: "cadiz:10", type: "house", w: 3, d: 3 }).ok, false);
   assert.equal(startConstruction(g, "cadiz", PLOT.id, "house").ok, false);
 });
+
+// Piece 3: the workshop's weave production inside its port's market tick.
+import { workshopTick } from "../src/game/buildings.mjs";
+import { marketSlot } from "../src/game/game.mjs";
+import { price } from "../src/sim/market.mjs";
+import { FEE } from "../src/sim/trade.mjs";
+
+function fundedWorkshop(level = 1) {
+  const g = newGame(world, "cadiz", { cash: 50000 });
+  buyPlot(g, "cadiz", PLOT);
+  startConstruction(g, "cadiz", PLOT.id, "workshop");
+  const b = buildingAt(g, "cadiz", PLOT.id);
+  b.state = "active"; b.level = level; delete b.nextLevel; delete b.readyTick; // skip the wait; timing is covered above
+  return g;
+}
+function woolTown(g) { // cheap wool, dear cloth: the weave's natural home
+  Object.assign(g.market.cadiz.wool, { stock: 500, target: 50 });
+  Object.assign(g.market.cadiz.cloth, { stock: 2, target: 100 });
+}
+
+test("profitable workshop runs one weave batch per level at its port tick", () => {
+  const g = fundedWorkshop(1);
+  woolTown(g);
+  const cash = g.cash, wool = g.market.cadiz.wool.stock, cloth = g.market.cadiz.cloth.stock;
+  workshopTick(g, "cadiz");
+  assert.equal(g.market.cadiz.wool.stock, wool - 4);
+  assert.equal(g.market.cadiz.cloth.stock, cloth + 2);
+  // exact net: 2 cloth sold at the clamped top price, 4 wool bought at the clamped bottom, fees both sides
+  const clothP = Math.floor(270 * (1 - FEE)), woolP = Math.ceil(24 * (1 + FEE));
+  assert.equal(g.cash, cash + 2 * clothP - 4 * woolP);
+  assert.equal(buildingAt(g, "cadiz", PLOT.id).produced, 1);
+  const g2 = fundedWorkshop(2);
+  woolTown(g2);
+  workshopTick(g2, "cadiz");
+  assert.equal(buildingAt(g2, "cadiz", PLOT.id).produced, 2); // level 2 tries two batches
+  assert.equal(g2.market.cadiz.wool.stock, wool - 8);
+});
+
+test("no stock, no cash, no margin, under construction: no production, no mutation", () => {
+  let g = fundedWorkshop(); woolTown(g); g.market.cadiz.wool.stock = 0;
+  let snap = JSON.stringify(g.market.cadiz); workshopTick(g, "cadiz");
+  assert.equal(JSON.stringify(g.market.cadiz), snap); assert.equal(buildingAt(g, "cadiz", PLOT.id).produced ?? 0, 0);
+  g = fundedWorkshop(); woolTown(g); g.cash = 0;
+  snap = JSON.stringify(g.market.cadiz); workshopTick(g, "cadiz");
+  assert.equal(JSON.stringify(g.market.cadiz), snap);
+  g = fundedWorkshop(); Object.assign(g.market.cadiz.cloth, { stock: 900, target: 50 }); // cloth worthless: margin gone
+  const cash = g.cash; workshopTick(g, "cadiz");
+  assert.equal(g.cash, cash); assert.equal(buildingAt(g, "cadiz", PLOT.id).produced ?? 0, 0);
+  g = fundedWorkshop(); woolTown(g); buildingAt(g, "cadiz", PLOT.id).state = "construction";
+  snap = JSON.stringify(g.market.cadiz); workshopTick(g, "cadiz");
+  assert.equal(JSON.stringify(g.market.cadiz), snap);
+});
+
+test("production runs inside the port's own staggered market tick, deterministically", () => {
+  const idx = world.cities.findIndex((c) => c.id === "cadiz"), slot = marketSlot(world, idx);
+  const ticks = slot === 0 ? TICKS_PER_DAY : slot;
+  const a = newGame(world, "cadiz", { cash: 50000 }), b = newGame(world, "cadiz", { cash: 50000 });
+  buyPlot(b, "cadiz", PLOT); startConstruction(b, "cadiz", PLOT.id, "workshop");
+  const bb = buildingAt(b, "cadiz", PLOT.id); bb.state = "active"; bb.level = 1; delete bb.nextLevel; delete bb.readyTick;
+  for (const g of [a, b]) woolTown(g);
+  for (let i = 0; i < ticks; i++) { advanceTick(a); advanceTick(b); } // both see cadiz's market tick once
+  assert.equal(a.market.cadiz.wool.stock - b.market.cadiz.wool.stock, 4); // the weave is the only difference
+  assert.equal(b.market.cadiz.cloth.stock - a.market.cadiz.cloth.stock, 2);
+  assert.equal(buildingAt(b, "cadiz", PLOT.id).produced, 1); // and it produced exactly once
+  for (const c of world.cities) if (c.id !== "cadiz") assert.deepEqual(b.market[c.id], a.market[c.id]); // other ports untouched
+  // same run twice: identical state
+  const c1 = fundedWorkshop(), c2 = fundedWorkshop();
+  woolTown(c1); woolTown(c2);
+  for (let i = 0; i < ticks; i++) { advanceTick(c1); advanceTick(c2); }
+  assert.equal(JSON.stringify(c1.market), JSON.stringify(c2.market));
+  assert.equal(c1.cash, c2.cash);
+});

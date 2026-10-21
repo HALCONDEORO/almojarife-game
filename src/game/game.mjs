@@ -19,7 +19,7 @@ import { rollEvent } from "./events.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
-import { tickBuildings, accrueBuildings } from "./buildings.mjs";
+import { tickBuildings, accrueBuildings, workshopTick } from "./buildings.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
 
@@ -109,6 +109,7 @@ function marketTick(g) {
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
     tickMarketCity(g.market[c.id], day, g.world);
+    workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     const hist = (g.hist ??= {});
     for (const [good, e] of Object.entries(g.market[c.id])) {
       const a = ((hist[c.id] ??= {})[good] ??= []);

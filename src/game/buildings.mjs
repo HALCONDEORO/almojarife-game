@@ -2,6 +2,8 @@
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
 import { quoteRecipe, consumeRecipe, RECIPES } from "../sim/recipes.mjs";
+import { price } from "../sim/market.mjs";
+import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
 
@@ -85,5 +87,39 @@ export function accrueBuildings(g) {
     if (b.state !== "active") continue;
     const a = (g.accrued ??= { ships: {} });
     (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + BUILDING_TYPES[b.type].upkeep * b.level;
+  }
+}
+
+/** Revenue of selling qty of a good into the local market, with per-unit price impact. No mutation. */
+function sellQuote(world, market, city, good, qty) {
+  const e = market[city]?.[good];
+  if (!e) return 0;
+  const sim = { ...e };
+  let revenue = 0;
+  for (let i = 0; i < qty; i++) { revenue += Math.floor(price(world, sim, good) * (1 - FEE)); sim.stock++; }
+  return revenue;
+}
+
+/** One production day of a port's active workshops, run inside that port's (staggered) market tick so
+ *  it sees fresh prices. Each workshop runs the largest batch count (up to its level) that still
+ *  turns a profit after both market fees: wool is bought and cloth sold at the local market, so dear
+ *  inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+export function workshopTick(g, cityId) {
+  const plots = g.buildings?.[cityId];
+  if (!plots) return;
+  for (const b of Object.values(plots)) {
+    if (b.state !== "active" || b.type !== "workshop") continue;
+    for (let batches = b.level; batches >= 1; batches--) {
+      const q = quoteRecipe(g.world, g.market, cityId, "weave", batches);
+      if (!q.ok) continue; // not enough input stock for this size: try smaller
+      if (g.cash < q.cost) continue;
+      const revenue = sellQuote(g.world, g.market, cityId, "cloth", q.outputs.cloth);
+      if (revenue <= q.cost) continue; // margin gone at this size
+      const c = consumeRecipe(g.world, g.market, cityId, "weave", g.cash, batches); // wool stock down, cloth stock up
+      if (!c.ok) break; // re-quoted inside; never mutate half-way
+      g.cash += revenue - c.cost;
+      b.produced = (b.produced ?? 0) + batches; // lifetime batches, for the Buildings tab (piece 4)
+      break;
+    }
   }
 }
