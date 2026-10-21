@@ -27,6 +27,7 @@ export const PER_1000 = {
   ironware:   { poor: 0.1, middle: 0.3, rich: 0.2 },
   wool:       { poor: 0.2, middle: 0.4, rich: 0.3 },
   cloth:      { poor: 0.05, middle: 0.4, rich: 0.9 },
+  bricks:     { poor: 0, middle: 0, rich: 0 }, // a construction material, not a consumer good: only building quotes will draw it (chains study PR5)
   olive_oil:  { poor: 0.25, middle: 0.5, rich: 0.8 },
   wine:       { poor: 0.15, middle: 0.6, rich: 1.4 },
   sugar:      { poor: 0.05, middle: 0.3, rich: 1.5 },

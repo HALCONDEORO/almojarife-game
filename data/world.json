@@ -582,6 +582,9 @@
   "timber": {
    "base": 25
   },
+  "bricks": {
+   "base": 30
+  },
   "cloth": {
    "base": 90
   },

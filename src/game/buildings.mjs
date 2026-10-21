@@ -22,6 +22,8 @@ export const BUILDING_TYPES = Object.freeze({
   vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   brewery: Object.freeze({ recipe: "brewery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  // Brickworks (chains study PR3): fires timber into bricks, the construction material PR5 wires into every build quote.
+  brickworks: Object.freeze({ recipe: "brickworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   // Private dock: your ships pay less port toll in this city per active level (docs/design/dock-building.md).
   dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
   // Fishery: huts, nets and small boats; yields fresh fish where the city catches it (docs/design/fish-chain.md).
@@ -169,7 +171,7 @@ export function sellQuote(world, market, city, good, qty) {
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
-  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, dock: 0, fishery: 4, ironworks: 6,
+  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, dock: 0, fishery: 4, ironworks: 6,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -195,6 +197,7 @@ export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 
 export const PRODUCERS = Object.freeze({
   workshop: Object.freeze({ recipe: "weave", output: "cloth", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   brewery: Object.freeze({ recipe: "brew", output: "beer", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
+  brickworks: Object.freeze({ recipe: "firing", output: "bricks", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   // Primary producers: the land yields the good, no inputs. yield = units per batch; seasonal goods
   // follow the market's own seasonMul (harvest/shearing peaks), the rest produce evenly all year.
   farm: Object.freeze({ output: "grain", primary: true, yield: 4, pattern: WORKSHOP_BATCH_PATTERN }),

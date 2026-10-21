@@ -7,6 +7,7 @@ const S = {
   wool: '<g fill="#f2efe6" stroke="#b9b09a" stroke-width="1"><circle cx="8" cy="10" r="4"/><circle cx="14" cy="9" r="4.5"/><circle cx="17" cy="14" r="3.5"/><circle cx="9" cy="15" r="3.5"/><circle cx="13" cy="15" r="3.5"/></g>',
   iron: '<path d="M3 17h18v3H3z" fill="#4a4f55"/><path d="M5 17V12h12l3-3v-1H8L5 11z" fill="#7a828a"/><path d="M5 12h12" stroke="#a7aeb5" stroke-width="1"/>',
   timber: '<g fill="#a8733a" stroke="#6e4a22" stroke-width="1"><rect x="2" y="14" width="20" height="6" rx="3"/><rect x="4" y="7" width="16" height="6" rx="3"/></g><circle cx="20" cy="17" r="1.8" fill="#d6a566"/><circle cx="18" cy="10" r="1.8" fill="#d6a566"/>',
+  bricks: '<g fill="#b5583a" stroke="#7d3a24" stroke-width="1"><rect x="3" y="14" width="8" height="5"/><rect x="13" y="14" width="8" height="5"/><rect x="8" y="7" width="8" height="5"/></g>',
   cloth: '<path d="M3 5h16a2 2 0 010 4H3z" fill="#b2403f"/><path d="M3 9h16a2 2 0 010 4H3z" fill="#3b6fb0"/><path d="M3 13h16a2 2 0 010 4H3z" fill="#d8b24a"/><path d="M3 17h16a2 2 0 010 4H3z" fill="#4a8a55"/>',
   olive_oil: '<path d="M10 3h4v4c3 1 4 4 4 7v5a2 2 0 01-2 2H8a2 2 0 01-2-2v-5c0-3 1-6 4-7z" fill="#9aa83a"/><rect x="10" y="2" width="4" height="3" fill="#6b4a22"/><path d="M8 13h8v5H8z" fill="#cdd46a"/>',
   wine: '<path d="M3 8c0-2 4-3 9-3s9 1 9 3v8c0 2-4 3-9 3s-9-1-9-3z" fill="#8a4a2a" stroke="#4d2813" stroke-width="1"/><ellipse cx="12" cy="8" rx="9" ry="3" fill="#b06a3e"/><path d="M3 12c3 2 15 2 18 0M3 16c3 2 15 2 18 0" stroke="#4d2813" stroke-width="1.2" fill="none"/>',
