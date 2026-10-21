@@ -188,3 +188,14 @@ test("production runs inside the port's own staggered market tick, deterministic
   assert.equal(JSON.stringify(c1.market), JSON.stringify(c2.market));
   assert.equal(c1.cash, c2.cash);
 });
+
+test("hostile or malformed plot ids are rejected and can never reach Object internals", () => {
+  const g = newGame(world, "cadiz", { cash: 10000 });
+  for (const id of ["__proto__", "constructor", "prototype", "CADIZ:1", "cadiz", "cadiz:x", "cadiz:-1", "cadiz:1:2", ""]) {
+    assert.equal(buyPlot(g, "cadiz", { id, type: "house", w: 3, d: 3 }).ok, false, id);
+  }
+  buyPlot(g, "cadiz", PLOT);
+  assert.equal(buildingAt(g, "cadiz", "__proto__"), null); // null-prototype maps: no leak
+  assert.equal(quoteConstruction(g, "cadiz", "__proto__", "house").reason, "plot not owned");
+  assert.equal({}.polluted, undefined); // nothing polluted the global prototype
+});
