@@ -3,17 +3,31 @@
 // Cannons are bought at port, cost extra upkeep every day, and give the ship a defence value (used later against pirates).
 export const WAGE_SHARE = 0.6, CANNON_PRICE = 150, CANNON_UPKEEP = 0.5;
 export const MAX_CANNONS = { barca: 1, cog: 3, caravel: 4, nao: 8 };
-export const cannonsOf = (ship) => ship.cannons ?? 0;
+/** Weapon types a ship can mount, one per slot (slot caps stay MAX_CANNONS). Original numbers.
+ *  `cannon` keeps its legacy price/power/upkeep so old saves and balance hold exactly. */
+export const WEAPON_TYPES = {
+  ballista: { price: 90, power: 6, upkeep: 0.3 },
+  catapult: { price: 130, power: 8, upkeep: 0.4 },
+  cannon: { price: 150, power: 10, upkeep: 0.5 },
+  bombard: { price: 300, power: 16, upkeep: 0.8 },
+};
+/** Mounted weapons as {type: count}. Legacy `ship.cannons` counts as that many `cannon`. */
+export const weaponsOf = (ship) => { const w = { ...(ship.weapons ?? {}) }; for (const k of Object.keys(w)) if (!WEAPON_TYPES[k] || !Number.isInteger(w[k]) || w[k] < 1) delete w[k]; if (Number.isInteger(ship.cannons) && ship.cannons > 0) w.cannon = (w.cannon ?? 0) + ship.cannons; return w; };
+/** Total weapon slots used; the per-type slots cap is MAX_CANNONS as before. */
+export const weaponCount = (ship) => Object.values(weaponsOf(ship)).reduce((a, b) => a + b, 0);
+/** Total firepower: sum of mounted power. Legacy ships with n cannons score n x 10, as before. */
+export const weaponPower = (ship) => Object.entries(weaponsOf(ship)).reduce((s, [t, n]) => s + WEAPON_TYPES[t].power * n, 0);
+export const cannonsOf = (ship) => weaponCount(ship);
 export const maxCannons = (ship) => MAX_CANNONS[ship.type] ?? 0;
 /** Armament condition in percent (100 = like new). Old saves have no value and count as 100. */
 export const gunCond = (ship) => { const c = Number(ship.gunCond); return Number.isFinite(c) ? Math.min(100, Math.max(0, c)) : 100; };
 export const GUN_WEAR_PER_DAY = 0.4, GUN_REPAIR_SHARE = 0.4; // sea wear per day; full repair costs 40% of the cannons' price
-export const defenceOf = (ship) => Math.round(cannonsOf(ship) * 10 * gunCond(ship) / 100 * crewDefence(ship)); // cannons x their condition x the crew
+export const defenceOf = (ship) => Math.round(weaponPower(ship) * gunCond(ship) / 100 * crewDefence(ship)); // firepower x condition x crew
 /** Armament wears out while sailing. Call once per day for a ship at sea. Fights will use wearGunsBy too. */
 export const wearGunsBy = (ship, pct) => { if (cannonsOf(ship) > 0) { const c = gunCond(ship); ship.gunCond = Math.max(Math.min(c, 10), c - pct); } }; // wear stops at 10% and never raises a lower value
 export const wearGuns = (ship) => wearGunsBy(ship, GUN_WEAR_PER_DAY);
 /** Cost to bring the armament back to 100%: proportional to the damage and to the number of cannons. */
-export const gunRepairCost = (ship) => Math.round(cannonsOf(ship) * CANNON_PRICE * GUN_REPAIR_SHARE * (100 - gunCond(ship)) / 100 * 100) / 100;
+export const gunRepairCost = (ship) => Math.round(Object.entries(weaponsOf(ship)).reduce((s, [t, n]) => s + WEAPON_TYPES[t].price * n, 0) * GUN_REPAIR_SHARE * (100 - gunCond(ship)) / 100 * 100) / 100;
 export function repairGuns(g, ship) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
@@ -61,16 +75,20 @@ export function dismissCrew(g, ship, n) {
   n = Math.min(n, crewOf(ship)); ship.crew = crewOf(ship) - n; return { ok: true, dismissed: n, crew: ship.crew };
 }
 /** Extra daily upkeep of the cannons of one ship. */
-export const cannonUpkeep = (ship) => cannonsOf(ship) * CANNON_UPKEEP;
-export function buyCannon(g, ship) {
+export const cannonUpkeep = (ship) => Object.entries(weaponsOf(ship)).reduce((s, [t, n]) => s + WEAPON_TYPES[t].upkeep * n, 0);
+export function buyWeapon(g, ship, type = "cannon") {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
-  if (cannonsOf(ship) >= maxCannons(ship)) return { ok: false, reason: "full" };
-  if (g.cash < CANNON_PRICE) return { ok: false, reason: "no cash" };
-  const n = cannonsOf(ship); ship.gunCond = (gunCond(ship) * n + 100) / (n + 1); // the new cannon is like new
-  g.cash -= CANNON_PRICE; ship.cannons = n + 1;
-  return { ok: true, cost: CANNON_PRICE, cannons: ship.cannons };
+  const W = WEAPON_TYPES[type]; if (!W) return { ok: false, reason: "bad type" };
+  if (weaponCount(ship) >= maxCannons(ship)) return { ok: false, reason: "full" };
+  if (g.cash < W.price) return { ok: false, reason: "no cash" };
+  const n = weaponCount(ship); ship.gunCond = (gunCond(ship) * n + 100) / (n + 1); // the new piece is like new
+  g.cash -= W.price;
+  if (type === "cannon" && !ship.weapons) ship.cannons = (ship.cannons ?? 0) + 1; // legacy field stays the cannon count when nothing else is mounted
+  else ship.weapons = { ...weaponsOf(ship), [type]: (weaponsOf(ship)[type] ?? 0) + 1 }, ship.cannons = 0;
+  return { ok: true, cost: W.price, weapons: weaponsOf(ship) };
 }
+export const buyCannon = (g, ship) => buyWeapon(g, ship, "cannon");
 /** Split of a weekly ship cost into hull upkeep, crew wages and cannons. */
 export function splitCost(cost, cannons, realWages = null) {
   const base = Math.max(0, cost - cannons), wages = Math.round((realWages ?? base * WAGE_SHARE) * 100) / 100;

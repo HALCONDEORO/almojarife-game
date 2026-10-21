@@ -75,3 +75,42 @@ test("wear never raises armament condition: below the 10% floor it stays, at the
   const d = mk(10.2); wearGunsBy(d, 5); assert.equal(d.gunCond, 10);
   const e = mk(80); wearGunsBy(e, 5); assert.equal(e.gunCond, 75);
 });
+
+test("weapon types: ballista/catapult/bombard mount, power and legacy cannons", async () => {
+  const { buyWeapon, weaponsOf, weaponCount, weaponPower, cannonUpkeep, defenceOf, WEAPON_TYPES } = await import("../src/game/crew.mjs");
+  const g = { cash: 1000, over: false }, ship = { type: "nao", cannons: 2, crew: 28 };
+  assert.equal(weaponPower(ship), 20); // legacy: 2 cannons x 10
+  const r1 = buyWeapon(g, ship, "ballista");
+  assert.equal(r1.ok, true); assert.equal(r1.cost, WEAPON_TYPES.ballista.price);
+  assert.deepEqual(weaponsOf(ship), { cannon: 2, ballista: 1 });
+  assert.equal(ship.cannons, 0); // legacy field folded into weapons
+  assert.equal(weaponPower(ship), 2 * 10 + 6);
+  assert.equal(weaponCount(ship), 3);
+  assert.ok(Math.abs(cannonUpkeep(ship) - (2 * 0.5 + 0.3)) < 1e-9);
+  assert.ok(defenceOf(ship) > 0);
+  const r2 = buyWeapon(g, ship, "bombard");
+  assert.equal(r2.ok, true); assert.equal(r2.cost, 300);
+  assert.equal(weaponPower(ship), 42);
+  const bad = buyWeapon(g, ship, "trebuchet");
+  assert.equal(bad.ok, false); assert.equal(bad.reason, "bad type");
+});
+
+test("weapon slots: cap is the ship type's MAX_CANNONS", async () => {
+  const { buyWeapon, weaponCount } = await import("../src/game/crew.mjs");
+  const g = { cash: 10000, over: false }, ship = { type: "barca", crew: 5 };
+  assert.equal(buyWeapon(g, ship, "ballista").ok, true);
+  assert.equal(weaponCount(ship), 1);
+  const full = buyWeapon(g, ship, "catapult");
+  assert.equal(full.ok, false); assert.equal(full.reason, "full");
+});
+
+test("legacy all-cannon ships keep exact price, power and upkeep", async () => {
+  const { buyCannon, weaponPower, cannonUpkeep, gunRepairCost } = await import("../src/game/crew.mjs");
+  const g = { cash: 1000, over: false }, ship = { type: "cog", crew: 12 };
+  buyCannon(g, ship); buyCannon(g, ship);
+  assert.equal(ship.cannons, 2); assert.equal(ship.weapons, undefined); // untouched legacy shape
+  assert.equal(weaponPower(ship), 20);
+  assert.equal(cannonUpkeep(ship), 1);
+  ship.gunCond = 50;
+  assert.equal(gunRepairCost(ship), Math.round(2 * 150 * 0.4 * 0.5 * 100) / 100);
+});
