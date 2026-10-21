@@ -3,7 +3,7 @@ import {loadWorld} from '../src/sim/world.mjs';import {newGame,doSail,advanceDay
 import {automaticEncounter,resolvePirates,dismissEncounterReport,escapeChance} from '../src/game/encounterdaily.mjs';
 import {encounterDialogHtml} from '../src/view/encounterview.mjs';import {serialize,deserialize} from '../src/game/gamesave.mjs';import {pendingEvent,resolveEvent} from '../src/game/events.mjs';
 const world=loadWorld();
-function encounter(seed=13){const g=newGame(world),s=g.ships[0];g.eventsOn=true;g.seed=seed;doSail(g,s,'barcelona');for(let day=1;day<2000;day++){g.day=day;automaticEncounter(g,s);if(g.pending?.event==='sea-pirates')return g;}throw Error('missing pirates');}
+function encounter(seed=13){const g=newGame(world),s=g.ships[0];g.eventsOn=true;g.seed=seed;doSail(g,s,'barcelona');for(let t=1;t<400000;t++){g.tick=t;g.day=Math.floor(t/240);automaticEncounter(g,s);if(g.pending?.event==='sea-pirates')return g;}throw Error('missing pirates');}
 test('pirates pause before any loss, show actual escape chance and options in both languages',()=>{
  const g=encounter(),p=g.pending;assert.equal(p.escapeChance,escapeChance(g.ships[0]));assert.equal(g.encounters?.filter(e=>e.kind==='pirates').length??0,0);
  const before=JSON.stringify(g);advanceDay(g);waitUntilArrival(g,g.ships[0]);assert.equal(JSON.stringify(g),before);assert.equal(pendingEvent(g),null);
@@ -11,9 +11,10 @@ test('pirates pause before any loss, show actual escape chance and options in bo
 });
 test('fight makes one final report, persists through save, blocks time until dismissed, no duplicate logs',()=>{
  const g=encounter(),p={...g.pending};const s=g.ships[0];s.cargo={salt:10};s.basis={salt:100};g.basis={salt:{qty:10,cost:100}};
+ const eventLogs=()=>g.log.filter(l=>l.ship===p.ship&&l.day===p.day&&l.key==='event').length,logsBefore=eventLogs();
  const clone=deserialize(serialize(g,'test'),world).g;assert.deepEqual(resolvePirates(g,'fight'),resolvePirates(clone,'fight'));
  assert.equal(g.pending,null);assert.equal(g.encounterReport.id,p.id);assert.equal(g.encounters.filter(e=>e.id===p.id).length,1);
- assert.equal(g.log.filter(l=>l.ship===p.ship&&l.day===p.day&&l.key==='event').length,0);
+ assert.equal(eventLogs(),logsBefore); // the fight report goes to encounterReport, never to the log
  assert.ok(!g.inbox?.some(e=>e.ship===p.ship&&e.day===p.day&&e.kind==='event'));
  const before=JSON.stringify(g);assert.equal(resolvePirates(g,'fight').ok,false);advanceDay(g);assert.equal(JSON.stringify(g),before);
  const loaded=deserialize(serialize(g,'test'),world).g;assert.deepEqual(loaded.encounterReport,g.encounterReport);assert.match(encounterDialogHtml(loaded,'es'),/Informe del encuentro/);assert.match(encounterDialogHtml(loaded,'en'),/Encounter report/);

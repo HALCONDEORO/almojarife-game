@@ -9,8 +9,9 @@ const consumed={},made={},failures={},counts={};let samples=0,pins=0,spent=0;
 for(let day=0;day<1095;day++){
  tickMarket(m,day,world);
  for(const tr of traders){
-  for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);aiStep(world,m,tr,tr.ship);} // act on the arrival tick
-  tickShip(tr.ship);aiStep(world,m,tr,tr.ship); // daily wear; docked traders decide once a day
+  let acted=false; // decided on the arrival tick already (same rule as sim_1000y/sim_economy)
+  for(let i=0;i<TICKS_PER_DAY&&tr.ship.voyage;i++)if(sailTick(tr.ship)){tickShip(tr.ship,true);aiStep(world,m,tr,tr.ship);acted=true;} // act on the arrival tick
+  tickShip(tr.ship);if(!acted)aiStep(world,m,tr,tr.ship); // daily wear; docked traders decide once a day
  }
  if(enabled&&day%30===0)for(const c of world.cities){
   // Hypothetical town budget. Not minted player money, not evidence of actual buildings.
