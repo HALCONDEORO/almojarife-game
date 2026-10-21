@@ -16,7 +16,7 @@ const checks = [], warnings = [];
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
 const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
-const H = [365, 1825, 3650, 10950].filter((h) => report.horizons?.includes(h));
+const H = [365, 1825, 3650, 10950, 18250, 36500].filter((h) => report.horizons?.includes(h));
 
 // The campaign deadline still ends the game at day 365 (sandbox reports it, then keeps running).
 for (const [key, sc] of Object.entries(report.scenarios ?? {}))
@@ -39,7 +39,7 @@ check("C: still halted at day 365", C.haltedEnd, C.haltedEnd === true, "true");
 
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
 for (const h of H) {
-  const tag = h === 365 ? "1y" : h === 1825 ? "5y" : h === 3650 ? "10y" : "30y";
+  const tag = { 365: "1y", 1825: "5y", 3650: "10y", 10950: "30y", 18250: "50y", 36500: "100y" }[h] ?? (h + "d");
   const aH = A.horizons?.[h], bH = B.horizons?.[h], cH = C.horizons?.[h];
   if (aH) {
     check(`A@${tag}: price index in band [0.80, 1.40] (no inflation spiral)`, aH.priceIndex, within(aH.priceIndex, 0.8, 1.4), "0.80-1.40");
@@ -67,6 +67,9 @@ if ((B.upgrades ?? 0) === 0)
   warn("B: workshop never upgrades", B.upgrades, "Upgrading needs materials from the local market (36 timber vs ~26 stocked in Casablanca): ports without stock can never level buildings, and the bot does not stockpile.");
 if (C.resumedDay == null && C.haltedEnd)
   warn("C: a halted building never resumes", null, "restartBuilding exists but nothing calls it: once wages halt a building it stays dead for the whole run (no partial wages, no recovery path).");
+const npcA0 = A.npcCash?.[0], npcAEnd = A.horizons?.[Math.max(...H)]?.npcCash;
+if (Number.isFinite(npcA0) && Number.isFinite(npcAEnd) && npcAEnd < npcA0)
+  warn("A: NPC traders bleed cash over the long run", npcA0 + " -> " + npcAEnd, "The 3 NPC traders boom then bust: 13k at day 0, ~194k at 50y, ~12k at 100y. Over a century the NPC economy dies, so a free-play world runs out of trading partners.");
 if ((B.finalLevel ?? 1) === 1 && (report.days ?? 0) > 365)
   warn("B: building level stuck at 1 over the whole run", B.finalLevel, "Consequence of the materials gate above: level-1 output and wages forever.");
 
