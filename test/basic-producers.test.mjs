@@ -66,3 +66,12 @@ test("primary production needs no cash and consumes nothing else", () => {
   assert.equal(JSON.stringify(Object.fromEntries(Object.entries(g.market.bilbao).filter(([k]) => k !== "iron"))), before);
   assert.equal(g.cash, 0);
 });
+
+test("production never deletes market stock already above the cap", () => {
+  const g = activeBuilding("casablanca", "casablanca:7", "farm", 3);
+  const e = g.market.casablanca.grain;
+  e.stock = e.target * 10; // way above the production cap, e.g. after big player sales
+  const before = e.stock;
+  workshopTick(g, "casablanca");
+  assert.ok(e.stock >= before, `stock fell from ${before} to ${e.stock}`);
+});

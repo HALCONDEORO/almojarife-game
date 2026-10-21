@@ -187,7 +187,7 @@ export function workshopTick(g, cityId) {
       const e = g.market[cityId]?.[def.output];
       if (!e) continue;
       const amount = Math.max(1, Math.round(def.yield * batches * seasonMul(def.output, day)));
-      e.stock = Math.min(e.target * 4, e.stock + amount); // same stock cap as city production
+      e.stock = Math.max(e.stock, Math.min(e.target * 4, e.stock + amount)); // same stock cap as city production, but never clip stock already above it
       b.produced = (b.produced ?? 0) + amount; // lifetime units, for the Buildings tab
       continue;
     }
