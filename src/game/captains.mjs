@@ -1,4 +1,5 @@
-// Original captain domain, not wired into the game yet. Prices/bonuses are design candidates.
+// Captain domain: deterministic tavern rosters, hire/dismiss, bounded skill readers.
+// Active skills: navigation (sailing speed), weather (storm losses), defence (pirate fights). Prices/bonuses are design candidates.
 const NAMES = ['Inés del Puerto','Tomás de la Ribera','Leonor del Mar','Mateo del Faro'];
 const hash=(s)=>Array.from(s).reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,7);
 const validCity=(g,city)=>g.world?.cities?.some(c=>c.id===city);
@@ -8,12 +9,12 @@ export function captainRoster(g,city){
  if(!validCity(g,city))return [];
  const n=hash(city),id=`captain:${city}:1`;
  if(g.captainHistory?.[id])return [];
- return [{id,city,name:NAMES[n%NAMES.length],navigation:1+n%3,fee:120,wage:2}];
+ return [{id,city,name:NAMES[n%NAMES.length],navigation:1+n%3,weather:(n>>3)%4,defence:(n>>5)%4,fee:120,wage:2}];
 }
 export function captainOf(ship){
  const c=ship?.captain;
  if(!c||typeof c.id!=='string'||typeof c.name!=='string')return null;
- return {id:c.id,name:c.name,navigation:level(c.navigation),wage:Number.isFinite(c.wage)&&c.wage>=0&&c.wage<=10?c.wage:0};
+ return {id:c.id,name:c.name,navigation:level(c.navigation),weather:level(c.weather),defence:level(c.defence),wage:Number.isFinite(c.wage)&&c.wage>=0&&c.wage<=10?c.wage:0};
 }
 export const captainSpeed=(ship)=>1+0.04*(captainOf(ship)?.navigation??0);
 export const captainWage=(ship)=>captainOf(ship)?.wage??0;
@@ -26,7 +27,7 @@ export function hireCaptain(g,ship,id){
  const candidate=captainRoster(g,ship.at).find(c=>c.id===id);
  if(!candidate||g.ships.some(s=>s.captain?.id===id))return {ok:false,reason:'unavailable captain'};
  if(!Number.isFinite(g.cash)||g.cash<candidate.fee)return {ok:false,reason:'no cash'};
- const assigned={id:candidate.id,name:candidate.name,navigation:candidate.navigation,wage:candidate.wage};
+ const assigned={id:candidate.id,name:candidate.name,navigation:candidate.navigation,weather:candidate.weather,defence:candidate.defence,wage:candidate.wage};
  g.cash-=candidate.fee;ship.captain=assigned;
  (g.captainHistory??={})[id]={state:'hired',day:g.day,ship:ship.id};
  return {ok:true,cost:candidate.fee,captain:{...assigned}};
