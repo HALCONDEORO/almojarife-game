@@ -52,6 +52,7 @@ export function buyPlot(g, cityId, plot) {
 export function quoteConstruction(g, cityId, plotId, type) {
   const spec = BUILDING_TYPES[type];
   if (!spec) return { ok: false, reason: "unknown type" };
+  if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
   if (b.state === "construction") return { ok: false, reason: "already building" };
@@ -121,8 +122,20 @@ export const WORKSHOP_BATCH_PATTERN = Object.freeze({ 1: Object.freeze([1, 0]), 
  *  Buildings tab read from this table, never from hardcoded types. (Primary producers with no
  *  inputs - farms, mines - are a later piece.) */
 export const PRODUCERS = Object.freeze({
-  workshop: Object.freeze({ recipe: "weave", output: "cloth", pattern: WORKSHOP_BATCH_PATTERN }),
+  workshop: Object.freeze({ recipe: "weave", output: "cloth", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
 });
+/** Where a producer type may be built. Primary producers (farms, mines: no inputs, the land yields
+ *  the good) only go where the city MAKES that good - local resources per city, the rest is imported,
+ *  like the classic Hansa model. Processors (primary: false) run on market inputs and build anywhere.
+ *  Makes-lists come from world.json; no city list is hardcoded here. */
+export const producerCities = (world, type) => {
+  const def = PRODUCERS[type];
+  if (!def) return [];
+  if (!def.primary) return world.cities.map((c) => c.id);
+  return world.cities.filter((c) => c.makes.includes(def.output)).map((c) => c.id);
+};
+/** Whether a producer type may be built in a city (see producerCities). */
+export const cityAllowsProducer = (world, cityId, type) => producerCities(world, type).includes(cityId);
 /** Average batches a level produces per day when the margin holds, from the type's pattern. */
 export const producerRate = (type, level) => { const p = PRODUCERS[type]?.pattern?.[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
 /** Average batches a workshop level produces per day when the margin holds. */
