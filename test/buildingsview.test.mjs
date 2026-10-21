@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
-import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
+import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 };
@@ -101,4 +101,17 @@ test("buildingLabel: short floating names for the 3D view", () => {
   const en = { bldTypes: { warehouse: "Warehouse" }, bldState: { plot: "empty plot" } };
   assert.equal(buildingLabel(en, { type: null }), "empty plot");
   assert.equal(buildingLabel(en, { type: "warehouse", state: "active", level: 1 }), "Warehouse");
+});
+
+test("single-plot view state: an empty cache is loading (a 3D click must trigger the plots load), a populated cache finds the buy offer", () => {
+  const g = funded();
+  assert.deepEqual(plotViewState({}, world, g, "cadiz", "cadiz:7"), { kind: "loading" });
+  assert.equal(plotViewState({ cadiz: "error" }, world, g, "cadiz", "cadiz:7").kind, "error");
+  const st = plotViewState({ cadiz: [PLOT] }, world, g, "cadiz", "cadiz:7");
+  assert.equal(st.kind, "offer");
+  assert.equal(st.offer.id, "cadiz:7");
+  assert.equal(plotViewState({ cadiz: [PLOT] }, world, g, "cadiz", "cadiz:99").kind, "none");
+  const r = buyPlot(g, "cadiz", PLOT);
+  assert.ok(r.ok);
+  assert.equal(plotViewState({ cadiz: [PLOT] }, world, g, "cadiz", "cadiz:7").kind, "owned");
 });

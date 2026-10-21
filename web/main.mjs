@@ -22,7 +22,7 @@ import { repOf, respectOf } from "../src/game/rank.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding } from "../src/view3d/port3d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
-import { buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
+import { plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT } from "../src/game/buildings.mjs";
 import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
@@ -150,7 +150,7 @@ function spark(a, col) {
 }
 let tab = "market"; const qtys = {}; // per-good quantity chosen in the market table
 let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
-function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if (tab === "buildings" && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if (tab === "buildings" && ship().at === city) render(); }); }
+function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 function autosave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
@@ -293,11 +293,14 @@ function render() {
         }
       }
     } else if (tab === "plot") { // one building or plot, opened by clicking it in the 3D view
+      ensurePlots(s.at); // a 3D click can land here before the Construir tab ever loaded the plots
       if (bldAction && (bldAction.plotId !== bldSelPlot || !bldAction.plotId.startsWith(s.at + ":"))) { bldAction = null; bldError = null; } // plot switched: never confirm on the old plot
       const r = buildingsRows(g, s.at).find((x) => x.plotId === bldSelPlot);
       if (!r) { // a free plot ("solar") clicked in the 3D view: show its buy offer
-        const layP = plotsCache[s.at], o = Array.isArray(layP) ? plotOffers(world, g, s.at, layP).find((x) => x.id === bldSelPlot) : null;
-        if (o && hasOffice(g, s.at)) { h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></p>`; }
+        const pv = plotViewState(plotsCache, world, g, s.at, bldSelPlot), o = pv.kind === "offer" ? pv.offer : null;
+        if (pv.kind === "loading") h += `<p><i>${t.bldLoading}</i></p>`;
+        else if (pv.kind === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
+        else if (o && hasOffice(g, s.at)) { h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></p>`; }
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {

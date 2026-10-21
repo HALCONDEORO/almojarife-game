@@ -82,3 +82,16 @@ export function buildingLabel(t, row) {
   if (row.state === "construction") return `${name} (${row.nextLevel ?? 1})`;
   return row.level > 1 ? `${name} ${row.level}` : name;
 }
+
+// What the single-plot view (a click in the 3D port) should show for a city/plot,
+// including whether the plots layout still has to load. Pure; the UI calls ensurePlots
+// whenever this is not driven from an already-populated cache.
+export function plotViewState(plotsCache, world, g, cityId, selPlot) {
+  const lay = plotsCache[cityId];
+  if (lay === "error") return { kind: "error" };
+  if (!Array.isArray(lay)) return { kind: "loading" };
+  const row = buildingsRows(g, cityId).find((x) => x.plotId === selPlot);
+  if (row) return { kind: "owned", row };
+  const offer = plotOffers(world, g, cityId, lay).find((x) => x.id === selPlot);
+  return offer ? { kind: "offer", offer } : { kind: "none" };
+}
