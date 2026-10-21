@@ -21,7 +21,7 @@ import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
-import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus } from "./buildings.mjs";
+import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf } from "./reputation.mjs";
@@ -58,7 +58,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null }; // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
@@ -69,6 +69,21 @@ export function netWorth(g) {
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
   for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
   return w;
+}
+/** Free play bankruptcy: the bank seizes cargo, warehouse stock and buildings, sells them at half value,
+ * writes off whatever debt remains (loans included), and the trader starts over with just his ships. */
+export function resolveBankruptcy(g) {
+  let recovered = 0;
+  const seize = (goods) => { for (const [good, q] of Object.entries(goods ?? {})) if (q > 0) { recovered += q * g.world.goods[good].base / 2; goods[good] = 0; } };
+  for (const s of g.ships ?? []) seize(s.cargo);
+  for (const wh of Object.values(g.warehouses ?? {})) seize(wh.goods);
+  for (const plots of Object.values(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots))
+    { recovered += (BUILDING_TYPES[b.type]?.fee ?? 0) * (b.level ?? 1) / 2; delete plots[plotId]; }
+  const forgiven = Math.max(0, Math.round(-g.cash + loansOwed(g) - recovered));
+  g.cash = Math.max(0, Math.round(g.cash + recovered));
+  g.loans = [];
+  g.bankruptcies = (g.bankruptcies ?? 0) + 1;
+  post(g, "bankrupt", { recovered: Math.round(recovered), forgiven });
 }
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
@@ -85,13 +100,15 @@ function dayTick(g) {
   warnLowCash(g);
   settleWeek(g);
   updateRank(g, netWorth(g), post);
-  if (g.cash < -OVERDRAFT_LIMIT) { g.over = "lose"; g.overReason = "bankrupt"; }
+  if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   rollEvent(g);
   tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
   deliverOrders(g);
   refreshIntel(g);
-  if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
-  else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
+  if (!g.freePlay) { // free play has no deadline and no goal: the world just goes on
+    if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
+    else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
+  }
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
@@ -157,7 +174,7 @@ export function doSell(g, ship, good, qty) {
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const r = sell(g.world, g.market, ship, good, qty, FEE * feeMul(g, ship.at));
-  if (r.ok) { g.cash += r.revenue; repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.cash += r.revenue; repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
