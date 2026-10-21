@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/banner.svg" alt="The Almojarife: ships sailing between ports on a 15th-century sea chart" width="900">
+</p>
+
 <h1 align="center">El Almojarife</h1>
 <p align="center"><em>An open-source sea-trading game on the Iberian and Mediterranean coast, 15th-16th century.</em><br>
 <a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your browser</b></a></p>
@@ -71,6 +75,8 @@ You need Node 20 or newer and any static web server:
     sh tools/fetch_data.sh   # downloads the coastline data (not stored in the repo)
 
 The sea-chart background is rebuilt by `tools/build_background.py` from the Natural Earth raster; the finished image is in `assets/map/`.
+
+The README banner and the social preview in `docs/images/` are drawn by `tools/build_banner.py` from `data/world.json` and the sea chart. Run `python3 tools/build_banner.py --png` after changing ports or lanes; `--check` fails in CI when they are out of date. The ships on the banner follow the real lanes and are listed in `ROUTES` at the top of the script.
 
 ## Repository map
 
