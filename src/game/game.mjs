@@ -20,6 +20,7 @@ import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket } from "./intel.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus } from "./buildings.mjs";
+import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { npcPlan } from "../sim/npcplan.mjs";
 
@@ -111,6 +112,7 @@ function marketTick(g) {
     for (const e of Object.values(g.market[c.id])) e.pop = (c.pop ?? 8000) + housePopBonus(g, c.id); // houses add their people before demand is computed
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
+    stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
     const hist = (g.hist ??= {});
     for (const [good, e] of Object.entries(g.market[c.id])) {
       const a = ((hist[c.id] ??= {})[good] ??= []);
