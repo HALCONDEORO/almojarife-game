@@ -140,7 +140,7 @@ function run(start, seed, style, mode, events) {
               const best = plan(g, ship, style, rng, g.cash, new Set(targets));
               if (best) {
                 const r = doBuy(g, ship, best.good, best.qty);
-                if (r.ok) { costBasis[best.good] = (costBasis[best.good] ?? 0) + r.cost; origin[best.good] = ship.at; if (doSail(g, ship, best.city).ok) trips++; }
+                if (r.ok) { costBasis[best.good] = (costBasis[best.good] ?? 0) + r.cost; origin[best.good] = ship.at; if (doSail(g, ship, best.dest).ok) trips++; }
               }
               continue;
             }
