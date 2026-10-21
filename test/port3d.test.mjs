@@ -6,6 +6,14 @@ test("the port layout is deterministic per port and grows with population", () =
   assert.notDeepEqual(portLayout("cadiz", 8000).houses, portLayout("lisboa", 8000).houses);
   assert.ok(portLayout("cadiz", 30000).houses.length > portLayout("cadiz", 5000).houses.length);
 });
+test("bigger towns get typed buildings by district; small ones stay plain houses", () => {
+  const typesOf = (L) => L.houses.filter((h) => h.type !== "house").map((h) => [h.type, h.row]);
+  const big = typesOf(portLayout("cadiz", 30000)), small = typesOf(portLayout("cadiz", 3000));
+  assert.deepEqual(big.map((x) => x[0]).sort(), ["chapel", "inn", "smithy"]);
+  assert.deepEqual(Object.fromEntries(big), { chapel: 3, inn: 0, smithy: 1 }); // artisan quarter by the quay, chapel on the top row
+  assert.equal(small.length, 0);
+  assert.deepEqual(typesOf(portLayout("cadiz", 30000)), big); // same city, same layout
+});
 test("houses stand on the hillside behind the building row, with sane sizes", () => {
   const L = portLayout("sevilla", 20000);
   for (const h of L.houses) { assert.ok(h.z < FRONT_Z - 5); assert.ok(h.w >= 4 && h.h >= 3 && h.h < 5); assert.ok(Math.abs(h.x) < 36); assert.equal(h.y, slopeY(h.z)); }
@@ -58,7 +66,7 @@ test("building level grows with city size, keeps upgrades and stays in 1..3", ()
 });
 test("every level builds a clickable building", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
-  for (const pop of [3000, 12000, 40000]) { const { scene } = buildPortScene(THREE, { id: "cadiz", pop, ships: 0 }); const bs = scene.children.filter((c) => c.userData.building); assert.equal(bs.length, 4); for (const b of bs) assert.equal(b.userData.level, buildingLevel(b.userData.building, pop)); }
+  for (const pop of [3000, 12000, 40000]) { const { scene } = buildPortScene(THREE, { id: "cadiz", pop, ships: 0 }); const bs = scene.children.filter((c) => c.userData.building && !String(c.userData.building).startsWith("town:")); assert.equal(bs.length, 4); for (const b of bs) assert.equal(b.userData.level, buildingLevel(b.userData.building, pop)); }
 });
 test("the largest port stays far inside the draw-call budget (150, shadows included)", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
@@ -66,6 +74,14 @@ test("the largest port stays far inside the draw-call budget (150, shadows inclu
   assert.equal(scene.getObjectByName("warehouse")?.userData.building, "warehouse"); // named and clickable like the quay buildings
   let meshes = 0, tris = 0; scene.traverse((o) => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
   assert.ok(meshes * 2 <= 150, "meshes " + meshes); assert.ok(tris < 150000, "triangles " + tris);
+});
+test("typed town buildings are pickable, fused on their own and keep the forge glowing", async () => {
+  const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene } = await import("../src/view3d/port3d.mjs");
+  const { scene } = buildPortScene(THREE, { id: "cadiz", pop: 30000, ships: 0 });
+  const tb = scene.children.filter((c) => String(c.userData.building || "").startsWith("town:"));
+  assert.deepEqual(tb.map((g) => g.userData.building).sort(), ["town:chapel", "town:inn", "town:smithy"]);
+  for (const g of tb) assert.ok(g.children.some((c) => c.name === "fused"), g.name);
+  assert.ok(scene.getObjectByName("town:smithy").children.some((c) => c.isMesh && c.material.emissiveIntensity > 0)); // the forge glow stays apart
 });
 test("fusing keeps the buildings clickable and keeps emissive lights apart", async () => {
   const THREE = await import("../web/vendor/three.module.min.js"), { buildPortScene, fuseStatic } = await import("../src/view3d/port3d.mjs");
