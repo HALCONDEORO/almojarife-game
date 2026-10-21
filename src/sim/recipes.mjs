@@ -18,17 +18,20 @@ export const RECIPES = Object.freeze({
   vineyard: Object.freeze({ timber: 14, iron: 2, cloth: 2 }),
   saltworks: Object.freeze({ timber: 10, iron: 2 }),
   smokehouse: Object.freeze({ timber: 12, iron: 2 }),
+  brewery: Object.freeze({ timber: 12, iron: 2 }),
   dock: Object.freeze({ timber: 10, iron: 2 }),
   fishery: Object.freeze({ timber: 8, cloth: 2 }),
   ironworks: Object.freeze({ timber: 14, iron: 4 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),
   forge: Object.freeze({ iron: 2, timber: 1 }),
+  brew: Object.freeze({ grain: 3 }),
   // Primary producers take nothing from the market: the land yields the good (seasonal, see SEASON_PEAK).
 });
 export const OUTPUTS = Object.freeze({
   weave: Object.freeze({ cloth: 2 }),
   forge: Object.freeze({ ironware: 2 }),
+  brew: Object.freeze({ beer: 2 }),
 });
 /** Cost and availability for purchasing recipe inputs directly at a local market. No mutation. */
 export function quoteRecipe(world, market, city, recipe, batches = 1) {

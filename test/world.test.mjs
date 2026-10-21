@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { loadLand, isLand, segmentLandHit, haversineKm } from "../tools/geo.mjs";
 import { loadWorld, route } from "../src/sim/world.mjs";
 import { makeMarket, price, tickMarket } from "../src/sim/market.mjs";
+import { PRODUCERS } from "../src/game/buildings.mjs";
 const land = loadLand();
 const world = loadWorld();
 test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
@@ -91,7 +92,8 @@ test("market 365 days: stocks never negative, prices stay bounded", () => {
 });
 test("every good has at least one producer and one consumer", () => {
   for (const g of Object.keys(world.goods)) {
-    assert.ok(world.cities.some((c) => c.makes.includes(g)), g + " has no producer");
+    // a good is produced if a port makes it or a production building outputs it (the brewery builds anywhere, so beer has no maker city)
+    assert.ok(world.cities.some((c) => c.makes.includes(g)) || Object.values(PRODUCERS).some((p) => p.output === g), g + " has no producer");
     assert.ok(world.cities.some((c) => c.needs.includes(g)), g + " has no consumer");
   }
 });

@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateWorld } from "../src/sim/validate.mjs";
+import { PRODUCERS } from "../src/game/buildings.mjs";
+const buildingMade = Object.values(PRODUCERS).map((p) => p.output); // a building-made good (beer) needs no maker city
 const good = () => JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url), "utf8"));
-test("the shipped world data is valid", () => assert.deepEqual(validateWorld(good()), []));
+test("the shipped world data is valid", () => assert.deepEqual(validateWorld(good(), buildingMade), []));
 test("catches unknown goods, duplicate ids, bad lanes and unreachable cities", () => {
   let w = good(); w.cities[0].makes.push("unobtainium");
   assert.ok(validateWorld(w).some((e) => e.includes("unknown good")));

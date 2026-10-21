@@ -1,6 +1,6 @@
 // Data checks for data/world.json. No dependencies, so it runs in Node and in the browser.
 // Returns a list of plain-English problems; an empty list means the data is usable.
-export function validateWorld(w) {
+export function validateWorld(w, buildingMade = []) {
   const errs = [], num = (v) => typeof v === "number" && Number.isFinite(v);
   if (!w || typeof w !== "object") return ["world data is not an object"];
   for (const k of ["cities", "goods", "waypoints", "lanes"]) if (!w[k]) errs.push(`missing "${k}"`);
@@ -35,7 +35,7 @@ export function validateWorld(w) {
     const seen = new Set([w.cities[0].id]), q = [w.cities[0].id];
     while (q.length) for (const n of adj[q.pop()] ?? []) if (!seen.has(n)) { seen.add(n); q.push(n); }
     for (const c of w.cities) if (!seen.has(c.id)) errs.push(`city ${c.id}: no sea route from ${w.cities[0].id}`);
-    for (const g of goods) if (!w.cities.some((c) => c.makes.includes(g))) errs.push(`good ${g}: no city makes it`);
+    for (const g of goods) if (!w.cities.some((c) => c.makes.includes(g)) && !buildingMade.includes(g)) errs.push(`good ${g}: no city makes it`);
   }
   return errs;
 }
