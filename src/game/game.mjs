@@ -23,6 +23,7 @@ import { tickAlerts } from "./alerts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
+import { arrivalPregon } from "./pregon.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
@@ -127,6 +128,7 @@ function arrive(g, s) {
   wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
   arrivalNews(g, s.at); // dockside talk: price news from passing ships
+  arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
   campaignEvent(g, { kind: "arrive", city: s.at }, MISSION);
 }
 /** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
