@@ -1,5 +1,5 @@
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
-import { setRoute, clearRoute, processRoutes } from "./routes.mjs";
+import { setRoute, setRouteAdv, clearRoute, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf } from "./rank.mjs";
 import { buyCannon as buyCannonShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
@@ -288,4 +288,4 @@ export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g)
 export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g) => loanRoom(g, netWorth(g));
 export { loansOwed };
-export { setRoute, clearRoute };
+export { setRoute, setRouteAdv, clearRoute };
