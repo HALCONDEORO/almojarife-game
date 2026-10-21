@@ -126,8 +126,8 @@ export function accrueBuildings(g) {
   for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots)) {
     if (b.state !== "active") continue;
     const cost = BUILDING_TYPES[b.type].upkeep * b.level + (JOBS_PER_LEVEL[b.type] ?? 0) * b.level * WAGE_PER_WORKER;
-    if (b.halted) { // free play: a halted building resumes on its own as soon as cash covers its day again
-      if (g.cash - committed < cost) continue;
+    if (b.halted) { // hysteresis: resume only when cash covers two days of cost, so a building near the line does not flap halt/restart daily
+      if (g.cash - committed < cost * 2) continue;
       b.halted = false; post(g, "restart", { city: cityId, plot: plotId });
     }
     if (g.cash - committed < cost) { b.halted = true; post(g, "halt", { city: cityId, plot: plotId }); continue; } // no cash at charge time: the workers walk
