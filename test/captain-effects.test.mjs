@@ -14,9 +14,10 @@ test('captain departure equals shared estimate, crew minimum still enforced',()=
 });
 test('salary accrues docked and sailing, due/net worth include it, paid once weekly',()=>{
  const a=newGame(w),b=newGame(w);hireCaptain(a,a.ships[0],captainRoster(a,a.ships[0].at)[0].id);b.cash=a.cash;
+ const wk=a.ships[0].captain.wage*7;
  for(let d=1;d<=7;d++){a.day=b.day=d;accrueDay(a,a.ships[0]);accrueDay(b,b.ships[0]);}
- assert.equal(Math.round(accruedTotal(a)-accruedTotal(b)),14);assert.equal(Math.round(dueNow(a)-dueNow(b)),14);
- assert.equal(Math.round(netWorth(b)-netWorth(a)),14);const before=a.cash,r=settleWeek(a);settleWeek(b);
- assert.equal(r.lines[0].captain,14);assert.equal(Math.round(b.cash-a.cash),14);assert.equal(Math.round(before-a.cash),Math.round(r.paid));assert.equal(accruedTotal(a),0);
- const g=newGame(w),s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);doSail(g,s,'lisboa');advanceDay(g);assert.equal(g.accrued.captains[s.id],2);
+ assert.equal(Math.round(accruedTotal(a)-accruedTotal(b)),wk);assert.equal(Math.round(dueNow(a)-dueNow(b)),wk);
+ assert.equal(Math.round(netWorth(b)-netWorth(a)),wk);const before=a.cash,r=settleWeek(a);settleWeek(b);
+ assert.equal(r.lines[0].captain,wk);assert.equal(Math.round(b.cash-a.cash),wk);assert.equal(Math.round(before-a.cash),Math.round(r.paid));assert.equal(accruedTotal(a),0);
+ const g=newGame(w),s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);doSail(g,s,'lisboa');advanceDay(g);assert.equal(g.accrued.captains[s.id],s.captain.wage);
 });

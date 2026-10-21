@@ -1,5 +1,5 @@
 // Captain domain: deterministic tavern rosters, hire/dismiss, bounded skill readers.
-// Active skills: navigation (sailing speed), weather (storm losses), defence (pirate fights). Prices/bonuses are design candidates.
+// Active skills: navigation (sailing speed), weather (storm losses), defence (pirate fights). Fee and wage scale with total skill levels (captainPrice).
 const NAMES = ['Inés del Puerto','Tomás de la Ribera','Leonor del Mar','Mateo del Faro'];
 const hash=(s)=>Array.from(s).reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,7);
 const validCity=(g,city)=>g.world?.cities?.some(c=>c.id===city);
@@ -9,7 +9,13 @@ export function captainRoster(g,city){
  if(!validCity(g,city))return [];
  const n=hash(city),id=`captain:${city}:1`;
  if(g.captainHistory?.[id])return [];
- return [{id,city,name:NAMES[n%NAMES.length],navigation:1+n%3,weather:(n>>3)%4,defence:(n>>5)%4,fee:120,wage:2}];
+ const c={id,city,name:NAMES[n%NAMES.length],navigation:1+n%3,weather:(n>>3)%4,defence:(n>>5)%4};
+ return [{...c,...captainPrice(c)}];
+}
+/** Hire fee and daily wage from total skill levels: 30 per level on the fee, +1 coin/day per two levels. */
+export function captainPrice(c){
+ const total=level(c?.navigation)+level(c?.weather)+level(c?.defence);
+ return {fee:30+30*total,wage:1+(total>>1)};
 }
 export function captainOf(ship){
  const c=ship?.captain;
