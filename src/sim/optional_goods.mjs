@@ -17,8 +17,8 @@ export function withKidMeat(world) {
 
 /** Pottery: a processor good (2 timber -> 2 pottery, study 5 pottery A, base 40 so margin +54% at base prices). Makers: Valencia (Manises) and Sevilla (Triana),
  *  sourced in docs/design/production-chains-study.md section 8 (Manises: doi 10.26882/histagrar.090e03f, revistas.um.es/medievalismo/article/view/210581;
- *  Triana: doi 10.33349/2014.85.3440). Porto is not listed: no source. Consumers are the study's section 4.4 proposal. The kiln building exists only with this good. */
-export const POTTERY = Object.freeze({ good: "pottery", base: 40, makers: Object.freeze(["valencia", "sevilla"]), consumers: Object.freeze(["lisboa", "cadiz", "palma", "malaga", "argel", "oran"]) });
+ *  Triana: doi 10.33349/2014.85.3440). Porto is not listed: no source. Consumers: the study section 4.4 proposal plus barcelona, bilbao, tanger, cartagena, alicante (added after the 4-seed kiln measurement V1; no historical source yet). The kiln building exists only with this good. */
+export const POTTERY = Object.freeze({ good: "pottery", base: 40, makers: Object.freeze(["valencia", "sevilla"]), consumers: Object.freeze(["lisboa", "cadiz", "palma", "malaga", "argel", "oran", "barcelona", "bilbao", "tanger", "cartagena", "alicante"]) });
 export function withPottery(world) {
   const w = structuredClone(world);
   w.goods[POTTERY.good] = { base: POTTERY.base };
