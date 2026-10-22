@@ -38,6 +38,7 @@ import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf, noteTrade, decayRep
 export { feeMul } from "./reputation.mjs"; // the UI previews with the same fee the port will charge
 import { npcPlan } from "../sim/npcplan.mjs";
 import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
+import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
 import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -125,6 +126,7 @@ function dayTick(g) {
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
+  dailyJustice(g); // flag off: nothing
   for (const h of DAILY_HOOKS) h(g);
   campaignTick(g, MISSION);
   const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
@@ -149,6 +151,7 @@ function dayTick(g) {
 function arrive(g, s) {
   wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
+  arrivalJustice(g, s); // flag off or no data: nothing
   arrivalNews(g, s.at); // dockside talk: price news from passing ships
   arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
   campaignEvent(g, { kind: "arrive", city: s.at }, MISSION);
@@ -221,6 +224,7 @@ export function doSell(g, ship, good, qty) {
 export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
+  if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
   const from = ship.at;
   // Per-leg wind, seeded by departure tick and leg, so replays and save/load keep the same weather.
   const wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${to}`)();

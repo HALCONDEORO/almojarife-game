@@ -18,7 +18,7 @@ export const infamyOf = (g) => { const n = Number(g.infamy); return Number.isFin
 /** Raise (or lower with a negative amount) infamy, clamped. Returns the new value. */
 export function addInfamy(g, n) { if (!Number.isFinite(n)) return infamyOf(g); g.infamy = Math.min(INFAMY_MAX, Math.max(0, Math.round((infamyOf(g) + n) * 100) / 100)); return g.infamy; }
 /** Monthly fade: call once a day, it lowers infamy by INFAMY_DECAY_PER_MONTH on every 30th day. */
-export function decayInfamy(g) { if (g.pardon === true && g.day > 0 && g.day % 30 === 0 && infamyOf(g) > 0) addInfamy(g, -INFAMY_DECAY_PER_MONTH); }
+export function decayInfamy(g) { if ((g.pardon === true || g.justice === true) && g.day > 0 && g.day % 30 === 0 && infamyOf(g) > 0) addInfamy(g, -INFAMY_DECAY_PER_MONTH); }
 /** What a pardon costs now. */
 export const pardonFee = (g) => (infamyOf(g) > 0 ? Math.max(PARDON_MIN_FEE, Math.ceil(infamyOf(g) * PARDON_PER_POINT)) : 0);
 /** Why a pardon cannot be bought here, or null if it can. */

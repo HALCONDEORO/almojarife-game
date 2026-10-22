@@ -2,6 +2,7 @@
 // 2-5 owned ships group up, sail to the same port at the pace of the slowest hull,
 // and when pirates strike a member at sea the whole group's armament answers (escort bonus).
 // Pure game logic, no DOM. The normal sail/encounter rules still apply, so winds, fees and choices stay.
+import { heldNow } from "./justicewire.mjs";
 import { defenceOf, speedFactor } from "./crew.mjs";
 import { post } from "./ledger.mjs";
 
@@ -88,6 +89,7 @@ export function sailConvoy(g, id, to, ops) {
   if (ships.some((s) => !s || s.voyage)) return { ok: false, reason: "at sea" };
   if (ships.some((s) => s.at !== ships[0].at)) return { ok: false, reason: "scattered" }; // regroup in one port first
   if (ships[0].at === to) return { ok: false, reason: "already there" };
+  if (ships.some((s) => heldNow(g, s))) return { ok: false, reason: "held" }; // a ship the court holds keeps the whole convoy in port; checked before any member leaves
   for (const s of ships) { if (speedFactor(s) <= 0) return { ok: false, reason: "crew" }; } // validate every hull before any leaves: a short-crewed member must not strand the rest mid-departure
   for (const s of ships) { const r = ops.doSail(g, s, to); if (!r.ok) return r; }
   let slow = 0;
