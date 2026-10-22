@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, netWorth, botWorth, shipValue } from "../src/game/game.mjs";
+import { newGame, advanceDay, netWorth, botWorth, houseWorth, shipValue } from "../src/game/game.mjs";
 import { householdWeek, householdCharge, cityWorks, healthShield, cityHealth, HOUSEHOLD_RATE_YEAR, WORKS_COST, WORKS_EVERY } from "../src/game/household.mjs";
 import { rollShock } from "../src/game/shocks.mjs";
 import { reportsHtml } from "../src/view/ledgerview.mjs";
@@ -65,4 +65,9 @@ test("weekly report line appears with the flag on and not with it off", () => {
 test("hook does nothing off the weekly day or with the flag off", () => {
   const g = mk(); g.day = 6; const c = g.cash; assert.equal(householdWeek(g, netWorth, botWorth), 0); assert.equal(g.cash, c);
   const h = newGame(world, "cadiz", { seed: 3 }); h.day = 7; assert.equal(householdWeek(h, netWorth, botWorth), 0);
+});
+test("same base for both: a player's tribute worth counts ships like a bot (cash + cargo + ships)", () => {
+  const g = mk(); g.warehouses = {}; g.loans = []; g.ships = [g.ships[0]]; g.ships[0].cargo = {};
+  const t = g.ai[0]; t.cash = g.cash; t.ship = { ...g.ships[0], cargo: {} };
+  assert.equal(houseWorth(g), g.cash + shipValue(g.ships[0])); assert.equal(houseWorth(g), botWorth(g, t));
 });

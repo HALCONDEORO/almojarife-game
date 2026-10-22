@@ -89,6 +89,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
 export const botWorth = (g, t) => t.cash + Object.entries(t.ship?.cargo ?? {}).reduce((w, [k, q]) => w + q * g.world.goods[k].base, 0) + (t.ship ? shipValue(t.ship) : 0); // a bot house counts its ship too
+export const houseWorth = (g) => netWorth(g) + g.ships.reduce((w, s) => w + shipValue(s), 0); // tribute base: the same as a bot (cash + cargo + ships), net of debts
 export function netWorth(g) {
   let w = g.cash - accruedTotal(g) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
@@ -135,7 +136,7 @@ function dayTick(g) {
   const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
   chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year
   chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
-  const hc = householdWeek(g, netWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
+  const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
   if (hc && g.reports?.[0]?.day === g.day) g.reports[0].household = hc;
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
