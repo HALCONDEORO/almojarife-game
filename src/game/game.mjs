@@ -28,6 +28,8 @@ import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
 import { arrivalIdentity } from "./identity.mjs";
 import { arrivalMood } from "./moodout.mjs";
+import { seasonsTick } from "./seasons.mjs";
+import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
@@ -91,6 +93,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
   if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
+  if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -136,6 +139,7 @@ function dayTick(g) {
   accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
+  seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
