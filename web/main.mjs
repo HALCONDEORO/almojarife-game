@@ -622,7 +622,7 @@ function close3d() {
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;tab=tb;render();
-  const w=d.querySelector(".city-window");w.hidden=false;
+  const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;w.hidden=false;
   d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,hall:t.tabHall,buildings:t.bldBuild,route:t.tabRoute,house:premises(g,ship().at,lang).label,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})(),town:t.townTypes[townSel]??t.tabCity})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();
 }
