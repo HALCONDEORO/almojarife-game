@@ -80,3 +80,22 @@ import {newGame as newGameFlag} from '../src/game/game.mjs';import {loadWorld as
 test('pirate fight flag is off by default and saved as a boolean',()=>{
  assert.equal(newGameFlag(loadWorldFlag()).pirateFight,false);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:true}).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:1}).pirateFight,false);
 });
+import {MAX_CANNONS as MAXC} from '../src/game/crew.mjs';
+import {resolvePirates as resolveP,prizeFor as prizeForP} from '../src/game/encounterdaily.mjs';
+import {doSail as doSailP} from '../src/game/game.mjs';
+function pirateRun(flag,i){
+ const g=newGameFlag(loadWorldFlag(),undefined,{pirateFight:flag});g.eventsOn=true;g.seed=3;const s=g.ships[0];doSailP(g,s,'barcelona');
+ g.pending={event:'sea-pirates',ship:s.id,day:g.day,hour:0,id:`p:${i}`,escapeChance:50};
+ return {g,e:resolveP(g,'fight')};
+}
+test('flag OFF: every won fight offers the old seeded prize (parity with the single-roll path)',()=>{
+ let won=0;for(let i=0;i<100;i++){const {g,e}=pirateRun(false,i);if(e.result==='repelled'){won++;assert.deepEqual(e.prize,prizeForP(g,e.id));}else assert.equal(e.prize,undefined);}
+ assert.ok(won>20,'some fights are won: '+won);
+});
+test('flag ON: prize comes from the fought ship; pirates never exceed the hull cannon cap; escort never lowers own skill',()=>{
+ let prizes=0;for(let i=0;i<100;i++){const {e}=pirateRun(true,i);if(e.prize){prizes++;assert.ok(e.prize.hull>=1&&e.prize.hull<=100);}}
+ assert.ok(prizes>0);
+ for(let i=0;i<200;i++){const p=pirateShip(7,'c'+i),n=Object.values(p.weapons).reduce((a,b)=>a+b,0);assert.ok(n<=(MAXC[p.type]??0),'cap '+p.type+' '+n);}
+ const s=ship({cannons:2,gunCond:100,captain:{defence:3},cargo:{salt:40}});
+ for(const esc of [0,1,5,6,7,18,40]){const a=fightPirates(s,2,'k',esc),b=fightPirates(s,2,'k',0);assert.ok(a.outcome.hullLoss<=b.outcome.hullLoss+0,'escort '+esc);}
+});

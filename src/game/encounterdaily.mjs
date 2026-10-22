@@ -52,7 +52,7 @@ export function resolvePirates(g,choice){
  const applied=applyEncounter(g,ship,out);if(!applied.ok)return applied;
  const e={...applied,id:p.id,day:p.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
  (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
- if(e.result==='repelled'&&ship.voyage&&fight?.prize)e.prize=fight.prize; // a won fight may leave the pirate ship if it did not sink
+ if(e.result==='repelled'&&ship.voyage)e.prize=fight?fight.prize:prizeFor(g,e.id); // flag on: the fought ship if it did not sink; flag off: the old seeded prize, unchanged
  g.encounterReport=e;g.pending=null;return e;
 }
 

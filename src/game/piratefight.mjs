@@ -3,6 +3,7 @@
 // Own design. Pure: reads the player's ship, returns an outcome in the shape applyEncounter already takes.
 import { seeded } from "../view/cityscene.mjs";
 import { resolveBattle, applyBattle } from "./battle.mjs";
+const PRIZE_HULL_MIN = 30, PRIZE_HULL_SPAN = 40; // mirrors encounterdaily.mjs (kept local to avoid an import cycle)
 import { MAX_CANNONS, WEAPON_TYPES } from "./crew.mjs";
 
 export const PIRATE_TYPES = [["barca", 0.6], ["cog", 0.3], ["caravel", 0.1]]; // same mix as the old prize roll
@@ -16,25 +17,25 @@ export function pirateShip(seed, encounterId) {
   for (const [t, p] of PIRATE_TYPES) { x -= p; if (x < 0) { type = t; break; } }
   const slots = MAX_CANNONS[type] ?? 0;
   const weak = r() < PIRATE_WEAK; // a share of pirates are poorly armed fishermen-turned-raiders
-  const guns = weak ? 0 : Math.max(1, Math.round(slots * PIRATE_STRENGTH * (0.2 + 2 * r()))); // pirates are not held to the slot caps: they are the difficulty knob
+  const guns = weak ? 0 : Math.min(slots, Math.max(1, Math.round(slots * PIRATE_STRENGTH * (0.2 + 2 * r())))); // never above the hull's own cannon cap: pirates play by the player's rules // pirates are not held to the slot caps: they are the difficulty knob
   const wr = r(), crewRoll = r();
-  return { id: `pirate:${encounterId}`, owner: "pirates", type, hull: 100, weapons: guns ? { [Object.keys(WEAPON_TYPES)[Math.floor(wr * 4)]]: guns } : {}, gunCond: 100, captain: { defence: weak ? 0 : Math.floor(r() * 3) }, weak, crew: undefined, crewRoll, cargo: {} };
+  return { id: `pirate:${encounterId}`, owner: "pirates", type, hull: 100, weapons: guns ? { [Object.keys(WEAPON_TYPES)[Math.floor(wr * 4)]]: guns } : {}, gunCond: 100, captain: { defence: weak ? 0 : 1 + Math.floor(r() * 3) }, weak, crew: undefined, crewRoll, cargo: {} };
 }
 /** Fight the pirates: returns { outcome (for applyEncounter), prize ({type,hull} or null), battle (the report) }. Never mutates the real ship. */
 export function fightPirates(ship, seed, encounterId, escort = 0) {
   const p = pirateShip(seed, encounterId);
   const { crewRoll, weak } = p; delete p.crewRoll; delete p.weak; delete p.crew;
-  p.crew = Math.round(({ barca: 3, cog: 8, caravel: 10 }[p.type] ?? 3) + crewRoll * ({ barca: 5, cog: 10, caravel: 12 }[p.type] ?? 5) * (weak ? 0.1 : 0.5));
+  p.crew = Math.round(({ barca: 3, cog: 8, caravel: 10 }[p.type] ?? 3) + crewRoll * ({ barca: 5, cog: 10, caravel: 12 }[p.type] ?? 5) * (weak ? 0.1 : 3));
   const r = seeded(`battle-v1:${seed ?? 0}:${encounterId}`);
   const rolls = [r(), r(), r(), r()];
   const me = { ...ship, cargo: { ...(ship.cargo ?? {}) } };
-  if (escort > 0) me.captain = { ...(me.captain ?? {}), defence: (me.captain?.defence ?? 0) + escort / 6 }; // convoy escort: defence points count like captain skill levels (6 points each) // the resolver reads a copy; applyEncounter does the real change
+  if (escort > 0) { const own = me.captain?.defence ?? 0, ok = Number.isSafeInteger(own) && own >= 0 && own <= 3 ? own : 0; me.captain = { ...(me.captain ?? {}), defence: Math.max(ok, Math.min(3, Math.round(escort / 6))) }; } // whole levels 0-3, never below the captain's own skill // convoy escort: defence points count like captain skill levels (6 points each) // the resolver reads a copy; applyEncounter does the real change
   const rep = resolveBattle(p, me, rolls, { finish: "plunder", lootCap: 0.2, damage: PIRATE_DAMAGE, freeHold: Infinity });
   const won = rep.result === "defender-won" || rep.attackerShipSunk;
   const hullLoss = Math.max(0, Math.round((ship.hull ?? 100) - rep.hullD));
   return {
     outcome: { kind: "pirates", result: won ? "repelled" : "raided", hullLoss: Math.min(100, hullLoss), cargoLossPct: won ? 0 : 20, delay: won ? 0 : 1 },
-    prize: won && rep.hullA > 0 ? { type: p.type, hull: Math.max(1, Math.round(rep.hullA)) } : null,
+    prize: won ? { type: p.type, hull: PRIZE_HULL_MIN + Math.min(PRIZE_HULL_SPAN - 1, Math.floor(Math.max(0, rep.hullA) / 100 * PRIZE_HULL_SPAN)) } : null, // same 30-69% hull range and same 'always on a win' rule as the old prize, so the prize stays in the old value band
     battle: rep,
   };
 }
