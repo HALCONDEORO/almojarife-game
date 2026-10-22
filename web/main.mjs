@@ -39,7 +39,7 @@ import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { contactsOf, hireContact, fireContact, CONTACT_PRICE, CONTACT_MAX } from "../src/game/contacts.mjs";
-import { TICKS_PER_HOUR, tickParts, calendarOf } from "../src/sim/clock.mjs"; // TICKS_PER_DAY comes via game.mjs
+import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR } from "../src/sim/clock.mjs"; // TICKS_PER_DAY comes via game.mjs
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
 import { warehouseCap, setRoute, setRouteAdv, clearRoute, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceDay, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
@@ -197,7 +197,7 @@ function render() {
   const pr = g.profile, co = $("co"); co.textContent = "";
   if (pr) { const box = document.createElement("span"); box.innerHTML = crestSvg(pr.crest, 22, "top"); co.append(box, ` ${pr.company}`); if (pr.character) { const sm = document.createElement("small"); sm.textContent = ` (${pr.character})`; co.append(sm); } }
   else if (company) co.textContent = `· ${company}`;
-  const cal = calendarOf(g.day), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / MS_PER_TICK) / TICKS_PER_DAY; // exact even paused or just loaded
+  const cal = calendarOf(g.day, g.startYear ?? LEGACY_START_YEAR), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / MS_PER_TICK) / TICKS_PER_DAY; // exact even paused or just loaded
   const mins = Math.floor(dayFrac * 24 * 60), hh = String(Math.floor(mins / 60)).padStart(2, "0"), mm = String(mins % 60).padStart(2, "0");
   $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.day}/${DEADLINE_DAYS} · ${t.seasons[seasonOf(g.day)]}`;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator

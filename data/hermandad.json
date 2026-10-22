@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "note": "Design data for brotherhoods, lords and events (docs/design/hermandad.md). F1 has zero economic effect: nothing reads this at run time yet. A row enters only with a cited source; unverified facts stay out.",
+  "classes": ["member", "trading_house", "station", "free_port", "strong_place"],
+  "portClass": {},
+  "lords": [],
+  "institutions": [
+    { "id": "marismas", "from": null, "until": 1494, "name": { "es": "Hermandad de las Marismas", "en": "Brotherhood of the Marshes" }, "region": "north", "note": "Federation of Cantabrian ports with Vitoria; per the source it disappears when the Consulado de Burgos is created in 1494.", "source": "https://es.wikipedia.org/wiki/Hermandad_de_las_Marismas" },
+    { "id": "burgos", "from": 1494, "until": null, "name": { "es": "Consulado de Burgos", "en": "Consulate of Burgos" }, "region": "atlantic", "note": "Created by the Crown in 1494 on the model of the Consulado del Mar.", "source": "https://es.wikipedia.org/wiki/Consulado_de_Burgos" }
+  ],
+  "events": [
+    { "id": "malaga-siege-1487", "from": { "year": 1487, "month": 5, "day": 7 }, "until": { "year": 1487, "month": 8, "day": 18 }, "port": "malaga", "kind": "siege", "note": "Siege and fall of Malaga to Castile, 7 May to 18 August 1487.", "source": "https://en.wikipedia.org/wiki/Granada_War" },
+    { "id": "granada-1492", "from": { "year": 1492, "month": 1, "day": 2 }, "until": null, "port": null, "kind": "conquest", "note": "Granada surrenders on 2 January 1492; end of the Nasrid kingdom.", "source": "https://en.wikipedia.org/wiki/Granada_War" },
+    { "id": "melilla-1497", "from": { "year": 1497, "month": 9, "day": 17 }, "until": null, "port": "melilla", "kind": "occupation", "note": "Melilla occupied by Castile on 17 September 1497.", "source": "https://en.wikipedia.org/wiki/Melilla" }
+  ]
+}
