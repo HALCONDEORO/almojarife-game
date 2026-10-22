@@ -37,7 +37,11 @@ test("prestige is non-negative and passes with a cut", () => {
 test("signed reputation: good name is cut, bad name is kept", () => {
   assert.equal(passReputation(100), 50);
   assert.equal(passReputation(-40), -40);
-  assert.equal(passReputation(-0.5), -0);
+  assert.equal(passReputation(-0.5), -0.5);
+  assert.equal(passReputation(-40.25), -40.25);
+  assert.equal(passReputation(0.03), 0.01);
+  assert.equal(passReputation(7.77), 3.88);
+  for (const v of [-100, -0.01, 0, 0.01, 12.34]) assert.ok(v < 0 ? passReputation(v) === v : passReputation(v) <= v && passReputation(v) >= 0);
   assert.throws(() => passReputation(NaN));
 });
 test("retirement year is fixed from birth", () => assert.equal(retireYear(newPersona(1460)), 1520));

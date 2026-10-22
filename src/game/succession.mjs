@@ -29,8 +29,8 @@ export function passPrestige(value) {
   if (!Number.isFinite(value) || value < 0) throw new RangeError("passPrestige: prestige must be a finite number >= 0");
   return Math.floor(value * REPUTATION_KEPT);
 }
-/** Reputation is signed. Good name passes with the cut; a bad name passes in full (an heir does not start clean from a scandal). Never rises in magnitude of good, never improves bad. */
+/** Reputation is signed. Good name passes with the cut (to hundredths); a bad name passes in full (an heir does not start clean from a scandal). Never rises in magnitude of good, never improves bad. */
 export function passReputation(value) {
   if (!Number.isFinite(value)) throw new RangeError("passReputation: reputation must be finite");
-  return value >= 0 ? Math.floor(value * REPUTATION_KEPT) : Math.ceil(value);
+  return value >= 0 ? Math.floor(value * REPUTATION_KEPT * 100) / 100 : value; // hundredths like addRep; a negative value is returned untouched
 }
