@@ -1,4 +1,4 @@
-import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
+import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement,tradePortDetail} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -77,7 +77,7 @@ $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
 // Pan and zoom: the wheel zooms at the cursor, dragging pans, two fingers pinch, double click resets.
 let target = null, lp = 0; // destination chosen on the map; long-press timer
 const cam = newCamera(800, VH), mapEl = $("map");
-const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); };
+const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); if(HISTORICAL_MAPS_ENABLED && mapMode==="trade")render(); };
 function scaleMarkers() {
   const k = markerScale(cam.zoom);
   mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
@@ -247,7 +247,7 @@ function render() {
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
     m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14">${c.name}</text></g>`;
   }
-  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id});
+  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
     if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("map").after(key); }
@@ -256,6 +256,12 @@ function render() {
   m += historical.svg;
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
+  if(HISTORICAL_MAPS_ENABLED && mapMode==='trade') {
+    for(const badge of $("map").querySelectorAll('.trade-card')) {
+      const show=()=>{const p=world.cities.find(p=>p.id===badge.dataset.port),el=$("trade-port-detail");if(p&&el)el.innerHTML=tradePortDetail(p,lang,id=>t.goods[id]??id);};
+      badge.onpointerenter=badge.onfocus=badge.onclick=show;
+    }
+  }
   $("map").querySelectorAll("g.city").forEach((el) => {
     el.onclick = () => {
       const a = portClickAction(g, el.dataset.c); // own ship docked there -> enter the city; else destination

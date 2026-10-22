@@ -12,7 +12,7 @@ Original UI/SVG annotations; no third-party or P3/P4 artwork. Existing base char
 
 Delivery order: scaffold/geographic; political renderer; sourced leagues; trade. Reviews and publication belong to Estudio. Default stays OFF until reviewed.
 
-## Revised player presentation (Marco,18:00)
+## Revised player presentation
 No sources, links, attribution notices, research warnings or technical holding intervals
 are visible in normal play. Political key: current game year and names/colours only.
 Leagues: name and short player description only. Trade: produces/needs only.
@@ -38,3 +38,32 @@ Marismas founding roster: https://www.rsbap.org/ojs/index.php/boletin/article/do
 Secondary period synthesis ending1494: https://historia.nationalgeographic.com.es/a/hermandad-marismas-asi-gano-castilla-dominio-atlantico_25456
 Roster1296 is not annually attested membership. Only Santander/SanSebastián from
 that roster have nodes on this map; Bilbao is not inferred. No invented route mesh.
+
+## Trade icon increment
+Original line pictograms in src/view/mapgoodsicons.mjs, no external artwork.
+Each city card has a name, green upward arrow for produces, brown downward arrow
+for needs. Each row shows up to three pictograms and +n for remaining goods. The
+native hover title and accessible card name include every good; the existing
+expandable list remains available for touch and readers. Each icon is named.
+Cards occupy distinct map-coordinate rectangles, avoid port markers and their
+name labels, and remain separated on zoom. Leader lines tie cards to their ports.
+Dense clusters get placement priority. Layout is cached, bounded to five charts.
+These are game specialisations, not measured historical cargo flows. This caveat
+belongs here, not player UI. Default feature flag remains false.
+
+## Readability revision
+Reuse web/icons.mjs goodIcon, exactly the market art. No new pictogram module.
+Compact badges show one24px icon per direction plus remaining-good count, rather
+than filling the whole chart with goods. Hover, keyboard focus or click opens a
+large, named detail below the chart with all28px market icons and translated names.
+Touch users can tap a badge or open the complete port list. Dense-cluster layout
+and collision avoidance retained. Original custom map pictograms removed.
+
+## Zoom-dependent badge density
+The importance criterion is the existing game-data population, not a new historical
+ranking. At zoom1 show population>=12000 (9 ports in current data); from1.8 show
+>=5000; from3 show all discovered ports. Port dots/names remain available at all
+levels, so badge suppression never removes a navigable city. Cards retain24px
+market icons on screen via inverse zoom; layout is recomputed and cached by zoom.
+Cards do not intersect one another at any density tier. Unknown ports never enter
+the list. Population thresholds are presentation tuning, not historical claims.
