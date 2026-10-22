@@ -1,6 +1,6 @@
 # Mechanic 7: pardon (perdón)
 
-Seventh mechanic of the piracy set (assigned by the main agent on 22 Oct 2026). Flag `g.pardon` OFF; nothing calls it from the daily loop or the UI, so the game is unchanged and the player sees nothing.
+Seventh mechanic of the piracy set. Flag `g.pardon` OFF; nothing calls it from the daily loop or the UI, so the game is unchanged and the player sees nothing.
 
 ## Rules (first values, to tune with the sweep)
 - Minimal infamy: one number 0-100 (`g.infamy`). Mechanic 5 (bad name and justice) will raise it; this module holds it, fades it by 1 a month (`decayInfamy`, once a day) and sells the pardon.
