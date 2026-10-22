@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "note": "Dated peace treaties between realms of data/realms.json. While a peace holds, letters of marque between the two realms are suspended (mechanic 3). Further peaces are drawn from the game seed (src/game/peace.mjs). A row needs a cited source.",
+  "treaties": [
+    { "realms": ["castile", "portugal"], "from": 1479, "until": null, "source": "https://en.wikipedia.org/wiki/Treaty_of_Alc%C3%A1%C3%A7ovas", "note": "Alcáçovas, signed 4 Sep 1479, ended the War of the Castilian Succession. Open-ended in the data; Tordesillas 1494 (https://en.wikipedia.org/wiki/Treaty_of_Tordesillas) split the oceans between the same parties." },
+    { "realms": ["aragon", "portugal"], "from": 1479, "until": null, "source": "https://en.wikipedia.org/wiki/Treaty_of_Alc%C3%A1%C3%A7ovas", "note": "The Catholic Monarchs signed for Castile and Aragon." }
+  ]
+}
