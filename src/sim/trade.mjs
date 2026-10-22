@@ -1,3 +1,4 @@
+import { quoteProcurement, receiveProcurement, recordMarketPurchase } from "./procurement.mjs";
 // M1b: ships, voyages along sea lanes, and buy/sell with price impact.
 // Own design. Numbers are first-pass and will be tuned by the balance tests.
 import { route } from "./world.mjs";
@@ -59,6 +60,7 @@ export function buy(world, market, ship, cash, good, qty, fee = FEE) {
     cost += unit; e.stock -= 1; n++;
   }
   if (n === 0) return { ok: false, reason: qty <= 0 ? "nothing to buy" : "no cash" };
+  recordMarketPurchase(market[ship.at],good,n,cost,e.stock+n);
   ship.cargo[good] = (ship.cargo[good] ?? 0) + n;
   ship.basis = ship.basis ?? {};
   ship.basis[good] = (ship.basis[good] ?? 0) + cost; // what this cargo cost, for profit display
@@ -71,8 +73,9 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   if (!e) return { ok: false, reason: "no market" };
   qty = Math.min(qty, ship.cargo[good] ?? 0);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
-  let revenue = 0;
-  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += Math.floor(price(world, e, good) * (1 - fee)); }
+  const receipt=receiveProcurement(world,market[ship.at],good,qty,fee);
+  qty=receipt.qty;const revenue=receipt.revenue;
+  if(qty===0)return {ok:false,reason:'market has no cash'};
   const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
   const spent = Math.round(paid * qty / had); // share of the cost that leaves with the goods
   ship.cargo[good] -= qty;
@@ -98,8 +101,8 @@ export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
 export function previewSell(world, market, ship, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
-  const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
-  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += Math.floor(price(world, sim, good) * (1 - fee)); }
+  const q=quoteProcurement(world,market[ship.at],good,Math.min(qty,have),fee);
+  const n=q.qty,revenue=q.revenue;
   const spent = Math.round((ship.basis?.[good] ?? 0) * n / have);
-  return { qty: n, revenue, avg: Math.round(revenue / n), profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
+  return { qty: n, revenue, avg: n ? Math.round(revenue / n) : 0, profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: q.next };
 }

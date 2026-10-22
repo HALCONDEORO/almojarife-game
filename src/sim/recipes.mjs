@@ -1,3 +1,4 @@
+import { recordMarketPurchase } from "./procurement.mjs";
 // Own gameplay recipes. Not historical construction quantities. Not enabled in the game yet.
 import { price } from './market.mjs';
 import { FEE } from './trade.mjs';
@@ -60,7 +61,7 @@ export function consumeRecipe(world, market, city, recipe, cash, batches=1) {
   if (!Number.isFinite(cash) || cash < 0) return { ok:false, reason:'bad cash' };
   const q=quoteRecipe(world,market,city,recipe,batches); if (!q.ok) return q;
   if (cash < q.cost) return {ok:false,reason:'no cash',cost:q.cost};
-  for(const [good,qty] of Object.entries(q.inputs)) market[city][good].stock-=qty;
+  for(const [good,qty] of Object.entries(q.inputs)) {const e=market[city][good];recordMarketPurchase(market[city],good,qty,q.lineCosts[good],e.stock);e.stock-=qty;}
   for(const [good,qty] of Object.entries(q.outputs)) market[city][good].stock+=qty;
   return q;
 }
@@ -86,6 +87,6 @@ export function consumeUnits(world, market, city, inputs, cash) {
   const q = quoteUnits(world, market, city, inputs);
   if (!q.ok) return q;
   if (cash < q.cost) return { ok: false, reason: 'no cash', cost: q.cost };
-  for (const [good, qty] of Object.entries(inputs)) market[city][good].stock -= qty;
+  for (const [good, qty] of Object.entries(inputs)) {const e=market[city][good];recordMarketPurchase(market[city],good,qty,q.lineCosts[good],e.stock);e.stock-=qty;}
   return q;
 }

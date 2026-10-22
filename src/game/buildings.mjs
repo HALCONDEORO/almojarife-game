@@ -1,8 +1,9 @@
+import { quoteProcurement, receiveProcurement, recordLocalSupply } from "../sim/procurement.mjs";
 // Construction engine, sim slice (docs/design/city-builder.md piece 2): plot ownership,
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
 import { quoteRecipe, consumeRecipe, quoteUnits, consumeUnits, RECIPES } from "../sim/recipes.mjs";
-import { price, seasonMul } from "../sim/market.mjs";
+import { seasonMul } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
@@ -175,10 +176,8 @@ export function restartBuilding(g, cityId, plotId) {
 export function sellQuote(world, market, city, good, qty) {
   const e = market[city]?.[good];
   if (!e) return 0;
-  const sim = { ...e };
-  let revenue = 0;
-  for (let i = 0; i < qty; i++) { revenue += Math.floor(price(world, sim, good) * (1 - FEE)); sim.stock++; }
-  return revenue;
+  const q=quoteProcurement(world,market[city],good,qty,FEE);
+  return q.qty===qty?q.revenue:0;
 }
 
 /** Employment (city-builder follow-up: jobs). The workers ARE the port's inhabitants: the town's own
@@ -275,12 +274,16 @@ export function workshopTick(g, cityId) {
       const e = g.market[cityId]?.[def.output];
       if (!e) continue;
       const amount = Math.max(1, Math.round(def.yield * batches * seasonMul(def.output, day)));
+      const oldStock=e.stock;
       e.stock = Math.max(e.stock, Math.min(e.target * 4, e.stock + amount)); // same stock cap as city production, but never clip stock already above it
+      recordLocalSupply(g.market[cityId],def.output,e.stock-oldStock,g.world.goods[def.output].base);
       b.produced = (b.produced ?? 0) + amount; // lifetime units, for the Buildings tab
       for (const [good, perBatch] of Object.entries(def.byproducts ?? {})) { // by-products: same batches and staffing, own season, own stock cap
         const be = g.market[cityId]?.[good];
         if (!be) continue;
+        const oldByproduct=be.stock;
         be.stock = Math.max(be.stock, Math.min(be.target * 4, be.stock + Math.max(1, Math.round(perBatch * batches * seasonMul(good, day)))));
+        recordLocalSupply(g.market[cityId],good,be.stock-oldByproduct,g.world.goods[good].base);
       }
       continue;
     }
@@ -293,7 +296,11 @@ export function workshopTick(g, cityId) {
       if (revenue <= q.cost) continue; // margin gone at this size
       const c = consumeRecipe(g.world, g.market, cityId, def.recipe, g.cash, batches); // input stock down, output stock up
       if (!c.ok) break; // re-quoted inside; never mutate half-way
-      g.cash += revenue - c.cost;
+      // consumeRecipe stages output in public stock; remove it before the
+      // common wholesale receipt, which applies the same post-unit price as ships.
+      g.market[cityId][def.output].stock-=q.outputs[def.output];
+      const receipt=receiveProcurement(g.world,g.market[cityId],def.output,q.outputs[def.output],FEE);
+      g.cash += receipt.revenue - c.cost;
       b.produced = (b.produced ?? 0) + batches; // lifetime batches, for the Buildings tab (piece 4)
       break;
     }

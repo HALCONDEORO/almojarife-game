@@ -65,3 +65,15 @@ test("tickMarket: daily demand below 0.5 still consumes over time, and the long 
     assert.ok(Math.abs(total - d * 1000) <= 1, `d=${d} total=${total}`);
   }
 });
+
+import { basketBy, basketCost } from "../src/sim/classes.mjs";
+test("basketBy splits every good across the three classes and adds up to totalDemand", () => {
+  const b = basketBy(20000);
+  for (const g of Object.keys(PER_1000)) assert.ok(Math.abs(b.poor[g] + b.middle[g] + b.rich[g] - totalDemand(20000, g)) < 1e-9, g);
+  assert.ok(b.rich.meat > b.middle.meat && b.middle.meat > b.poor.meat); // meat belongs to the rich
+});
+test("basketCost grows with class and falls to zero when nothing is affordable", () => {
+  const c = basketCost(20000, () => 1);
+  assert.ok(c.rich / 2400 > c.middle / 6800 && c.middle / 6800 > c.poor / 10800);
+  assert.equal(basketCost(20000, () => 1, () => 5).rich, 0);
+});

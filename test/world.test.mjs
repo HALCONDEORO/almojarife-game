@@ -116,14 +116,23 @@ test("after a year producers sell at or below base, consumers at or above base, 
     assert.ok(p > Math.round(base * 0.4), `${cid} ${g} price ${p} pinned at floor`);
   }
 });
-test("no drift: day 365 and day 730 give the same stocks and prices", () => {
-  const m = makeMarket(world);
-  for (let d = 0; d < 365; d++) tickMarket(m);
-  const snap = JSON.parse(JSON.stringify(m));
-  for (let d = 0; d < 365; d++) tickMarket(m);
-  for (const [cid, c] of Object.entries(m)) for (const [g, e] of Object.entries(c)) {
-    assert.equal(e.stock, snap[cid][g].stock, `${cid} ${g} stock drifts`);
-    assert.equal(price(world, e, g), price(world, snap[cid][g], g), `${cid} ${g} price drifts`);
+// Semantic change: household cash and fractional wants are persistent state.
+// Annual identical integer stock was an artifact of the old stateless rounding,
+// not a stability/conservation criterion. Clamp/balance thresholds remain intact.
+test("stateful market: world-optional API, integral stock, save continuation and accounts reconcile", () => {
+  const m=makeMarket(world),withoutWorld=makeMarket(world);let reload;
+  for(let day=0;day<730;day++){
+    tickMarket(m,day,world);tickMarket(withoutWorld,day);
+    if(day===364)reload=JSON.parse(JSON.stringify(m));
+    else if(day>364)tickMarket(reload,day,world);
+    for(const row of Object.values(m))for(const e of Object.values(row))assert.ok(Number.isSafeInteger(e.stock)&&e.stock>=0&&e.stock<=e.target*4);
+  }
+  assert.deepEqual(m,withoutWorld);assert.deepEqual(m,reload);
+  for(const row of Object.values(m)){
+    const a=row.grain.commerce;
+    assert.equal(a.cash,a.openingCapital+a.retail+a.received-a.paid);
+    assert.equal(Object.values(a.inventoryBasis).reduce((n,x)=>n+x,0),a.openingInventory+a.localSupplyValue+a.paid-a.consumedBasis-a.releasedBasis);
+    assert.ok(Math.abs(Object.values(a.households).reduce((n,h)=>n+h.cash,0)+a.retail-a.householdIncome)<1e-5);
   }
 });
 test("a producer already at the cap stays at the cap after one tick", () => {

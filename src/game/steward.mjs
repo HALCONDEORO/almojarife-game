@@ -1,3 +1,4 @@
+import { procurementOf, receiveProcurement, recordMarketPurchase } from "../sim/procurement.mjs";
 // Warehouse administrator: standing buy/sell orders per good in a port where the player
 // owns a warehouse. Buys when the price is at or below a cap (up to a stock target) and
 // sells when the price is at or above a floor (keeping a chosen stock). Runs once a day
@@ -59,10 +60,10 @@ export function stewardTick(g, city, cap) {
       const have = w.goods[good] ?? 0, can = have - r.sellKeep;
       if (can > 0) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
-        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; revenue += Math.floor(p * (1 - FEE)); n++; }
+        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; const unit=Math.floor(p*(1-FEE));if(revenue+unit>(procurementOf(g.market[city])?.cash??Infinity))break;revenue+=unit;n++; }
         if (n > 0) {
           const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
-          e.stock += n;
+          receiveProcurement(g.world,g.market[city],good,n,FEE);
           const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = Math.round(paid * n / had);
           w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
           if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
@@ -90,6 +91,7 @@ export function stewardTick(g, city, cap) {
           cost += charged; e.stock -= 1; n++;
         }
         if (n > 0) {
+          recordMarketPurchase(g.market[city],good,n,cost,e.stock+n);
           g.cash -= cost;
           noteTrade(g, city);
           repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
