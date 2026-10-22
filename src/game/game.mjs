@@ -20,6 +20,7 @@ import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
+import { rollContracts, expireContracts, contractOnSale } from "./contracts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
@@ -116,6 +117,8 @@ function dayTick(g) {
   chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
+  expireContracts(g); // a council contract past its due day lapses
+  if (g.day % 7 === 0) rollContracts(g); // town councils post their weekly offers
   rollEvent(g);
   tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
   tickContacts(g); // hired contacts send their inexact price reports (presence re-wins the port below)
@@ -196,7 +199,7 @@ export function doSell(g, ship, good, qty) {
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
-  if (r.ok) { noteTrade(g, ship.at); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { noteTrade(g, ship.at); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
