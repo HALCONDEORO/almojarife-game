@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame} from '../src/game/game.mjs';
-import {arrivalNews,fairPrice} from '../src/game/news.mjs';
+import {arrivalNews, newsEs,fairPrice} from '../src/game/news.mjs';
 import {price} from '../src/sim/market.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 const world=loadWorld();
@@ -22,7 +22,7 @@ test('dear news fires with a rounded figure and never writes into intel',()=>{
  const about=Math.round(n.price/5)*5;
  const m=(g.inbox??[]).find((x)=>x.kind==='news');
  assert.ok(m,'posted to the inbox');
- assert.ok(m.txt.es.includes('está caro')&&m.txt.es.includes(String(about)),'ES text quotes the rounded price');
+ assert.ok(/está car(o|a|os|as)\b/.test(m.txt.es)&&m.txt.es.includes(String(about)),'ES text quotes the rounded price');
  assert.ok(m.txt.en.includes('is dear'),'EN text too');
  assert.equal(g.intel.sevilla.day,0,'news leaves intel untouched (rumours and presence stay the way to know a market)');
 });
@@ -31,7 +31,7 @@ test('cheap news fires the other way and quiet markets stay quiet',()=>{
  for(const gd of Object.keys(g.market.sevilla)) g.market.sevilla[gd].stock=g.market.sevilla[gd].target*4; // glutted across the board: far below fair
  let n=null;for(let d=1;d<=60&&!n;d++){g.day=d;n=arrivalNews(g,'cadiz');}
  assert.ok(n);assert.equal(n.dear,false);
- assert.ok((g.inbox??[]).find((x)=>x.kind==='news').txt.es.includes('barato'));
+ assert.ok((g.inbox??[]).find((x)=>x.kind==='news').txt.es.match(/barat[oa]s?\b/));
  // a market sitting at its fair price generates no news on any try
  const q=mk();know(q,'sevilla');
  for(const gd of Object.keys(q.market.sevilla)){const x=q.market.sevilla[gd];x.stock=x.target;}
@@ -46,4 +46,12 @@ test('news survives a save/load',()=>{
  const fair=fairPrice(world,g.market.sevilla.grain,'grain');
  assert.ok(price(world,g.market.sevilla.grain,'grain')>fair,'test setup: dear really is dear');
  assert.ok((r.inbox??[]).some((m)=>m.kind==='news'),'the news line survives');
+});
+
+test('Spanish price news agree in gender and number',()=>{
+ assert.match(newsEs('el trigo',true,'Sevilla',45),/el trigo está caro allí: lo pagan/);
+ assert.match(newsEs('la madera',true,'Sevilla',45),/la madera está cara allí: la pagan/);
+ assert.match(newsEs('las legumbres',true,'Sevilla',45),/las legumbres están caras allí: las pagan/);
+ assert.match(newsEs('las legumbres',false,'Sevilla',20),/las legumbres están baratas allí: apenas las pagan/);
+ assert.match(newsEs('el vino',false,'Sevilla',20),/el vino está barato allí: apenas lo pagan/);
 });
