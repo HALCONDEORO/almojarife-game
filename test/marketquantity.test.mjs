@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
+test('market has named integer quantity input, min/max guard and retained presets',()=>{const s=readFileSync('web/main.mjs','utf8');assert.match(s,/inputmode="numeric" min="1" max="999" step="1" data-quantity/);assert.match(s,/aria-label="\$\{t.qtyLbl\}: \$\{t.goods\[gd\]\}"/);assert.match(s,/Math.min\(999,Math.floor\(n\)\)/);assert.match(s,/data-q="\$\{gd\}:max"/);});
