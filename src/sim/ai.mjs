@@ -8,7 +8,7 @@ import { WEAPON_TYPES, weaponCount, maxCannons, loadWeight, gearOf } from "./arm
 
 const CARRY_MIN_MARGIN = 1.08; // never sail for less than 8% gross margin (covers both fees)
 
-function bestPlan(world, market, ship, cash, planningMarket = market, canVisit = () => true) {
+function bestPlan(world, market, ship, cash, planningMarket = market, canVisit = () => true, scoreCandidate = null) {
   let best = null;
   const spec = SHIP_TYPES[ship.type];
   for (const dest of world.cities) {
@@ -25,7 +25,9 @@ function bestPlan(world, market, ship, cash, planningMarket = market, canVisit =
       const buyP = price(world, here, good) * (1 + FEE), sellP = price(world, there, good) * (1 - FEE);
       if (sellP / buyP < CARRY_MIN_MARGIN) continue;
       const qty = Math.max(0, Math.min(shipCapacity(ship), here.stock, Math.floor(cash / Math.ceil(buyP))));
-      const score = ((sellP - buyP) * qty) / (days + 1);
+      const rawScore = ((sellP - buyP) * qty) / (days + 1);
+      const score = scoreCandidate ? scoreCandidate({dest:dest.id,good,score:rawScore}) : rawScore;
+      if(!Number.isFinite(score)||score<0)continue;
       if (qty <= 0) continue;
       // Tie-break on destination id, then good id, so the choice never depends on iteration order.
       const better = !best || score > best.score ||
@@ -68,7 +70,7 @@ export function aiStep(world, market, trader, ship, hooks = {}) {
   if (cargoUsed(ship) > 0) return null;
   if (hooks.pirateRisk?.(ship)) armShip(trader, ship); // bots arm only when a harness says their lane is dangerous: today nobody raids them, and arming them measurably inflated the NPC economy
   const planningMarket = hooks.planningMarket ? hooks.planningMarket() : market;
-  const plan = bestPlan(world, market, ship, trader.cash, planningMarket ?? {}, hooks.canVisit);
+  const plan = bestPlan(world, market, ship, trader.cash, planningMarket ?? {}, hooks.canVisit, hooks.scoreCandidate);
   if (!plan) return null;
   const eb = market[ship.at]?.[plan.good];
   const scarcityB = eb ? eb.target / Math.max(1, eb.stock) : 0;
