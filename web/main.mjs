@@ -677,6 +677,13 @@ document.addEventListener("keydown", (e) => {
 $("play").onclick = () => { playing = !playing; render(); };
 $("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
 $("new").onclick = () => showMenu();
+{ // fullscreen toggle; the button stays hidden where the browser has no Fullscreen API (e.g. iPhone)
+  const de = document.documentElement, fsb = $("fs");
+  if (fsb && document.fullscreenEnabled && de.requestFullscreen) {
+    fsb.hidden = false;
+    fsb.onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else de.requestFullscreen().catch(() => {}); };
+  }
+}
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
   if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
