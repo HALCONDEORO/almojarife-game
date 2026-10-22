@@ -1,7 +1,7 @@
 // Construction engine, sim slice (docs/design/city-builder.md piece 2): plot ownership,
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
-import { quoteRecipe, consumeRecipe, RECIPES } from "../sim/recipes.mjs";
+import { quoteRecipe, consumeRecipe, quoteUnits, consumeUnits, RECIPES } from "../sim/recipes.mjs";
 import { price, seasonMul } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
@@ -97,10 +97,17 @@ export function quoteConstruction(g, cityId, plotId, type) {
   const level = b.level + 1;
   if (b.type && b.type !== type) return { ok: false, reason: "plot has another building" };
   if (level > spec.maxLevel) return { ok: false, reason: "max level" };
-  const q = quoteRecipe(g.world, g.market, cityId, spec.recipe, level); // materials scale with the level
+  const inputs = {}, fromStore = {}, missing = {};
+  const store = g.warehouses?.[cityId]?.goods ?? {};
+  for (const [good, qty] of Object.entries(RECIPES[spec.recipe])) {
+    inputs[good] = qty * level;
+    fromStore[good] = Math.min(inputs[good], Math.max(0, store[good] ?? 0));
+    missing[good] = inputs[good] - fromStore[good];
+  }
+  const q = quoteUnits(g.world, g.market, cityId, missing);
   if (!q.ok) return q;
   const fee = spec.fee * level, ticks = spec.buildDays * level * TICKS_PER_DAY;
-  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs: q.inputs };
+  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing };
 }
 
 /** Pay and start construction; the building turns active exactly at readyTick (tickBuildings). */
@@ -110,8 +117,16 @@ export function startConstruction(g, cityId, plotId, type) {
   if (!q.ok) return q;
   if (g.cash < q.cost) return { ok: false, reason: "no cash", cost: q.cost };
   const spec = BUILDING_TYPES[type];
-  const c = consumeRecipe(g.world, g.market, cityId, spec.recipe, g.cash, q.level);
+  const c = consumeUnits(g.world, g.market, cityId, q.missing, g.cash - q.fee);
   if (!c.ok) return c; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
+  const w = g.warehouses?.[cityId];
+  for (const [good, qty] of Object.entries(q.fromStore)) {
+    if (!qty) continue;
+    const had = w.goods[good], transferred = Math.round((w.basis?.[good] ?? 0) * qty / had);
+    if (w.basis) w.basis[good] = (w.basis[good] ?? 0) - transferred;
+    w.goods[good] -= qty;
+    if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
+  }
   g.cash -= q.cost;
   const b = buildingAt(g, cityId, plotId);
   Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks });

@@ -4,9 +4,10 @@
 // workshop in his home port. C: poor bot (little cash) builds a saltworks: when do wages halt it?
 // Run: node tools/sim_buildings_economy.mjs [days=10950]   Prints one JSON report. Own design.
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, netWorth, GOAL_CASH } from "../src/game/game.mjs";
+import { newGame, advanceDay, netWorth, GOAL_CASH, buyWarehouse, doBuy, storeGoods } from "../src/game/game.mjs";
 import { loansOwed } from "../src/game/bank.mjs";
-import { buyPlot, startConstruction, staffingRatio, jobsNeeded } from "../src/game/buildings.mjs";
+import { buyPlot, startConstruction, staffingRatio, jobsNeeded, BUILDING_TYPES, JOBS_PER_LEVEL, WAGE_PER_WORKER, producerRate, sellQuote } from "../src/game/buildings.mjs";
+import { RECIPES, quoteRecipe } from "../src/sim/recipes.mjs";
 import { price } from "../src/sim/market.mjs";
 
 export const HORIZONS = [365, 1825, 3650, 10950, 18250, 36500]; // 1, 5, 10, 30, 50, 100 game years
@@ -41,6 +42,7 @@ function scenarioB() {
   const bp = buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
   const build = startConstruction(g, home, home + ":1", "workshop");
   if (!build.ok) return { error: "build failed", reason: build.reason, plotPrice: bp.price };
+  let stockpiled = 0; const BUFFER = 1200;
   let minCash = g.cash, staffSum = 0, staffDays = 0, haltDays = 0, upgrades = 0, haltEvents = 0;
   const horizons = {};
   const st = {};
@@ -51,13 +53,28 @@ function scenarioB() {
     const b = g.buildings?.[home]?.[home + ":1"];
     if (!wasHalted && b?.halted) haltEvents++;
     if (b?.state === "active") { staffSum += staffingRatio(g, home); staffDays++; if (b.halted) haltDays++; }
-    if ((d === 90 || d === 210) && b?.state === "active" && !b.halted && b.level < 3 && g.cash > 1500) { const r = startConstruction(g, home, home + ":1", "workshop"); if (r.ok) upgrades++; }
+    if (d % 7 === 0 && b?.state === "active" && !b.halted && b.level < 3) {
+      if (!g.warehouses[home] && g.cash > BUFFER + 1500) buyWarehouse(g, home);
+      const ship = g.ships.find((s) => s.at === home && !s.voyage);
+      if (g.warehouses[home] && ship) for (const [good, qty] of Object.entries(RECIPES.workshop)) {
+        const need = Math.max(0, qty * (b.level + 1) - (g.warehouses[home].goods[good] ?? 0));
+        const unit = Math.ceil(price(world, g.market[home][good], good) * 1.1);
+        const n = Math.min(need, Math.max(0, Math.floor((g.cash - BUFFER) / unit)));
+        if (n > 0) { const r = doBuy(g, ship, good, n); if (r.ok) { const stored = storeGoods(g, ship, good, r.qty); if (stored.ok) stockpiled += stored.qty; } }
+      }
+      const q = quoteRecipe(world, g.market, home, "weave");
+      const margin = q.ok ? sellQuote(world, g.market, home, "cloth", 2) - q.cost : 0;
+      const daily = (BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER) * (b.level + 1);
+      if (g.cash > BUFFER && margin * producerRate("workshop", b.level + 1) >= 3 * daily) {
+        const r = startConstruction(g, home, home + ":1", "workshop"); if (r.ok) upgrades++;
+      }
+    }
     minCash = Math.min(minCash, g.cash);
     campaignAt365(g, st);
     if (snaps.includes(d)) snapB(d);
   }
   const b = g.buildings[home][home + ":1"];
-  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, finalLevel: b.level, produced: b.produced ?? 0,
+  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b.level, produced: b.produced ?? 0,
     upkeepWagesPaid: paidBuildings(g), haltEvents, haltDays, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1,
     cashMin: Math.round(minCash), cashEnd: Math.round(g.cash), netWorthEnd: Math.round(netWorth(g)),
     priceIndex: [s0.priceIndex, priceIndex(g)], npcCash: [s0.npcCash, npcCash(g)], jobsEnd: jobsNeeded(g, home), campaignEnd: st.firstOver ?? null, horizons };

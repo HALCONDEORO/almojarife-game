@@ -65,7 +65,7 @@ for (const h of H) {
   }
   if (bH) {
     check(`B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
-    check(`B@${tag}: bot cash positive and above 4,500`, bH.cash, within(bH.cash, 4501, Infinity), "> 4500");
+    check(`B@${tag}: cash plus stored/cargo goods above 4,500`, bH.netWorth ?? bH.cash, within(bH.netWorth ?? bH.cash, 4501, Infinity), "> 4500");
     check(`B@${tag}: workshop never halted`, bH.haltEvents, bH.haltEvents === 0, "0");
     const prev = H[H.indexOf(h) - 1], pH = prev ? B.horizons?.[prev] : null;
     if (pH) {
