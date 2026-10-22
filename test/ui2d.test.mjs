@@ -10,3 +10,5 @@ test('hall preserves every displayed value and escapes optional city lines',()=>
  for(const text of ['&lt;Mayor&gt;','One','Two','Conocido/14','fee 4','toll 10/5','caja 1600','levies +1/-1','meeting 12','&lt;ciudad&gt;'])assert.ok(h.includes(text),text);
  assert.equal(JSON.stringify(hv),before);assert.doesNotMatch(h,/<ciudad>/);
 });
+import {readFileSync} from 'node:fs';
+test('hall presentation appends rather than erases pending events and ship controls',()=>{const source=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');assert.match(source,/if\(ui2dEnabled\(location.search\)\)h \+= hall2dHtml/);assert.doesNotMatch(source,/if\(ui2dEnabled\(location.search\)\)h = hall2dHtml/);});

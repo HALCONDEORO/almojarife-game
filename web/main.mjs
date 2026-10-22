@@ -388,7 +388,7 @@ function render() {
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
       const hv = hallView(g, s.at);
-      if(ui2dEnabled(location.search))h = hall2dHtml(hv,t,fmt,RESPECT_NAMES[lang][hv.respectId],lang);
+      if(ui2dEnabled(location.search))h += hall2dHtml(hv,t,fmt,RESPECT_NAMES[lang][hv.respectId],lang);
       else {
       h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hv.mayor}</div>` + hv.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("") + `</div>`;
       h += `<p><i>${t.hallStand.replace("{r}", RESPECT_NAMES[lang][hv.respectId]).replace("{n}", hv.respectPts)}</i></p>`;
