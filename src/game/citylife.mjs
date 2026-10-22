@@ -11,6 +11,7 @@ import { CLASSES, PER_1000, classShares } from "../sim/classes.mjs";
 import { activeShocks } from "./shocks.mjs";
 import { housePopBonus } from "./buildings.mjs";
 import { plagueActive, PLAGUE_MOOD } from "./plague.mjs";
+import { calamityMoodHit } from "./calamities.mjs";
 
 /** Active levels of a civic type that actually work: a halted building helps nobody. */
 const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0);
@@ -65,6 +66,7 @@ export function moodTarget(g, cityId, cls) {
   const hardTimes = activeShocks(g, cityId).length > 0;
   if (hardTimes) target = Math.max(0, target - SHOCK_PENALTY);
   if (plagueActive(g, cityId)) target = Math.max(0, target - PLAGUE_MOOD); // a plague sits on spirits while it lasts
+  target = Math.max(0, target - calamityMoodHit(g, cityId)); // and so do famine, fire and foul sanitation
   if (g.citylife) { // civic buildings lift spirits; they never exist in a flag-off game
     if (cls === "poor") target = Math.min(100, target + HOSPITAL_MOOD * workingLevels(g, cityId, "hospital") * (hardTimes ? 2 : 1));
     if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * workingLevels(g, cityId, "alhondiga"));
