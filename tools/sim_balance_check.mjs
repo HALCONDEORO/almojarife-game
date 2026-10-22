@@ -19,6 +19,8 @@ const report = process.argv[2]
   : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", process.env.BALANCE_DAYS || "36500", seeds.join(",")], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const checks = [], warnings = [];
+const EXPECTED_H = [365, 1825, 3650, 10950, 18250, 36500].filter((h) => h <= (report.days ?? 0));
+if (JSON.stringify(report.horizons ?? null) !== JSON.stringify(EXPECTED_H)) { console.log("FAIL  report horizons " + JSON.stringify(report.horizons) + " do not match days " + report.days + " (expected " + JSON.stringify(EXPECTED_H) + ")"); process.exit(1); }
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
 const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
@@ -36,6 +38,8 @@ function checkBC(prefix, B, C) {
   for (const h of H) {
     const tag = { 365: "1y", 1825: "5y", 3650: "10y", 10950: "30y", 18250: "50y", 36500: "100y" }[h] ?? (h + "d");
     const bH = B.horizons?.[h], cH = C.horizons?.[h];
+  check(`${prefix}B@${tag}: snapshot present`, bH ? "present" : "missing", !!bH, "present");
+  check(`${prefix}C@${tag}: snapshot present`, cH ? "present" : "missing", !!cH, "present");
   if (bH) {
     check(`${prefix}B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
     check(`${prefix}B@${tag}: cash plus stored/cargo goods above 4,500`, bH.netWorth ?? bH.cash, within(bH.netWorth ?? bH.cash, 4501, Infinity), "> 4500");

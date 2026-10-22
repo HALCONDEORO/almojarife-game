@@ -25,3 +25,17 @@ test('balance economy report carries per-seed runs for B and C', () => {
   assert.deepEqual(Object.keys(rep.seedRuns), ['1', '2']);
   for (const s of ['1', '2']) assert.ok(rep.seedRuns[s].B_builder_bot.horizons && rep.seedRuns[s].C_poor_bot.horizons);
 });
+
+test('balance gate rejects a report with a missing horizon snapshot or horizons that do not match days', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bal-'));
+  const rep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '3650', '1'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+  const ok = join(dir, 'ok.json'); writeFileSync(ok, JSON.stringify(rep));
+  const base = run({ BALANCE_SEEDS: '1' }, [ok]);
+  assert.equal(base.status, 0, base.stdout.slice(-600));
+  const a = structuredClone(rep); delete a.seedRuns['1'].B_builder_bot.horizons[1825];
+  const fa = join(dir, 'a.json'); writeFileSync(fa, JSON.stringify(a));
+  const ra = run({ BALANCE_SEEDS: '1' }, [fa]); assert.notEqual(ra.status, 0); assert.match(ra.stdout, /seed 1 B@5y: snapshot present.*missing/);
+  const b = structuredClone(rep); b.horizons = []; b.scenarios.B_builder_bot.horizons = {}; b.scenarios.C_poor_bot.horizons = {};
+  const fb = join(dir, 'b.json'); writeFileSync(fb, JSON.stringify(b));
+  const rb = run({ BALANCE_SEEDS: '1' }, [fb]); assert.notEqual(rb.status, 0); assert.match(rb.stdout, /do not match days/);
+});
