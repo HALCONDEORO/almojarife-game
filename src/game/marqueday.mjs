@@ -8,3 +8,5 @@ export function installMarqueDaily(hooks, realms, peaces) {
   hooks.push(h);
   return () => { const i = hooks.indexOf(h); if (i >= 0) hooks.splice(i, 1); };
 }
+/** Host switch for the daily piracy hook. OFF: the host fetches nothing and registers nothing. The game flags g.marque and g.peace stay separate switches. */
+export const PIRACY_DAILY_ENABLED = false;
