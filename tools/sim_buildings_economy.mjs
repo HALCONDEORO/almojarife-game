@@ -73,8 +73,9 @@ function scenarioB() {
     campaignAt365(g, st);
     if (snaps.includes(d)) snapB(d);
   }
-  const b = g.buildings[home][home + ":1"];
-  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b.level, produced: b.produced ?? 0,
+  const b = g.buildings?.[home]?.[home + ":1"] ?? null; // null: the building was lost (bankruptcy liquidation), report it instead of crashing
+  const lost = !b;
+  return { home, buildingLost: lost, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b?.level ?? null, produced: b?.produced ?? 0,
     upkeepWagesPaid: paidBuildings(g), haltEvents, haltDays, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1,
     cashMin: Math.round(minCash), cashEnd: Math.round(g.cash), netWorthEnd: Math.round(netWorth(g)),
     priceIndex: [s0.priceIndex, priceIndex(g)], npcCash: [s0.npcCash, npcCash(g)], jobsEnd: jobsNeeded(g, home), campaignEnd: st.firstOver ?? null, horizons };
