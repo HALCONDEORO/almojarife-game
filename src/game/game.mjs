@@ -33,6 +33,7 @@ import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
+import { prizeLocked } from "./privateering.mjs";
 import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf, noteTrade, decayRep } from "./reputation.mjs";
 export { feeMul } from "./reputation.mjs"; // the UI previews with the same fee the port will charge
 import { npcPlan } from "../sim/npcplan.mjs";
@@ -209,6 +210,7 @@ export function doBuy(g, ship, good, qty) {
 }
 export function doSell(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
+  if (prizeLocked(g, ship, good) > 0 && qty > (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good)) return { ok: false, reason: "prize" }; // prize goods wait for a court (flag off: never)
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, ship.at);
@@ -295,6 +297,7 @@ export function buyWarehouse(g, city) {
 }
 /** Move goods from the ship's hold into the warehouse of the port where it is docked. */
 export function storeGoods(g, ship, good, qty) {
+  if (prizeLocked(g, ship, good) > 0 && qty > (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good)) return { ok: false, reason: "prize" };
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };

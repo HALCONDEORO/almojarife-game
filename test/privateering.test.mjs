@@ -62,3 +62,58 @@ test("a won fight never overfills the hold (full and partial hold)", () => {
     assert.ok(used <= 60 - 0 && used <= 60, `hold used ${used} over 60`); assert.ok(have === 60 ? used === 60 : used >= have);
   }
 });
+// --- mechanic 2: prize court ---
+import { doSell, storeGoods, buyWarehouse } from "../src/game/game.mjs";
+import { settlePrize, prizeUnits, prizeLocked } from "../src/game/privateering.mjs";
+const prized = () => { const { g, s } = setup(); s.at = "cadiz"; s.voyage = null; s.cargo = { wool: 10, salt: 5 }; s.prizeLots = [{ realm: "portugal", goods: { wool: 10 }, day: 0 }]; return { g, s }; };
+test("prize goods are locked: only the free part can be sold, and nothing locks with the flag off", () => {
+  const { g, s } = prized();
+  assert.equal(prizeUnits(s, "wool"), 10); assert.equal(doSell(g, s, "wool", 1).reason, "prize"); assert.equal(doSell(g, s, "salt", 1).ok, true);
+  g.marque = false; assert.equal(prizeLocked(g, s, "wool"), 0);
+});
+test("a prize cannot be stored in a warehouse before the court", () => {
+  const { g, s } = prized(); g.cash = 1e6; buyWarehouse(g, "cadiz"); assert.equal(storeGoods(g, s, "wool", 5).reason, "prize");
+});
+test("a port with no realm has no court; the lot waits", () => {
+  const { g, s } = prized(); s.at = "tetuan"; assert.equal(settlePrize(g, data, s).reason, "no court"); assert.equal(s.prizeLots.length, 1);
+});
+test("a good port releases the prize; the goods become free cargo", () => {
+  const { g, s } = prized(); const r = settlePrize(g, data, s);
+  assert.equal(r.ok, true); assert.deepEqual(r.released, { wool: 10 }); assert.equal(s.cargo.wool, 10); assert.equal(s.prizeLots, undefined); assert.equal(doSell(g, s, "wool", 10).ok, true);
+});
+test("the victim's realm seizes the prize, and so does an ill-seen port", () => {
+  let { g, s } = prized(); s.at = "lisboa"; let r = settlePrize(g, data, s);
+  assert.deepEqual(r.seized, { wool: 10 }); assert.equal(s.cargo.wool, undefined); assert.equal(s.cargo.salt, 5);
+  ({ g, s } = prized()); g.portRep = { cadiz: -10 }; r = settlePrize(g, data, s); assert.deepEqual(r.seized, { wool: 10 });
+});
+test("a sunk or lost cargo never leaves phantom locks, and flag off settles nothing", () => {
+  const { g, s } = prized(); s.cargo = { wool: 3 }; assert.equal(prizeUnits(s, "wool"), 3);
+  g.marque = false; assert.equal(settlePrize(g, data, s).reason, "off");
+});
+test("an attack tags the kept goods as a prize lot", () => {
+  const { g, s, t } = setup(); lane(g, s, t); buyLetter(g, data, "cadiz", "portugal"); s.weapons = { bombarda: 2 }; s.crew = 20;
+  const r = attackTrader(g, data, s.id, 0); assert.equal(r.ok, true);
+  const kept = Object.values(r.kept).reduce((a, b) => a + b, 0), tagged = (s.prizeLots ?? []).reduce((a, l) => a + Object.values(l.goods).reduce((x, y) => x + y, 0), 0);
+  assert.equal(tagged, kept);
+});
+// --- interaction with captured-ship prizes (ship.prize === true) and saves ---
+import { shipValue } from "../src/game/game.mjs";
+test("a captured prize ship (ship.prize === true) is never locked and sells its cargo with the flag on", () => {
+  const { g, s } = setup(); s.at = "cadiz"; s.voyage = null; s.cargo = { salt: 3 }; s.prize = true;
+  assert.equal(prizeUnits(s, "salt"), 0); assert.equal(prizeLocked(g, s, "salt"), 0); assert.equal(doSell(g, s, "salt", 3).ok, true);
+});
+test("prize lots never change the resale value of the ship; a captured hull keeps its own rate", () => {
+  const { s } = setup(); const base = shipValue(s);
+  s.prizeLots = [{ realm: "portugal", goods: { wool: 1 }, day: 0 }]; assert.equal(shipValue(s), base);
+  const c = { ...s, prizeLots: undefined, prize: true }; assert.ok(shipValue(c) < base);
+});
+test("a ship that is both a captured hull and carries prize lots keeps both rules apart", () => {
+  const { g, s } = setup(); s.at = "cadiz"; s.voyage = null; s.prize = true; s.cargo = { wool: 4, salt: 2 }; s.prizeLots = [{ realm: "portugal", goods: { wool: 4 }, day: 0 }];
+  assert.equal(doSell(g, s, "wool", 1).reason, "prize"); assert.equal(doSell(g, s, "salt", 2).ok, true);
+  const r = settlePrize(g, data, s); assert.equal(r.ok, true); assert.equal(s.prize, true); assert.equal(s.prizeLots, undefined);
+});
+test("prize lots survive a save and reload and still lock the goods", () => {
+  const { g, s } = prized(); const h = deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g;
+  const hs = h.ships.find((x) => x.id === s.id); assert.deepEqual(hs.prizeLots, s.prizeLots); assert.equal(prizeUnits(hs, "wool"), 10);
+  assert.equal(doSell(h, hs, "wool", 1).reason, "prize");
+});
