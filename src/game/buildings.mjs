@@ -36,7 +36,16 @@ export const BUILDING_TYPES = Object.freeze({
   fishery: Object.freeze({ recipe: "fishery", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   // Ironworks: processor, iron and timber into ironware (docs/design/production-chains-study.md).
   ironworks: Object.freeze({ recipe: "ironworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  // Civic buildings of the city-life module (src/game/citylife.mjs); names from the documented
+  // record (posito, hospital, alhondiga). Effects live in that module and only apply when the
+  // citylife flag created its state; the view never offers them in a flag-off game.
+  posito: Object.freeze({ recipe: "posito", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  hospital: Object.freeze({ recipe: "hospital", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
+  alhondiga: Object.freeze({ recipe: "alhondiga", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
 });
+
+/** Types owned by the city-life module: offered to build only while g.citylife exists. */
+export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga"]);
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
 export function plotPrice(world, cityId, plot) {
@@ -193,6 +202,7 @@ export function sellQuote(world, market, city, good, qty) {
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
+  posito: 2, hospital: 6, alhondiga: 3, // city-life civic types (own tuning; only buildable with the flag on)
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -202,7 +212,8 @@ export const WAGE_PER_WORKER = 1;
 /** Total workers the port's active buildings want. */
 export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
 /** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
-export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
+// The extra term is the city-life population drift (src/game/citylife.mjs state contract): 0 in a flag-off game.
+export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) + (g.citylife?.cities?.[cityId]?.extra ?? 0) - Math.round(pop * TOWN_JOBS_SHARE)); };
 /** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
 export const staffingRatio = (g, cityId) => { const need = jobsNeeded(g, cityId); return need < 1 ? 1 : Math.min(1, freeLabor(g, cityId) / need); };
 
@@ -307,7 +318,7 @@ export function workshopTick(g, cityId) {
 /** Building effects (design doc piece 5). Houses raise the port's effective population a little
  *  (more of the existing class demand, nothing new); warehouse buildings extend its storage cap. */
 export const HOUSE_POP_PER_LEVEL = 50, WAREHOUSE_CAP_PER_LEVEL = 300;
-const activeLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type === type ? b.level : 0), 0);
+export const activeLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type === type ? b.level : 0), 0);
 export const housePopBonus = (g, cityId) => HOUSE_POP_PER_LEVEL * activeLevels(g, cityId, "house");
 export const warehouseCapBonus = (g, cityId) => WAREHOUSE_CAP_PER_LEVEL * activeLevels(g, cityId, "warehouse");
 /** Dock: share of the port toll your ships still pay there, by summed ACTIVE dock levels (capped at 3:
