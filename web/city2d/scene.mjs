@@ -1,5 +1,5 @@
 import {cityPlots} from '../../src/view3d/cityplots.mjs';
-import {project,placement,resolveVisual,assetKey,shoreline,mainland} from '../../src/view/city2d.mjs';
+import {project,placement,resolveVisual,assetKey,mainland,harbourLayout} from '../../src/view/city2d.mjs';
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 let walls=q.get('walls')==='1',bld={},labels={},tick=0;function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
 const names={house:'Casa',warehouse:'Almacén',workshop:'Taller',farm:'Granja',pasture:'Dehesa',sawmill:'Aserradero',mine:'Mina',oil_mill:'Almazara',vineyard:'Viñedo',saltworks:'Salina',brewery:'Cervecería',soapworks:'Jabonería',pottery:'Alfarería',brickworks:'Ladrillera',esparto_field:'Espartizal',ranch:'Ganadería',armory:'Armería',dock:'Muelle',fishery:'Pesquería',ironworks:'Fragua',posito:'Pósito',hospital:'Hospital',alhondiga:'Alhóndiga',caminos:'Caminos',pozo:'Pozo',capilla:'Capilla',market:'Mercado',shipyard:'Astillero',tavern:'Taberna',bank:'Banco',office:'Oficina'};
@@ -19,6 +19,30 @@ function drawWalls(){
  for(const f of [0,.5,1]){const x=a.x+(b.x-a.x)*f,y=a.y+(b.y-a.y)*f;ctx.fillStyle='#cbb68a';ctx.fillRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.strokeStyle='#7f6b48';ctx.strokeRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.fillStyle='#6a6048';ctx.fillRect(x-1.5*zoom,y-27*zoom,3*zoom,8*zoom);for(let i=-1;i<=1;i++){ctx.fillStyle='#e2cfaa';ctx.fillRect(x+(i*5-2)*zoom,y-42*zoom,4*zoom,7*zoom)}}
  }
 }
+function drawHarbour(t){
+ const {edge,span,piers}=harbourLayout(bounds);
+ const line=(a,b,color,width)=>{a=xy(...a);b=xy(...b);ctx.strokeStyle=color;ctx.lineWidth=width*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()};
+ // Stone apron is inland; piers extend into water without touching any plot.
+ const apron=[[edge-2,bounds.minY],[edge,bounds.minY],[edge,bounds.maxY-4],[edge-2,bounds.maxY-4]].map(p=>xy(...p));
+ ctx.beginPath();apron.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#a99a7b';ctx.fill();
+ line([edge,bounds.minY],[edge,bounds.maxY-4],'#6d6c59',13);
+ line([edge,bounds.minY],[edge,bounds.maxY-4],'#d8cba7',6);
+ for(const pier of piers){
+  const y=pier.y,end=pier.x+pier.w,w=pier.d;
+  const corners=[[edge,y],[end,y],[end,y+w],[edge,y+w]].map(p=>xy(...p));
+  ctx.save();ctx.translate(0,5*zoom);ctx.beginPath();corners.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#204e5666';ctx.fill();ctx.restore();
+  ctx.beginPath();corners.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#9b8057';ctx.fill();
+  line([edge,y],[end,y],'#d1b58a',2);line([edge,y+w],[end,y+w],'#5f604e',3);
+  for(let x=edge+.5;x<end;x+=.65)line([x,y],[x,y+w],'#5e533e77',1);
+  for(const x of [edge+.6,end-.4])for(const yy of [y,y+w]){const p=xy(x,yy);ctx.fillStyle='#665b45';ctx.fillRect(p.x-2*zoom,p.y-4*zoom,4*zoom,10*zoom);ctx.fillStyle='#c2ac7d';ctx.beginPath();ctx.ellipse(p.x,p.y-4*zoom,2.5*zoom,1.6*zoom,0,0,Math.PI*2);ctx.fill()}
+ }
+ for(let i=0;i<11;i++){const p=xy(edge-1.2,bounds.minY+2+i*span/13);ctx.fillStyle='#7c7157';ctx.beginPath();ctx.ellipse(p.x,p.y,2.5*zoom,4*zoom,0,0,Math.PI*2);ctx.fill()}
+ // Crates, barrels and a handcart make the working waterfront legible at close zoom.
+ for(let i=0;i<8;i++){const p=xy(edge-2.6,bounds.minY+3+i*span/10);ctx.fillStyle='#655c4444';ctx.beginPath();ctx.ellipse(p.x+3*zoom,p.y+2*zoom,8*zoom,3*zoom,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=i%2?'#a08053':'#8d714c';ctx.fillRect(p.x-4*zoom,p.y-8*zoom,8*zoom,8*zoom);ctx.strokeStyle='#5e553e';ctx.lineWidth=1*zoom;ctx.strokeRect(p.x-4*zoom,p.y-8*zoom,8*zoom,8*zoom);ctx.beginPath();ctx.moveTo(p.x-4*zoom,p.y-8*zoom);ctx.lineTo(p.x+4*zoom,p.y);ctx.stroke()}
+ if(images.barco){const bob=animate?Math.sin(t*1.1)*.22:0;sprite({x:edge+10,y:bounds.minY+span*.45+bob,w:7,d:7},images.barco)}
+ // Cosmetic dockworkers follow the apron, never simulation citizens or jobs.
+ for(let i=0;i<7;i++){const f=(i/7+(animate?t*.009:0))%1,p=xy(edge-1.2,bounds.minY+3+f*(span-9)),step=animate?Math.sin(t*5+i)*1.4:0;ctx.fillStyle='#5b5a413b';ctx.beginPath();ctx.ellipse(p.x+2*zoom,p.y+zoom,4*zoom,1.8*zoom,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#4e4c39';ctx.lineWidth=1.3*zoom;ctx.beginPath();ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x-step*zoom,p.y);ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x+step*zoom,p.y);ctx.stroke();ctx.fillStyle=['#775746','#68746a','#9d8761'][i%3];ctx.fillRect(p.x-1.7*zoom,p.y-8*zoom,3.4*zoom,5*zoom);ctx.fillStyle='#cfb18b';ctx.beginPath();ctx.arc(p.x,p.y-9*zoom,1.8*zoom,0,Math.PI*2);ctx.fill()}
+}
 function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
  const c=mainland(bounds).map(([x,y])=>xy(x,y));ctx.beginPath();ctx.moveTo((c[0].x+c[c.length-1].x)/2,(c[0].y+c[c.length-1].y)/2);c.forEach((p,i)=>{const n=c[(i+1)%c.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.fillStyle='#b8a67a';ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#315f6755';ctx.lineWidth=25*zoom;ctx.stroke();ctx.strokeStyle='#cdbf96';ctx.lineWidth=9*zoom;ctx.stroke();ctx.save();ctx.clip();
  // Fine deterministic earth grain rather than repeating rectangular sprite tiles.
@@ -33,8 +57,8 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  for(let i=0;i<15;i++){const x=bounds.minX+6+(i%5)*5.1+(i%3)*.6,y=bounds.minY-8-Math.floor(i/5)*5.5+(i%4)*.45;const key=i%5===0?'warehouse:1':'house_comfortable:'+(1+i%2);sprite({x,y,w:3.8,d:3.5},images[key],.82)}
  drawWalls();
  ctx.strokeStyle='#e4d3ad';ctx.lineWidth=10*zoom;ctx.lineCap='round';for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
- // Quay follows the exact projected shoreline as a continuous stone edge.
-const qa=xy(bounds.maxX+3,bounds.minY),qb=xy(bounds.maxX+3,bounds.maxY);ctx.strokeStyle='#8e8167';ctx.lineWidth=12*zoom;ctx.beginPath();ctx.moveTo(qa.x,qa.y);ctx.lineTo(qb.x,qb.y);ctx.stroke();ctx.strokeStyle='#e0d2ad';ctx.lineWidth=6*zoom;ctx.beginPath();ctx.moveTo(qa.x,qa.y-4*zoom);ctx.lineTo(qb.x,qb.y-4*zoom);ctx.stroke();for(let i=0;i<=12;i++){const a=xy(bounds.maxX+3,bounds.minY+(bounds.maxY-bounds.minY)*i/12);ctx.fillStyle='#756c54';ctx.beginPath();ctx.ellipse(a.x,a.y,3*zoom,6*zoom,0,0,Math.PI*2);ctx.fill()}if(images.barco){const p={id:'boat',x:bounds.maxX+8,y:(bounds.minY+bounds.maxY)*.5,w:7,d:7};const bob=animate?Math.sin(t*1.1)*.35:0;sprite({...p,y:p.y+bob},images.barco)}for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const p of [...layout.plots].sort((a,b)=>placement(a).depth-placement(b).depth)){
+ drawHarbour(t);
+ for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const p of [...layout.plots].sort((a,b)=>placement(a).depth-placement(b).depth)){
  const owned=bld[p.id],service=['market','shipyard','tavern','bank','office','warehouse'].includes(p.type)&&+p.id.split(':')[1]<6;
  let b=owned||{type:p.type,level:1,state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d);polygon(p);if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
  const isPreview=preview&&p===hover&&!owned&&!service;if(v.state!=='plot'&&v.state!=='construction'&&!isPreview){const key=assetKey(p,b);sprite(p,images[key]||images[p.type+':1'],1,v.state==='halted'?'saturate(.15) brightness(.8)':'');}
