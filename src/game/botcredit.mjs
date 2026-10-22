@@ -9,7 +9,8 @@ import { dueNow, post } from './ledger.mjs';
 export function botFinanceView(g, bot) {
   const view = { world: g.world, market: g.market, day: g.day, tick: g.tick,
     over: g.over, ships: bot.ships ?? [bot.ship] };
-  for (const field of ['cash', 'warehouses', 'loans', 'nextLoan', 'rankIdx', 'accrued',
+  view.credit = g.credit === true; // the same flag, the same terms: a bot is judged by its own payment record like a player
+  for (const field of ['payRep', 'cash', 'warehouses', 'loans', 'nextLoan', 'rankIdx', 'accrued',
     'weekLoanInterest', 'weekLoanPrincipal', 'reports', 'inbox', 'nextMsg', 'weekTrade']) {
     Object.defineProperty(view, field, { enumerable: true,
       get: () => bot[field], set: (value) => { bot[field] = value; } });
