@@ -1,4 +1,4 @@
-import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement,tradePortDetail} from "../src/view/historicalmap.mjs";
+import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -256,12 +256,6 @@ function render() {
   m += historical.svg;
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
-  if(HISTORICAL_MAPS_ENABLED && mapMode==='trade') {
-    for(const badge of $("map").querySelectorAll('.trade-card')) {
-      const show=()=>{const p=world.cities.find(p=>p.id===badge.dataset.port),el=$("trade-port-detail");if(p&&el)el.innerHTML=tradePortDetail(p,lang,id=>t.goods[id]??id);};
-      badge.onpointerenter=badge.onfocus=badge.onclick=show;
-    }
-  }
   $("map").querySelectorAll("g.city").forEach((el) => {
     el.onclick = () => {
       const a = portClickAction(g, el.dataset.c); // own ship docked there -> enter the city; else destination
