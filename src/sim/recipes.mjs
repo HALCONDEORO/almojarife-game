@@ -6,7 +6,7 @@ export const RECIPES = Object.freeze({
   cog: Object.freeze({ timber: 24, iron: 8, cloth: 10, esparto: 6 }),
   caravel: Object.freeze({ timber: 20, iron: 10, cloth: 16, esparto: 6 }),
   nao: Object.freeze({ timber: 42, iron: 16, cloth: 21, esparto: 9 }),
-warehouse: Object.freeze({ timber: 12, bricks: 16, ironware: 1 }),
+  warehouse: Object.freeze({ timber: 12, bricks: 16, ironware: 1 }),
   house: Object.freeze({ timber: 8, bricks: 8, cloth: 2 }),
   workshop: Object.freeze({ timber: 10, bricks: 10, ironware: 2, cloth: 6 }),
   farm: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }),

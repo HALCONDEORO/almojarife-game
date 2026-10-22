@@ -105,9 +105,9 @@ test("after a year producers sell at or below base, consumers at or above base, 
     const p = price(world, e, g), base = world.goods[g].base;
     if (e.makes) assert.ok(p <= base, `${cid} ${g} producer price ${p} > base ${base}`);
     // Design decision (soap PR, review at the double PASS): soap demand is tuned BELOW the fixed
-    // needs-trickle inflow (0.02/0.05/0.08 per 1000) so consumer ports settle under base, near the
-    // producer floor. That removes the maker/consumer price spread that NPC traders were compounding
-    // for a century (100y worth gate) without touching stock floors or caps: soap is a cheap civic
+    // needs-trickle inflow (0.02/0.05/0.08 per 1000) so consumer ports settle under base.
+    // The smaller maker/consumer spread prevents the measured century-long NPC worth surge
+    // (100y worth gate) without touching stock floors or caps: soap is a cheap civic
     // staple, not an arbitrage vehicle. The exemption below is scoped to soap only; every other good
     // keeps the "consumer pays at least base" invariant.
     if (e.needs && !lowMarginCivic.has(g)) assert.ok(p >= base, `${cid} ${g} consumer price ${p} < base ${base}`);
