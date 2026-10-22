@@ -14,10 +14,12 @@ export const tickParts = (tick) => ({ day: dayOf(tick), hour: hourOf(tick) });
 // Plain 365-day years with the usual month lengths; leap years are ignored on purpose,
 // so the date of a game day is pure arithmetic and never drifts from the day count.
 export const START_YEAR = 1480;
+/** Saves written before the start year moved to 1480 carry no startYear: they keep counting from 1475, so their chronicle and dates continue unchanged. */
+export const LEGACY_START_YEAR = 1475;
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 /** Calendar date of a game day: {year, month (0-11), day (1-31)}. */
-export function calendarOf(day) {
-  const year = START_YEAR + Math.floor(day / 365);
+export function calendarOf(day, startYear = START_YEAR) {
+  const year = startYear + Math.floor(day / 365);
   let doy = day % 365, month = 0;
   while (doy >= MONTH_DAYS[month]) doy -= MONTH_DAYS[month++];
   return { year, month, day: doy + 1 };

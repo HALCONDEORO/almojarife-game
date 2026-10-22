@@ -1,5 +1,5 @@
 // F1 of docs/design/hermandad.md: data only, zero economic effect. Pure readers and a validator; nothing here changes a game.
-import { readFileSync } from "node:fs";
+// No node:fs here: the module is pure so the web bundle can import it later; the data file is passed in by the caller.
 export const CLASSES = ["member", "trading_house", "station", "free_port", "strong_place"];
 /** A port without a class is a member (the migration default for old saves). */
 export const portClassOf = (data, portId) => data.portClass?.[portId] ?? "member";
@@ -8,7 +8,6 @@ const key = (d) => d ? d.year * 10000 + d.month * 100 + d.day : null;
 export const institutionsAt = (data, year) => data.institutions.filter((i) => (i.from === null || year >= i.from) && (i.until === null || year < i.until));
 /** Events whose start falls in [fromYear, toYear], in date order. */
 export const eventsBetween = (data, fromYear, toYear) => data.events.filter((e) => e.from.year >= fromYear && e.from.year <= toYear).sort((a, b) => key(a.from) - key(b.from));
-export const loadHermandad = () => JSON.parse(readFileSync(new URL("../../data/hermandad.json", import.meta.url), "utf8"));
 const okDate = (d) => d && Number.isInteger(d.year) && d.year >= 1480 && d.year <= 1600 && Number.isInteger(d.month) && d.month >= 1 && d.month <= 12 && Number.isInteger(d.day) && d.day >= 1 && d.day <= 31;
 /** Returns a list of problems (empty = valid). Every row needs an https source; ports must exist; years stay inside 1480-1600 (institutions may be open). */
 export function validateHermandad(data, portIds) {
