@@ -9,3 +9,5 @@ test('state mapping uses real state including halted',()=>{const p={type:'house'
 test('invalid, duplicate and overlapping footprints reported',()=>{assert.throws(()=>placement({x:0,y:0,w:-1,d:2}));const a={id:'a',x:0,y:0,w:3,d:3};assert.throws(()=>validateOccupancy([a,a]));assert.equal(validateOccupancy([a,{...a,id:'b',x:1}]).collisions.length,1)});
 
 test('natural coast is stable and never cuts through occupied bounding rectangle',async()=>{const {shoreline}=await import('../src/view/city2d.mjs');const b={minX:2,minY:3,maxX:43,maxY:42},p=shoreline(b,'huelva');assert.deepEqual(p,shoreline(b,'huelva'));assert.notDeepEqual(p,shoreline(b,'cadiz'));for(const[x,y]of p)assert.ok(x<=b.minX||x>=b.maxX||y<=b.minY||y>=b.maxY);assert.throws(()=>shoreline({...b,maxX:0}));});
+
+test('mainland extends well beyond the town inland, leaving one sea front',async()=>{const {mainland}=await import('../src/view/city2d.mjs'),b={minX:2,minY:3,maxX:43,maxY:42},p=mainland(b);assert.ok(p[0][0]<b.minX-100);assert.ok(p[0][1]<b.minY-100);assert.ok(p[2][0]>b.maxX);assert.deepEqual(p,mainland(b));assert.throws(()=>mainland({...b,maxX:0}));});

@@ -29,3 +29,11 @@ export function shoreline(bounds,seed='city'){
  for(let i=12;i>=0;i--)pts.push([minX-bump(i+29),minY+(maxY-minY)*i/12]);
  return pts;
 }
+
+/** A coastal town is attached to mainland, never surrounded by sea. */
+export function mainland(bounds){
+ const {minX,minY,maxX,maxY}=bounds;
+ if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid mainland');
+ const back=Math.max(maxX-minX,maxY-minY)*8;
+ return [[minX-back,minY-back],[maxX+3,minY-back],[maxX+3,minY-12],[maxX+3,minY],[maxX+3,maxY-5],[maxX+3,maxY+5],[maxX-5,maxY+5],[minX,maxY+5],[minX-12,maxY+5],[minX-back,maxY+5]];
+}
