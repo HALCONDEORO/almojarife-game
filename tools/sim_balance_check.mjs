@@ -16,7 +16,7 @@ const seeds = seedsEnv === "none" ? [] : seedsEnv.split(",").map((x) => (/^\d+$/
 if (seeds.some((x) => !Number.isSafeInteger(x) || x > 4294967295) || new Set(seeds).size !== seeds.length) throw new Error("BALANCE_SEEDS must be 'none' or a comma list of distinct uint32 integers");
 const report = process.argv[2]
   ? JSON.parse(readFileSync(process.argv[2], "utf8"))
-  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", process.env.BALANCE_DAYS ?? "36500", seeds.join(",")], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", process.env.BALANCE_DAYS || "36500", seeds.join(",")], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const checks = [], warnings = [];
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
