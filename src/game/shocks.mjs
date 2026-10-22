@@ -4,6 +4,7 @@
 // restored on expiry), so a save/load mid-shock stays exact. No DOM here.
 import { seeded } from "../view/cityscene.mjs";
 import { post } from "./ledger.mjs";
+import { healthShield, cityHealth } from "./household.mjs";
 
 /** The three regions. Every city of the world belongs to exactly one (a test checks this). */
 export const REGIONS = {
@@ -81,6 +82,7 @@ export function rollShock(g) {
   if (type.id === "poor_harvest") sh.good = HARVEST_GOODS[Math.floor(r() * HARVEST_GOODS.length)];
   else if (type.id === "new_demand") { const goods = Object.keys(g.world.goods); sh.good = goods[Math.floor(r() * goods.length)]; }
   else { const cities = REGIONS[region]; sh.city = cities[Math.floor(r() * cities.length)]; delete sh.region; }
+  if (sh.type === "port_closed" && g.household === true && r() < healthShield(cityHealth(g, sh.city))) return null; // city works turn some scares away (flag off: no extra draw)
   if (sh.type === "port_closed") { if (active.some((a) => a.type === "port_closed" && a.city === sh.city)) return null; } // a port never closes twice over
   else if (active.some((a) => a.type === sh.type && a.region === sh.region && a.good === sh.good)) return null; // no exact duplicates running
   return sh;

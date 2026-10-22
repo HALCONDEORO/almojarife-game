@@ -27,6 +27,7 @@ import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mj
 import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
+import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
@@ -80,13 +81,15 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if(houses)ai.forEach((bot,i)=>{bot.house=houses[i];});
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if(houses)regionalRivalStep({world,market,day:d-WARMUP_DAYS,tick:d*TICKS_PER_DAY,seed:normalizeSeed(opts.seed),regionalRivals:true},t);else aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === true, credit: opts.credit === true, legumes: opts.legumes === true, pottery: opts.pottery === true, pirateFight: opts.pirateFight === true, marque: opts.marque === true, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === true, credit: opts.credit === true, legumes: opts.legumes === true, pottery: opts.pottery === true, pirateFight: opts.pirateFight === true, marque: opts.marque === true, household: opts.household === true, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   if(houses)g.regionalRivals=true;
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
+export const botWorth = (g, t) => t.cash + Object.entries(t.ship?.cargo ?? {}).reduce((w, [k, q]) => w + q * g.world.goods[k].base, 0) + (t.ship ? shipValue(t.ship) : 0); // a bot house counts its ship too
+export const houseWorth = (g) => netWorth(g) + g.ships.reduce((w, s) => w + shipValue(s), 0); // tribute base: the same as a bot (cash + cargo + ships), net of debts
 export function netWorth(g) {
   let w = g.cash - accruedTotal(g) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
   for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
@@ -133,6 +136,8 @@ function dayTick(g) {
   const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
   chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year
   chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
+  const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
+  if (hc && g.reports?.[0]?.day === g.day) g.reports[0].household = hc;
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   expireContracts(g); // a council contract past its due day lapses
