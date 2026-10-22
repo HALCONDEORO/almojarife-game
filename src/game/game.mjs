@@ -31,6 +31,7 @@ import { arrivalMood } from "./moodout.mjs";
 import { seasonsTick } from "./seasons.mjs";
 import { craftCount } from "./crafts.mjs";
 import { memoryDeed, memoryGossipLine, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
+import { relationsOnSale } from "./relations.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
@@ -100,6 +101,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
   if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
   if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
+  if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -250,7 +252,7 @@ export function doSell(g, ship, good, qty) {
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
-  if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
