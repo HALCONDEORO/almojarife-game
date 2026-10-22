@@ -2,7 +2,7 @@
 // 2-5 owned ships group up, sail to the same port at the pace of the slowest hull,
 // and when pirates strike a member at sea the whole group's armament answers (escort bonus).
 // Pure game logic, no DOM. The normal sail/encounter rules still apply, so winds, fees and choices stay.
-import { weaponPower } from "./crew.mjs";
+import { weaponPower, speedFactor } from "./crew.mjs";
 import { post } from "./ledger.mjs";
 
 export const CONVOY_MIN = 2, CONVOY_MAX = 5;
@@ -37,11 +37,12 @@ export function formConvoy(g, shipIds, name = "") {
     if (convoyOf(g, s)) return { ok: false, reason: "already grouped" };
     ships.push(s);
   }
+  if (ships.some((x) => x.at !== ships[0].at)) return { ok: false, reason: "scattered" }; // a convoy forms in one port, regroup first
   const seq = (g.convoySeq = (g.convoySeq ?? 0) + 1), id = "cv" + seq;
   const cv = { id, name: String(name || "").trim().slice(0, 30) || "Convoy " + seq, ships: ids, since: g.day };
   (g.convoys ??= {})[id] = cv;
   for (const s of ships) s.convoy = id;
-  post(g, "convoyFormed", { convoy: id, name: cv.name, ships: ids });
+  post(g, "convoyFormed", { convoy: id, name: cv.name, ships: ids, txt: { es: `Se forma el convoy ${cv.name} (${ids.length} barcos).`, en: `Convoy ${cv.name} forms (${ids.length} ships).` } });
   return { ok: true, convoy: cv };
 }
 
@@ -51,11 +52,19 @@ export function leaveConvoy(g, shipId) {
   const cv = convoyOf(g, s);
   if (!cv) return { ok: false, reason: "no convoy" };
   if (s.voyage) return { ok: false, reason: "at sea" }; // you cannot desert the group mid-voyage
-  cv.ships = cv.ships.filter((x) => x !== shipId);
-  delete s.convoy;
-  post(g, "convoyLeft", { convoy: cv.id, ship: shipId });
-  if (cv.ships.length < CONVOY_MIN) { const [last] = cv.ships; const ls = g.ships.find((x) => x.id === last); if (ls) delete ls.convoy; delete g.convoys[cv.id]; post(g, "convoyDisbanded", { convoy: cv.id }); }
+  removeFromConvoy(g, s);
   return { ok: true };
+}
+
+/** A ship leaving the fleet (sold, and one day sunk) leaves its convoy: membership cleaned,
+ *  a single-hull remainder disbands, and the inbox hears both. */
+export function removeFromConvoy(g, ship) {
+  const cv = convoyOf(g, ship);
+  if (!cv) return;
+  cv.ships = cv.ships.filter((x) => x !== ship.id);
+  delete ship.convoy;
+  post(g, "convoyLeft", { convoy: cv.id, name: cv.name, ship: ship.id, txt: { es: `El barco ${ship.id} sale del convoy ${cv.name}.`, en: `Ship ${ship.id} leaves convoy ${cv.name}.` } });
+  if (cv.ships.length < CONVOY_MIN) { const [last] = cv.ships; const ls = g.ships.find((x) => x.id === last); if (ls) delete ls.convoy; delete g.convoys[cv.id]; post(g, "convoyDisbanded", { convoy: cv.id, name: cv.name, txt: { es: `El convoy ${cv.name} se disuelve: queda un solo barco.`, en: `Convoy ${cv.name} disbands: a single hull is left.` } }); }
 }
 
 /** Dissolve the whole group (ships must be in port). */
@@ -65,7 +74,7 @@ export function disbandConvoy(g, id) {
   for (const sid of cv.ships) { const s = g.ships.find((x) => x.id === sid); if (s?.voyage) return { ok: false, reason: "at sea" }; }
   for (const sid of cv.ships) { const s = g.ships.find((x) => x.id === sid); if (s) delete s.convoy; }
   delete g.convoys[id];
-  post(g, "convoyDisbanded", { convoy: id });
+  post(g, "convoyDisbanded", { convoy: id, name: cv.name, txt: { es: `El convoy ${cv.name} se disuelve.`, en: `Convoy ${cv.name} disbands.` } });
   return { ok: true };
 }
 
@@ -79,10 +88,12 @@ export function sailConvoy(g, id, to, ops) {
   if (ships.some((s) => !s || s.voyage)) return { ok: false, reason: "at sea" };
   if (ships.some((s) => s.at !== ships[0].at)) return { ok: false, reason: "scattered" }; // regroup in one port first
   if (ships[0].at === to) return { ok: false, reason: "already there" };
+  for (const s of ships) { if (speedFactor(s) <= 0) return { ok: false, reason: "crew" }; } // validate every hull before any leaves: a short-crewed member must not strand the rest mid-departure
   for (const s of ships) { const r = ops.doSail(g, s, to); if (!r.ok) return r; }
   let slow = 0;
   for (const s of ships) slow = Math.max(slow, s.voyage.ticksLeft);
   for (const s of ships) { s.voyage.ticksLeft = slow; s.voyage.totalTicks = Math.max(s.voyage.totalTicks ?? slow, slow); }
-  post(g, "convoySailed", { convoy: id, to, ships: cv.ships.slice() });
+  const toName = g.world.nodes[to]?.name ?? to;
+  post(g, "convoySailed", { convoy: id, name: cv.name, to, ships: cv.ships.slice(), txt: { es: `El convoy ${cv.name} zarpa a ${toName} (${cv.ships.length} barcos, al paso del más lento).`, en: `Convoy ${cv.name} sails to ${toName} (${cv.ships.length} ships, at the pace of the slowest).` } });
   return { ok: true, ships: cv.ships.slice(), to };
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
-import {newGame,doSail,buyCaravel,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
+import {newGame,doSail,buyCaravel,sellShip,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
 import {buyWeapon} from '../src/game/crew.mjs';
 import {encounterOutcome} from '../src/game/encounters.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
@@ -46,4 +46,33 @@ test('convoys survive save and load',()=>{
  const back=deserialize(JSON.parse(JSON.stringify(serialize(g,'Test Co'))),world).g;
  assert.ok(back.convoys[cv.id]);assert.deepEqual(back.convoys[cv.id].ships,[s0.id,s1.id]);
  assert.equal(back.ships[0].convoy,cv.id);
+});
+
+test('a convoy only forms in one port (scattered ships are rejected)',()=>{
+ const {g,s0,s1}=mk();s1.at='lisboa';
+ assert.equal(formConvoy(g,[s0.id,s1.id]).reason,'scattered');
+ assert.ok(!s0.convoy&&!s1.convoy,'nobody grouped');
+});
+test('every convoy notice carries bilingual text (no blank inbox lines)',()=>{
+ const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
+ sailConvoy(g,cv.id,'barcelona',{doSail});
+ const notes=(g.inbox??[]).filter((m)=>m.kind.startsWith('convoy'));
+ assert.equal(notes.length,2,'formed + sailed');
+ for(const m of notes){assert.ok(m.txt?.es?.length>5&&m.txt?.en?.length>5,`txt on ${m.kind}`);}
+ assert.ok(notes.find((m)=>m.kind==='convoySailed').txt.es.includes('Barcelona'),'the city name, not the id');
+});
+test('sailConvoy validates every hull before any leaves: no partial departures',()=>{
+ const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
+ s1.crew=0; // below the minimum: this hull cannot leave
+ const r=sailConvoy(g,cv.id,'barcelona',{doSail});
+ assert.equal(r.ok,false);assert.equal(r.reason,'crew');
+ assert.ok(!s0.voyage&&!s1.voyage,'nobody moved: the group is not stranded without its escort');
+});
+test('selling a ship posts its convoy farewell and a single-hull remainder disbands with notice',()=>{
+ const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
+ assert.ok(sellShip(g,s1).ok);
+ const notes=(g.inbox??[]).filter((m)=>m.kind.startsWith('convoy'));
+ assert.ok(notes.some((m)=>m.kind==='convoyLeft'&&m.txt?.es&&m.txt?.en),'farewell posted, bilingual');
+ assert.ok(notes.some((m)=>m.kind==='convoyDisbanded'),'the disband is posted too');
+ assert.equal(s0.convoy,undefined);assert.equal(g.convoys[cv.id],undefined);
 });
