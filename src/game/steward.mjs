@@ -6,7 +6,7 @@
 import { price } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
-import { repOnBuy, repOnSale, scarcityOf } from "./reputation.mjs";
+import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
 import { addRespect } from "./rank.mjs";
 import { recordSale } from "./voyages.mjs";
 
@@ -67,6 +67,7 @@ export function stewardTick(g, city, cap) {
           w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
           if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
           g.cash += revenue;
+          noteTrade(g, city); // a standing-order sale keeps the name alive like a manual one
           repOnSale(g, city, scarcity, revenue); // standing orders earn (and lose) reputation like manual trades
           if (addRespect(g, city, revenue)) post(g, "respect", { city }); // and the house earns respect, as in doSell
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
@@ -90,6 +91,7 @@ export function stewardTick(g, city, cap) {
         }
         if (n > 0) {
           g.cash -= cost;
+          noteTrade(g, city);
           repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
           w.goods[good] = (w.goods[good] ?? 0) + n;
           (w.basis ??= {})[good] = (w.basis[good] ?? 0) + cost;

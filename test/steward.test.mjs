@@ -153,3 +153,15 @@ test('steward sale with no ship in port still works: respect rises, no voyage en
  assert.ok(did?.[0]?.sold>0,'sale fine without any ship');
  assert.deepEqual(g.voyages??[],[],'and nothing recorded');
 });
+test('standing-order trades keep the port name alive against the monthly decay',async()=>{
+ const{decayRep,addRep,portRep}=await import('../src/game/reputation.mjs');
+ const{g}=mk();dear(g,'grain');addRep(g,'cadiz',60);
+ g.day=29;const w=g.warehouses.cadiz;w.goods.grain=10;w.basis={grain:100};
+ assert.ok(setStewardRule(g,'cadiz','grain',{sellAbove:1,sellKeep:0},999).ok);
+ assert.ok(stewardTick(g,'cadiz',999)?.[0]?.sold>0);
+ assert.equal(g.repTrade.cadiz,29,'the sale was noted');
+ const rep=portRep(g,'cadiz');g.day=30;decayRep(g);assert.equal(portRep(g,'cadiz'),rep,'no decay after a steward sale');
+ const{g:g2}=mk();dear(g2,'grain');addRep(g2,'cadiz',-5);g2.day=29;g2.repTrade={};
+ const p=price(world,g2.market.cadiz.grain,'grain');assert.ok(setStewardRule(g2,'cadiz','grain',{buyBelow:p,buyTo:1},999).ok);
+ assert.ok(stewardTick(g2,'cadiz',999)?.[0]?.bought>0);assert.equal(g2.repTrade.cadiz,29,'the buy was noted');
+});
