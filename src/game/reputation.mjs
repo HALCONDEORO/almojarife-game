@@ -85,3 +85,23 @@ export function repOnBuy(g, city, scarcity, cost) {
   award(g, city, -d);
   return -d;
 }
+
+/** Reputation fades in ports where the trader has not traded for a month: points lost per month, moving toward 0. */
+export const REP_DECAY_PER_MONTH = 10, REP_DECAY_DAYS = 30;
+/** Remember the day of the last trade in a port (manual or by standing order; a trade keeps the name alive). */
+export function noteTrade(g, city) { (g.repTrade ??= {})[city] = g.day; }
+/** Monthly decay: only ports without trade for REP_DECAY_DAYS lose points, so an active merchant is never punished.
+ *  A port with a name but no recorded trade day (an old save) starts its clock today instead of decaying at once. */
+export function decayRep(g) {
+  if (g.day % REP_DECAY_DAYS !== 0) return;
+  const rt = (g.repTrade ??= {});
+  for (const city of Object.keys(g.portRep ?? {})) {
+    const v = portRep(g, city);
+    if (!v) continue;
+    if (rt[city] === undefined) { rt[city] = g.day; continue; }
+    if (g.day - rt[city] < REP_DECAY_DAYS) continue;
+    const before = repTierIndex(v);
+    g.portRep[city] = v > 0 ? Math.max(0, v - REP_DECAY_PER_MONTH) : Math.min(0, v + REP_DECAY_PER_MONTH);
+    noteTier(g, city, before);
+  }
+}
