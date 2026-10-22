@@ -6,4 +6,4 @@ Flow: Continue, Campaigns, Free game, Settings. Campaign selection leads to char
 
 Continue would show save context, not immediately reset it. Import/export belong in Settings, not beside the main Start action. Current mock does not read/write local saves or start actual games. The SVG illustrations are original, not third-party game assets.
 
-Desktop 1440 and phone-width 390 screenshots visually inspected. Cards stack vertically on mobile. Buttons change local mock views only. Campaign detail/free view/return tested in headless Chrome. No physical phone check. Mock should be shown to Marco before production changes.
+Desktop 1440 and phone-width 390 screenshots visually inspected. Cards stack vertically on mobile. Buttons change local mock views only. Campaign detail/free view/return tested in headless Chrome. No physical phone check. Mock should be shown to the project owner before production changes.

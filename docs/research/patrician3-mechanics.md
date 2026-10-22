@@ -60,7 +60,7 @@ Almojarife idea: this is the best path to "play for hours without clicking every
 - Reputation is local or Hanse-wide. It rises by supplying scarce goods, building public works, donating to the church, holding celebrations, completing missions, hunting pirates.
 - Town hall: council meetings for higher ranks, mayor elections, taxes, missions and notices; the top rank leads the League and handles disputes (a town taxing too much, a town helping pirates).
 - Late missions: found a new town, stop a notorious pirate, destroy a hideout, bring a struggling town to prosperity.
-Almojarife idea: ranks from "buhonero" to "almojarife" (our top rank), town halls with permits and taxes (Marco's roadmap), mission board, reputation per town and global.
+Almojarife idea: ranks from "buhonero" to "almojarife" (our top rank), town halls with permits and taxes (project roadmap), mission board, reputation per town and global.
 
 ## 8. Buildings and city logic
 - Public buildings: roads, wells, hospital, chapel, church, mint, school, shipyard, tavern, weapon smith, town wall levels. They give permanent reputation and affect health, fire and plague.
