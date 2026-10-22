@@ -40,6 +40,7 @@ test("the derechos the player pays feed the town's chest", () => {
 
 test("a poor chest makes the concejo raise a tax on its meeting day, by one bounded step", () => {
   const g = fresh();
+  g.ai = []; // council mechanics only: no bot derechos refilling the chest on the way to the meeting
   const meet = nextMeetingDay(world, "cadiz", 1);
   g.hallCaja = { cadiz: 0 }; // an empty chest before the meeting
   const before = taxSteps(g, "cadiz");
@@ -82,11 +83,13 @@ test("votes are deterministic for the same city and day", () => {
 
 test("the vote is only news where the concejo knows the player", () => {
   const g = fresh();
+  g.ai = []; // no bot derechos: the chest stays empty until the vote
   const meet = nextMeetingDay(world, "sevilla", 1);
   g.hallCaja = { sevilla: 0 };
   runTo(g, meet); // sevilla never heard of the player
   assert.equal(g.inbox.filter((m) => m.kind === "council").length, 0);
   const g2 = fresh();
+  g2.ai = [];
   ensureRep(g2).sevilla = 500; // some respect: the player sold there before
   g2.hallCaja = { sevilla: 0 };
   runTo(g2, meet);
@@ -102,7 +105,9 @@ test("an idle year keeps every chest and tax step inside its band", () => {
     const st = taxSteps(g, c.id);
     assert.ok(Math.abs(st.sisa) <= STEP_MAX && Math.abs(st.portazgo) <= STEP_MAX, `${c.id} out of band: ${JSON.stringify(st)}`);
     const caja = cajaOf(g, c.id), target = cajaTarget(world, c.id);
-    assert.ok(caja >= 0 && caja <= 3 * target, `${c.id} chest out of control: ${caja} vs target ${target}`);
+    // bots pour derechos into busy ports; obras spending caps the surplus near 1.5*target + derechos/0.1,
+    // so small ports on busy lanes read a high ratio on modest coins (measured worst: ~1.6k at huelva)
+    assert.ok(caja >= 0 && caja <= 1.5 * target + 2500, `${c.id} chest out of control: ${caja} vs target ${target}`);
   }
 });
 

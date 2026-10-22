@@ -1,10 +1,10 @@
 // Council treasury and tax votes (phase B1 of docs/design/town-hall-mayor-taxes.md).
-// Each port's concejo keeps a caja fed by the derechos (almojarifazgo + portazgo the player
-// pays) and by its own citizens' sisas, and spends it on watch and walls. Every MEETING_EVERY
+// Each port's concejo keeps a caja fed by the derechos (almojarifazgo + portazgo every trader
+// pays, the player and the bots alike) and by its own citizens' sisas, and spends it on watch and walls. Every MEETING_EVERY
 // days the concejo votes one step up or down on a tax. Steps are discrete and bounded, so the
 // balance gate is protected by construction; every effect is monotone and shown in the tab.
-// Player payments are a small bonus: the town's own income keeps the caja near equilibrium,
-// so unvisited ports do not drift into punitive taxes. Pure game logic, no DOM.
+// Trader derechos are real income; the concejo spends a surplus on obras y fiestas, so busy
+// ports' chests stay bounded and unvisited ports do not drift into punitive taxes. No DOM.
 import { post } from "./ledger.mjs";
 import { townCouncil } from "./townhall.mjs";
 import { repOf } from "./rank.mjs";
@@ -29,7 +29,8 @@ export const cajaTarget = (world, city) => 30 * upkeepOf(world, city);
 export function creditCaja(g, city, amount) {
   if (!Number.isFinite(amount)) return;
   const c = (g.hallCaja ??= {});
-  c[city] = r2((c[city] ?? cajaTarget(g.world, city)) + amount); // a chest materializes at its target reserve
+  // a chest materializes at its target reserve, and never drops below zero: the watch goes unpaid first
+  c[city] = Math.max(0, r2((c[city] ?? cajaTarget(g.world, city)) + amount));
 }
 /** One meeting per city per MEETING_EVERY days, staggered deterministically by city. */
 export const meetingDay = (world, city, day) => { const r = seeded("meet:" + city)(); return day % MEETING_EVERY === Math.floor(r * MEETING_EVERY); };
@@ -41,6 +42,8 @@ export function councilDay(g) {
     const id = c.id, st = taxSteps(g, id), up = upkeepOf(g.world, id);
     const income = up * (1 + 0.6 * st.sisa + 0.4 * st.portazgo); // higher taxes, fuller chest
     creditCaja(g, id, r2(income - up));
+    const over = cajaOf(g, id) - cajaTarget(g.world, id) * 1.5; // bot and player derechos pile up at busy ports
+    if (over > 0) creditCaja(g, id, r2(-over * 0.1)); // the concejo spends its surplus on obras y fiestas
     if (!meetingDay(g.world, id, g.day)) continue;
     const caja = cajaOf(g, id), target = cajaTarget(g.world, id);
     const rnd = seeded(`vote:${id}:${g.day}`);
