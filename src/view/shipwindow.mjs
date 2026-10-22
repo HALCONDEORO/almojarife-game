@@ -5,9 +5,11 @@ import { goodIcon } from "../../web/icons.mjs";
 import { shipIconSvg } from "./yardscene.mjs";
 import { assignedCaptainHtml, CT } from "./captainview.mjs";
 import { captainOf as captainOfShip } from "../game/captains.mjs";
-import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE } from "../game/crew.mjs";
+import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponWeight, gearOf, gearWeight, GEAR, GEAR_MAX, armoryPrice } from "../game/crew.mjs";
+import { shipCapacity } from "../sim/trade.mjs";
 import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, warehouseOf, quote } from "../game/game.mjs";
 
+const WEAPON_NAME = { es: { ballista: "Ballesta", catapult: "Catapulta", cannon: "Cañón", bombard: "Bombarda" }, en: { ballista: "Ballista", catapult: "Catapult", cannon: "Cannon", bombard: "Bombard" } };
 export const SW = {
   es: {
     tabCargo: "Mercancía", tabCrew: "Tripulación", tabData: "Datos",
@@ -20,6 +22,7 @@ export const SW = {
     captainTavern: "Contrata capitanes en la taberna.",
     guns: "Armamento", gunCond: "Estado {c}%", gunNone: "Sin cañones",
     gunRepair: "Reparar armamento ({p})", cannonBuy: "Comprar cañón ({p})",
+    armory: "Armería", weaponBuy: "{w} ({p}, poder {pw}, peso {wt})", gearLine: "Equipo de marineros: nivel {l}/{m}", gearBuy: "Mejorar equipo ({p})", weightLine: "Armas y equipo restan {w} de bodega",
     hull: "Casco {h}%", repair: "Reparar casco ({p})",
     upkeep: "Mantenimiento: {u}/día", value: "Valor: {v}",
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
@@ -39,6 +42,7 @@ export const SW = {
     captainTavern: "Hire captains at the tavern.",
     guns: "Armament", gunCond: "Condition {c}%", gunNone: "No cannons",
     gunRepair: "Repair armament ({p})", cannonBuy: "Buy a cannon ({p})",
+    armory: "Armory", weaponBuy: "{w} ({p}, power {pw}, weight {wt})", gearLine: "Sailors' gear: level {l}/{m}", gearBuy: "Upgrade gear ({p})", weightLine: "Weapons and gear take {w} from the hold",
     hull: "Hull {h}%", repair: "Repair hull ({p})",
     upkeep: "Upkeep: {u}/day", value: "Value: {v}",
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
@@ -77,7 +81,7 @@ function cargoTab(g, s, t, hp, gn, cn) {
     }
     h += `</table>`;
   }
-  h += `<p><b>${t.hold}</b>: ${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}</p>`;
+  h += `<p><b>${t.hold}</b>: ${cargoUsed(s)}/${shipCapacity(s)}</p>`;
   return h;
 }
 
@@ -94,6 +98,10 @@ function crewTab(g, s, lang, t, fmt) {
   h += `<div><b>${t.guns}</b>: ${cn ? `${cn}/${mc} · ${t.gunCond.replace("{c}", Math.round(gunCond(s)))}` : t.gunNone}<br>`;
   h += `<button data-gunrepair="1" ${gr <= 0 || s.voyage || g.over || g.cash < gr ? "disabled" : ""}>${t.gunRepair.replace("{p}", fmt(gr))}</button> `;
   h += `<button data-cannon="1" ${s.voyage || g.over || cn >= mc || g.cash < CANNON_PRICE ? "disabled" : ""}>${t.cannonBuy.replace("{p}", fmt(CANNON_PRICE))}</button></div>`;
+  const gl = gearOf(s), gp = gl < GEAR_MAX ? armoryPrice(g, s.at, GEAR[gl + 1] - GEAR[gl]) : 0, lw = weaponWeight(s) + gearWeight(s);
+  h += `<div class="armory"><b>${t.armory}</b>: ` + Object.entries(WEAPON_TYPES).map(([k, W]) => { const p = armoryPrice(g, s.at, W.price); return `<button data-weapon="${k}" ${s.voyage || g.over || cn >= mc || g.cash < p ? "disabled" : ""}>${t.weaponBuy.replace("{w}", WEAPON_NAME[lang]?.[k] ?? k).replace("{p}", fmt(p)).replace("{pw}", W.power).replace("{wt}", W.weight)}</button>`; }).join(" ");
+  h += `<br>${t.gearLine.replace("{l}", gl).replace("{m}", GEAR_MAX)} <button data-gear="1" ${s.voyage || g.over || gl >= GEAR_MAX || g.cash < gp ? "disabled" : ""}>${t.gearBuy.replace("{p}", fmt(gp))}</button>`;
+  h += `<br><small>${t.weightLine.replace("{w}", lw)}</small></div>`;
   return h;
 }
 

@@ -13,7 +13,7 @@ const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, FEE } from "../sim/trade.mjs";
+import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
 import { seeded } from "../view/cityscene.mjs";
@@ -293,7 +293,7 @@ export function takeGoods(g, ship, good, qty) {
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
-  qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, SHIP_TYPES[ship.type].capacity - cargoUsed(ship));
+  qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
   const had=w.goods[good],paid=w.basis?.[good]??0,transferred=Math.round(paid*qty/had);
   if(w.basis)w.basis[good]=paid-transferred;
