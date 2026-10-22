@@ -6,7 +6,7 @@ import {withKidMeat,KID_MEAT} from '../src/sim/optional_goods.mjs';
 import {PRODUCERS,buyPlot,workshopTick} from '../src/game/buildings.mjs';
 import {PER_1000,OPTIONAL_PER_1000,classCounts,demandBy} from '../src/sim/classes.mjs';
 const world=loadWorld();
-const snap=(g)=>{const {kidMeat,...rest}=g;return JSON.stringify({...rest,world:undefined});};
+const snap=(g)=>{const {kidMeat,legumes,...rest}=g;return JSON.stringify({...rest,world:undefined});};
 test('flag OFF is the default: no kid meat anywhere in the world or the markets',()=>{
  assert.equal('kid_meat' in world.goods,false);assert.equal('kid_meat' in PER_1000,false);
  const g=newGame(world,'cadiz',{freePlay:true});assert.equal(g.kidMeat,false);
