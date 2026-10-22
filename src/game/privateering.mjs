@@ -9,7 +9,7 @@ import { realmOf, activeLetter, QUINTO } from "./marque.mjs";
 import { yearOf } from "./chronicle.mjs";
 import { makeShip } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
-import { shipCapacity } from "../sim/trade.mjs";
+import { shipCapacity, cargoUsed } from "../sim/trade.mjs";
 
 export const traderRealm = (g, data, t) => (t?.home ? realmOf(data, t.home, yearOf(g.day, g.startYear)) : null);
 const sameLane = (a, b) => !!a.voyage && !!b.voyage && ((a.voyage.from === b.voyage.from && a.voyage.to === b.voyage.to) || (a.voyage.from === b.voyage.to && a.voyage.to === b.voyage.from));
@@ -39,7 +39,7 @@ export function attackTrader(g, data, shipId, aiIndex) {
   (g.attackTicks ??= {})[key] = g.tick;
   const trader = g.ai[aiIndex], victim = trader.ship;
   const r = seeded(`marque-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${aiIndex}`), rolls = [r(), r(), r(), r()];
-  const rep = resolveBattle(ship, victim, rolls, { finish: "plunder", freeHold: shipCapacity(ship) });
+  const rep = resolveBattle(ship, victim, rolls, { finish: "plunder", freeHold: Math.max(0, shipCapacity(ship) - cargoUsed(ship)) });
   const hullBefore = ship.hull;
   applyBattle(ship, victim, rep);
   // The quinto leaves the hold and the game (it is paid to the issuer, a sink).

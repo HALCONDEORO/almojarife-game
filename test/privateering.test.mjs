@@ -51,3 +51,14 @@ test("the marque flag is opt-in and survives a save", () => {
   const g = newGame(world, "cadiz", { marque: true }); assert.equal(g.marque, true);
   assert.equal(deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g.marque, true);
 });
+
+test("a won fight never overfills the hold (full and partial hold)", () => {
+  for (const have of [60, 30]) {
+    const { g, s, t } = setup(); lane(g, s, t); buyLetter(g, data, "cadiz", "portugal");
+    s.cargo = { salt: have }; s.weapons = { cannon: 3 }; s.crew = 18; t.ship.cargo = { wool: 30, fish: 30 }; t.ship.crew = 3; t.ship.weapons = {};
+    const r = attackTrader(g, data, s.id, 0);
+    assert.ok(r.ok);
+    const used = Object.values(s.cargo).reduce((a, b) => a + b, 0);
+    assert.ok(used <= 60 - 0 && used <= 60, `hold used ${used} over 60`); assert.ok(have === 60 ? used === 60 : used >= have);
+  }
+});
