@@ -15,3 +15,17 @@ export function resolveVisual(plot,b){const state=visualState(b),type=b?.type||p
 export function houseStyle(id){let n=0;for(const c of String(id))n=(n*31+c.charCodeAt(0))>>>0;return ['poor','comfortable','rich'][n%3];}
 export function assetKey(plot,b){const v=resolveVisual(plot,b);return `${v.type==='house'?'house_'+houseStyle(plot.id):v.type}:${v.level}`;}
 export function enabled(search){return new URLSearchParams(search).get('city2d')==='1';}
+
+/** Presentation coast. Every point remains outside the occupied bounding rectangle. */
+export function shoreline(bounds,seed='city'){
+ const {minX,minY,maxX,maxY}=bounds;
+ if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid coast');
+ let n=0;for(const c of String(seed))n=(n*31+c.charCodeAt(0))>>>0;
+ const bump=i=>1.4+((n+i*73)%17)/6,pts=[];
+ // North/west form natural land, east keeps its straight working quay.
+ for(let i=0;i<=12;i++)pts.push([minX+(maxX-minX)*i/12,minY-bump(i)]);
+ pts.push([maxX+1,minY],[maxX+1,maxY]);
+ for(let i=12;i>=0;i--)pts.push([minX+(maxX-minX)*i/12,maxY+bump(i+17)]);
+ for(let i=12;i>=0;i--)pts.push([minX-bump(i+29),minY+(maxY-minY)*i/12]);
+ return pts;
+}
