@@ -30,6 +30,7 @@ import { arrivalIdentity } from "./identity.mjs";
 import { arrivalMood } from "./moodout.mjs";
 import { seasonsTick } from "./seasons.mjs";
 import { craftCount } from "./crafts.mjs";
+import { memoryDeed, memoryGossipLine, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
@@ -98,6 +99,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
   if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
   if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
+  if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -134,7 +136,7 @@ export const DAILY_HOOKS = [];
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
   g.day++;
-  for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) craftCount(g, t.ship.at, plan.good, plan.bought); } // aiStep no-ops at sea; arrivals act on their own tick
+  for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
@@ -182,6 +184,7 @@ function arrive(g, s) {
   arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
   arrivalIdentity(g, s.at); // first docking: the port shows its character (flag off: nothing)
   arrivalMood(g, s.at); // dockside talk: how the city feels (flag off: nothing)
+  { const gossip = memoryGossipLine(g, s.at); if (gossip) { (g.memoryGossip ??= {})[s.at] = g.day; post(g, "info", { city: s.at, txt: gossip.txt }); } } // the city recalls your deeds (flag off: nothing)
   campaignEvent(g, { kind: "arrive", city: s.at }, MISSION);
 }
 /** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
@@ -219,7 +222,7 @@ export function advanceTick(g) {
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
-  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) craftCount(g, t.ship.at, plan.good, plan.bought); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // AI traders act (and pay the arrival day's wear) on their own arrival tick
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
@@ -237,7 +240,7 @@ export function doBuy(g, ship, good, qty) {
   const r = buy(g.world, g.market, ship, g.cash, good, qty, f);
   // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
   // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
-  if (r.ok) { craftCount(g, ship.at, good, r.qty); noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
+  if (r.ok) { craftCount(g, ship.at, good, r.qty); if (good === "grain" && scarcityOf(g.market[ship.at].grain) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "grievance", r.qty); noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
   return r;
 }
 export function doSell(g, ship, good, qty) {
@@ -247,7 +250,7 @@ export function doSell(g, ship, good, qty) {
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
-  if (r.ok) { noteTrade(g, ship.at); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
 }
 export function doSail(g, ship, to) {
