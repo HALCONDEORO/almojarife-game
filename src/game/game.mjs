@@ -60,6 +60,9 @@ export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_
 /** Ticks per game day (10 per hour). The tick is the simulation unit; the day stays the accounting unit. See docs/design/time-model.md. */
 export const TICKS_PER_DAY = CLOCK_TICKS_PER_DAY;
 
+/** A game seed is an integer 0..2^32-1; anything else (including none) means 0, so tests and simulations stay reproducible.
+ *  The web client passes a fresh random seed for every new game; it is saved with the game and shown in the menu. */
+export const normalizeSeed = (n) => (Number.isSafeInteger(n) && n >= 0 && n <= 0xFFFFFFFF ? n : 0);
 export function newGame(world, start = "cadiz", opts = {}) {
   const ids = world.cities.map((c) => c.id);
   // Opt-in research option only. Production defaults stay exactly three traders.
@@ -67,7 +70,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const ai = origins.map((at, i) => ({ cash: 2000, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) }));
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
