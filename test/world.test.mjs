@@ -97,13 +97,21 @@ test("Cadiz to Palma route is plausible (1000-1200 km)", () => {
   const r = route(world, "cadiz", "palma");
   assert.ok(r.km > 1000 && r.km < 1200, String(r.km));
 });
+const lowMarginCivic = new Set(["soap"]); // see the comment inside the price-invariant test below
 test("after a year producers sell at or below base, consumers at or above base, nobody is pinned at the floor", () => {
   const m = makeMarket(world);
   for (let d = 0; d < 365; d++) tickMarket(m);
   for (const [cid, c] of Object.entries(m)) for (const [g, e] of Object.entries(c)) {
     const p = price(world, e, g), base = world.goods[g].base;
     if (e.makes) assert.ok(p <= base, `${cid} ${g} producer price ${p} > base ${base}`);
-    if (e.needs) assert.ok(p >= base, `${cid} ${g} consumer price ${p} < base ${base}`);
+    // Design decision (soap PR, review at the double PASS): soap demand is tuned BELOW the fixed
+    // needs-trickle inflow (0.02/0.05/0.08 per 1000) so consumer ports settle under base.
+    // The smaller maker/consumer spread prevents the measured century-long NPC worth surge
+    // (100y worth gate) without touching stock floors or caps: soap is a cheap civic
+    // staple, not an arbitrage vehicle. The exemption below is scoped to soap only; every other good
+    // keeps the "consumer pays at least base" invariant.
+    if (e.needs && !lowMarginCivic.has(g)) assert.ok(p >= base, `${cid} ${g} consumer price ${p} < base ${base}`);
+    if (e.needs && lowMarginCivic.has(g)) assert.ok(p <= base, `${cid} ${g} low-margin civic price ${p} > base ${base}`);
     if (e.makes) assert.ok(e.stock <= e.target * 4, `${cid} ${g} stock unbounded`);
     assert.ok(p > Math.round(base * 0.4), `${cid} ${g} price ${p} pinned at floor`);
   }

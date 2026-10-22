@@ -7,8 +7,8 @@ import { post } from "./ledger.mjs";
 import { isLive } from "./intel.mjs";
 import { price } from "../sim/market.mjs";
 export const NEWS_CHANCE = 0.7, NEWS_DEVIATION = 0.15;
-export const GOOD_EN = { grain: "grain", wine: "wine", olive_oil: "olive oil", sugar: "sugar", wool: "wool", fish: "fish", esparto: "esparto", meat: "meat", leather: "leather", salt: "salt", timber: "timber", iron: "iron", cloth: "cloth", silk: "silk", pepper: "pepper", beer: "beer" };
-export const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", beer: "la cerveza" };
+export const GOOD_EN = { grain: "grain", wine: "wine", olive_oil: "olive oil", sugar: "sugar", wool: "wool", fish: "fish", esparto: "esparto", meat: "meat", leather: "leather", salt: "salt", timber: "timber", iron: "iron", cloth: "cloth", silk: "silk", pepper: "pepper", beer: "beer", soap: "soap" };
+export const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", beer: "la cerveza", soap: "el jabón" };
 /** Fair price: what the entry would charge at its target stock. */
 export const fairPrice = (world, e, good) => price(world, { ...e, stock: e.target }, good);
 /** Maybe post one price-news line on arrival at `at`. Returns {city, good, dear, price} or null. */
