@@ -4,7 +4,7 @@ export const NEEDS_TEXT={
 };
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function needsHtml(account,goods,lang='es'){
- const t=NEEDS_TEXT[lang]??NEEDS_TEXT.es,n=account?.needsLedger;if(!n)return `<p>${t.empty}</p>`;
+ const t=NEEDS_TEXT[lang]??NEEDS_TEXT.es,n=account?.needsLedger;if(!n)return '';
  const fmt=x=>Number(x??0).toLocaleString(lang,{maximumFractionDigits:2});
  const table=(rows)=>`<div class="needs-scroll"><table class="needs-table"><thead><tr>${['good','need','desired','consumed','balance','evidence'].map(k=>`<th>${t[k]}</th>`).join('')}</tr></thead><tbody>${Object.entries(rows).map(([g,r])=>`<tr><th>${esc(goods[g]??g)}</th><td>${fmt(r.need)}</td><td>${fmt(r.desired)}</td><td>${fmt(r.consumed)}</td><td>${fmt(r.balance)}</td><td><small>${t.legacy}</small></td></tr>`).join('')}</tbody></table></div>`;
  return `<section class="needs-ledger"><h3>${t.title}</h3><p>${t.note}</p><p>${n.days} ${t.days}. ${t.signed}</p><p class="needs-scroll-hint">${t.scroll}</p><details open><summary>${t.today} (${n.daily.day??'-'}) · ${t.unit}</summary>${table(n.daily.byGood)}</details><details><summary>${t.total} · ${t.unit}</summary>${table(n.totals)}</details>${['poor','middle','rich'].map(c=>`<details><summary>${t[c]} · ${t.today}</summary>${table(n.daily.byClass[c])}<h4>${t.total}</h4>${table(n.byClass[c])}</details>`).join('')}</section>`;
