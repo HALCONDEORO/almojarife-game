@@ -1,4 +1,5 @@
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
+import { fleetHtml } from "../src/view/fleet.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
@@ -172,6 +173,7 @@ function spark(a, col) {
   const pts = a.map((v, i) => `${(i / (a.length - 1) * w).toFixed(1)},${(h - (v - lo) / span * h).toFixed(1)}`).join(" ");
   return `<svg class="spark" width="${w}" height="${h + 2}" viewBox="0 -1 ${w} ${h + 2}"><polyline fill="none" stroke="${col === "inherit" ? "#654" : col}" stroke-width="1.2" points="${pts}"/></svg> `;
 }
+let fleetFilter="all",fleetSearch="";
 let tab = "market"; const qtys = {}; // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
 let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
@@ -196,6 +198,11 @@ function act(fn) {
 
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaText(g.tick+s.voyage.ticksLeft)});
+  $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
+  $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
+  $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
+  $("fleet-search").oninput=e=>{const pos=e.target.selectionStart;fleetSearch=e.target.value;render();const input=$("fleet-search");input.focus();input.setSelectionRange(pos,pos);};
+  $("fleet-body").querySelectorAll('[data-fleet-ship]').forEach(button=>button.onclick=()=>{sel=Number(button.dataset.fleetShip);target=null;shipWin={tab:'data'};render();});
   document.getElementById('sea-modal')?.remove();
   if(g.pending?.event==='sea-pirates'||g.encounterReport){
    playing=false;const modal=document.createElement('div');modal.id='sea-modal';modal.innerHTML=encounterDialogHtml(g,lang);document.body.appendChild(modal);
