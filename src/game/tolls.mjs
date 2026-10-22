@@ -9,6 +9,8 @@ export const TOLL_DIV = 10; // toll = capacity / 10 (a 60 cog pays 6)
 export const TOLL_DISCOUNT = [0, 0.25, 0.5, 1]; // by respect level: stranger, known, trusted, honoured
 const r2 = (x) => Math.round(x * 100) / 100;
 export const baseToll = (ship) => SHIP_TYPES[ship.type].capacity / TOLL_DIV;
+/** The toll an AI trader pays: same arqueo and the concejo's portazgo, no respect or dock discounts (those are earned by the player's own name and buildings). */
+export const aiTollFor = (g, ship, city) => r2(baseToll(ship) * portazgoMul(g, city));
 export const tollFor = (g, ship, city) => r2(baseToll(ship) * (1 - TOLL_DISCOUNT[respectIndex(repOf(g, city))]) * dockTollFactor(g, city) * portazgoMul(g, city)); // the concejo moves the toll in discrete portazgo steps
 export const tollsDue = (g) => r2(g.accrued?.tolls ?? 0);
 /** Charge the toll of `city` for `ship` into the weekly bill. Returns the amount. */

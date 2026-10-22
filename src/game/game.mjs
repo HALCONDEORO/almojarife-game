@@ -7,7 +7,7 @@ import { chronicleWeek, chronicleTick } from "./chronicle.mjs";
 import { buyCannon as buyCannonShip, buyWeapon as buyWeaponShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
 export const buyCannon = buyCannonShip, buyWeapon = buyWeaponShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
 import { openVoyage, recordSale } from "./voyages.mjs";
-import { chargeToll, tollsDue } from "./tolls.mjs";
+import { chargeToll, tollsDue, aiTollFor } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
@@ -24,7 +24,7 @@ import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
-import { councilDay, creditCaja } from "./council.mjs";
+import { councilDay, creditCaja, sisaMul } from "./council.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
@@ -94,10 +94,19 @@ export function resolveBankruptcy(g) {
   g.bankruptcies = (g.bankruptcies ?? 0) + 1;
   post(g, "bankrupt", { recovered: Math.round(recovered), forgiven });
 }
+/** Bots pay the same derechos the player pays (the concejo's sisa), and the coins feed the same caja. */
+const aiHooks = (g) => {
+  const share = (c, amount, fee) => creditCaja(g, c, r2d((amount * fee) / (1 - fee))); // the derecho inside what they received
+  return {
+    feeMul: (c) => sisaMul(g, c),
+    onSale: (c, _good, _scarcity, revenue) => share(c, revenue, FEE * sisaMul(g, c)),
+    onBuy: (c, _good, _scarcity, cost) => { const f = FEE * sisaMul(g, c); creditCaja(g, c, r2d((cost * f) / (1 + f))); },
+  };
+};
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
   g.day++;
-  for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship); } // aiStep no-ops at sea; arrivals act on their own tick
+  for (const t of g.ai) { tickShip(t.ship); aiStep(g.world, g.market, t, t.ship, aiHooks(g)); } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
@@ -168,7 +177,12 @@ export function advanceTick(g) {
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
-  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); aiStep(g.world, g.market, t, t.ship); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  for (const t of g.ai) if (sailTick(t.ship)) { // AI traders pay the same portazgo, wear and derechos on their arrival tick
+    tickShip(t.ship, true);
+    const toll = aiTollFor(g, t.ship, t.ship.at);
+    if (toll > 0) { t.cash = r2d(t.cash - toll); creditCaja(g, t.ship.at, toll); }
+    aiStep(g.world, g.market, t, t.ship, aiHooks(g));
+  }
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
