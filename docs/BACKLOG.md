@@ -57,11 +57,11 @@ All game rules and numbers are our own design. Other games inspire ideas only; s
 - next: AI levels (careful, balanced, bold) with a long-run balance test
 - later: mission conditions store, replays, mod loading
 
-## Added 20:52 (Marco)
+## Added 20:52 (project owner)
 - shipyard: today only "buy a caravel" (fixed price, max 3 ships, no building, repair or upgrade, one shipyard action in any port). Next: ship classes as data, shipyard only in some ports, build orders with delay, repair, upgrades, selling ships, named fleets/convoys
 - real calendar: months, dates, seasons and feasts; a game year with real historical events per era (fairs, wars, epidemics, bad harvests, milestones), data in JSON, public-domain/verified sources noted in docs (English), tests; yearly variation by seeded random events on top of the fixed historical ones
 
-## Added 20:54 (Marco) - world and calendar plan (supersedes the 1480-1500 proposal)
+## Added 20:54 (project owner) - world and calendar plan (supersedes the 1480-1500 proposal)
 Start year 1470 (Iberia, Mediterranean, Atlantic coast). The map opens by dated milestones; every region, port, good and event is data in JSON with a verified public-domain source in docs/ (English) and tests.
 - phase 1: real calendar (months, dates, seasons, feasts), game starts 1470, year counter, dated event table
 - phase 2: milestone engine: regions/ports/goods unlock on their date (Atlantic islands, West Africa coast 1470s-80s, Cape of Good Hope 1488, Americas/Caribbean 1492, Brazil 1500, India route 1498)
@@ -71,7 +71,7 @@ Start year 1470 (Iberia, Mediterranean, Atlantic coast). The map opens by dated 
 - phase 6: yearly variation: fixed historical events + seeded random ones (harvests, epidemics, wars, fairs, piracy)
 - market info (shipped basic): live in port, last seen with age, rumours. Next: agents/contacts per port, information from passing ships
 
-## Scope 21:15 (Marco): Patrician-style mechanics inside the current map (own mechanics, no copied content)
+## Scope 21:15 (project owner): Patrician-style mechanics inside the current map (own mechanics, no copied content)
 Priority by impact, one small PR each with tests and ES screenshots:
 1. shipyard: ship classes as data, build with delay, repair, upgrades, sell
 2. buildings and factories: production chains per port (data), upkeep, levels
@@ -81,7 +81,7 @@ Priority by impact, one small PR each with tests and ES screenshots:
 6. auctions: lots of goods/ships, rival bids
 7. rivals: stronger AI with strategies and personalities
 Graphics engine in parallel: waves, day/night, animated port, performance, mobile; 3D study after.
-- crew and guns (Marco 21:23): crew (sailors, soldiers with light arms) and artillery (bombards/cannons by era and class) with cost, cargo weight taken, upkeep, effect on pirate events and naval combat; data in JSON. Next after the illustrated shipyard.
+- crew and guns (21:23): crew (sailors, soldiers with light arms) and artillery (bombards/cannons by era and class) with cost, cargo weight taken, upkeep, effect on pirate events and naval combat; data in JSON. Next after the illustrated shipyard.
 
 ## Ten ideas from the owner (21:29), all accepted. Fictional characters only; own mechanics, no copied content.
 Priority order (impact first, small PRs with tests):

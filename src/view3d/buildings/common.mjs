@@ -1,5 +1,5 @@
 // Shared low-level builders for the per-building modules (own work, boxes/cones/extrusions only).
-// Moved out of port3d.mjs so each building can live in its own file (Marco's buildings plan).
+// Moved out of port3d.mjs so each building can live in its own file (project buildings plan).
 export const std = (THREE, color, o = {}) => { const { tex, perMetre, ...rest } = o; const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...rest }); if (tex) m.userData.texKind = tex + "@" + (perMetre ?? 0.4); return m; };
 export const put = (THREE, parent, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
 /** Gabled roof with tile texture, eaves overhanging the footprint. */

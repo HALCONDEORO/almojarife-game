@@ -1,6 +1,6 @@
 # Model policy for code work
 
-Decided by Marco on 20 Oct 2026 (approval at 10:08, adjustments at 10:00 and 10:17), as relayed by the main agent. Own measurement of 20 Oct 2026 10:04 on the server.
+Project design decision of 20 Oct 2026. Own measurement of 20 Oct 2026 10:04 on the server.
 
 ## Rules
 
