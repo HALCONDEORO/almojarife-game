@@ -114,3 +114,16 @@ test("bot deeds fade like yours and surface as the ambient Ayuntamiento line", (
   memoryDeed(b, "cadiz", "botGrievance", 500);
   assert.equal(hallView(b, "cadiz").memory.kind, "bots");
 });
+
+test("an old save with botGrievance as a single number does not break new deeds", () => {
+  const world = loadWorld();
+  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityMemory: true });
+  g.memoryDeeds = { cadiz: { favor: [], grievance: [], botGrievance: 7 } };
+  memoryDeed(g, "cadiz", "botGrievance", 30);
+  memoryDeed(g, "cadiz", "favor", 20);
+  assert.ok(memoryOf(g, "cadiz").bots > 0);
+  assert.ok(memoryOf(g, "cadiz").favor > 0);
+  g.memoryDeeds = { cadiz: {} };
+  memoryDeed(g, "cadiz", "grievance", 10);
+  assert.ok(memoryOf(g, "cadiz").grievance > 0);
+});

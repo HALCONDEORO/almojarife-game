@@ -19,6 +19,8 @@ export function memoryDeed(g, cityId, kind, qty) {
   if (g?.cityMemory !== true || !(qty > 0)) return;
   const all = (g.memoryDeeds ??= {});
   const c = (all[cityId] ??= { favor: [], grievance: [], bots: [] });
+  // an entry from an old save may lack the arrays (botGrievance used to be one number): rebuild what is missing
+  for (const k of ["favor", "grievance", "bots"]) if (!Array.isArray(c[k])) c[k] = [];
   const list = kind === "botGrievance" ? c.bots : c[kind];
   list.push({ day: g.day, qty });
   if (list.length > 40) list.shift(); // the oldest stories fall off the end
