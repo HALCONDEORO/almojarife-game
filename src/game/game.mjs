@@ -32,6 +32,7 @@ import { seasonsTick } from "./seasons.mjs";
 import { craftCount } from "./crafts.mjs";
 import { memoryDeed, memoryGossipLine, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { relationsOnSale } from "./relations.mjs";
+import { growthTick, growthMul } from "./growth.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
@@ -102,6 +103,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
   if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
   if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
+  if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -206,7 +208,8 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
-    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day (flags off: x1)
+    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
+    growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
