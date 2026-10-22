@@ -11,25 +11,38 @@ export function mapModeControls({enabled=HISTORICAL_MAPS_ENABLED,mode='geographi
 /** Only individually sourced holdings in the game's 1480-1600 range are eligible. Data from a corrected
  * upstream realm table is injected, not silently duplicated here. Unknown != neutral.
  * All ports passed MUST already be filtered by the player's discovered chart. */
+export function politicalHolding(data,port,year){
+ if(!data||!Number.isInteger(year)||year<1480||year>1600)return null;
+ // Do not let an unsourced/conflicting row disappear before overlap detection.
+ const rows=(data.holdings??[]).filter(h=>h.port===port&&(h.from==null||year>=h.from)&&(h.until==null||year<h.until));
+ if(rows.length!==1)return null;const h=rows[0];
+ if(!data.realms?.[h.realm]?.name||!/^https:\/\//.test(h.source??''))return null;
+ if(['from','until'].some(k=>h[k]!=null&&!Number.isInteger(h[k])))return null;
+ return h;
+}
 export function politicalPortLayer({ports,year,data,x,y,lang='es',enabled=false}){
- if(!enabled)return{svg:'',legend:''};const t=TEXT[lang]??TEXT.es;
- if(!data||!Number.isInteger(year)||year<1480||year>=1601)return{svg:'',legend:t.pending};
- const ids=Object.keys(data.realms??{}).sort(),used=new Set();let svg='';
- for(const p of ports){const rows=(data.holdings??[]).filter(h=>h.port===p.id&&/^https:\/\//.test(h.source??'')&&(h.from==null||year>=h.from)&&(h.until==null||year<h.until));if(rows.length!==1||!data.realms[rows[0].realm])continue;const id=rows[0].realm;used.add(id);const color=COLORS[ids.indexOf(id)%COLORS.length];svg+=`<circle cx="${x(p.lon)}" cy="${y(p.lat)}" r="13" fill="none" stroke="${color}" stroke-width="4" pointer-events="none"><title>${esc(data.realms[id].name[lang]??id)}</title></circle>`;}
- return{svg,legend:`${year}: ${[...used].sort().map(id=>`<span style="display:inline-block;border-left:8px solid ${COLORS[ids.indexOf(id)%COLORS.length]};padding-left:4px">${esc(data.realms[id].name[lang]??id)}</span>`).join(' · ')}. ${t.ports} ${t.unknown}: ${ports.filter(p=>!(data.holdings??[]).some(h=>h.port===p.id&&(h.from==null||year>=h.from)&&(h.until==null||year<h.until))).map(p=>esc(p.name??p.id)).join(", ")||"-"}.`};
+ if(!enabled)return{svg:'',legend:''};const t=TEXT[lang]??TEXT.es,es=lang==='es';
+ if(!data||!Number.isInteger(year)||year<1480||year>1600)return{svg:'',legend:''};
+ const ids=Object.keys(data.realms??{}).sort(),used=new Set(),unknown=[];let svg='';
+ for(const p of ports){const h=politicalHolding(data,p.id,year);if(!h){unknown.push(esc(p.name??p.id));continue;}const id=h.realm,name=data.realms[id].name[lang]??id;used.add(id);const color=COLORS[ids.indexOf(id)%COLORS.length];
+ svg+=`<g data-mx="${x(p.lon)}" data-my="${y(p.lat)}"><circle cx="0" cy="0" r="13" fill="none" stroke="${color}" stroke-width="4" pointer-events="none"><title>${esc(name)}</title></circle></g>`;
+
+ }
+ const key=[...used].sort().map(id=>`<span style="display:inline-block;border-left:8px solid ${COLORS[ids.indexOf(id)%COLORS.length]};padding-left:4px">${esc(data.realms[id].name[lang]??id)}</span>`).join(' · ');
+ return{svg,legend:`${year}: ${key}`};
 }
 export function historicalLayer({mode,...args}){if(!args.enabled)return {svg:'',legend:''};if(mode==='political')return politicalPortLayer(args);if(mode==='trade')return tradePortLayer(args);if(mode==='leagues')return leaguePortLayer({...args,data:args.leagues});return{svg:'',legend:mode==='leagues'?(TEXT[args.lang]??TEXT.es).pending:''};}
 /** Declared game specialisations only. No inferred historical trade volumes. */
 export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id}){
  if(!enabled)return{svg:'',legend:''};const es=lang==='es';
- return{svg:'',legend:`<p>${es?'Rutas: enlaces de navegación de la carta descubierta, no flujos medidos. Producción y demanda: especializaciones del juego, no volúmenes históricos.':'Routes: navigation links on the discovered chart, not measured flows. Production and demand: game specialisations, not historical volumes.'}</p><details><summary>${es?'Producción y demanda por puerto':'Production and demand by port'}</summary><ul>${ports.map(p=>`<li><b>${esc(p.name)}</b>: ${es?'produce':'produces'} ${(p.makes??[]).map(id=>esc(goodName(id))).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(id=>esc(goodName(id))).join(', ')||'-'}</li>`).join('')}</ul></details>`};
+ return{svg:'',legend:`<p>${es?'Rutas comerciales. Consulta qué produce y qué pide cada puerto.':'Trade routes. See what each port produces and needs.'}</p><details><summary>${es?'Producción y demanda por puerto':'Production and demand by port'}</summary><ul>${ports.map(p=>`<li><b>${esc(p.name)}</b>: ${es?'produce':'produces'} ${(p.makes??[]).map(id=>esc(goodName(id))).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(id=>esc(goodName(id))).join(', ')||'-'}</li>`).join('')}</ul></details>`};
 }
 /** Dated institutional evidence, not territory, alliances in game or invented routes. */
 export function leaguePortLayer({enabled=false,ports=[],year,data,lang='es',x,y}){
- if(!enabled)return{svg:'',legend:''};const es=lang==='es';
+ if(!enabled)return{svg:'',legend:''};
  const rows=(data?.leagues??[]).filter(l=>Number.isInteger(year)&&year>=l.from&&year<l.until&&/^https:\/\//.test(l.rosterSource)&&/^https:\/\//.test(l.periodSource));
- let svg='';const legend=rows.map(l=>{for(const p of ports.filter(p=>l.ports.includes(p.id)))svg+=`<rect x="${x(p.lon)-12}" y="${y(p.lat)-12}" width="24" height="24" fill="none" stroke="#315b83" stroke-width="3" pointer-events="none"/>`;return `<p><b>${esc(l.name[lang])}</b> (${l.from}-${l.until-1}; ${es?'fin':'end'} ${l.until}): ${esc(l.kind[lang])}. ${esc(l.note[lang])} <a href="${esc(l.rosterSource)}" target="_blank" rel="noopener">${es?'Carta fundacional':'Founding charter'}</a> · <a href="${esc(l.periodSource)}" target="_blank" rel="noopener">${es?'Periodo (síntesis secundaria)':'Period (secondary synthesis)'}</a>. ${es?'Fundadores fuera de esta carta':'Founders beyond this chart'}: ${l.outsideMap.map(esc).join(', ')}.</p>`;}).join('');
- return{svg,legend:legend||(es?'Sin agrupación verificada para este año en los datos disponibles; no significa que no existieran otras.':'No verified grouping for this year in the available data; this does not mean others did not exist.')};
+ let svg='';const legend=rows.map(l=>{for(const p of ports.filter(p=>l.ports.includes(p.id)))svg+=`<g data-mx="${x(p.lon)}" data-my="${y(p.lat)}"><rect x="-12" y="-12" width="24" height="24" fill="none" stroke="#315b83" stroke-width="3" pointer-events="none"/></g>`;return `<p><b>${esc(l.name[lang])}</b>: ${esc(l.kind[lang])}.</p>`;}).join('');
+ return{svg,legend};
 }
 // Hand-set original cartographic callouts for dense clusters; offsets are screen
 // marker units, so they remain readable with the existing inverse zoom scaling.
