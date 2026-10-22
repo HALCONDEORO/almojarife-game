@@ -7,6 +7,7 @@ import {seeded} from '../view/cityscene.mjs';
 import {TICKS_PER_DAY,hourOf} from '../sim/clock.mjs';
 import {encounterOutcome,applyEncounter,encounterText} from './encounters.mjs';
 import {post} from './ledger.mjs';
+import {escortOf} from './convoys.mjs';
 export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
 // Per tick: P(at least one encounter in a full day at sea) = 1-(1-p_tick)^240 = SEA_ENCOUNTER_CHANCE exactly.
 export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS_PER_DAY);
@@ -45,7 +46,7 @@ export function resolvePirates(g,choice){
  if(!ship?.voyage||!Number.isFinite(p.escapeChance)||p.escapeChance<15||p.escapeChance>85)return {ok:false};
  const r=seeded(`sea-choice-v1:${g.seed??0}:${p.id}`);
  const escaped=choice==='flee'&&r()*100<p.escapeChance;
- let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:encounterOutcome(ship,'pirates',r());
+ let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:encounterOutcome(ship,'pirates',r(),escortOf(g,ship));
  const applied=applyEncounter(g,ship,out);if(!applied.ok)return applied;
  const e={...applied,id:p.id,day:p.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
  (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
