@@ -83,9 +83,10 @@ export function netWorth(g) {
 export const MISSION = { post, addRespect, repOf, netWorth }; // mission engine hooks (post from ledger, respect from rank)
 export function resolveBankruptcy(g) {
   let recovered = 0;
-  const seize = (goods) => { for (const [good, q] of Object.entries(goods ?? {})) if (q > 0) { recovered += q * g.world.goods[good].base / 2; goods[good] = 0; } };
-  for (const s of g.ships ?? []) seize(s.cargo);
-  for (const wh of Object.values(g.warehouses ?? {})) seize(wh.goods);
+  // Seize like a sale to zero: drop the cargo key AND its cost basis, the same cleanup a real sale does.
+  const seize = (hold, goodsKey) => { const goods = hold?.[goodsKey]; for (const [good, q] of Object.entries(goods ?? {})) if (q > 0) { recovered += q * g.world.goods[good].base / 2; delete goods[good]; if (hold.basis) delete hold.basis[good]; } };
+  for (const s of g.ships ?? []) seize(s, "cargo");
+  for (const wh of Object.values(g.warehouses ?? {})) seize(wh, "goods");
   for (const plots of Object.values(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots))
     { recovered += (BUILDING_TYPES[b.type]?.fee ?? 0) * (b.level ?? 1) / 2; delete plots[plotId]; }
   const forgiven = Math.max(0, Math.round(-g.cash + loansOwed(g) - recovered));
