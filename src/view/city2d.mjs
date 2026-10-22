@@ -45,3 +45,9 @@ export function harbourLayout(bounds){
  const edge=maxX+3,span=maxY-minY;
  return {edge,span,piers:Array.from({length:3},(_,i)=>({x:edge,y:minY+span*(.22+i*.25),w:7+i%2*2,d:2.1}))};
 }
+
+/** One footprint anchor shared by the sprite and its ground contact. */
+export function spriteGeometry(plot){
+ const p=placement(plot),scale=p.width*.94/400;
+ return {anchor:p.anchor,scale,left:p.anchor.x-256*scale,top:p.anchor.y-500*scale,width:512*scale,height:512*scale};
+}

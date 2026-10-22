@@ -1,5 +1,5 @@
 import {cityPlots} from '../../src/view3d/cityplots.mjs';
-import {project,placement,resolveVisual,assetKey,mainland,harbourLayout} from '../../src/view/city2d.mjs';
+import {project,placement,resolveVisual,assetKey,mainland,harbourLayout,spriteGeometry} from '../../src/view/city2d.mjs';
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 let walls=q.get('walls')==='1',bld={},labels={},tick=0;function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
 const names={house:'Casa',warehouse:'Almacén',workshop:'Taller',farm:'Granja',pasture:'Dehesa',sawmill:'Aserradero',mine:'Mina',oil_mill:'Almazara',vineyard:'Viñedo',saltworks:'Salina',brewery:'Cervecería',soapworks:'Jabonería',pottery:'Alfarería',brickworks:'Ladrillera',esparto_field:'Espartizal',ranch:'Ganadería',armory:'Armería',dock:'Muelle',fishery:'Pesquería',ironworks:'Fragua',posito:'Pósito',hospital:'Hospital',alhondiga:'Alhóndiga',caminos:'Caminos',pozo:'Pozo',capilla:'Capilla',market:'Mercado',shipyard:'Astillero',tavern:'Taberna',bank:'Banco',office:'Oficina'};
@@ -8,7 +8,12 @@ const boot=async()=>{layout=await cityPlots(city,pop);bounds={minX:Math.max(0,Ma
 const xy=(x,y)=>{const p=project(x,y);return{x:canvas.width/2+(p.x+dx)*zoom,y:35+(p.y+dy)*zoom}};
 function polygon(p){ctx.beginPath();placement(p).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
 function fit(){dirty=true;if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const pts=manifestBounds,minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x)),minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));zoom=Math.min((innerWidth-30)/(maxX-minX+40),(innerHeight-180)/(maxY-minY+100));zoom=Math.max(.15,zoom);dx=-(minX+maxX)/2;dy=(innerHeight/2+25-35)/zoom-(minY+maxY)/2;draw(0)}
-function sprite(p,im,alpha=1,filter=''){if(!im)return;const at=xy(p.x+p.w,p.y+p.d),scale=placement(p).width*.94/400*zoom;ctx.save();ctx.globalAlpha=alpha;ctx.filter=filter;ctx.drawImage(im,at.x-256*scale,at.y-500*scale,512*scale,512*scale);ctx.restore()}
+function sprite(p,im,alpha=1,filter=''){if(!im)return;const g=spriteGeometry(p);ctx.save();ctx.globalAlpha=alpha;ctx.filter=filter;ctx.drawImage(im,canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom,g.width*zoom,g.height*zoom);ctx.restore()}
+function groundContact(p){
+ const center=xy(p.x+p.w*.5,p.y+p.d*.5),w=placement(p).width*.44*zoom,h=(p.w+p.d)*3.4*zoom;
+ ctx.save();ctx.translate(center.x,center.y);ctx.scale(1,h/w);const g=ctx.createRadialGradient(0,0,w*.12,0,0,w);g.addColorStop(0,'#514d324f');g.addColorStop(.6,'#65583b2e');g.addColorStop(1,'#65583b00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,w,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+
 function drawWalls(){
  if(!walls)return;
  // The expansion exists only when the real simulation owns it. Rear walls occupy empty perimeter margins.
@@ -61,8 +66,8 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const p of [...layout.plots].sort((a,b)=>placement(a).depth-placement(b).depth)){
  const owned=bld[p.id],service=['market','shipyard','tavern','bank','office','warehouse'].includes(p.type)&&+p.id.split(':')[1]<6;
  let b=owned||{type:p.type,level:1,state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d);polygon(p);if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
- const isPreview=preview&&p===hover&&!owned&&!service;if(v.state!=='plot'&&v.state!=='construction'&&!isPreview){const key=assetKey(p,b);sprite(p,images[key]||images[p.type+':1'],1,v.state==='halted'?'saturate(.15) brightness(.8)':'');}
- if(v.state==='construction'){sprite(p,images['construction:'+Math.max(1,Math.min(3,b.nextLevel||1))],.9);}
+ const isPreview=preview&&p===hover&&!owned&&!service;if(v.state!=='plot'&&v.state!=='construction'&&!isPreview){groundContact(p);const key=assetKey(p,b);sprite(p,images[key]||images[p.type+':1'],1,v.state==='halted'?'saturate(.15) brightness(.8)':'');}
+ if(v.state==='construction'){groundContact(p);sprite(p,images['construction:'+Math.max(1,Math.min(3,b.nextLevel||1))],.9);}
  if(isPreview){sprite(p,images[assetKey(p,{type:$('type').value,level:+$('level').value})],.55);polygon(p);ctx.strokeStyle='#4c7554';ctx.lineWidth=3;ctx.stroke()}
  if(v.state==='halted'){ctx.fillStyle='#f6e9c8';ctx.beginPath();ctx.arc(at.x,at.y-7,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#4f4b3c';ctx.fillRect(at.x-3,at.y-11,2,7);ctx.fillRect(at.x+1,at.y-11,2,7)}
  // Small ambient smoke only for active working furnaces. It carries no simulation effect.
