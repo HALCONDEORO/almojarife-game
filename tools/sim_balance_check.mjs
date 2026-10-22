@@ -12,7 +12,7 @@ import { OVERDRAFT_LIMIT } from "../src/game/ledger.mjs";
 // BALANCE_DAYS: shorter horizon for the fast PR gate; unset = full run.
 const report = process.argv[2]
   ? JSON.parse(readFileSync(process.argv[2], "utf8"))
-  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", ...(process.env.BALANCE_DAYS ? [process.env.BALANCE_DAYS] : [])], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", ...(process.env.BALANCE_DAYS || process.env.BALANCE_SEEDS ? [process.env.BALANCE_DAYS ?? "36500"] : []), ...(process.env.BALANCE_SEEDS ? [process.env.BALANCE_SEEDS] : [])], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const checks = [], warnings = [];
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
@@ -51,6 +51,17 @@ const C = report.scenarios?.C_poor_bot ?? {};
 check("C: poor bot's saltworks gets built", C.buildOk, C.buildOk === true, "true");
 check("C: wages halt it within 180 days", C.firstHaltDay, Number.isInteger(C.firstHaltDay) && C.firstHaltDay <= 180, "1-180");
 check("C: still halted at day 365", C.haltedEnd, C.haltedEnd === true, "true");
+
+// Extra game seeds (BALANCE_SEEDS=1,2,3): bots B and C must pass the same hard checks with every seed.
+for (const [seed, sr] of Object.entries(report.seedRuns ?? {})) {
+  const b = sr.B_builder_bot ?? {}, c = sr.C_poor_bot ?? {};
+  check(`B seed ${seed}: builder bot never halts`, b.haltEvents, b.haltEvents === 0, "0");
+  check(`B seed ${seed}: ends richer than 4,500 start`, b.cashEnd, within(b.cashEnd, 4501, Infinity), "> 4500");
+  check(`B seed ${seed}: workshop produces (>= 50 batches)`, b.produced, within(b.produced, 50, Infinity), ">= 50");
+  check(`C seed ${seed}: saltworks gets built`, c.buildOk, c.buildOk === true, "true");
+  check(`C seed ${seed}: wages halt it within 180 days`, c.firstHaltDay, Number.isInteger(c.firstHaltDay) && c.firstHaltDay <= 180, "1-180");
+  check(`C seed ${seed}: still halted at day 365`, c.haltedEnd, c.haltedEnd === true, "true");
+}
 
 // NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.
 // The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,

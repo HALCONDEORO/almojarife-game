@@ -35,9 +35,9 @@ function scenarioA() {
   return { priceIndex: [s0.priceIndex, s1.priceIndex], npcCash: [s0.npcCash, s1.npcCash], npcWorth: [s0.npcWorth, s1.npcWorth], npcWorthMean10y, idlePlayerCashEnd: Math.round(g.cash), campaignEnd: st.firstOver ?? null, horizons };
 }
 
-function scenarioB() {
+function scenarioB(seed = 0) {
   const home = "casablanca"; // best cloth margin near the start (+125/batch at day 0): the market picks the place
-  const g = newGame(world, home, { cash: 2500, freePlay: true }); // 4,500 total: a trader who saved up for his first workshop
+  const g = newGame(world, home, { cash: 2500, freePlay: true, seed }); // 4,500 total: a trader who saved up for his first workshop
   const s0 = base(g);
   const bp = buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
   const build = startConstruction(g, home, home + ":1", "workshop");
@@ -80,8 +80,8 @@ function scenarioB() {
     priceIndex: [s0.priceIndex, priceIndex(g)], npcCash: [s0.npcCash, npcCash(g)], jobsEnd: jobsNeeded(g, home), campaignEnd: st.firstOver ?? null, horizons };
 }
 
-function scenarioC() {
-  const g = newGame(world, "cadiz", { cash: -800 }); // starts with 1,200: plot + build, almost nothing left
+function scenarioC(seed = 0) {
+  const g = newGame(world, "cadiz", { cash: -800, seed }); // starts with 1,200: plot + build, almost nothing left
   const s0 = base(g);
   const bp = buyPlot(g, "cadiz", { id: "cadiz:1", type: "saltworks", w: 3, d: 3 });
   const build = startConstruction(g, "cadiz", "cadiz:1", "saltworks");
@@ -113,7 +113,10 @@ function scenarioD() {
   return { dayEnd: g.day, over: g.over, bankruptcies: g.bankruptcies ?? 0, cashMin: Math.round(minCash), cashEnd: Math.round(g.cash) };
 }
 
+// Extra game seeds (argv[3], comma list) run the bots B and C again; seed 0 stays the default and the report shape for it does not change.
+const extraSeeds = (process.argv[3] ?? "").split(",").filter(Boolean).map(Number);
+if (extraSeeds.some((x) => !Number.isSafeInteger(x) || x < 0)) throw new Error("seeds must be non-negative integers");
 const t0 = Date.now();
-const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seconds: +((Date.now() - t0) / 1000).toFixed(1),
+const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seedRuns: Object.fromEntries(extraSeeds.map((x) => [x, { B_builder_bot: scenarioB(x), C_poor_bot: scenarioC(x) }])), seconds: +((Date.now() - t0) / 1000).toFixed(1),
   scope: "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd." };
 console.log(JSON.stringify(report, null, 1));
