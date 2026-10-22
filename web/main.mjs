@@ -767,3 +767,9 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Tab'){e.preventDefault();const i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus();}
  else if(e.key==='Escape')e.preventDefault();
 },true);
+
+// Keep the existing live header visible in the city, including wrapped mobile rows.
+const gameHeader=document.querySelector('body>header');
+const syncHeaderHeight=()=>document.documentElement.style.setProperty('--game-header-height',`${gameHeader.getBoundingClientRect().height}px`);
+new ResizeObserver(syncHeaderHeight).observe(gameHeader);
+syncHeaderHeight();
