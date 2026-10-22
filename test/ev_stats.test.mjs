@@ -1,0 +1,43 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { ruinBound, bca, passesUpper, zc, sampleSd } from "../tools/ev/stats.mjs";
+
+// Reference values computed independently with Python/scipy (protocol v13, N=224). Tolerance 0.001 pp.
+const REF = [
+  [[0, 0, 0, 224], 1.3393, 1.1934],
+  [[0, 3, 0, 221], 3.3035, 3.3035],
+  [[0, 2, 2, 220], 1.8721, 1.8721],
+  [[0, 1, 0, 223], 1.9760, 1.9760],
+  [[10, 3, 0, 211], 3.1515, 3.1515],
+  [[10, 2, 2, 210], 1.8073, 1.8073],
+];
+for (const [t, fin, nw] of REF) {
+  test(`ruin bound ${t.join(",")}`, () => {
+    const r = ruinBound(...t);
+    assert.ok(Math.abs(r.upper * 100 - fin) < 0.001, `final ${r.upper * 100}`);
+    assert.ok(Math.abs(r.newcombeUpper * 100 - nw) < 0.001, `nw ${r.newcombeUpper * 100}`);
+  });
+}
+test("zero discordant pairs gives 3/N = 1.34 pp", () => {
+  assert.ok(Math.abs(ruinBound(0, 0, 0, 224).upper - 3 / 224) < 1e-12);
+});
+test("all discordant pairs and symmetric case are finite", () => {
+  assert.ok(Number.isFinite(ruinBound(0, 224, 0, 0).upper));
+  assert.ok(Number.isFinite(ruinBound(0, 0, 224, 0).upper));
+});
+test("bca: constant sample is exact [c,c]; NaN is undefined and never passes", () => {
+  const c = bca([2, 2, 2, 2]);
+  assert.equal(c.status, "constant"); assert.equal(c.upper, 2);
+  const n = bca([1, NaN, 3]);
+  assert.equal(n.status, "undefined"); assert.equal(passesUpper(n.upper), false);
+});
+test("bca: variable sample brackets the mean and is deterministic", () => {
+  const v = Array.from({ length: 60 }, (_, i) => (i % 7) - 3 + i * 0.01);
+  const a = bca(v, undefined, { seed: 5 }), b = bca(v, undefined, { seed: 5 });
+  assert.deepEqual(a, b); assert.equal(a.status, "ok"); assert.ok(a.lower < a.upper);
+});
+test("z_c uses sd of A and falls back to the floor when sd is 0", () => {
+  assert.equal(zc([2, 4], 2, 1), 1.5);
+  assert.equal(zc([2, 4], 0, 3), 1);
+  assert.ok(sampleSd([1, 2, 3]) === 1);
+});
