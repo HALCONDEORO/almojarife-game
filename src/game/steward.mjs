@@ -8,6 +8,7 @@ import { craftCount } from "./crafts.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
 import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
+import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { addRespect } from "./rank.mjs";
 import { recordSale } from "./voyages.mjs";
 
@@ -70,6 +71,7 @@ export function stewardTick(g, city, cap) {
           g.cash += revenue;
           noteTrade(g, city); // a standing-order sale keeps the name alive like a manual one
           repOnSale(g, city, scarcity, revenue); // standing orders earn (and lose) reputation like manual trades
+          if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); // relief into a starving port is remembered
           if (addRespect(g, city, revenue)) post(g, "respect", { city }); // and the house earns respect, as in doSell
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
           if (docked) recordSale(g, docked, n, revenue, revenue - spent);
@@ -95,6 +97,7 @@ export function stewardTick(g, city, cap) {
           g.cash -= cost;
           noteTrade(g, city);
           repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
+          if (good === "grain" && scarcityOf(e) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "grievance", n); // hauling grain out of a starving port is remembered too
           w.goods[good] = (w.goods[good] ?? 0) + n;
           (w.basis ??= {})[good] = (w.basis[good] ?? 0) + cost;
           did.push({ good, bought: n, cost });

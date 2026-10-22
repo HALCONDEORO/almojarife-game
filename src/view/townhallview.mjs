@@ -10,6 +10,7 @@ import { identityLine } from "../game/identity.mjs";
 import { moodOutLine } from "../game/moodout.mjs";
 import { craftLine } from "../game/crafts.mjs";
 import { festivalLine } from "../game/festivals.mjs";
+import { memoryLine } from "../game/memory.mjs";
 
 /** Everything the tab shows for one city, numbers already rounded for display. */
 export function hallView(g, cityId) {
@@ -32,5 +33,6 @@ export function hallView(g, cityId) {
     ...(g.cityMoodOut === true && moodOutLine(g, cityId) ? { mood: moodOutLine(g, cityId) } : {}), // how the city feels, in words (citylife off: no key)
     ...(g.cityCrafts === true && craftLine(g, cityId) ? { craft: craftLine(g, cityId) } : {}), // the name the city earned by what leaves its docks
     ...(g.cityFestivals === true ? { festival: festivalLine(g, cityId) } : {}), // the city's own day, so you can be there
+    ...(g.cityMemory === true && memoryLine(g, cityId) ? { memory: memoryLine(g, cityId) } : {}), // what the city holds against (or for) you; off: no key
   };
 }

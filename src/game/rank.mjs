@@ -26,7 +26,8 @@ export function ensureRep(g) {
 }
 /** Rank index kept in range; a damaged value counts as 0. */
 export const heldRank = (g) => { const i = Number(g.rankIdx); return Number.isInteger(i) && i >= 0 && i < RANKS.length ? i : 0; };
-export const repOf = (g, city) => (ensureRep(g)[city] ?? 0) / REP_PER_COINS;
+import { memoryRep } from "./memory.mjs";
+export const repOf = (g, city) => (ensureRep(g)[city] ?? 0) / REP_PER_COINS + memoryRep(g, city); // memory nudges respect (bounded, flag off: +0)
 export const respectIndex = (pts) => { let i = 0; RESPECT.forEach((r, k) => { if (pts >= r.from) i = k; }); return i; };
 export const respectOf = (g, city) => RESPECT[respectIndex(repOf(g, city))];
 /** Sale of `revenue` coins in `city`: adds respect points. Returns true if the respect level rose. */
