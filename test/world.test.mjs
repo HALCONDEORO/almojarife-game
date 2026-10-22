@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { loadLand, isLand, segmentLandHit, haversineKm } from "../tools/geo.mjs";
 import { loadWorld, route } from "../src/sim/world.mjs";
 import { makeMarket, price, tickMarket } from "../src/sim/market.mjs";
-import { PRODUCERS } from "../src/game/buildings.mjs";
 const land = loadLand();
 const world = loadWorld();
 test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
@@ -90,14 +89,7 @@ test("market 365 days: stocks never negative, prices stay bounded", () => {
     assert.ok(p >= world.goods[g].base * 0.4 - 1 && p <= world.goods[g].base * 3 + 1);
   }
 });
-test("every good has at least one producer and one consumer", () => {
-  const madeByBuilding = new Set(Object.values(PRODUCERS).map((d) => d.output)); // processors build anywhere, so their output needs no maker city
-  const constructionOnly = new Set(["bricks"]); // bricks are demanded by construction quotes only, from the chains plan PR5 on; the PR9 guard test replaces this exemption
-  for (const g of Object.keys(world.goods)) {
-    assert.ok(world.cities.some((c) => c.makes.includes(g)) || madeByBuilding.has(g), g + " has no producer");
-    assert.ok(world.cities.some((c) => c.needs.includes(g)) || constructionOnly.has(g), g + " has no consumer");
-  }
-});
+// Producer and consumer rules moved to test/catalogue.test.mjs (production chains PR 9).
 test("no port both makes and needs the same good", () => {
   for (const c of world.cities) for (const g of c.makes) assert.ok(!c.needs.includes(g), c.id + " " + g);
 });
