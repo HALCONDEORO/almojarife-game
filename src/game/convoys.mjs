@@ -2,7 +2,7 @@
 // 2-5 owned ships group up, sail to the same port at the pace of the slowest hull,
 // and when pirates strike a member at sea the whole group's armament answers (escort bonus).
 // Pure game logic, no DOM. The normal sail/encounter rules still apply, so winds, fees and choices stay.
-import { weaponPower, speedFactor } from "./crew.mjs";
+import { defenceOf, speedFactor } from "./crew.mjs";
 import { post } from "./ledger.mjs";
 
 export const CONVOY_MIN = 2, CONVOY_MAX = 5;
@@ -18,7 +18,7 @@ export function escortOf(g, ship) {
   for (const id of cv.ships) {
     if (id === ship.id) continue;
     const mate = g.ships.find((s) => s.id === id);
-    if (mate?.voyage && mate.voyage.from === ship.voyage.from && mate.voyage.to === ship.voyage.to) sum += weaponPower(mate);
+    if (mate?.voyage && mate.voyage.from === ship.voyage.from && mate.voyage.to === ship.voyage.to) sum += defenceOf(mate);
   }
   return sum;
 }

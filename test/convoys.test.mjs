@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,doSail,buyCaravel,sellShip,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
-import {buyWeapon} from '../src/game/crew.mjs';
+import {buyWeapon,defenceOf} from '../src/game/crew.mjs';
 import {encounterOutcome} from '../src/game/encounters.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 const world=loadWorld();
@@ -40,6 +40,15 @@ test('escort firepower only counts convoy mates on the same leg',()=>{
  assert.ok(escortOf(g,s0)>0,'mates cover each other at sea');assert.equal(escortOf(g,s0),escortOf(g,s1));
  const solo=encounterOutcome(s0,'pirates',0.5),escorted=encounterOutcome(s0,'pirates',0.5,escortOf(g,s0));
  assert.ok(escorted.defence>solo.defence&&escorted.chance>solo.chance,'escort raises the repel chance');
+});
+test('escort counts the effective defence of mates (condition and crew), not raw firepower',()=>{
+ const {g,s0,s1}=mk();g.cash=100000;
+ assert.ok(buyWeapon(g,s0,'bombard').ok);assert.ok(buyWeapon(g,s1,'bombard').ok);
+ const cv=formConvoy(g,[s0.id,s1.id]).convoy;sailConvoy(g,cv.id,'barcelona',{doSail});
+ assert.equal(escortOf(g,s0),defenceOf(s1),'escort equals the mate defence');
+ const full=escortOf(g,s0);assert.ok(full>0);
+ s1.gunCond=0;assert.equal(escortOf(g,s0),defenceOf(s1));assert.ok(escortOf(g,s0)<full,'worn-out guns escort less');
+ s1.gunCond=100;s1.crew=1;assert.equal(escortOf(g,s0),defenceOf(s1));assert.ok(escortOf(g,s0)<full,'a skeleton crew escorts less');
 });
 test('convoys survive save and load',()=>{
  const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
