@@ -31,6 +31,9 @@ export const RECIPES = Object.freeze({
   posito: Object.freeze({ bricks: 10, timber: 4, ironware: 1 }),
   hospital: Object.freeze({ timber: 10, bricks: 10, ironware: 2, cloth: 4 }),
   alhondiga: Object.freeze({ timber: 8, bricks: 8, ironware: 2 }),
+  caminos: Object.freeze({ bricks: 6, timber: 2, ironware: 1 }),
+  pozo: Object.freeze({ timber: 2, bricks: 6, ironware: 1 }),
+  capilla: Object.freeze({ timber: 6, bricks: 8, ironware: 1, cloth: 2 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),
   forge: Object.freeze({ iron: 2, timber: 1 }),
