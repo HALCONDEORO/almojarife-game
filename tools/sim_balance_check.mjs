@@ -9,9 +9,10 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { OVERDRAFT_LIMIT } from "../src/game/ledger.mjs";
 
+// BALANCE_DAYS: shorter horizon for the fast PR gate; unset = full run.
 const report = process.argv[2]
   ? JSON.parse(readFileSync(process.argv[2], "utf8"))
-  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", ...(process.env.BALANCE_DAYS ? [process.env.BALANCE_DAYS] : [])], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const checks = [], warnings = [];
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
