@@ -34,11 +34,11 @@ Games checked but with no usable public page for combat detail: Corsairs / Sea D
   third for the admiral. Source: Dialnet 58329, "Apuntes para el estudio de la influencia del corso y la piratería en la política exterior
   de los Reyes Católicos", https://dialnet.unirioja.es/descarga/articulo/58329.pdf
 - Victims of a sea attack asked their ruler for a carta de marca y represalia: a licence to retaliate against subjects of the aggressor's
-  realm. Sources: https://dialnet.unirioja.es/descarga/articulo/1957430.pdf ; http://hdl.handle.net/10261/56184
+  realm. Sources: https://dialnet.unirioja.es/descarga/articulo/1957430.pdf
 - In 1459 to 1461 corsairs raided the coasts of the Crown of Aragon and took refuge in ports such as Cartagena or Marseille; Barcelona
   asked for galleys to chase them. https://dialnet.unirioja.es/descarga/articulo/5746219.pdf
-- Marine insurance existed: Barcelona kept a manual of insurance contracts (Masons, 1428-1429) and merchants such as Joan de Torralba
-  managed risk with policies. https://raco.cat/index.php/EHDAP/article/view/288065 ; https://doi.org/10.36253/979-12-215-0963-2.24
+- Marine insurance existed: Barcelona kept a manual of maritime insurance contracts (1428-1429).
+  https://raco.cat/index.php/EHDAP/article/view/288065
 - State convoys: the Venetian mude were galleys owned by the state, rented to merchants at auction and sailing on fixed dates with an
   armed escort. http://www.arielcaliban.org/PX_mude.pdf
 These give us real hooks: a quinto, letters of marque and reprisal, port refuge, insurance and convoys. We use them as the basis of the
@@ -111,8 +111,7 @@ player and the bots use it with no difference. No UI, no state in the function.
   a damaged convoy breaks off. Cost: more upkeep, benefit: strength adds up and weapons can sit on dedicated escort ships.
   Basis: Venetian mude and the escorts of Port Royale 2.
 - Insurance: pay a premium at departure, a share of the cargo value, set by the recent attacks on the lane (a rolling count per lane,
-  per year). If a pirate takes or sinks the ship, the office pays the insured value minus an excess. Basis: Barcelona insurance contracts
-  of the 15th century. Optional; only if the economy sweep shows pirate losses too punishing for the player.
+  per year). If a pirate takes or sinks the ship, the office pays the insured value minus an excess. Basis: the Barcelona insurance manual of 1428-1429. Optional; only if the economy sweep shows pirate losses too punishing for the player.
 
 ### 4.6 Weapons and gear
 Ship weapon power decides gun rounds; weight (from #230) costs hold space and speed trade-offs make light ships flee and heavy ones
