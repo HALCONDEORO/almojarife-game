@@ -1,0 +1,14 @@
+{
+ "version":1,
+ "leagues":[{
+  "id":"marismas",
+  "name":{"es":"Hermandad de las Marismas","en":"Brotherhood of the Marshes"},
+  "from":1296,"until":1494,"rosterYear":1296,
+  "kind":{"es":"Hermandad concejil, comercial y naval","en":"Municipal, commercial and naval brotherhood"},
+  "ports":["santander","sansebastian"],
+  "outsideMap":["Laredo","Castro Urdiales","Vitoria","Bermeo","Getaria","Hondarribia"],
+  "rosterSource":"https://www.rsbap.org/ojs/index.php/boletin/article/download/1412/1345/2628",
+  "periodSource":"https://historia.nationalgeographic.com.es/a/hermandad-marismas-asi-gano-castilla-dominio-atlantico_25456",
+  "note":{"es":"Se señalan miembros documentados en la carta fundacional de1296, no una lista exhaustiva ni una confirmación anual de pertenencia. La supervivencia hasta1494 sigue una síntesis secundaria; no prueba actividad continua ni rutas concretas.","en":"Marks members documented in the1296 founding charter, not an exhaustive roster or annually confirmed membership. Survival until1494 follows a secondary synthesis; it does not establish continuous activity or specific routes."}
+ }]
+}
