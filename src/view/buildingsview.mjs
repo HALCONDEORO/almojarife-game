@@ -50,7 +50,7 @@ export function plotOffers(world, g, cityId, layoutPlots) {
 
 /** Build quotes for every type on an owned empty plot, with days and upkeep. */
 export function buildOffers(g, cityId, plotId) {
-  return TYPE_KEYS.map((type) => {
+  return TYPE_KEYS.filter((type) => !PRODUCERS[type] || g.world.goods?.[PRODUCERS[type].output]).map((type) => { // a type whose good is not in this game is not offered
     const q = quoteConstruction(g, cityId, plotId, type), spec = BUILDING_TYPES[type];
     return q.ok
       ? { type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: spec.upkeep * q.level, affordable: g.cash >= q.cost }

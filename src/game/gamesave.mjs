@@ -2,7 +2,7 @@
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
 import { campaignShapeOk, newCampaign } from "./campaigns.mjs";
 import { fillMissingMarketRows } from "../sim/market.mjs";
-import { withKidMeat, withLegumes } from "../sim/optional_goods.mjs";
+import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
 export const MAX_COMPANY = 30;
@@ -54,6 +54,7 @@ export function deserialize(save, world) {
   for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
   for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
+  if (g.pottery === true) g.world = withPottery(g.world);
   if (g.legumes === true) g.world = withLegumes(g.world);
   if (g.kidMeat === true) g.world = withKidMeat(g.world); // a save made with the optional goods flag keeps its goods
   migrateRetired(g);

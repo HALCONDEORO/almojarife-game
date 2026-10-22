@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
-import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES } from "../src/game/buildings.mjs";
+import { buyPlot, startConstruction, buildingAt, BUILDING_TYPES, PRODUCERS } from "../src/game/buildings.mjs";
 import { buildingsRows, plotOffers, plotViewState, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, whyText } from "../src/view/buildingsview.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
@@ -62,7 +62,7 @@ test("build offers quote every type on an empty plot; producers quote only where
   const g = funded();
   buyPlot(g, "cadiz", PLOT);
   const offers = buildOffers(g, "cadiz", PLOT.id);
-  assert.equal(offers.length, Object.keys(BUILDING_TYPES).length); // one entry per type, refused ones carry their reason
+  assert.equal(offers.length, Object.keys(BUILDING_TYPES).filter((t) => !PRODUCERS[t] || g.world.goods[PRODUCERS[t].output]).length); // one entry per offered type, refused ones carry their reason; a type whose optional good is not in the game (pottery) is not offered
   for (const t of ["house", "workshop", "warehouse", "saltworks", "fishery"]) { // cadiz makes salt and fish
     const o = offers.find((x) => x.type === t);
     assert.ok(o.ok && o.days === BUILDING_TYPES[t].buildDays && o.cost > 0, t + " quotes");

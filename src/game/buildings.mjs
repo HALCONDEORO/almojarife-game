@@ -24,6 +24,7 @@ export const BUILDING_TYPES = Object.freeze({
   brewery: Object.freeze({ recipe: "brewery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   soapworks: Object.freeze({ recipe: "soapworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   // Brickworks (chains study PR3): fires timber into bricks, the construction material PR5 wires into every build quote.
+  pottery: Object.freeze({ recipe: "pottery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }), // only offered in games with the pottery flag (the good must exist)
   brickworks: Object.freeze({ recipe: "brickworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   esparto_field: Object.freeze({ recipe: "esparto_field", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   ranch: Object.freeze({ recipe: "ranch", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
@@ -191,7 +192,7 @@ export function sellQuote(world, market, city, good, qty) {
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
-  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
+  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -218,6 +219,7 @@ export const PRODUCERS = Object.freeze({
   workshop: Object.freeze({ recipe: "weave", output: "cloth", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   brewery: Object.freeze({ recipe: "brew", output: "beer", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   soapworks: Object.freeze({ recipe: "boil", output: "soap", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
+  pottery: Object.freeze({ recipe: "kiln", output: "pottery", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   brickworks: Object.freeze({ recipe: "firing", output: "bricks", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
   // Primary producers: the land yields the good, no inputs. yield = units per batch; seasonal goods
   // follow the market's own seasonMul (harvest/shearing peaks), the rest produce evenly all year.
@@ -240,7 +242,7 @@ export const PRODUCERS = Object.freeze({
  *  Makes-lists come from world.json; no city list is hardcoded here. */
 export const producerCities = (world, type) => {
   const def = PRODUCERS[type];
-  if (!def) return [];
+  if (!def || !world.goods?.[def.output]) return []; // an optional good that is not in this game: nowhere to build
   if (!def.primary) return world.cities.map((c) => c.id);
   return world.cities.filter((c) => c.makes.includes(def.output)).map((c) => c.id);
 };
