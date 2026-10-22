@@ -1,5 +1,6 @@
 import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml } from "../src/view/ui2d.mjs";
 import { logHtml } from "../src/view/logview.mjs";
+import { warehouseHeader2d, bankHeader2d, store2dWrap, store2dWindowClass } from "../src/view/ui2d_store.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
@@ -332,6 +333,7 @@ function render() {
       }
       return "-";
     };
+    const ui2dMark = h.length; // start of the tab content (ui2d wraps it below)
     if (tab === "market") {
       const market2d=ui2dEnabled(location.search);
       if(market2d)h+=`<div class="ui2d-market-intro"><h3>${t.tabMarket} · ${cityName(s.at)}</h3><p>${t.cash}: <b>${fmt(g.cash)}</b> · ${t.hold}: <b>${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}</b></p></div>`;
@@ -491,6 +493,13 @@ function render() {
         h += `<div class="rumor">${t.admReserve}: <input id="adm-res" type="number" min="0" value="${adm?.reserve ?? 0}" size="6"> <button id="adm-resset">${t.admReserveSet}</button></div>`;
       }
     }
+    if (ui2dEnabled(location.search) && (tab === "store" || tab === "bank")) { // presentation only: same controls, framed with a heading and figures
+      const inner = h.slice(ui2dMark), city = cityName(s.at);
+      const head = tab === "store"
+        ? warehouseHeader2d(lang, { city, hasWarehouse: !!wh, stored: Object.values(wh?.goods ?? {}).reduce((x, y) => x + y, 0), onShip: Object.values(s.cargo ?? {}).reduce((x, y) => x + y, 0), kinds: Object.values(wh?.goods ?? {}).filter((q) => q > 0).length }, fmt)
+        : bankHeader2d(lang, { city, room: bankRoom(g, s.at), owed: loansOwed(g), ratePct: +(LOAN_RATE * termsFor(g, s.at).rate * 100).toFixed(2), loans: (g.loans ?? []).length }, fmt);
+      h = h.slice(0, ui2dMark) + store2dWrap(tab === "store" ? "warehouse" : "bank", head, inner);
+    }
     if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target) : null;
       h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
@@ -499,6 +508,7 @@ function render() {
   $("panel").innerHTML = h;
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-hall-window",tab==="hall"&&ui2dEnabled(location.search));
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-market-window",tab==="market"&&ui2dEnabled(location.search));
+  { const w = $("v3d")?.querySelector(".city-window"); if (w) { w.classList.remove("ui2d-store-window", "ui2d-bank-window"); const k = ui2dEnabled(location.search) ? store2dWindowClass(tab) : ""; if (k) w.classList.add(k); } }
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
