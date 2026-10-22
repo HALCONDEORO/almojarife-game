@@ -30,6 +30,7 @@ import { arrivalIdentity } from "./identity.mjs";
 import { arrivalMood } from "./moodout.mjs";
 import { seasonsTick } from "./seasons.mjs";
 import { craftCount } from "./crafts.mjs";
+import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
 import { householdWeek } from "./household.mjs";
@@ -96,6 +97,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
   if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
+  if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -142,6 +144,7 @@ function dayTick(g) {
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
+  festivalsTick(g); // a docked ship hears the city's festival (flag off: nothing)
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
@@ -198,7 +201,7 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
-    for (const e of Object.values(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id)); // houses add their people (and city life its drift) before demand is computed; a plague shuts people in
+    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day (flags off: x1)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
