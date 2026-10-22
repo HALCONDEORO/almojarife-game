@@ -6,16 +6,19 @@ import { SHIP_TYPES, FEE, buy, sell, sail, cargoUsed } from "./trade.mjs";
 
 const CARRY_MIN_MARGIN = 1.08; // never sail for less than 8% gross margin (covers both fees)
 
-function bestPlan(world, market, ship, cash) {
+function bestPlan(world, market, ship, cash, planningMarket = market, canVisit = () => true) {
   let best = null;
   const spec = SHIP_TYPES[ship.type];
   for (const dest of world.cities) {
-    if (dest.id === ship.at) continue;
+    if (dest.id === ship.at || !canVisit(dest.id)) continue;
+    const remote = planningMarket[dest.id];
+    if (!remote) continue; // no information is not a view of the real remote market
     const r = route(world, ship.at, dest.id);
     if (!r) continue;
     const days = Math.max(1, Math.ceil(r.km / spec.kmPerDay));
     for (const good of Object.keys(world.goods)) {
-      const here = market[ship.at][good], there = market[dest.id][good];
+      const here = market[ship.at][good], there = remote[good];
+      if (!here || !there) continue; // old or partial reports need not contain every good
       if (here.stock <= 0) continue;
       const buyP = price(world, here, good) * (1 + FEE), sellP = price(world, there, good) * (1 - FEE);
       if (sellP / buyP < CARRY_MIN_MARGIN) continue;
@@ -33,7 +36,10 @@ function bestPlan(world, market, ship, cash) {
 
 /** One decision for an idle ship. Mutates ship, market and trader. Returns what it did.
  *  Optional hooks let a harness apply player rules: feeMul(city) scales the market fee,
- *  onSale/onBuy report (city, good, scarcityBefore, revenue|cost) for reputation tracking. */
+ *  onSale/onBuy report (city, good, scarcityBefore, revenue|cost) for reputation tracking.
+ *  planningMarket() supplies private remembered/rumoured remote cells; canVisit(city) gates
+ *  destinations by the trader's own chart. Neither hook reads the real remote market.
+ *  Local execution still uses the shared live market, just like a player trade. */
 export function aiStep(world, market, trader, ship, hooks = {}) {
   if (ship.voyage) return null;
   const fee = FEE * (hooks.feeMul?.(ship.at) ?? 1);
@@ -44,7 +50,8 @@ export function aiStep(world, market, trader, ship, hooks = {}) {
     if (s.ok) { trader.cash += s.revenue; hooks.onSale?.(ship.at, good, scarcity, s.revenue); }
   }
   if (cargoUsed(ship) > 0) return null;
-  const plan = bestPlan(world, market, ship, trader.cash);
+  const planningMarket = hooks.planningMarket ? hooks.planningMarket() : market;
+  const plan = bestPlan(world, market, ship, trader.cash, planningMarket ?? {}, hooks.canVisit);
   if (!plan) return null;
   const eb = market[ship.at]?.[plan.good];
   const scarcityB = eb ? eb.target / Math.max(1, eb.stock) : 0;
