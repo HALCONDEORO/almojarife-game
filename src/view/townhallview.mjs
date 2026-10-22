@@ -8,6 +8,7 @@ import { TOLL_DIV, TOLL_DISCOUNT } from "../game/tolls.mjs";
 import { cajaOf, taxSteps, nextMeetingDay } from "../game/council.mjs";
 import { identityLine } from "../game/identity.mjs";
 import { moodOutLine } from "../game/moodout.mjs";
+import { craftLine } from "../game/crafts.mjs";
 
 /** Everything the tab shows for one city, numbers already rounded for display. */
 export function hallView(g, cityId) {
@@ -28,5 +29,6 @@ export function hallView(g, cityId) {
     // City character, only with the identity flag on: the tab shows one sentence of who this city is. Off: no key at all.
     ...(g.cityIdentity === true ? { identity: identityLine(g.world, cityId) } : {}),
     ...(g.cityMoodOut === true && moodOutLine(g, cityId) ? { mood: moodOutLine(g, cityId) } : {}), // how the city feels, in words (citylife off: no key)
+    ...(g.cityCrafts === true && craftLine(g, cityId) ? { craft: craftLine(g, cityId) } : {}), // the name the city earned by what leaves its docks
   };
 }

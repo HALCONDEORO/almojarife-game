@@ -76,6 +76,7 @@ export function aiStep(world, market, trader, ship, hooks = {}) {
   const scarcityB = eb ? eb.target / Math.max(1, eb.stock) : 0;
   const b = buy(world, market, ship, trader.cash, plan.good, plan.qty, fee);
   if (!b.ok) return null;
+  plan.bought = b.qty; // what actually left the port (a port's fame counts real loads, not intentions)
   trader.cash -= b.cost;
   hooks.onBuy?.(ship.at, plan.good, scarcityB, b.cost);
   sail(world, ship, plan.dest);
