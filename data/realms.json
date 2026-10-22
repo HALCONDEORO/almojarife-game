@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them.",
+  "realms": {
+    "castile": {
+      "name": {
+        "es": "Castilla",
+        "en": "Castile"
+      },
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    "aragon": {
+      "name": {
+        "es": "Corona de Aragón",
+        "en": "Crown of Aragon"
+      },
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    "portugal": {
+      "name": {
+        "es": "Portugal",
+        "en": "Portugal"
+      },
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal"
+    },
+    "granada": {
+      "name": {
+        "es": "Emirato de Granada",
+        "en": "Emirate of Granada"
+      },
+      "source": "https://en.wikipedia.org/wiki/Emirate_of_Granada"
+    },
+    "tlemcen": {
+      "name": {
+        "es": "Reino de Tlemecén",
+        "en": "Kingdom of Tlemcen"
+      },
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Tlemcen"
+    },
+    "algiers": {
+      "name": {
+        "es": "Regencia de Argel",
+        "en": "Regency of Algiers"
+      },
+      "source": "https://en.wikipedia.org/wiki/History_of_the_Regency_of_Algiers"
+    }
+  },
+  "holdings": [
+    {
+      "port": "cadiz",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "sevilla",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "huelva",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "cartagena",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "bilbao",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "santander",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "sansebastian",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "coruna",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "vigo",
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile"
+    },
+    {
+      "port": "valencia",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "barcelona",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "palma",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "ibiza",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "tarragona",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "alicante",
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon"
+    },
+    {
+      "port": "lisboa",
+      "realm": "portugal",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal"
+    },
+    {
+      "port": "porto",
+      "realm": "portugal",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal"
+    },
+    {
+      "port": "setubal",
+      "realm": "portugal",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal"
+    },
+    {
+      "port": "ceuta",
+      "realm": "portugal",
+      "from": null,
+      "until": 1668,
+      "source": "https://en.wikipedia.org/wiki/Ceuta",
+      "note": "Conquered by Portugal in 1415. Under the Iberian Union (1580-1640) the city stayed Portuguese; Portugal ceded it to Spain by the Treaty of Lisbon, 1 January 1668."
+    },
+    {
+      "port": "ceuta",
+      "realm": "castile",
+      "from": 1668,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Ceuta"
+    },
+    {
+      "port": "faro",
+      "realm": "portugal",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal"
+    },
+    {
+      "port": "malaga",
+      "realm": "granada",
+      "from": null,
+      "until": 1487,
+      "source": "https://en.wikipedia.org/wiki/Siege_of_M%C3%A1laga_(1487)",
+      "note": "Conquered by the Catholic Monarchs from the Emirate of Granada in 1487."
+    },
+    {
+      "port": "malaga",
+      "realm": "castile",
+      "from": 1487,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Siege_of_M%C3%A1laga_(1487)"
+    },
+    {
+      "port": "melilla",
+      "realm": "castile",
+      "from": 1497,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Melilla",
+      "note": "Occupied on 17 September 1497 as a condominium of the House of Medina Sidonia and the Crown of Castile until 1556; held here as Castile. Before 1497 no realm is claimed."
+    },
+    {
+      "port": "oran",
+      "realm": "tlemcen",
+      "from": null,
+      "until": 1509,
+      "source": "https://en.wikipedia.org/wiki/Oran",
+      "note": "Zayyanid presence until 1509."
+    },
+    {
+      "port": "oran",
+      "realm": "castile",
+      "from": 1509,
+      "until": 1708,
+      "source": "https://en.wikipedia.org/wiki/Oran"
+    },
+    {
+      "port": "argel",
+      "realm": "algiers",
+      "from": 1516,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/History_of_the_Regency_of_Algiers",
+      "note": "Regency founded in 1516; before that no realm is claimed."
+    }
+  ],
+  "unions": [
+    {
+      "realms": [
+        "castile",
+        "aragon"
+      ],
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Iberian_Union",
+      "note": "Castile and Aragon are two crowns under one monarch (personal union); the source describes them that way when Portugal joins in 1580. A letter cannot name a realm under the issuer's own monarch."
+    },
+    {
+      "realms": [
+        "castile",
+        "aragon",
+        "portugal"
+      ],
+      "from": 1580,
+      "until": 1640,
+      "source": "https://en.wikipedia.org/wiki/Iberian_Union",
+      "note": "Iberian Union (Hispanic Monarchy): Portugal in personal union with the Spanish crowns, 1580 to 1640. Realms stay distinct for holdings, but share a monarch."
+    }
+  ]
+}
