@@ -73,7 +73,7 @@ export function stewardTick(g, city, cap) {
           noteTrade(g, city); // a standing-order sale keeps the name alive like a manual one
           repOnSale(g, city, scarcity, revenue); // standing orders earn (and lose) reputation like manual trades
           if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); // relief into a starving port is remembered
-          relationsOnSale(g, city, good); // a standing-order sale earns the rival nod like a manual one
+          relationsOnSale(g, city, good, n, revenue); // a standing-order sale earns the rival nod like a manual one
           if (addRespect(g, city, revenue)) post(g, "respect", { city }); // and the house earns respect, as in doSell
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
           if (docked) recordSale(g, docked, n, revenue, revenue - spent);

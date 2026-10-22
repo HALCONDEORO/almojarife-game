@@ -7,6 +7,8 @@ import { seeded } from "../view/cityscene.mjs";
 import { ensureRep, REP_PER_COINS } from "./rank.mjs";
 
 export const RELATION_RIVAL_RESPECT = 1; // respect points per qualifying sale (own tuning, inference)
+export const RELATION_MIN_WEIGHTED = 100; // a nod needs a sale of at least this many coins of the rival's goods (price-weighted units; own tuning, inference)
+export const RELATION_COOLDOWN_DAYS = 7;  // one nod per city per week, so splitting sales farms nothing (own tuning, inference)
 
 const pairKey = (a, b) => [a, b].sort().join(":");
 /** -1 rivals, 0 neutral, +1 friends; symmetric and stable across games. */
@@ -29,11 +31,18 @@ const pick = (world, cityId, want) => { // the strongest of that kind, determini
 export const rivalOf = (world, cityId) => pick(world, cityId, -1);
 /** The city's closest friend (or null). */
 export const friendOf = (world, cityId) => pick(world, cityId, 1);
-/** Respect nod for selling a city what its rival makes. Flag off: 0. */
-export function relationsOnSale(g, cityId, good) {
+/** Respect nod for selling a city what its rival makes. A nod needs a real sale
+ *  (at least RELATION_MIN_WEIGHTED coins of revenue) and a city gives at most one
+ *  nod per RELATION_COOLDOWN_DAYS, so fractioning one sale into many farms nothing.
+ *  Flag off: 0, no state. */
+export function relationsOnSale(g, cityId, good, qty = 0, revenue = 0) {
   if (g?.cityRelations !== true) return 0;
   const rival = rivalOf(g.world, cityId);
   if (!rival || !g.market[rival]?.[good]?.makes) return 0;
+  if (!(qty > 0) || revenue < RELATION_MIN_WEIGHTED) return 0;
+  const nods = (g.relationsNod ??= {});
+  if (g.day - (nods[cityId] ?? -1e9) < RELATION_COOLDOWN_DAYS) return 0;
+  nods[cityId] = g.day;
   ensureRep(g)[cityId] = (ensureRep(g)[cityId] ?? 0) + RELATION_RIVAL_RESPECT * REP_PER_COINS;
   return RELATION_RIVAL_RESPECT;
 }
