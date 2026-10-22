@@ -25,8 +25,12 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  for(let i=0;i<4200;i++){const rx=((i*73.13)%997)/997,ry=((i*197.77)%991)/991,p=xy(bounds.minX-70+rx*(bounds.maxX-bounds.minX+70),bounds.minY-70+ry*(bounds.maxY-bounds.minY+70));ctx.globalAlpha=.18;ctx.fillStyle=i%4?'#e0d1a8':'#64794f';ctx.beginPath();ctx.ellipse(p.x,p.y,(2+i%5)*zoom,(1+i%3)*zoom,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.restore();
  // Roads continue inland beyond the owned plot district, entirely decorative.
  for(const p of layout.paths.filter(p=>p.beg.x===p.end.x).slice(0,3)){const a=xy(p.beg.x,bounds.minY),b=xy(p.beg.x,bounds.minY-80);ctx.strokeStyle='#cebc92';ctx.lineWidth=7*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
- // Distant field terraces and olive groves on the mainland.
- for(let i=0;i<65;i++){const x=bounds.minX-5-(i%13)*3.4,y=bounds.minY-4-Math.floor(i/13)*6;const a=xy(x,y);ctx.strokeStyle='#8c946854';ctx.lineWidth=3*zoom;ctx.beginPath();ctx.moveTo(a.x-18*zoom,a.y);ctx.lineTo(a.x+18*zoom,a.y+18*zoom);ctx.stroke();if(i%3===0)sprite({x,y,w:2.5,d:2.5},images.arboles,.8)}
+ // Low hills, fields and distant roofs remain outside the canonical district.
+ for(let i=0;i<9;i++){const p=xy(bounds.minX-18-i*4,bounds.minY-26+i*3),r=(85+i%3*27)*zoom,g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);g.addColorStop(0,i%2?'#78875b33':'#d8c89366');g.addColorStop(1,'#a7ab7800');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(p.x,p.y,r*2,r,0,0,Math.PI*2);ctx.fill()}
+ const fieldColors=['#9ca16b','#b4a573','#b9ac7a','#939a69'];
+ for(let i=0;i<9;i++){const x=bounds.minX-7-(i%3)*10,y=bounds.minY-5-Math.floor(i/3)*12,w=8,d=9,ps=[[x,y],[x+w,y],[x+w,y+d],[x,y+d]].map(([x,y])=>xy(x,y));ctx.beginPath();ps.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fieldColors[i%4];ctx.globalAlpha=.65;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#d4c49a';ctx.lineWidth=2*zoom;ctx.stroke();for(let j=1;j<8;j++){const a=xy(x+j,y),b=xy(x+j,y+d);ctx.strokeStyle='#626e4733';ctx.lineWidth=1*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}
+ for(let i=0;i<38;i++){const x=bounds.minX-7-((i*7.43)%33),y=bounds.minY-5-((i*13.7)%41);sprite({x,y,w:1.6+i%3*.4,d:1.6+i%3*.4},images.arboles,.74)}
+ for(let i=0;i<15;i++){const x=bounds.minX+6+(i%5)*5.1+(i%3)*.6,y=bounds.minY-8-Math.floor(i/5)*5.5+(i%4)*.45;const key=i%5===0?'warehouse:1':'house_comfortable:'+(1+i%2);sprite({x,y,w:3.8,d:3.5},images[key],.82)}
  drawWalls();
  ctx.strokeStyle='#e4d3ad';ctx.lineWidth=10*zoom;ctx.lineCap='round';for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
  // Quay follows the exact projected shoreline as a continuous stone edge.
