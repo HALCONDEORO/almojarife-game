@@ -1,4 +1,4 @@
-import { enabled as ui2dEnabled, inbox2dHtml } from "../src/view/ui2d.mjs";
+import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml } from "../src/view/ui2d.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
@@ -386,12 +386,15 @@ function render() {
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
       const hv = hallView(g, s.at);
+      if(ui2dEnabled(location.search))h = hall2dHtml(hv,t,fmt,RESPECT_NAMES[lang][hv.respectId],lang);
+      else {
       h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hv.mayor}</div>` + hv.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("") + `</div>`;
       h += `<p><i>${t.hallStand.replace("{r}", RESPECT_NAMES[lang][hv.respectId]).replace("{n}", hv.respectPts)}</i></p>`;
       const cityLines = [hv.identity, hv.mood, hv.craft, hv.festival, hv.memory, hv.relations, hv.growth].filter(Boolean); // living-city lines: present only while their flag is on (off: nothing renders)
       if (cityLines.length) h += `<p><i>` + cityLines.map((l) => l.txt?.[lang] ?? l.txt?.es).filter(Boolean).join("<br>") + `</i></p>`;
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmt(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisa > 0 ? "+" : "") + hv.sisa).replace("{p}", (hv.portazgo > 0 ? "+" : "") + hv.portazgo)}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
+      }
     } else if (tab === "buildings") {
       ensurePlots(s.at);
       if (bldAction && !bldAction.plotId.startsWith(s.at + ":")) { bldAction = null; bldError = null; } // sailed away with an armed action
@@ -486,12 +489,13 @@ function render() {
         h += `<div class="rumor">${t.admReserve}: <input id="adm-res" type="number" min="0" value="${adm?.reserve ?? 0}" size="6"> <button id="adm-resset">${t.admReserveSet}</button></div>`;
       }
     }
-    { const te = target ? travelEstimate(world, s, target) : null;
+    if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target) : null;
       h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (!g.over) h += `<div><button data-wait="1">${t.wait}</button>${s.voyage ? `<button data-arrive="1">${t.arrive}</button>` : ""}</div>`;
   }
   $("panel").innerHTML = h;
+  $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-hall-window",tab==="hall"&&ui2dEnabled(location.search));
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
