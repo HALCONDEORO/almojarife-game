@@ -64,3 +64,28 @@ export function consumeRecipe(world, market, city, recipe, cash, batches=1) {
   for(const [good,qty] of Object.entries(q.outputs)) market[city][good].stock+=qty;
   return q;
 }
+
+/** Quote explicit material quantities, including an empty market remainder. No mutation. */
+export function quoteUnits(world, market, city, inputs) {
+  const stock = market[city];
+  if (!stock) return { ok: false, reason: 'unknown city' };
+  let cost = 0; const lineCosts = {};
+  for (const [good, qty] of Object.entries(inputs)) {
+    if (!world.goods[good] || !Number.isSafeInteger(qty) || qty < 0) return { ok: false, reason: 'bad inputs' };
+    const e = stock[good];
+    if (!e || !Number.isSafeInteger(e.stock) || e.stock < qty) return { ok: false, reason: 'missing materials', good, required: qty, available: e?.stock ?? 0 };
+    const sim = { ...e }; let line = 0;
+    for (let i = 0; i < qty; i++) { line += Math.ceil(price(world, sim, good) * (1 + FEE)); sim.stock--; }
+    lineCosts[good] = line; cost += line;
+  }
+  return { ok: true, city, inputs: { ...inputs }, lineCosts, cost };
+}
+/** Requote and consume all quantities or none. */
+export function consumeUnits(world, market, city, inputs, cash) {
+  if (!Number.isFinite(cash) || cash < 0) return { ok: false, reason: 'bad cash' };
+  const q = quoteUnits(world, market, city, inputs);
+  if (!q.ok) return q;
+  if (cash < q.cost) return { ok: false, reason: 'no cash', cost: q.cost };
+  for (const [good, qty] of Object.entries(inputs)) market[city][good].stock -= qty;
+  return q;
+}
