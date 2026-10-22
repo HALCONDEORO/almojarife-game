@@ -1,0 +1,5 @@
+import test from'node:test';import assert from'node:assert/strict';import{voyageSummary,voyageCardHtml}from'../src/view/voyagecard.mjs';
+test('voyage progress and remaining distance use the selected ship only',()=>{const s={id:1,voyage:{from:'a',to:'b',totalTicks:100,ticksLeft:40,km:200}};const before=JSON.stringify(s),r=voyageSummary(s);assert.equal(r.progress,.6);assert.equal(r.remainingKm,80);assert.equal(JSON.stringify(s),before);});
+test('progress clamps without negative distance',()=>{const r=voyageSummary({voyage:{totalTicks:10,ticksLeft:-3,km:100}});assert.equal(r.progress,1);assert.equal(r.remainingKm,0);});
+test('docked ship reports current port not stale ETA',()=>{const h=voyageCardHtml({id:2,at:'huelva'},{lang:'en',cityName:()=> 'Huelva'});assert.match(h,/At port: Huelva/);assert.doesNotMatch(h,/Estimated arrival/);});
+test('ETA is explicitly estimated and escaped',()=>{const h=voyageCardHtml({id:1,voyage:{from:'a',to:'b',totalTicks:10,ticksLeft:5}},{lang:'en',eta:()=>'<tomorrow>'});assert.match(h,/Estimated arrival/);assert.match(h,/&lt;tomorrow&gt;/);});
