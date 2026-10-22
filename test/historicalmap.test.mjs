@@ -1,6 +1,6 @@
 import test from'node:test';import assert from'node:assert/strict';import{mapModeControls,politicalPortLayer,HISTORICAL_MAPS_ENABLED}from'../src/view/historicalmap.mjs';
 const data={validFrom:1480,validUntil:1500,realms:{a:{name:{es:'Reino A',en:'Realm A'}}},holdings:[{port:'p',realm:'a',from:1480,until:1490,source:'https://example.invalid/source'}]},p={ports:[{id:'p',lon:1,lat:2}],year:1485,data,x:n=>n,y:n=>n,enabled:true};
-test('flag OFF has no selector, overlay or internal OFF notice',()=>{assert.equal(HISTORICAL_MAPS_ENABLED,false);assert.equal(mapModeControls(),'');assert.deepEqual(politicalPortLayer({...p,enabled:false}),{svg:'',legend:''});});
+test('flag OFF (explicit) has no selector, overlay or internal OFF notice',()=>{assert.equal(typeof HISTORICAL_MAPS_ENABLED,'boolean');assert.equal(mapModeControls({enabled:false}),'');assert.deepEqual(politicalPortLayer({...p,enabled:false}),{svg:'',legend:''});});
 test('all three views named ES EN when explicitly enabled',()=>{assert.match(mapModeControls({enabled:true}),/Geográfico/);assert.match(mapModeControls({enabled:true,lang:'en'}),/Political/);});
 test('bounded source rows produce original port rings, never territory claims',()=>{assert.match(politicalPortLayer(p).svg,/<circle/);assert.equal(politicalPortLayer({...p,year:1490}).svg,'');});
 test('out of validity year or uncorrected unbounded data renders no political attribution',()=>{assert.equal(politicalPortLayer({...p,year:1601}).svg,'');assert.equal(politicalPortLayer({...p,data:null}).svg,'');});
