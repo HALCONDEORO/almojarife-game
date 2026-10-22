@@ -385,6 +385,8 @@ function render() {
       const hv = hallView(g, s.at);
       h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hv.mayor}</div>` + hv.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("") + `</div>`;
       h += `<p><i>${t.hallStand.replace("{r}", RESPECT_NAMES[lang][hv.respectId]).replace("{n}", hv.respectPts)}</i></p>`;
+      const cityLines = [hv.identity, hv.mood, hv.craft, hv.festival, hv.memory, hv.relations, hv.growth].filter(Boolean); // living-city lines: present only while their flag is on (off: nothing renders)
+      if (cityLines.length) h += `<p><i>` + cityLines.map((l) => l.txt?.[lang] ?? l.txt?.es).filter(Boolean).join("<br>") + `</i></p>`;
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmt(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisa > 0 ? "+" : "") + hv.sisa).replace("{p}", (hv.portazgo > 0 ? "+" : "") + hv.portazgo)}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
     } else if (tab === "buildings") {
