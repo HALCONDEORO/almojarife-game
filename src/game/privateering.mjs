@@ -11,18 +11,19 @@ import { portRep } from "./reputation.mjs";
 import { yearOf } from "./chronicle.mjs";
 import { makeShip } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
+import { chargePiracy } from "./justicewire.mjs";
 import { shipCapacity, cargoUsed } from "../sim/trade.mjs";
 
 export const traderRealm = (g, data, t) => (t?.home ? realmOf(data, t.home, yearOf(g.day, g.startYear)) : null);
 const sameLane = (a, b) => !!a.voyage && !!b.voyage && ((a.voyage.from === b.voyage.from && a.voyage.to === b.voyage.to) || (a.voyage.from === b.voyage.to && a.voyage.to === b.voyage.from));
 
 /** Traders at sea on the same lane as the ship whose realm a held letter names that is not suspended by a peace (mechanic 3; `peaces` is data/peaces.json, omitted = no treaties, and g.peace off = no peace at all). Index into g.ai. */
-export function targetsFor(g, data, ship, peaces = {}) {
+export function targetsFor(g, data, ship, peaces = {}, opts = {}) {
   if (g.marque !== true || g.over || !ship?.voyage || ship.sunk) return [];
   const out = [];
   (g.ai ?? []).forEach((t, i) => {
     const realm = traderRealm(g, data, t);
-    if (realm && sameLane(ship, t.ship) && usableLetter(g, data, peaces, realm)) out.push({ index: i, realm });
+    if (realm && sameLane(ship, t.ship)) { if (usableLetter(g, data, peaces, realm)) out.push({ index: i, realm }); else if (opts.unlicensed === true && g.justice === true) out.push({ index: i, realm, unlicensed: true }); }
   });
   return out;
 }
@@ -30,11 +31,11 @@ export function targetsFor(g, data, ship, peaces = {}) {
 export const quintoUnits = (loot) => Object.fromEntries(Object.entries(loot).map(([k, q]) => [k, Math.floor(q * QUINTO)]));
 
 /** Attack the chosen trader. One fight per ship and tick (a reload cannot reroll it). Returns { ok, report, kept, quinto } or { ok:false, reason }. */
-export function attackTrader(g, data, shipId, aiIndex, peaces = {}) {
+export function attackTrader(g, data, shipId, aiIndex, peaces = {}, opts = {}) {
   if (g.marque !== true) return { ok: false, reason: "off" };
   const ship = g.ships.find((s) => s.id === shipId);
   if (!ship) return { ok: false, reason: "no ship" };
-  const t = targetsFor(g, data, ship, peaces).find((x) => x.index === aiIndex);
+  const t = targetsFor(g, data, ship, peaces, opts).find((x) => x.index === aiIndex);
   if (!t) return { ok: false, reason: "no target" };
   const key = `${ship.id}:${aiIndex}`;
   if (g.attackTicks?.[key] === g.tick) return { ok: false, reason: "already fought" };
@@ -45,7 +46,7 @@ export function attackTrader(g, data, shipId, aiIndex, peaces = {}) {
   const hullBefore = ship.hull;
   applyBattle(ship, victim, rep);
   // The quinto leaves the hold and the game (it is paid to the issuer, a sink).
-  const q = quintoUnits(rep.loot), kept = {};
+  const q = t.unlicensed ? {} : quintoUnits(rep.loot), kept = {}; // no letter, no issuer: no quinto, but the port charges the deed (justice flag)
   for (const [good, n] of Object.entries(rep.loot)) {
     const take = Math.min(n, q[good] ?? 0);
     if (take) { ship.cargo[good] -= take; if (!ship.cargo[good]) delete ship.cargo[good]; }
@@ -53,6 +54,7 @@ export function attackTrader(g, data, shipId, aiIndex, peaces = {}) {
   }
   const lotGoods = Object.fromEntries(Object.entries(kept).filter(([, n]) => n > 0));
   if (Object.keys(lotGoods).length && !ship.sunk) (ship.prizeLots ??= []).push({ realm: t.realm, goods: lotGoods, day: g.day }); // tagged until a court settles it (mechanic 2)
+  if (t.unlicensed && Object.keys(rep.loot).length) chargePiracy(g, trader.home, rep.loot);
   if (ship.sunk) { g.ships = g.ships.filter((s) => s !== ship); }
   if (victim.sunk) { trader.ship = makeShip(victim.id, victim.type, trader.home); } // a trader that goes down starts again from home
   const realmName = data.realms[t.realm].name;

@@ -146,3 +146,11 @@ frequency against today's 2.5% a day base (half pirates). Invariant checks: mone
 what the rules destroy (sunk ships, sunk cargo, fines, bounties, quinto).
 Acceptance for each phase: the gate stays green on the new bands, and a player who never goes pirate loses at most the pirate-risk
 share that exists today (no more than 1.5x the current raid rate on the same lanes) unless the owner decides otherwise.
+
+## Mechanic 5 wiring (bad name and justice)
+
+The engine is `src/game/justice.mjs` (charges, courts by port or realm, graded sentences with repeat offences). `src/game/justicewire.mjs` connects it to play, all behind `g.justice` (off by default) and data the host registers with `setJusticeData(realms, courts)`:
+- an attack on a trader whose realm has no usable letter (opt-in `unlicensed`) takes no fifth, raises a piracy charge in the victim's home port (infamy through `addInfamy`, shared with the pardon) and lowers the name in that port;
+- when a ship docks, the officers of that port's realm try its open charges; a prison sentence holds the ship (`heldUntil`);
+- a bad name fades one point a month. Nothing is shown to the player while the flag is off.
+Not wired yet: smuggling and fraud charges (the game has no export bans yet) and any bot use of courts. Famine as a consequence waits for verified sources.
