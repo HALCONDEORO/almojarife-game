@@ -96,3 +96,28 @@ test("a calamity drags the mood while it lasts (citylife seam)", () => {
   g.calamities.active.cadiz = { hambruna: { fromDay: 1, untilDay: 60 } };
   assert.equal(calamityMoodHit(g, "cadiz"), 15);
 });
+
+test("a fire-halted building is not a cash halt: accrue leaves it, restart refuses it, the label says fire", async () => {
+  const { accrueBuildings, restartBuilding } = await import("../src/game/buildings.mjs");
+  const { buildingsRows, buildingLabel } = await import("../src/view/buildingsview.mjs");
+  const g = game();
+  withBuildings(g, "cadiz", [["workshop", 1]]);
+  const b = g.buildings.cadiz["cadiz:1"];
+  b.halted = "incendio";
+  g.cash = 1e6; // plenty of cash: a cash halt would auto-resume with two days' cost
+  accrueBuildings(g); // the daily accrue
+  assert.equal(b.halted, "incendio"); // still burnt
+  assert.equal(g.accrued?.buildings?.["cadiz/cadiz:1"] ?? 0, 0); // and it accrued nothing
+  const r = restartBuilding(g, "cadiz", "cadiz:1");
+  assert.equal(r.ok, false); assert.equal(r.reason, "fire"); // no manual restart while it burns
+  const row = buildingsRows(g, "cadiz").find((x) => x.plotId === "cadiz:1");
+  assert.equal(row.fire, true);
+  const t = { bldState: { halted: "parado", fire: "incendio", plot: "solar" }, bldTypes: { workshop: "Taller" } };
+  assert.match(buildingLabel(t, row), /incendio/);
+  // when the fire is declared out, calamities lifts it and normal rules apply again
+  delete b.halted;
+  g.cash = -100; // no cash now: the daily accrue halts it for cash, as before
+  accrueBuildings(g);
+  assert.equal(b.halted, true);
+  assert.equal(restartBuilding(g, "cadiz", "cadiz:1").reason, "no cash");
+});
