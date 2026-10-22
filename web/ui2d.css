@@ -21,3 +21,8 @@
 .ui2d-store-body td:first-child,.ui2d-store-body th:first-child{border-left:1px solid #c2ae85;border-radius:3px 0 0 3px}.ui2d-store-body td:last-child,.ui2d-store-body th:last-child{border-right:1px solid #c2ae85;border-radius:0 3px 3px 0}
 .ui2d-store-body button{min-height:36px;padding:6px 12px;margin:2px}.ui2d-bank .card{border:1px solid #c2ae85;border-left:4px solid #b49b68;background:#ede2c7;border-radius:3px;padding:10px 12px;margin:8px 0}
 @media(max-width:600px){.ui2d-store-window,.ui2d-bank-window{width:calc(100vw - 12px)}.ui2d-store-head h3{font-size:21px}.ui2d-store-body button{min-height:44px}.ui2d-store-body td,.ui2d-store-body th{padding:6px}}
+/* Desktop space: the bottom bar already switches windows, so the duplicate tab strip goes; the window closes with its button. */
+.ui2d-store-window .tabs,.ui2d-bank-window .tabs{display:none}
+.ui2d-store-window #panel>p,.ui2d-bank-window #panel>p{margin:4px 0}
+.ui2d-store-head{padding:2px 0 8px;margin-bottom:8px;gap:10px}.ui2d-store-head>span{font-size:24px}.ui2d-store-head h3{font-size:21px}
+.ui2d-store-tiles{margin-bottom:8px}.ui2d-store-tile{padding:5px 10px}.ui2d-store-tile b{font-size:17px}
