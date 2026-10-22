@@ -27,3 +27,13 @@ Project design decision of 20 Oct 2026. Own measurement of 20 Oct 2026 10:04 on 
 | Claude Opus 5.5 | 65 s | 4.7k output | D1 |
 
 One sample per model: indicative only. Repeat when there is more data.
+
+## Quotas and operating pace
+
+Project operating rule, added 22 Oct 2026.
+
+1. Claude Sonnet is the default model. Claude Opus is used only for money, security and signatures.
+2. At most 2 interactive sessions and 3 headless sessions run at the same time.
+3. Stop-loss: a session stops starting new work when 80% of its 5-hour window is used.
+4. Claude generates, Codex reviews. The generator never reviews its own work.
+5. Pace targets until 27 Oct 2026: about 19% of the Claude quota per day and about 14% of the Codex quota per day.
