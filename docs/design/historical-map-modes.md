@@ -67,3 +67,10 @@ levels, so badge suppression never removes a navigable city. Cards retain24px
 market icons on screen via inverse zoom; layout is recomputed and cached by zoom.
 Cards do not intersect one another at any density tier. Unknown ports never enter
 the list. Population thresholds are presentation tuning, not historical claims.
+
+## Complete-goods cards
+Every displayed card now contains every produces/needs icon from that port, with
+24px market art and named hover labels. Four icons per row, variable card height,
+up/down arrows, port name. No +n, no detail panel, legend or list below the chart.
+Zoom importance thresholds stay unchanged; at close zoom every discovered port
+gets a card. Variable rectangles are checked for collisions at every tested tier.

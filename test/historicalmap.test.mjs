@@ -8,7 +8,7 @@ test('caller filtered discovery is respected without leaking hidden ports',()=>{
 test('overlapping conflicting holdings and source-free rows are not guessed',()=>{assert.equal(politicalPortLayer({...p,data:{...data,holdings:[...data.holdings,...data.holdings]}}).svg,'');assert.equal(politicalPortLayer({...p,data:{...data,holdings:[{...data.holdings[0],source:''}]}}).svg,'');});
 
 import{tradePortLayer}from'../src/view/historicalmap.mjs';
-test('trade lists only supplied discovered ports and declared specialisations',()=>{const a=tradePortLayer({enabled:true,ports:[{name:'Port',makes:['fish'],needs:['grain']}],goodName:id=>({fish:'Pescado',grain:'Grano'}[id])});assert.match(a.legend,/Pescado/);assert.match(a.legend,/Grano/);assert.doesNotMatch(a.legend,/stock|cash|telemetry/);assert.deepEqual(tradePortLayer({}),{svg:'',legend:''});});
+test('trade lists only supplied discovered ports and declared specialisations',()=>{const a=tradePortLayer({enabled:true,ports:[{id:'p',name:'Port',pop:50000,lon:1,lat:2,makes:['fish'],needs:['grain']}],x:n=>n,y:n=>n,goodName:id=>({fish:'Pescado',grain:'Grano'}[id])});assert.match(a.svg,/Pescado/);assert.match(a.svg,/Grano/);assert.equal(a.legend,'');assert.doesNotMatch(a.legend,/stock|cash|telemetry/);assert.deepEqual(tradePortLayer({}),{svg:'',legend:''});});
 
 import{leaguePortLayer,historicalLayer}from'../src/view/historicalmap.mjs';import fs from'node:fs';
 const leagueData=JSON.parse(fs.readFileSync(new URL('../data/leagues.json',import.meta.url)));
