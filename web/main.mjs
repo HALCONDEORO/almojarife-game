@@ -1,3 +1,4 @@
+import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -48,6 +49,9 @@ import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "
 import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs";
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 
+let mapMode = "geographic";
+const historicalRealms = HISTORICAL_MAPS_ENABLED ? await fetch("../data/realms.json").then(r => r.ok ? r.json() : null).catch(() => null) : null;
+const historicalLeagues = HISTORICAL_MAPS_ENABLED ? await fetch("../data/leagues.json").then(r=>r.ok?r.json():null).catch(()=>null) : null;
 const T = {
   es: { play: "▶ Navegar", pause: "⏸ Pausa", speed: "Velocidad", day: "Día", cash: "Monedas", goal: "Meta", ships: "Barcos", new: "Nueva partida", cont: "Continuar", resume: "Seguir jugando", saveNow: "Guardar ahora", quit: "Salir al título", lang2: "Idioma", speedDef: "Velocidad", paused: "Juego en pausa", alTitle: "Alertas de precio", alInfo: "Marca un precio en este puerto y el buzón te avisa el día que el mercado lo cruce (avisos de una sola vez). Útil para saber cuándo volver.", alBelow: "baje de", alAbove: "suba de", alSet: "Crear alerta", alNone: "Sin alertas en este puerto.", alElse: "Tienes {n} alerta(s) en otros puertos.", alPrice: "precio", alErr: "Revisa la alerta: precio en números y un máximo de 8.", tabMarket: "Mercado", tabYard: "Astillero", tabStore: "Almacén", warehouse: "Almacén", yardInfo: "Encarga barcos (se entregan tras el plazo; sin límite de flota: el mantenimiento diario es el freno), repara el casco o vende.", order: "Encargar {type} ({p}, {d} días, carga {c})", repair: "Reparar casco {h}% ({p})", sellShip: "Vender barco ({p})", orders: "En construcción", ready: "{type} en {city}, listo el día {day} ({pct}%)", yardEmpty: "Grada libre", orderShort: "Encargar ({p})", yc: "Carga {c} · {d} días · mantenimiento {u}/día", buyWh: "Comprar almacén ({p})", whInfo: "Guarda bienes en este puerto (hasta 300 unidades).", whEmpty: "Vacío", store: "Guardar", take: "Sacar", admTitle: "Administrador del almacén", admInfo: "Órdenes permanentes: compra cuando el precio baje del tope (hasta el stock indicado) y vende cuando suba del suelo (guardando lo que digas). Actúa una vez al día y nunca gasta tu reserva. El tope y el suelo se comparan con el precio de mercado, sin tasa (la tasa del puerto se suma al comprar y se resta al vender).", admRule: "compra ≤ {b} hasta {n} · vende ≥ {v} guardando {k}", admNoRules: "Sin órdenes todavía.", admGood: "Bien", admBuy: "Precio tope compra (mercado, sin tasa)", admTo: "Stock objetivo", admSell: "Precio suelo venta (mercado, sin tasa)", admKeep: "Guardar", admSet: "Guardar orden", admClear: "Quitar", admReserve: "Reserva de monedas", admReserveSet: "Fijar reserva", admErr: "Revisa la orden: el tope de compra debe quedar por debajo del suelo de venta y el objetivo dentro de la capacidad.", start: "Empezar", company: "Nombre de tu casa mercantil", defCo: "Mi Casa Mercantil", tagline: "Comercio marítimo en la costa ibérica, siglos XV-XVI", menu: "Menú", saved: "Partida guardada", noSave: "No hay partida guardada", exportS: "Exportar", importS: "Importar", badSave: "Ese archivo no es una partida válida", create: "Crea tu casa mercantil", character: "Tu nombre", portrait: "Retrato", crest: "Escudo", shield: "Forma", division: "División", charge: "Emblema", c1: "Color principal", c2: "Color secundario", home: "Puerto de origen", background: "Origen", back: "Atrás", sh: { heater: "Clásico", round: "Redondo" }, dv: { plain: "Liso", pale: "Partido", fess: "Cortado", chevron: "Cheurón", cross: "Cruz" }, ch: { star: "Estrella", tower: "Torre", ship: "Nave", anchor: "Ancla", sun: "Sol", wheat: "Trigo" }, bgInfo: { merchant: "+300 monedas", seafarer: "Barcos 15% más baratos de mantener", scholar: "+150 monedas y 5% menos de mantenimiento" },
     hint0: "Misión 1: gana {goal} monedas en {days} días. Compra barato donde un bien abunda, vende caro donde falta. Clic en un puerto para elegir destino y clic derecho para zarpar.",
@@ -212,7 +216,15 @@ function render() {
   const missionLine = missions.length ? "⚑ " + missions.map((m) => `${m.title}: ${m.stepLabel}${m.progress ? " (" + m.progress + ")" : ""}${m.daysLeft !== null ? " · " + (lang === "es" ? "quedan" : "left") + " " + m.daysLeft + " " + (lang === "es" ? "días" : "days") : ""}`).join(" · ") : null;
   $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
     s.voyage ? t.hintSea : (missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
-  // map
+  // map: historical views are player-facing information, never internal metrics.
+  if (HISTORICAL_MAPS_ENABLED) {
+    let tools = $("historical-map-tools");
+    if (!tools) { tools = document.createElement("div"); tools.id = "historical-map-tools"; $("map").before(tools); }
+    const wasOpen = tools.querySelector("details")?.open ?? false;
+    tools.innerHTML = mapModeControls({enabled:true,mode:mapMode,lang});
+    tools.querySelector("details").open = wasOpen;
+    $("map-mode").onchange = ev => { mapMode = ev.target.value; render(); };
+  }
   let m = "";
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
@@ -230,8 +242,16 @@ function render() {
   for (const c of world.cities) {
     if (!isDiscovered(g, c.id)) continue; // fog of war
     const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
-    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/><text x="10" y="4" font-size="14">${c.name}</text></g>`;
+    const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
+    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14">${c.name}</text></g>`;
   }
+  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id});
+  if (HISTORICAL_MAPS_ENABLED) {
+    let key = $("historical-map-key");
+    if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("map").after(key); }
+    key.innerHTML=historical.legend;
+  }
+  m += historical.svg;
   $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
   drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => {
