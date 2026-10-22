@@ -68,6 +68,21 @@ test('a partial delivery does not pay; the contract keeps counting',()=>{
  assert.equal(g.contracts.active[0].delivered, 8, 'other ports do not count');
 });
 
+test('an expired offer cannot be accepted, is taken down daily, and late sales earn no premium',()=>{
+ const g = newGame(world, 'cadiz'); g.day = 50;
+ withOffer(g, 'cadiz', {qty: 10, reward: 500, dueDay: 10});
+ const cash = g.cash;
+ assert.equal(acceptContract(g, 'cadiz').reason, 'offer expired');
+ assert.equal(offerOf(g, 'cadiz'), null, 'the stale offer is removed');
+ assert.equal(activeContracts(g).length, 0);
+ withOffer(g, 'cadiz', {dueDay: 20}); expireContracts(g);
+ assert.equal(offerOf(g, 'cadiz'), null, 'the daily sweep removes stale offers too');
+ withOffer(g, 'cadiz', {dueDay: 60, qty: 10}); assert.equal(acceptContract(g, 'cadiz').ok, true);
+ g.day = 61; contractOnSale(g, 'cadiz', 'grain', 10);
+ assert.equal(g.cash, cash, 'no premium after the due day');
+ assert.equal(activeContracts(g)[0].delivered, 0, 'late sales do not count');
+ expireContracts(g); assert.equal(activeContracts(g).length, 0); assert.equal(g.contracts.failed, 1);
+});
 test('a lapsed contract costs reputation and posts a message',()=>{
  const g = newGame(world, 'cadiz');
  withOffer(g);

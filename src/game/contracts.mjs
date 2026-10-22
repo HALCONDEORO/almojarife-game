@@ -40,6 +40,7 @@ export function acceptContract(g, city) {
   if (g.over) return { ok: false, reason: "game over" };
   const b = book(g), offer = b.offers[city];
   if (!offer) return { ok: false, reason: "no offer" };
+  if (offer.dueDay < g.day) { delete b.offers[city]; return { ok: false, reason: "offer expired" }; } // a lapsed order cannot be taken
   if (!g.ships.some((s) => !s.voyage && s.at === city)) return { ok: false, reason: "no ship here" };
   if (b.active.length >= CONTRACT_MAX_ACTIVE) return { ok: false, reason: "too many" };
   b.active.push({ ...offer, city, delivered: 0 });
@@ -55,6 +56,7 @@ export function contractOnSale(g, city, good, qty) {
   const k = b.active.findIndex((x) => x.city === city && x.good === good);
   if (k < 0) return;
   const ct = b.active[k];
+  if (ct.dueDay < g.day) return; // past its due day: sales no longer count and no premium is paid (the daily lapse removes it)
   ct.delivered = Math.min(ct.qty, ct.delivered + qty);
   if (ct.delivered >= ct.qty) {
     b.active.splice(k, 1);
@@ -66,10 +68,11 @@ export function contractOnSale(g, city, good, qty) {
   }
 }
 
-/** Daily: a contract past its due day lapses and the town remembers. */
+/** Daily: a contract past its due day lapses and the town remembers; stale offers are taken down. */
 export function expireContracts(g) {
   const b = g.contracts;
   if (!b) return;
+  for (const [city, o] of Object.entries(b.offers ?? {})) if (o.dueDay < g.day) delete b.offers[city]; // stale offers leave the board
   for (let i = b.active.length - 1; i >= 0; i--) {
     const ct = b.active[i];
     if (ct.dueDay < g.day) {
