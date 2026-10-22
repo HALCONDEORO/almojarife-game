@@ -1,13 +1,30 @@
 name: Balance
+# Fast gate on pull requests (10 game years), only when economy or simulation files change.
+# Full 100-year run on every push to main, every night, and on demand. Same thresholds in both.
 on:
   pull_request:
+    paths:
+      - "src/**"
+      - "data/**"
+      - "tools/**"
+      - "package.json"
+      - ".github/workflows/balance.yml"
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 2 * * *" # nightly, 02:17 UTC
+  workflow_dispatch:
 jobs:
   balance:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: sh tools/fetch_data.sh
-      - run: node tools/sim_balance_check.mjs
+      - name: Balance gate (fast on PRs, 100 years otherwise)
+        env:
+          BALANCE_DAYS: ${{ github.event_name == 'pull_request' && '3650' || '' }}
+        run: node tools/sim_balance_check.mjs
