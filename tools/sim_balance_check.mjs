@@ -48,13 +48,20 @@ check("C: poor bot's saltworks gets built", C.buildOk, C.buildOk === true, "true
 check("C: wages halt it within 180 days", C.firstHaltDay, Number.isInteger(C.firstHaltDay) && C.firstHaltDay <= 180, "1-180");
 check("C: still halted at day 365", C.haltedEnd, C.haltedEnd === true, "true");
 
+// NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.
+// The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,
+// so each band is set from the measured values within +-2 years of the horizon: low = 0.5 x the minimum, high = 4 x the maximum.
+// It catches a collapse or a runaway, not a drift. Recalibrate when the measured window moves.
+const NPC_WORTH_BAND = { 365: [50000, 720000], 1825: [35000, 1270000], 3650: [180000, 1950000], 10950: [12000, 930000], 18250: [75000, 1610000], 36500: [45000, 590000] };
+
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
 for (const h of H) {
   const tag = { 365: "1y", 1825: "5y", 3650: "10y", 10950: "30y", 18250: "50y", 36500: "100y" }[h] ?? (h + "d");
   const aH = A.horizons?.[h], bH = B.horizons?.[h], cH = C.horizons?.[h];
   if (aH) {
     check(`A@${tag}: price index in band [0.80, 1.40] (no inflation spiral)`, aH.priceIndex, within(aH.priceIndex, 0.8, 1.4), "0.80-1.40");
-    check(`A@${tag}: NPC worth (cash + cargo) sane [10k, 500k]`, aH.npcWorth ?? aH.npcCash, within(aH.npcWorth ?? aH.npcCash, 10000, 500000), "10000-500000");
+    const [wLo, wHi] = NPC_WORTH_BAND[h] ?? [10000, 1000000];
+    check(`A@${tag}: NPC worth (cash + cargo) in band [${wLo}, ${wHi}]`, aH.npcWorth ?? aH.npcCash, within(aH.npcWorth ?? aH.npcCash, wLo, wHi), `${wLo}-${wHi}`);
   }
   if (bH) {
     check(`B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
