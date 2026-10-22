@@ -10,10 +10,10 @@ export const ticksForKm = (km, kmPerDay) => (km / kmPerDay) * TICKS_PER_DAY;
 /** Split an absolute tick into {day, hour}; the view formats it with the active locale. */
 export const tickParts = (tick) => ({ day: dayOf(tick), hour: hourOf(tick) });
 
-// Game calendar: day 0 is 1 January 1475, deep winter to match seasonOf(day 0) = winter.
+// Game calendar: day 0 is 1 January 1480, deep winter to match seasonOf(day 0) = winter.
 // Plain 365-day years with the usual month lengths; leap years are ignored on purpose,
 // so the date of a game day is pure arithmetic and never drifts from the day count.
-export const START_YEAR = 1475;
+export const START_YEAR = 1480;
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 /** Calendar date of a game day: {year, month (0-11), day (1-31)}. */
 export function calendarOf(day) {
