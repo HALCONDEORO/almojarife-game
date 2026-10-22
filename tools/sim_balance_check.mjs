@@ -54,7 +54,7 @@ for (const h of H) {
   const aH = A.horizons?.[h], bH = B.horizons?.[h], cH = C.horizons?.[h];
   if (aH) {
     check(`A@${tag}: price index in band [0.80, 1.40] (no inflation spiral)`, aH.priceIndex, within(aH.priceIndex, 0.8, 1.4), "0.80-1.40");
-    check(`A@${tag}: NPC cash sane [10k, 500k]`, aH.npcCash, within(aH.npcCash, 10000, 500000), "10000-500000");
+    check(`A@${tag}: NPC worth (cash + cargo) sane [10k, 500k]`, aH.npcWorth ?? aH.npcCash, within(aH.npcWorth ?? aH.npcCash, 10000, 500000), "10000-500000");
   }
   if (bH) {
     check(`B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
@@ -77,9 +77,12 @@ if ((B.upgrades ?? 0) === 0)
   warn("B: workshop never upgrades", B.upgrades, "Upgrading needs materials from the local market (36 timber vs ~26 stocked in Casablanca): ports without stock can never level buildings, and the bot does not stockpile.");
 if (C.resumedDay == null && C.haltedEnd)
   warn("C: a halted building never resumes", null, "Auto-restart (with two-day hysteresis) exists since the halt fix; C still never resumes because the broke bot never earns again: a terminal halt is expected here, but watch it in long horizons.");
-const npcA0 = A.npcCash?.[0], npcAEnd = A.horizons?.[Math.max(...H)]?.npcCash;
-if (Number.isFinite(npcA0) && Number.isFinite(npcAEnd) && npcAEnd < npcA0)
-  warn("A: NPC traders bleed cash over the long run", npcA0 + " -> " + npcAEnd, "The 3 NPC traders boom then bust: 13k at day 0, ~194k at 50y, ~12k at 100y. Over a century the NPC economy dies, so a free-play world runs out of trading partners.");
+// Criterion: mean NPC worth (cash + cargo at base prices) over the last 10 years against the start. The last snapshot is
+// informational only: ships are at sea with cash turned into cargo, so one snapshot swings between ~32k and ~272k.
+const npcW0 = A.npcWorth?.[0] ?? A.npcCash?.[0], npcWMean = A.npcWorthMean10y, npcWEnd = A.npcWorth?.[1];
+if (Number.isFinite(npcW0) && Number.isFinite(npcWMean) && npcWMean < npcW0)
+  warn("A: NPC traders lose worth over the long run", npcW0 + " -> mean " + npcWMean, "Mean NPC worth (cash + cargo) over the last 10 years is below the start value.");
+if (Number.isFinite(npcWEnd)) console.log(`info: NPC worth at the last snapshot ${npcWEnd} (start ${npcW0}, last-10-year mean ${npcWMean}); informational, not a warning by itself`);
 if ((B.finalLevel ?? 1) === 1 && (report.days ?? 0) > 365)
   warn("B: building level stuck at 1 over the whole run", B.finalLevel, "Consequence of the materials gate above: level-1 output and wages forever.");
 
