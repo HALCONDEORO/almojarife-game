@@ -102,6 +102,8 @@ export function resolveBankruptcy(g) {
   g.bankruptcies = (g.bankruptcies ?? 0) + 1;
   post(g, "bankrupt", { recovered: Math.round(recovered), forgiven });
 }
+/** Optional per-day hooks registered by the host (data files are loaded by the caller, never by game.mjs). Empty by default: a game with no hooks is unchanged. */
+export const DAILY_HOOKS = [];
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
   g.day++;
@@ -117,6 +119,7 @@ function dayTick(g) {
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
+  for (const h of DAILY_HOOKS) h(g);
   campaignTick(g, MISSION);
   const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
   chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year

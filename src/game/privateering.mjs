@@ -5,7 +5,8 @@
 // Own design, pure of the DOM. Prize-court rules (where the goods may be sold) are mechanic 2, a later PR.
 import { seeded } from "../view/cityscene.mjs";
 import { resolveBattle, applyBattle } from "./battle.mjs";
-import { realmOf, activeLetter, QUINTO } from "./marque.mjs";
+import { realmOf, QUINTO } from "./marque.mjs";
+import { usableLetter } from "./peace.mjs";
 import { yearOf } from "./chronicle.mjs";
 import { makeShip } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
@@ -14,13 +15,13 @@ import { shipCapacity, cargoUsed } from "../sim/trade.mjs";
 export const traderRealm = (g, data, t) => (t?.home ? realmOf(data, t.home, yearOf(g.day, g.startYear)) : null);
 const sameLane = (a, b) => !!a.voyage && !!b.voyage && ((a.voyage.from === b.voyage.from && a.voyage.to === b.voyage.to) || (a.voyage.from === b.voyage.to && a.voyage.to === b.voyage.from));
 
-/** Traders at sea on the same lane as the ship whose realm a held letter names. Index into g.ai. */
-export function targetsFor(g, data, ship) {
+/** Traders at sea on the same lane as the ship whose realm a held letter names that is not suspended by a peace (mechanic 3; `peaces` is data/peaces.json, omitted = no treaties, and g.peace off = no peace at all). Index into g.ai. */
+export function targetsFor(g, data, ship, peaces = {}) {
   if (g.marque !== true || g.over || !ship?.voyage || ship.sunk) return [];
   const out = [];
   (g.ai ?? []).forEach((t, i) => {
     const realm = traderRealm(g, data, t);
-    if (realm && sameLane(ship, t.ship) && activeLetter(g, realm)) out.push({ index: i, realm });
+    if (realm && sameLane(ship, t.ship) && usableLetter(g, data, peaces, realm)) out.push({ index: i, realm });
   });
   return out;
 }
@@ -28,11 +29,11 @@ export function targetsFor(g, data, ship) {
 export const quintoUnits = (loot) => Object.fromEntries(Object.entries(loot).map(([k, q]) => [k, Math.floor(q * QUINTO)]));
 
 /** Attack the chosen trader. One fight per ship and tick (a reload cannot reroll it). Returns { ok, report, kept, quinto } or { ok:false, reason }. */
-export function attackTrader(g, data, shipId, aiIndex) {
+export function attackTrader(g, data, shipId, aiIndex, peaces = {}) {
   if (g.marque !== true) return { ok: false, reason: "off" };
   const ship = g.ships.find((s) => s.id === shipId);
   if (!ship) return { ok: false, reason: "no ship" };
-  const t = targetsFor(g, data, ship).find((x) => x.index === aiIndex);
+  const t = targetsFor(g, data, ship, peaces).find((x) => x.index === aiIndex);
   if (!t) return { ok: false, reason: "no target" };
   const key = `${ship.id}:${aiIndex}`;
   if (g.attackTicks?.[key] === g.tick) return { ok: false, reason: "already fought" };
