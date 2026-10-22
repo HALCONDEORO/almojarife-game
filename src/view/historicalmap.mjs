@@ -65,7 +65,7 @@ export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,o
  }if(cardLayouts.size>4)cardLayouts.clear();cardLayouts.set(cacheKey,out);return out;
 }
 export function tradeCardSize(p){return {w:138,h:20+Math.max(1,Math.ceil((p.makes?.length??0)/4))*27+Math.max(1,Math.ceil((p.needs?.length??0)/4))*27};}
-export const tradeBadgePorts=(ports,zoom=1)=>ports.filter(p=>zoom>=3||(p.pop??0)>=(zoom>=1.8?5000:12000));
+export const tradeBadgePorts=(ports,zoom=1)=>zoom>=1.8?ports.filter(p=>zoom>=3||(p.pop??0)>=5000):ports.filter(p=>(p.pop??0)>=12000).sort((a,b)=>(b.pop??0)-(a.pop??0)||a.id.localeCompare(b.id)).slice(0,5);
 export function tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom=1}){
  const es=lang==='es';return tradeCardLayout(tradeBadgePorts(ports,zoom),x,y,bounds,zoom,ports).map(({port:p,box:b,px,py})=>{
  const title=`${p.name}: ${es?'produce':'produces'} ${(p.makes??[]).map(goodName).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(goodName).join(', ')||'-'}`;
