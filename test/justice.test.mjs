@@ -59,7 +59,7 @@ test("courts data is valid; jurisdiction by port first, then realm, else general
 });
 test("the sentence and the message name the court that judged", () => {
   const g = mk(); g.ships[0].at = "sevilla"; raiseCharge(g, realms, "sevilla", "fraud", 100); g.infamy = 0;
-  const s = trial(g, "sevilla", courts); assert.equal(s.court.es, "Casa de la Contratación"); assert.ok(g.inbox.some((m) => m.kind === "warn" && m.txt.es.includes("Casa de la Contratación")));
+  const s = trial(g, "sevilla", courts); assert.equal(s.court.es, "Casa de la Contratación"); assert.ok(g.inbox.some((m) => m.kind === "info" && m.txt.es.includes("Casa de la Contratación")));
   const h = mk(); raiseCharge(h, realms, "cadiz", "fraud", 100); h.infamy = 0; assert.equal(trial(h, "cadiz", null).court, null);
 });
 test("recidivism: each conviction in the realm raises the fine, tightens the seizure, and the third sends the ship to prison even at low infamy", () => {

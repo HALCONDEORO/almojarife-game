@@ -68,7 +68,7 @@ export function officersAct(g, realms, port, ship, courts = null) {
     const days = prisonDays(g, realm);
     if (days > 0) { ship.heldUntil = Math.max(ship.heldUntil ?? 0, g.day + days); s.prisonDays = days; }
     c.status = "tried"; c.sentence = s; (g.convictions ??= {})[realm] = (g.convictions[realm] ?? 0) + 1; (g.sentences ??= []).unshift(s); if (g.sentences.length > 40) g.sentences.pop();
-    post(g, "warn", { txt: { es: `${court ? court.name.es + " te juzga" : "Los oficiales del puerto te juzgan"} por ${c.kind === "smuggling" ? "contrabando" : c.kind === "fraud" ? "fraude" : "piratería"}: multa ${s.fine}${Object.keys(s.seized).length ? ", parte de la carga embargada" : ""}${s.prisonDays ? `, barco retenido ${s.prisonDays} días` : ""}.`, en: `${court ? court.name.en : "The port officers"} tries you for ${c.kind}: fine ${s.fine}${Object.keys(s.seized).length ? ", part of the cargo seized" : ""}${s.prisonDays ? `, ship held ${s.prisonDays} days` : ""}.` } });
+    post(g, "info", { txt: { es: `${court ? court.name.es + " te juzga" : "Los oficiales del puerto te juzgan"} por ${c.kind === "smuggling" ? "contrabando" : c.kind === "fraud" ? "fraude" : "piratería"}: multa ${s.fine}${Object.keys(s.seized).length ? ", parte de la carga embargada" : ""}${s.prisonDays ? `, barco retenido ${s.prisonDays} días` : ""}.`, en: `${court ? court.name.en : "The port officers"} tries you for ${c.kind}: fine ${s.fine}${Object.keys(s.seized).length ? ", part of the cargo seized" : ""}${s.prisonDays ? `, ship held ${s.prisonDays} days` : ""}.` } });
     out.push(s);
   }
   return out;
