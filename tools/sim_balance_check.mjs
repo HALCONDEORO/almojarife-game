@@ -35,7 +35,10 @@ if ((report.days ?? 0) > 365) check("D: bankruptcy actually resolves", D.bankrup
 
 const A = report.scenarios?.A_no_player ?? {};
 check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], within(A.priceIndex?.[1], 0.7, 1.6), "0.70-1.60");
-const npcGrowthA = A.npcCash?.[0] > 0 ? A.npcCash[1] / A.npcCash[0] : NaN;
+// npcCash[1] is the final snapshot of the complete run, which may span 100 years.
+// Evaluate the named 365-day horizon, never the final cash of a longer simulation.
+const npcCashYear1 = A.horizons?.[365]?.npcCash;
+const npcGrowthA = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
 check("A: NPC cash growth x0.5-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.5, 30), "0.5-30");
 
 const B = report.scenarios?.B_builder_bot ?? {};
