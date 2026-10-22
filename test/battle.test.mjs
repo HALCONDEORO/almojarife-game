@@ -50,3 +50,20 @@ test('guns wear and crews shrink after a fight',()=>{
  const a=ship({cannons:3,gunCond:100}),d=ship({cannons:3,gunCond:100,cargo:{salt:10}});
  const r=resolveBattle(a,d,[.5,.5,.5,.5]);applyBattle(a,d,r);assert.ok(a.gunCond<100&&d.gunCond<100);assert.ok(a.crew<=12&&d.crew<=12);
 });
+test('a sunk attacker loses its cargo and it is counted as destroyed',()=>{
+ const a=ship({hull:1,crew:12,cargo:{wood:10}}),d=ship({hull:100,crew:28,cannons:8,gunCond:100,cargo:{salt:5}});
+ const r=resolveBattle(a,d,[.5,.5,.5,.5]);assert.ok(r.attackerShipSunk);assert.deepEqual(r.destroyedAttacker,{wood:10});
+ const before=units(a,d),destroyed=applyBattle(a,d,r);
+ assert.equal(destroyed,10);assert.equal(a.cargo.wood,undefined);assert.equal(d.cargo.salt,5);assert.equal(units(a,d)+destroyed,before);
+});
+test('when both ships sink, both cargoes are destroyed and counted',()=>{
+ let found=0;
+ for(let i=1;i<=400&&!found;i++){
+  const a=ship({hull:2+i%4,cannons:4,gunCond:100,cargo:{wood:7}}),d=ship({hull:2+(i*3)%4,cannons:4,gunCond:100,cargo:{salt:9}});
+  const r=resolveBattle(a,d,rolls(i));
+  if(r.result!=='both-sunk')continue;found++;
+  const before=units(a,d),destroyed=applyBattle(a,d,r);
+  assert.equal(destroyed,16);assert.equal(units(a,d),0);assert.equal(before,16);
+ }
+ assert.ok(found,'at least one both-sunk fight in the sample');
+});

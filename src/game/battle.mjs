@@ -39,9 +39,11 @@ export function resolveBattle(att, def, rolls, opts = {}) {
     hD = Math.max(0, hD - dD); hA = Math.max(0, hA - dA);
     cD = Math.max(0, cD - Math.floor(dD / 4)); cA = Math.max(0, cA - Math.floor(dA / 4));
   }
-  const rep = { rounds, hullA: hA, hullD: hD, crewA: cA, crewD: cD, loot: {}, destroyed: {}, attackerShipSunk: hA <= 0, defenderShipSunk: hD <= 0, captured: false, surrendered: false };
+  const rep = { rounds, hullA: hA, hullD: hD, crewA: cA, crewD: cD, loot: {}, destroyed: {}, destroyedAttacker: {}, attackerShipSunk: hA <= 0, defenderShipSunk: hD <= 0, captured: false, surrendered: false };
   const cargo = def.cargo ?? {};
   const sinkAll = () => { rep.destroyed = { ...cargo }; };
+  // A ship that goes down takes its whole hold with it, the attacker's as much as the defender's.
+  if (hA <= 0) rep.destroyedAttacker = { ...(att.cargo ?? {}) };
   if (hA <= 0 && hD <= 0) { rep.result = "both-sunk"; sinkAll(); return rep; }
   if (hA <= 0) { rep.result = "defender-won"; return rep; }
   if (hD <= 0) { rep.result = "defender-sunk"; sinkAll(); return rep; }
@@ -58,7 +60,7 @@ export function resolveBattle(att, def, rolls, opts = {}) {
 }
 
 /** Apply a report once. Moves loot between holds, sets hulls and crews, wears the guns, and marks sunk ships (ship.sunk = true);
- *  removing a sunk ship and changing the owner of a captured one stay with the caller. Returns the units of goods destroyed. */
+ *  removing a sunk ship and changing the owner of a captured one stay with the caller. Returns the units of goods destroyed on both ships. */
 export function applyBattle(att, def, rep) {
   att.hull = rep.hullA; def.hull = rep.hullD; att.crew = rep.crewA; def.crew = rep.crewD;
   wearGunsBy(att, GUN_WEAR_PER_ROUND * rep.rounds); wearGunsBy(def, GUN_WEAR_PER_ROUND * rep.rounds);
@@ -71,6 +73,7 @@ export function applyBattle(att, def, rep) {
     (att.cargo ??= {})[good] = (att.cargo[good] ?? 0) + take;
   }
   let destroyed = 0;
-  for (const [good, q] of Object.entries(rep.destroyed)) { const d = Math.min(q, def.cargo[good] ?? 0); destroyed += d; def.cargo[good] -= d; if (!def.cargo[good]) delete def.cargo[good]; }
+  const burn = (ship, lost) => { ship.cargo ??= {}; for (const [good, q] of Object.entries(lost ?? {})) { const d = Math.min(q, ship.cargo[good] ?? 0); destroyed += d; ship.cargo[good] -= d; if (!ship.cargo[good]) delete ship.cargo[good]; } };
+  burn(def, rep.destroyed); burn(att, rep.destroyedAttacker);
   return destroyed;
 }
