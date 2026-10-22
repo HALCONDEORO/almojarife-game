@@ -149,6 +149,8 @@ function stepTicks(n) {
     const arrivedAt = g.ships.findIndex((x, j) => before[j] && !x.voyage);
     if (arrivedAt >= 0) { playing = false; // pause when your ship arrives
       if (!g.pending && !g.encounterReport && !g.over) { sel = arrivedAt; open3d(g.ships[arrivedAt]); } } // docking opens the city, P3-style
+    // Stop this frame at the decision tick, not after the rest of its queued ticks.
+    if (g.pending || g.encounterReport || arrivedAt >= 0 || g.over) break;
   }
   render();
 }
