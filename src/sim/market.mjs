@@ -1,4 +1,5 @@
-import { totalDemand } from "./classes.mjs";
+import { NEEDS_LEDGER_ENABLED, recordLegacyConsumption } from "./needs-telemetry.mjs";
+import { totalDemand, demandBy } from "./classes.mjs";
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
 // Written from first principles; not derived from any other game's data.
 export function makeMarket(world) {
@@ -58,17 +59,25 @@ export function cityDemand(e, good, base) {
   const pop = e.pop;
   return totalDemand(pop, good, affordRatio(e, base)) * DEMAND_SCALE * (e.needs ? NEEDS_MUL : 1) * (e.makes ? MAKES_MUL : 1);
 }
-export function tickMarket(market, day, world) {
-  for (const city of Object.values(market)) tickMarketCity(city, day, world);
+export function tickMarket(market, day, world, options = {}) {
+  for (const city of Object.values(market)) tickMarketCity(city, day, world, options);
 }
 /** One day for ONE city (market[cityId]): the same formulas and quantities as a full tickMarket day. */
-export function tickMarketCity(city, day, world) {
+export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABLED} = {}) {
+  const actual={},desired={};
   for (const [good, e] of Object.entries(city)) {
     if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
     e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
     const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
     const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
     const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
+    if(needsLedger){
+      actual[good]=Math.min(e.stock,Math.max(0,used));
+      const by=demandBy(e.pop,good,affordRatio(e,world?.goods?.[good]?.base));
+      const mul=DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1)*scarcity;
+      desired[good]=Object.fromEntries(Object.entries(by).map(([c,n])=>[c,n*mul]));
+    }
     e.stock = Math.max(0, e.stock - used);
   }
+  if(needsLedger)recordLegacyConsumption(city,day,actual,desired,g=>{const e=city[g];return DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1);});
 }
