@@ -1,3 +1,4 @@
+import { post } from "./ledger.mjs";
 // Grain embargo (hunger consequence of a short harvest or lost shipping): when a port's grain runs critically short its council
 // stops grain leaving the port by sale to outsiders. Own design, pure, no DOM. Off unless g.embargo === true.
 // Basis (public sources, own words): Barcelona's municipality held, in shortages, the right to seize grain carried past the city (Vi vel gratia, 1328)
@@ -10,3 +11,12 @@ export const EMBARGO_BELOW = 0.4; // grain stock / target under which the counci
 export const GRAIN = "grain";
 export const grainShort = (g, port) => { const e = g.market?.[port]?.[GRAIN]; return !!e && e.stock / Math.max(1, e.target) < EMBARGO_BELOW; };
 export const embargoOn = (g, port) => g?.embargo === true && grainShort(g, port);
+/** Tell the player why the council refused (the host shows the inbox). One notice per port and day, so repeated clicks do not fill it. Only called with the flag on. */
+export function embargoNotice(g, port) {
+  const seen = (g.embargoSeen ??= {}); if (seen[port] === g.day) return false; seen[port] = g.day;
+  const name = g.world.nodes[port]?.name ?? port;
+  post(g, "warn", { city: port, txt: {
+    es: `El concejo de ${name} no vende grano: el pan escasea y lo guarda para sus vecinos. Vuelve cuando haya más en los almacenes, o trae tú grano al puerto.`,
+    en: `The council of ${name} will not sell grain: bread is short and it keeps the stock for its own people. Come back when the stores recover, or bring grain to the port yourself.` } });
+  return true;
+}

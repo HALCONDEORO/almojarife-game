@@ -16,3 +16,11 @@ test("the door opens again at the threshold, and grain may always be sold into t
   const t = mk(true, 0.1); t.s.cargo = { grain: 3 }; assert.equal(doSell(t.g, t.s, "grain", 3).ok, true);
 });
 test("the flag survives a save and reload", () => { const { g } = mk(true, 0.1); const h = deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g; assert.equal(embargoOn(h, "cadiz"), true); });
+test("a refusal leaves one notice per port and day, in Spanish and English, and none with the flag off", () => {
+  const { g, s } = mk(true, 0.1); doBuy(g, s, "grain", 1); doBuy(g, s, "grain", 1);
+  const msgs = (g.inbox ?? g.ledger?.inbox ?? []).filter((m) => /grano|grain/.test(JSON.stringify(m)));
+  assert.equal(msgs.length, 1, JSON.stringify(Object.keys(g)));
+  assert.match(JSON.stringify(msgs[0]), /no vende grano/); assert.match(JSON.stringify(msgs[0]), /will not sell grain/);
+  g.day += 1; doBuy(g, s, "grain", 1); assert.equal((g.inbox ?? g.ledger?.inbox).filter((m) => /grano/.test(JSON.stringify(m))).length, 2);
+  const off = mk(false, 0.1); doBuy(off.g, off.s, "grain", 1); assert.equal(off.g.embargoSeen, undefined);
+});

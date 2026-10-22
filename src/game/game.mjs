@@ -39,7 +39,7 @@ export { feeMul } from "./reputation.mjs"; // the UI previews with the same fee 
 import { npcPlan } from "../sim/npcplan.mjs";
 import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
 import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
-import { embargoOn, GRAIN } from "./embargo.mjs";
+import { embargoOn, embargoNotice, GRAIN } from "./embargo.mjs";
 import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -205,7 +205,7 @@ export function waitUntilArrival(g, ship) {
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
   if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
-  if (good === GRAIN && embargoOn(g, ship.at)) return { ok: false, reason: "embargo" }; // the council keeps its grain at home (flag off: never)
+  if (good === GRAIN && embargoOn(g, ship.at)) { embargoNotice(g, ship.at); return { ok: false, reason: "embargo" }; } // the council keeps its grain at home (flag off: never)
   const f = FEE * feeMul(g, ship.at);
   const r = buy(g.world, g.market, ship, g.cash, good, qty, f);
   // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
