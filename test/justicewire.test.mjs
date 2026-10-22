@@ -66,3 +66,10 @@ test("a convoy with one held member does not leave at all: no member is left sai
   g.day = b.heldUntil; const ok = sailConvoy(g, cv.convoy.id, "malaga", { doSail: ds }); assert.equal(ok.ok, true);
   const off = newGame(world); off.ships[0].heldUntil = 99; assert.equal(heldNow(off, off.ships[0]), false);
 });
+import { messageText } from "../src/view/ledgerview.mjs";
+test("a sentence reads as its own text in the inbox, in both languages", () => {
+  setJusticeData(realms, courts); const { g, s } = setup(true); g.infamy = 60; chargePiracy(g, "lisboa", { wool: 50 }); g.infamy = 60; s.voyage = null; s.at = "lisboa";
+  let out = []; for (let d = 1; d < 80 && !out.length; d++) { g.day = d; out = arrivalJustice(g, s); }
+  const m = g.inbox.find((x) => /juzga|piratería/.test(JSON.stringify(x))), f = (n) => String(n);
+  assert.ok(m); assert.match(messageText(m, "es", f), /te juzga|te juzgan/); assert.doesNotMatch(messageText(m, "es", f), /mantenimiento|upkeep/i); assert.match(messageText(m, "en", f), /piracy|tr(y|ies)|judge/i);
+});
