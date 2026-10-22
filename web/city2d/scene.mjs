@@ -24,6 +24,20 @@ function drawWalls(){
  for(const f of [0,.5,1]){const x=a.x+(b.x-a.x)*f,y=a.y+(b.y-a.y)*f;ctx.fillStyle='#cbb68a';ctx.fillRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.strokeStyle='#7f6b48';ctx.strokeRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.fillStyle='#6a6048';ctx.fillRect(x-1.5*zoom,y-27*zoom,3*zoom,8*zoom);for(let i=-1;i<=1;i++){ctx.fillStyle='#e2cfaa';ctx.fillRect(x+(i*5-2)*zoom,y-42*zoom,4*zoom,7*zoom)}}
  }
 }
+function boatSprite(p,t){
+ const im=images.barco;if(!im)return;if(!animate){sprite(p,im);return}
+ const g=spriteGeometry(p),scale=g.scale*zoom;ctx.save();ctx.translate(canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom);ctx.scale(scale,scale);
+ const sail=()=>{ctx.moveTo(162,123);ctx.lineTo(384,278);ctx.lineTo(373,291);ctx.lineTo(292,240);ctx.lineTo(219,199);ctx.lineTo(170,157);ctx.closePath()};
+ ctx.save();ctx.beginPath();ctx.rect(0,0,512,512);sail();ctx.clip('evenodd');ctx.drawImage(im,0,0);ctx.restore();
+ ctx.beginPath();sail();ctx.clip();for(let y=120;y<300;y+=4){const wind=Math.sin(t*1.8+y*.055)*1.7;ctx.drawImage(im,0,y,512,4,wind,y,512,4)}ctx.restore();
+}
+function harbourCrane(x,y,t){
+ const p=xy(x,y),s=zoom,sway=animate?Math.sin(t*.6)*3:0;ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
+ ctx.fillStyle='#5c5d403d';ctx.beginPath();ctx.ellipse(6,3,18,6,0,0,Math.PI*2);ctx.fill();ctx.lineCap='round';
+ const beam=(a,b,w,c)=>{ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke()};
+ beam([-8,0],[0,-45],5,'#796344');beam([8,0],[0,-45],5,'#967b51');beam([-7,-7],[7,-7],4,'#aa8b5c');beam([0,-43],[27,-53],5,'#90744b');beam([0,-28],[24,-52],3,'#6f5f42');beam([0,-43],[-11,-54],3,'#8d724b');beam([-11,-54],[27,-53],1,'#494c3b');
+ beam([26,-52],[26+sway,-21],1.2,'#56553f');ctx.strokeStyle='#5a5942';ctx.lineWidth=2;ctx.beginPath();ctx.arc(26+sway,-19,3,0,Math.PI*1.4);ctx.stroke();ctx.fillStyle='#ac8c5b';ctx.beginPath();ctx.arc(0,-22,6,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#66583d';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+}
 function drawHarbour(t){
  const {edge,span,piers}=harbourLayout(bounds);
  const line=(a,b,color,width)=>{a=xy(...a);b=xy(...b);ctx.strokeStyle=color;ctx.lineWidth=width*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()};
@@ -44,7 +58,8 @@ function drawHarbour(t){
  for(let i=0;i<11;i++){const p=xy(edge-1.2,bounds.minY+2+i*span/13);ctx.fillStyle='#7c7157';ctx.beginPath();ctx.ellipse(p.x,p.y,2.5*zoom,4*zoom,0,0,Math.PI*2);ctx.fill()}
  // Crates, barrels and a handcart make the working waterfront legible at close zoom.
  for(let i=0;i<8;i++){const p=xy(edge-2.6,bounds.minY+3+i*span/10);ctx.fillStyle='#655c4444';ctx.beginPath();ctx.ellipse(p.x+3*zoom,p.y+2*zoom,8*zoom,3*zoom,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=i%2?'#a08053':'#8d714c';ctx.fillRect(p.x-4*zoom,p.y-8*zoom,8*zoom,8*zoom);ctx.strokeStyle='#5e553e';ctx.lineWidth=1*zoom;ctx.strokeRect(p.x-4*zoom,p.y-8*zoom,8*zoom,8*zoom);ctx.beginPath();ctx.moveTo(p.x-4*zoom,p.y-8*zoom);ctx.lineTo(p.x+4*zoom,p.y);ctx.stroke()}
- if(images.barco){const bob=animate?Math.sin(t*1.1)*.22:0;sprite({x:edge+10,y:bounds.minY+span*.45+bob,w:7,d:7},images.barco)}
+ if(images.barco){const bob=animate?Math.sin(t*1.1)*.22:0;boatSprite({x:edge+10,y:bounds.minY+span*.45+bob,w:7,d:7},t)}
+ harbourCrane(edge-.3,bounds.minY+span*.47,t);
  // Cosmetic dockworkers follow the apron, never simulation citizens or jobs.
  for(let i=0;i<7;i++){const f=(i/7+(animate?t*.009:0))%1,p=xy(edge-1.2,bounds.minY+3+f*(span-9)),step=animate?Math.sin(t*5+i)*1.4:0;ctx.fillStyle='#5b5a413b';ctx.beginPath();ctx.ellipse(p.x+2*zoom,p.y+zoom,4*zoom,1.8*zoom,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#4e4c39';ctx.lineWidth=1.3*zoom;ctx.beginPath();ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x-step*zoom,p.y);ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x+step*zoom,p.y);ctx.stroke();ctx.fillStyle=['#775746','#68746a','#9d8761'][i%3];ctx.fillRect(p.x-1.7*zoom,p.y-8*zoom,3.4*zoom,5*zoom);ctx.fillStyle='#cfb18b';ctx.beginPath();ctx.arc(p.x,p.y-9*zoom,1.8*zoom,0,Math.PI*2);ctx.fill()}
 }
