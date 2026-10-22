@@ -9,7 +9,10 @@
 // first principles. No internal figure is ever shown to the player.
 import { CLASSES, PER_1000, classShares } from "../sim/classes.mjs";
 import { activeShocks } from "./shocks.mjs";
-import { activeLevels, housePopBonus } from "./buildings.mjs";
+import { housePopBonus } from "./buildings.mjs";
+
+/** Active levels of a civic type that actually work: a halted building helps nobody. */
+const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0);
 
 /** Goods each class cares about, from the existing basket (weight > 0). */
 const basket = (cls) => Object.keys(PER_1000).filter((good) => (PER_1000[good]?.[cls] ?? 0) > 0);
@@ -52,7 +55,7 @@ export function classCoverage(row, cls) {
 }
 /** Staple coverage as the city feels it: the posito's municipal stores count on top. */
 const stapleCoverage = (g, cityId) => STAPLES.reduce((a, good) => a + coverageOf(g.market?.[cityId], good), 0) / STAPLES.length
-  + POSITO_BUFFER * activeLevels(g, cityId, "posito");
+  + POSITO_BUFFER * workingLevels(g, cityId, "posito");
 
 /** Today's mood reading for one class before memory is applied (0-100). */
 export function moodTarget(g, cityId, cls) {
@@ -61,8 +64,8 @@ export function moodTarget(g, cityId, cls) {
   const hardTimes = activeShocks(g, cityId).length > 0;
   if (hardTimes) target = Math.max(0, target - SHOCK_PENALTY);
   if (g.citylife) { // civic buildings lift spirits; they never exist in a flag-off game
-    if (cls === "poor") target = Math.min(100, target + HOSPITAL_MOOD * activeLevels(g, cityId, "hospital") * (hardTimes ? 2 : 1));
-    if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * activeLevels(g, cityId, "alhondiga"));
+    if (cls === "poor") target = Math.min(100, target + HOSPITAL_MOOD * workingLevels(g, cityId, "hospital") * (hardTimes ? 2 : 1));
+    if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * workingLevels(g, cityId, "alhondiga"));
   }
   return target;
 }
@@ -83,10 +86,10 @@ export function citylifeDay(g) {
     const city = (cl.cities[c.id] ??= { animo: { poor: START_MOOD, middle: START_MOOD, rich: START_MOOD }, extra: 0 });
     for (const cls of CLASSES) city.animo[cls] += (moodTarget(g, c.id, cls) - city.animo[cls]) / MOOD_MEMORY;
     if (g.day % 7 === 0) { // weekly drift: content cities draw newcomers, miserable ones lose people
-      const base = c.pop ?? 8000, room = activeLevels(g, c.id, "house") * ROOM_PER_HOUSE_LEVEL;
+      const base = c.pop ?? 8000, room = workingLevels(g, c.id, "house") * ROOM_PER_HOUSE_LEVEL;
       let drift = Math.round((base + city.extra) * DRIFT_PER_WEEK * (meanMood(g, c.id) - MOOD_NEUTRAL) / (100 - MOOD_NEUTRAL));
       if (drift < 0 && stapleCoverage(g, c.id) < HUNGER_LINE) // a posito feeds the city through the crisis and slows the leaving
-        drift = Math.round(drift * (1 - POSITO_EMIGRATION_BRAKE * Math.min(3, activeLevels(g, c.id, "posito")) / 3));
+        drift = Math.round(drift * (1 - POSITO_EMIGRATION_BRAKE * Math.min(3, workingLevels(g, c.id, "posito")) / 3));
       const floor = -Math.round(base * GROWTH_MIN_FRACTION); // never below half the base population
       city.extra = Math.max(floor, Math.min(room, city.extra + drift)); // and never more newcomers than houses can shelter
     }

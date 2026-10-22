@@ -102,6 +102,7 @@ export function quoteConstruction(g, cityId, plotId, type) {
   if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   const spec = BUILDING_TYPES[type];
   if (!spec) return { ok: false, reason: "unknown type" };
+  if (CIVIC_BUILDINGS.includes(type) && !g.citylife) return { ok: false, reason: "unknown type" }; // civic types exist only with the city-life flag (off games cannot build them even by direct call)
   if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };

@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
+import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { buyPlot, buyOffice, startConstruction, BUILDING_TYPES, freeLabor } from "../src/game/buildings.mjs";
 import { initCitylife, citylifeDay, moodTarget, meanMood, citylifeExtra, moodWord } from "../src/game/citylife.mjs";
@@ -94,4 +95,45 @@ test("OFF parity: 200 days with the module loaded but the flag off match a plain
   const a = game(), b = game();
   for (let i = 0; i < 200; i++) { advanceDay(a); advanceDay(b); }
   assert.deepEqual(JSON.parse(JSON.stringify({ ...a, world: undefined })), JSON.parse(JSON.stringify({ ...b, world: undefined })));
+});
+
+// Real OFF parity, not just determinism: these golden numbers were produced by the base code
+// (main d58197d, before the module existed) running this exact scenario. If the module leaks
+// any state, effect or rounding into a flag-off game, one of them moves.
+test("OFF parity vs base code: golden market and cash figures of the pre-module build", () => {
+  const g = game();
+  for (let i = 0; i < 60; i++) advanceDay(g);
+  assert.deepEqual(
+    { day: g.day, cash: g.cash, cadiz_grain: g.market.cadiz.grain.stock, cadiz_wine: g.market.cadiz.wine.stock, sevilla_grain: g.market.sevilla.grain.stock, sevilla_pop: g.market.sevilla.grain.pop, lisboa_beer: g.market.lisboa.beer.stock },
+    { day: 60, cash: 1888, cadiz_grain: 100, cadiz_wine: 121, sevilla_grain: 297, sevilla_pop: 40000, lisboa_beer: 269 });
+});
+
+test("flag OFF: civic types cannot be built even by a direct startConstruction call", () => {
+  const g = game();
+  (g.rep ??= {}).cadiz = 100; g.cash = 1e6; buyOffice(g, "cadiz");
+  buyPlot(g, "cadiz", { id: "cadiz:1", type: "house", w: 10, d: 10 });
+  for (const t of ["posito", "hospital", "alhondiga"]) {
+    const r = startConstruction(g, "cadiz", "cadiz:1", t);
+    assert.ok(!r.ok && r.reason === "unknown type", t + " refused without the flag");
+  }
+});
+
+test("a halted hospital lifts nobody", () => {
+  const g = game({ citylife: true });
+  g.buildings = { cadiz: { "cadiz:1": { type: "hospital", level: 2, state: "active", halted: true } } };
+  const withHalted = moodTarget(g, "cadiz", "poor");
+  g.buildings.cadiz["cadiz:1"].halted = false;
+  const withWorking = moodTarget(g, "cadiz", "poor");
+  g.buildings.cadiz = {};
+  assert.equal(withHalted, moodTarget(g, "cadiz", "poor"), "halted = no effect");
+  assert.equal(withWorking - withHalted, 8, "working level 2 lifts the poor by 8");
+});
+
+test("save round trip with the flag ON keeps the city evolving identically", () => {
+  const a = game({ citylife: true });
+  for (let i = 0; i < 30; i++) advanceDay(a);
+  const { g: b } = deserialize(JSON.parse(JSON.stringify(serialize(a, "Casa Oro"))), world);
+  assert.ok(b.citylife?.cities?.cadiz, "citylife state survives the round trip");
+  for (let i = 0; i < 30; i++) { advanceDay(a); advanceDay(b); }
+  assert.deepEqual(JSON.parse(JSON.stringify({ ...b, world: undefined })), JSON.parse(JSON.stringify({ ...a, world: undefined })));
 });
