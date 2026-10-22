@@ -1,5 +1,6 @@
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
+import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
@@ -116,7 +117,10 @@ document.documentElement.lang = lang;
 // `progress` is how much of the current day has elapsed (0 to 1). It is kept across pause,
 // resume and speed changes, so ships never move backwards or jump.
 let playing = false, speed = 1, progress = 0, lastFrame = 0, tickAcc = 0;
-const MS_PER_DAY = 1500, MS_PER_TICK = MS_PER_DAY / TICKS_PER_DAY;
+let automaticTime = localStorage.getItem('automatic-time') !== 'false';
+let planningResume = false, manualPause = false;
+const toggleClock = () => { playing = !playing; manualPause = !playing; planningResume = false; render(); };
+const tickDurationMs = () => dayDurationMs(automaticTime) / TICKS_PER_DAY;
 const hoursOf = (ticks) => Math.max(1, Math.round(ticks / TICKS_PER_HOUR)); // whole hours, for estimates and ETAs
 const etaText = (tick) => { const p = tickParts(tick); return t.eta.replace("{d}", p.day).replace("{h}", String(p.hour).padStart(2, "0")); };
 const trails = {}; // view only: recent screen positions per ship, for the wake
@@ -125,7 +129,7 @@ function drawShips() {
   const all = [...g.ai.map((a) => ({ sh: a.ship, mine: false, id: "ai" + a.ship.id })), ...g.ships.map((sh, i) => ({ sh, mine: true, sel: i === sel, id: "p" + sh.id }))];
   let h = "", wakes = "";
   for (const { sh, mine, sel: isSel, id } of all) {
-    const f = tickAcc / MS_PER_TICK; // fraction of the current tick, for smooth drawing
+    const f = tickAcc / tickDurationMs(); // fraction of the current tick, for smooth drawing
     const p = shipPosition(world, sh, f), pt = { x: X(p.lon), y: Y(p.lat) };
     let ang = 0;
     if (sh.voyage) {
@@ -148,7 +152,7 @@ function stepTicks(n) {
     advanceTick(g);
     if (g.day !== dayBefore) autosave();
     if (g.pending || g.encounterReport) playing = false;
-    const arrivedAt = g.ships.findIndex((x, j) => before[j] && !x.voyage);
+    const arrivedAt = g.ships.findIndex((x, j) => before[j] && !x.voyage && arrivalNeedsDecision(x, automaticTime));
     if (arrivedAt >= 0) { playing = false; // pause when your ship arrives
       if (!g.pending && !g.encounterReport && !g.over) { sel = arrivedAt; open3d(g.ships[arrivedAt]); } } // docking opens the city, P3-style
     // Stop this frame at the decision tick, not after the rest of its queued ticks.
@@ -160,9 +164,9 @@ function frame(now) {
   const dt = lastFrame ? Math.min(250, now - lastFrame) : 0; lastFrame = now;
   if (playing && !g.over) {
     tickAcc += dt * speed;
-    const n = Math.floor(tickAcc / MS_PER_TICK);
-    if (n) { tickAcc -= n * MS_PER_TICK; stepTicks(n); }
-    progress = (g.tick % TICKS_PER_DAY + tickAcc / MS_PER_TICK) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
+    const n = Math.floor(tickAcc / tickDurationMs());
+    if (n) { tickAcc -= n * tickDurationMs(); stepTicks(n); }
+    progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
   requestAnimationFrame(frame);
@@ -191,7 +195,12 @@ function start(prof, save = true) {
 }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
-  const day = g.day; fn();
+  const day = g.day, voyagesBefore = g.ships.map(s => !!s.voyage), routesBefore = g.ships.map(s => s.route);
+  fn();
+  if (automaticTime && g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]))) {
+    manualPause = false;
+    if ($("v3d")) planningResume = true; else playing = true;
+  }
   if (g.day !== day) { progress = 0; tickAcc = 0; } // wait buttons advance whole days
   autosave(); render();
 }
@@ -216,7 +225,7 @@ function render() {
   const pr = g.profile, co = $("co"); co.textContent = "";
   if (pr) { const box = document.createElement("span"); box.innerHTML = crestSvg(pr.crest, 22, "top"); co.append(box, ` ${pr.company}`); if (pr.character) { const sm = document.createElement("small"); sm.textContent = ` (${pr.character})`; co.append(sm); } }
   else if (company) co.textContent = `· ${company}`;
-  const cal = calendarOf(g.day, g.startYear ?? LEGACY_START_YEAR), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / MS_PER_TICK) / TICKS_PER_DAY; // exact even paused or just loaded
+  const cal = calendarOf(g.day, g.startYear ?? LEGACY_START_YEAR), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // exact even paused or just loaded
   const mins = Math.floor(dayFrac * 24 * 60), hh = String(Math.floor(mins / 60)).padStart(2, "0"), mm = String(mins % 60).padStart(2, "0");
   $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.day}/${DEADLINE_DAYS} · ${t.seasons[seasonOf(g.day)]}`;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
@@ -243,7 +252,7 @@ function render() {
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
   if (s.voyage?.path?.length) { // selected ship under way: its route in red with live ETA (P3 select-ship)
-    const cur = shipPosition(world, s, tickAcc / MS_PER_TICK);
+    const cur = shipPosition(world, s, tickAcc / tickDurationMs());
     const pts = [`${X(cur.lon)},${Y(cur.lat)}`, ...s.voyage.path.filter((id) => world.nodes[id]).map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`)].join(" ");
     const last = s.voyage.path.filter((id) => world.nodes[id]).pop();
     if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(world.nodes[last].lon) + 10}" y="${Y(world.nodes[last].lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${cityName(s.voyage.to)} · ${etaText(g.tick + s.voyage.ticksLeft)}</text>`;
@@ -620,6 +629,7 @@ function sailToTarget() { if (!target) return; const to = target; const s0 = shi
     if (cv) { const mates = cv.ships.map((id) => g.ships.find((x) => x.id === id));
       if (mates.every((m) => m && !m.voyage && m.at === s0.at)) return sailConvoy(g, cv.id, to, { doSail }); } // a grouped convoy departs together, at the pace of the slowest
     return doSail(g, s0, to); });
+  if (automaticTime && s0.voyage) { playing = true; manualPause = false; }
   target = null; render(); }
 function closeCityWindow() {
   const d=$("v3d"); if (!d) return;
@@ -629,6 +639,8 @@ function close3d() {
   const d=$("v3d"); if(!d)return;
   const p=$("panel"), home=$("panel-home"); if(p&&home)home.appendChild(p);
   d.remove();document.body.classList.remove("in-city-3d");
+  if (automaticTime && planningResume && !manualPause) playing = true;
+  planningResume = false;
 }
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
@@ -639,6 +651,7 @@ function openCityPanel(tb) {
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
+  if (automaticTime) { planningResume = playing && !manualPause; playing = false; }
   shipWin=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
@@ -683,11 +696,11 @@ document.addEventListener("keydown", (e) => {
   if($("v3d"))return;
   if (e.key === "Escape") { if (shipWin) { shipWin = null; render(); return; } closeMenu(); target = null; render(); }
   else if (e.key === "Enter" && target) { e.preventDefault(); sailToTarget(); }
-  else if (e.key === " ") { e.preventDefault(); playing = !playing; render(); }
+  else if (e.key === " ") { e.preventDefault(); toggleClock(); }
   else { const i = shipForKey(g, e.key); if (i !== null) { sel = i; target = null; render(); } }
 });
-$("play").onclick = () => { playing = !playing; render(); };
-$("spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; render(); };
+$("play").onclick = () => { toggleClock(); };
+$("spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); render(); };
 $("new").onclick = () => showMenu();
 { // fullscreen toggle; the button stays hidden where the browser has no Fullscreen API (e.g. iPhone)
   const de = document.documentElement, fsb = $("fs");
@@ -712,13 +725,14 @@ $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.set
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
   el.innerHTML = `<div class="box"><h2>${t.paused}</h2><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <span id="m-msg"></span></p>` +
-    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><button id="m-quit">${t.quit}</button></p></div>`;
+    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><label><input id="m-auto-time" type="checkbox" ${automaticTime ? "checked" : ""}> ${lang === "es" ? "Avance automático" : "Automatic time"}</label></p><p><small>${lang === "es" ? "El puerto se pausa para planificar. Las rutas automáticas siguen sin detenerse al llegar." : "The port pauses for planning. Automatic routes keep running on routine arrivals."}</small></p><p><button id="m-quit">${t.quit}</button></p></div>`;
   el.hidden = false;
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
+  $("m-auto-time").onchange = e => { automaticTime = e.target.checked; localStorage.setItem('automatic-time', String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) speed = 4; $("m-spd").textContent = speed + 'x'; };
   $("m-res").onclick = close;
   $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
   $("m-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showMenu(); };
-  $("m-spd").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $("m-spd").textContent = speed + "x"; };
+  $("m-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); $("m-spd").textContent = speed + "x"; };
   $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
 }
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
