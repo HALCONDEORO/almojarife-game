@@ -14,3 +14,18 @@ export function withKidMeat(world) {
   }
   return w;
 }
+
+/** Legumes (chickpeas and broad beans): the poor's second staple. Sources: González-Mariscal, Revista de Historia Económica 2015 (Seville 1521-1540:
+ *  a labourer ate 148 g/day against 450 g of bread; chickpea 5.2 mrs/kg against bread 6.6, so base 20 against grain 22);
+ *  the best white chickpeas came from Coria del Río and Puebla del Río beside Seville (historiacocina.com/es/sevilla-legumbres, on Pedro Barroso),
+ *  so Sevilla is the only producer. Consumers: the big ports and Cádiz beside the producer. */
+export const LEGUMES = Object.freeze({ good: "legumes", base: 20, makers: Object.freeze(["sevilla"]), consumers: Object.freeze(["lisboa", "valencia", "barcelona", "cadiz"]) });
+export function withLegumes(world) {
+  const w = structuredClone(world);
+  w.goods[LEGUMES.good] = { base: LEGUMES.base };
+  for (const c of w.cities) {
+    if (LEGUMES.makers.includes(c.id) && !c.makes.includes(LEGUMES.good)) c.makes.push(LEGUMES.good);
+    if (LEGUMES.consumers.includes(c.id) && !c.needs.includes(LEGUMES.good)) c.needs.push(LEGUMES.good);
+  }
+  return w;
+}

@@ -4,6 +4,7 @@ const S = {
   fish: '<path d="M3 13c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z" fill="#5a9a8a"/><circle cx="8" cy="11.5" r="1.1" fill="#123"/><path d="M12 9c2 1.5 2 6 0 7.5" stroke="#3d7364" stroke-width="1" fill="none"/>',
   ironware: '<path d="M3 18h16v3H3z" fill="#4a4f55"/><path d="M6 18v-5h9l3-3V8H9L6 12z" fill="#6c737b"/><path d="M12 6l2 2" stroke="#b9c0c7" stroke-width="1.4"/>',
   meat: '<path d="M5 14c0-5 5-8 10-6 4 1 6 5 4 8s-7 4-10 2c-2-1-4-2-4-4z" fill="#c4574f" stroke="#7a2a26" stroke-width="1.2"/><circle cx="15" cy="12" r="2.2" fill="#f1d9c9"/>',
+  legumes: '<ellipse cx="9" cy="12" rx="4" ry="3" fill="#d9c27a" stroke="#8a6d2a" stroke-width="1.2"/><ellipse cx="15" cy="14" rx="4" ry="3" fill="#cdb064" stroke="#8a6d2a" stroke-width="1.2"/>',
   kid_meat: '<path d="M6 15c0-5 4-8 9-6 3 1 5 4 3 7s-6 4-9 2c-1-1-3-2-3-3z" fill="#e08a7a" stroke="#7a2a26" stroke-width="1.2"/><path d="M15 7l2-3M17 8l3-2" stroke="#5e3414" stroke-width="1.2"/>',
   leather: '<path d="M4 6l4-2 4 1 4-1 4 2-1 5 1 4-4 4H8l-4-4 1-4z" fill="#a9672f" stroke="#5e3414" stroke-width="1.2"/><path d="M9 11h6M9 15h6" stroke="#7a4a22" stroke-width="1" stroke-dasharray="2 2"/>',
   esparto: '<path d="M4 21c1-8 3-13 5-17M9 21c0-8 1-13 3-17M14 21c-1-8-1-12 0-17M19 21c-2-7-3-11-3-16" stroke="#a89a4f" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M3 21h18" stroke="#7c6f33" stroke-width="1.4"/>',
