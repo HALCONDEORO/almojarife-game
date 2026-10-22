@@ -48,3 +48,11 @@ test("daily hook: none registered means nothing changes; registered, the inbox g
   assert.equal(notes(), 1, "exactly one note");
   off(); assert.equal(DAILY_HOOKS.length, 0);
 });
+import { serialize, deserialize } from "../src/game/gamesave.mjs";
+import { PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
+test("g.peaceSeen survives save and load, so a reload cannot repeat a peace note", () => {
+  const g = newGame(world); g.marque = true; g.peace = true; g.peaceSeen = { "castile|tlemcen": true };
+  const { g: back } = deserialize(serialize(g, "X"), world);
+  assert.deepEqual(back.peaceSeen, { "castile|tlemcen": true }); assert.equal(back.peace, true);
+});
+test("the host switch is off by default", () => assert.equal(PIRACY_DAILY_ENABLED, false));

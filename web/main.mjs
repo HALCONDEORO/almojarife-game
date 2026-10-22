@@ -11,7 +11,8 @@ import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits
 import { goodIcon } from "./icons.mjs";
 import { missionView, campaignEvent } from "../src/game/campaigns.mjs";
 import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
-import { MISSION as MISSION_HOOKS } from "../src/game/game.mjs";
+import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
+import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
@@ -67,6 +68,7 @@ const T = {
 let lang = localStorage.getItem("lang") || (navigator.language?.toLowerCase().startsWith("es") ? "es" : "en"), t = T[lang], g, sel = 0;
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang);
 const world = buildWorld(await (await fetch("../data/world.json")).json());
+if (PIRACY_DAILY_ENABLED) { const [rl, pc] = await Promise.all([fetch("../data/realms.json").then(r => r.ok ? r.json() : null).catch(() => null), fetch("../data/peaces.json").then(r => r.ok ? r.json() : null).catch(() => null)]); if (rl && pc) installMarqueDaily(DAILY_HOOKS, rl, pc); }
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
