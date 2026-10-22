@@ -351,3 +351,7 @@ Each claim below is what the cited source supports; it is a basis for the place 
   not say the city tans them itself. https://ehumanista.ucsb.edu/sites/secure.lsit.ucsb.edu.span.d7_eh/files/sitefiles/ehumanista/volume38/Sequeira%2C%20Joana-Comprar%2C%20organizar%2C%20expedir.%20Mercadores%20pisanos%20no%20neg%C3%B3cio%20internacional%20dos%20couros%20portugueses%20e%20galegos%20no%20s%C3%A9culo%20XV.pdf
 - Leather, Porto: Melo, "A producao de couros em Portugal nos seculos XIV e XV", e-Humanista 49: urban tanning in Porto (the Couros
   quarter, about 18 tanneries by the late 15th century), Guimaraes and Evora. https://ehumanista.ucsb.edu/sites/default/files/sitefiles/ehumanista/volume49/ehum49js.melo.pdf
+
+## Reputation decay (PR rep-decay)
+
+Port reputation fades by 10 points a month toward 0 in ports where the player made no trade in the last 30 days. An active merchant is never punished: a trade in the month keeps the name. The concejo sisa already multiplies the fee at every tier, renowned included. Measured with a greedy trader (tools/sim_rep_decay.mjs): at 10 points a month the mean fee multiplier is 0.37 at 10 years and 0.34 at 30 years, against 0.22 and 0.23 without decay.

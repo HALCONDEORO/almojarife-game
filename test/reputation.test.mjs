@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,doBuy,doSell,repairShip,repairCost,repairPrice} from '../src/game/game.mjs';
-import {portRep,repTierOf,feeMul,repairMul,addRep,repOnSale,repOnBuy,scarcityOf,REP_MIN,REP_MAX,REP_TRADE_CAP} from '../src/game/reputation.mjs';
+import {noteTrade,decayRep,portRep,repTierOf,feeMul,repairMul,addRep,repOnSale,repOnBuy,scarcityOf,REP_MIN,REP_MAX,REP_TRADE_CAP} from '../src/game/reputation.mjs';
 import {FEE} from '../src/sim/trade.mjs';
 import {houseHtml} from '../src/view/rankview.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
@@ -99,4 +99,21 @@ test("the sell/rebuy loop nets zero reputation and the daily cap stops split-sal
  const before=portRep(g,'cadiz');
  for(let i=0;i<50;i++)doSell(g,s,'silk',1);
  assert.ok(portRep(g,'cadiz')-before<=10+1e-9,'50 small sales cap at the daily 10, got '+(portRep(g,'cadiz')-before));
+});
+test('reputation decays 10 points a month only in ports with no trade that month',()=>{
+ const{g}=mk();
+ addRep(g,'cadiz',60);addRep(g,'sevilla',60);
+ g.day=29;noteTrade(g,'cadiz'); // cadiz traded this month, sevilla did not
+ g.day=30;decayRep(g);
+ assert.equal(portRep(g,'cadiz'),60,'active port keeps its name');
+ assert.equal(portRep(g,'sevilla'),50,'idle port loses 10');
+ g.day=31;decayRep(g);assert.equal(portRep(g,'sevilla'),50,'only on month boundaries');
+ g.day=60;decayRep(g);assert.equal(portRep(g,'cadiz'),50,'cadiz idle for the next month');
+ addRep(g,'bilbao',-15);g.day=90;decayRep(g);assert.equal(portRep(g,'bilbao'),-5,'bad name heals toward 0');
+ g.day=120;decayRep(g);assert.equal(portRep(g,'bilbao'),0,'and stops at 0');
+});
+test('the concejo sisa multiplies the fee at every tier, renowned included',()=>{
+ const{g}=mk();addRep(g,'cadiz',90);
+ const base=feeMul(g,'cadiz');g.hallTax={cadiz:{sisa:2,portazgo:0}};
+ assert.ok(feeMul(g,'cadiz')>base,'renowned still pays the sisa');
 });
