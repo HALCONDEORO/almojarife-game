@@ -1,3 +1,4 @@
+import { placePortLabels } from "../src/view/portlabels.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
@@ -82,6 +83,18 @@ const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); 
 function scaleMarkers() {
   const k = markerScale(cam.zoom);
   mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
+  const rect=mapEl.getBoundingClientRect(),[vx,vy,vw,vh]=viewBox(cam),pixelScale=Math.min(rect.width/vw,rect.height/vh);
+  if(pixelScale>0){
+    const ports=[...mapEl.querySelectorAll('g.city')];
+    const layouts=placePortLabels(ports.map(el=>({id:el.dataset.c,name:el.querySelector('text')?.textContent??'',x:Number(el.dataset.mx)*pixelScale,y:Number(el.dataset.my)*pixelScale,priority:el.dataset.c===ship()?.at?2:el.dataset.c===target?3:0})),{x:vx*pixelScale,y:vy*pixelScale,w:vw*pixelScale,h:vh*pixelScale});
+    for(const el of ports){
+      const l=layouts.find(p=>p.id===el.dataset.c);el.setAttribute('transform',`translate(${el.dataset.mx} ${el.dataset.my}) scale(${1/pixelScale})`);
+      const text=el.querySelector('text');text.setAttribute('x',l.offset.x);text.setAttribute('y',l.offset.y);text.setAttribute('text-anchor','start');text.setAttribute('font-size','14');
+      const line=el.querySelector('path');if(line)line.setAttribute('d',`M0 0 L${l.offset.x} ${l.offset.y-4}`);
+      el.querySelector('circle').setAttribute('r',el.dataset.c===target?'7':'5');
+      if(!el.querySelector('.port-hit')){const hit=document.createElementNS('http://www.w3.org/2000/svg','circle');hit.setAttribute('class','port-hit');hit.setAttribute('r','18');hit.setAttribute('fill','transparent');el.prepend(hit);}
+    }
+  }
   mapEl.querySelectorAll("#static line").forEach((el) => el.setAttribute("stroke-width", 1.5 * k));
 }
 const frac = (e) => { const r = mapEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
