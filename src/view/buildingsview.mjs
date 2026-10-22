@@ -12,7 +12,8 @@ export function buildingsRows(g, cityId) {
   return Object.entries(plots).map(([plotId, b]) => {
     const spec = b.type ? BUILDING_TYPES[b.type] : null;
     const halted = b.state === "active" && !!b.halted; // halted: workers walked for lack of cash, no costs and no output
-    const row = { plotId, type: b.type, plotType: b.plotType, level: b.level, state: b.state, halted, upkeep: b.state === "active" && !halted && spec ? spec.upkeep * b.level : 0 };
+    const fire = b.state === "active" && b.halted === "incendio"; // fire-halted: closed until the fire is out (not a cash problem)
+    const row = { plotId, type: b.type, plotType: b.plotType, level: b.level, state: b.state, halted, fire, upkeep: b.state === "active" && !halted && spec ? spec.upkeep * b.level : 0 };
     if (b.state === "construction") {
       const total = spec.buildDays * b.nextLevel * TICKS_PER_DAY, left = Math.max(0, b.readyTick - g.tick);
       row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
@@ -93,7 +94,7 @@ export function buildingLabel(t, row) {
   const name = t.bldTypes[row.type] ?? row.type;
   if (row.state === "construction") return `${name} (${row.nextLevel ?? 1})`;
   const base = row.level > 1 ? `${name} ${row.level}` : name;
-  return row.halted ? `${base} (${t.bldState.halted})` : base;
+  return row.halted ? `${base} (${row.fire ? t.bldState.fire : t.bldState.halted})` : base;
 }
 
 // What the single-plot view (a click in the 3D port) should show for a city/plot,

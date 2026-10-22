@@ -173,6 +173,7 @@ export function accrueBuildings(g) {
     if (b.state !== "active") continue;
     const cost = BUILDING_TYPES[b.type].upkeep * b.level + (JOBS_PER_LEVEL[b.type] ?? 0) * b.level * WAGE_PER_WORKER;
     if (b.halted) { // hysteresis: resume only when cash covers two days of cost, so a building near the line does not flap halt/restart daily
+      if (b.halted === "incendio") continue; // a burnt building stays closed until the fire is declared out (calamities lifts it); it accrues nothing meanwhile
       if (g.cash - committed < cost * 2) continue;
       b.halted = false; post(g, "restart", { city: cityId, plot: plotId });
     }
@@ -186,6 +187,7 @@ export function accrueBuildings(g) {
 export function restartBuilding(g, cityId, plotId) {
   const b = buildingAt(g, cityId, plotId);
   if (!b || !b.halted) return { ok: false, reason: "not halted" };
+  if (b.halted === "incendio") return { ok: false, reason: "fire" }; // only the fire being put out reopens a burnt building
   if (g.cash <= 0) return { ok: false, reason: "no cash" };
   b.halted = false;
   return { ok: true };
