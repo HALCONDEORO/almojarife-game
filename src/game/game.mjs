@@ -29,6 +29,7 @@ import { arrivalPregon } from "./pregon.mjs";
 import { arrivalIdentity } from "./identity.mjs";
 import { arrivalMood } from "./moodout.mjs";
 import { seasonsTick } from "./seasons.mjs";
+import { craftCount } from "./crafts.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
 import { householdWeek } from "./household.mjs";
@@ -94,6 +95,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
+  if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
@@ -130,7 +132,7 @@ export const DAILY_HOOKS = [];
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
   g.day++;
-  for (const t of g.ai) { tickShip(t.ship); regionalRivalStep(g,t); } // aiStep no-ops at sea; arrivals act on their own tick
+  for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) craftCount(g, t.ship.at, plan.good, plan.bought); } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
@@ -214,7 +216,7 @@ export function advanceTick(g) {
   g.tick++;
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
-  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); regionalRivalStep(g,t); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) craftCount(g, t.ship.at, plan.good, plan.bought); } // AI traders act (and pay the arrival day's wear) on their own arrival tick
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
@@ -232,7 +234,7 @@ export function doBuy(g, ship, good, qty) {
   const r = buy(g.world, g.market, ship, g.cash, good, qty, f);
   // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
   // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
-  if (r.ok) { noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
+  if (r.ok) { craftCount(g, ship.at, good, r.qty); noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
   return r;
 }
 export function doSell(g, ship, good, qty) {

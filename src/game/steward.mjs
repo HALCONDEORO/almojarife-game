@@ -4,6 +4,7 @@
 // on the port's market slot. Trades move the market like manual ones and pay the market
 // fee; a cash reserve the player sets is never spent. No DOM here.
 import { price } from "../sim/market.mjs";
+import { craftCount } from "./crafts.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
 import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
@@ -90,6 +91,7 @@ export function stewardTick(g, city, cap) {
           cost += charged; e.stock -= 1; n++;
         }
         if (n > 0) {
+          craftCount(g, city, good, n); // the steward's standing orders ship goods out like any buyer
           g.cash -= cost;
           noteTrade(g, city);
           repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
