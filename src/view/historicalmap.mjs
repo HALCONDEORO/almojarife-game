@@ -1,3 +1,4 @@
+import {goodIcon} from "../../web/icons.mjs";
 // Original SVG/UI. Informational only: no economy, discovery or warfare effects.
 export const HISTORICAL_MAPS_ENABLED=false;
 export const MAP_MODES=['geographic','political','leagues','trade'];
@@ -33,9 +34,10 @@ export function politicalPortLayer({ports,year,data,x,y,lang='es',enabled=false}
 }
 export function historicalLayer({mode,...args}){if(!args.enabled)return {svg:'',legend:''};if(mode==='political')return politicalPortLayer(args);if(mode==='trade')return tradePortLayer(args);if(mode==='leagues')return leaguePortLayer({...args,data:args.leagues});return{svg:'',legend:mode==='leagues'?(TEXT[args.lang]??TEXT.es).pending:''};}
 /** Declared game specialisations only. No inferred historical trade volumes. */
-export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id}){
+export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id,x,y,bounds={width:800,height:850},zoom=1}){
  if(!enabled)return{svg:'',legend:''};const es=lang==='es';
- return{svg:'',legend:`<p>${es?'Rutas comerciales. Consulta qué produce y qué pide cada puerto.':'Trade routes. See what each port produces and needs.'}</p><details><summary>${es?'Producción y demanda por puerto':'Production and demand by port'}</summary><ul>${ports.map(p=>`<li><b>${esc(p.name)}</b>: ${es?'produce':'produces'} ${(p.makes??[]).map(id=>esc(goodName(id))).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(id=>esc(goodName(id))).join(', ')||'-'}</li>`).join('')}</ul></details>`};
+ const cards=typeof x==='function'&&typeof y==='function'?tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom}):'';
+ return{svg:cards,legend:`<p>${es?'↑ Produce · ↓ Pide. Señala un puerto para ver todos sus bienes.':'↑ Produces · ↓ Needs. Point to a port badge to see all goods.'}</p><div id="trade-port-detail" style="background:#fff8e7;color:#302519;padding:14px;border:1px solid #88714a;border-radius:5px">${ports.length?tradePortDetail(ports[0],lang,goodName):''}</div><details><summary>${es?'Producción y demanda por puerto':'Production and demand by port'}</summary><ul>${ports.map(p=>`<li><b>${esc(p.name)}</b>: ${es?'produce':'produces'} ${(p.makes??[]).map(id=>esc(goodName(id))).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(id=>esc(goodName(id))).join(', ')||'-'}</li>`).join('')}</ul></details>`};
 }
 /** Dated institutional evidence, not territory, alliances in game or invented routes. */
 export function leaguePortLayer({enabled=false,ports=[],year,data,lang='es',x,y}){
@@ -47,3 +49,30 @@ export function leaguePortLayer({enabled=false,ports=[],year,data,lang='es',x,y}
 // Hand-set original cartographic callouts for dense clusters; offsets are screen
 // marker units, so they remain readable with the existing inverse zoom scaling.
 export function mapLabelPlacement(id){return ({lisboa:{x:-18,y:-14,anchor:'end'},setubal:{x:18,y:22,anchor:'start'},santander:{x:-18,y:-16,anchor:'end'},bilbao:{x:0,y:32,anchor:'middle'},sansebastian:{x:18,y:-14,anchor:'start'},ceuta:{x:26,y:-12,anchor:'start'},tanger:{x:-18,y:-12,anchor:'end'},tetuan:{x:42,y:10,anchor:'start'},arcila:{x:-18,y:4,anchor:'end'},larache:{x:-18,y:20,anchor:'end'}})[id]??{x:14,y:4,anchor:'start'};}
+
+/** Stable collision-free cards in map coordinates at overview zoom. */
+const cardLayouts=new Map();
+export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,obstaclePorts=ports){
+ const cacheKey=JSON.stringify([bounds,zoom,ports.map(p=>[p.id,p.name,x(p.lon),y(p.lat)])]);
+ if(cardLayouts.has(cacheKey))return cardLayouts.get(cacheKey);
+ const W=86/zoom,H=34/zoom,gap=5/zoom,boxes=[],out=[];
+ const hits=(a,b)=>a.x<b.x+b.w+gap&&a.x+a.w+gap>b.x&&a.y<b.y+b.h+gap&&a.y+a.h+gap>b.y;
+ // Protect real port markers and the labels already placed on the chart.
+ const obstacles=obstaclePorts.flatMap(p=>{const px=x(p.lon),py=y(p.lat),l=mapLabelPlacement(p.id),w=p.name.length*7;return[{x:px-13,y:py-13,w:26,h:26},{x:px+l.x-(l.anchor==='end'?w:l.anchor==='middle'?w/2:0),y:py+l.y-13,w,h:17}];});
+ for(const p of [...ports].sort((a,b)=>{const near=p=>ports.filter(q=>Math.hypot(x(q.lon)-x(p.lon),y(q.lat)-y(p.lat))<100).length;return near(b)-near(a)||a.id.localeCompare(b.id)})){const px=x(p.lon),py=y(p.lat),candidates=[];
+ for(let yy=8;yy<bounds.height-H-8;yy+=Math.max(4,16/zoom))for(let xx=8;xx<bounds.width-W-8;xx+=Math.max(4,16/zoom)){const b={x:xx,y:yy,w:W,h:H};if([...boxes,...obstacles].some(o=>hits(b,o)))continue;const dx=xx+W/2-px,dy=yy+H-py;candidates.push({...b,score:dx*dx+dy*dy+(dy>0?1600:0)});}
+ candidates.sort((a,b)=>a.score-b.score);const b=candidates[0];if(!b)continue;boxes.push(b);out.push({port:p,box:b,px,py});
+ }if(cardLayouts.size>4)cardLayouts.clear();cardLayouts.set(cacheKey,out);return out;
+}
+export function tradePortDetail(p,lang='es',goodName=id=>id){
+ const es=lang==='es';const row=(ids,label)=>`<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0"><b>${label}</b>${ids.map(id=>`<span style="display:inline-flex;align-items:center;color:#302519">${goodIcon(id,28)}${esc(goodName(id))}</span>`).join('')}</div>`;
+ return `<b style="font-size:20px">${esc(p.name)}</b>${row(p.makes??[],es?'↑ Produce':'↑ Produces')}${row(p.needs??[],es?'↓ Pide':'↓ Needs')}`;
+}
+export const tradeBadgePorts=(ports,zoom=1)=>ports.filter(p=>zoom>=3||(p.pop??0)>=(zoom>=1.8?5000:12000));
+export function tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom=1}){
+ const es=lang==='es';return tradeCardLayout(tradeBadgePorts(ports,zoom),x,y,bounds,zoom,ports).map(({port:p,box:b,px,py})=>{
+ const title=`${p.name}: ${es?'produce':'produces'} ${(p.makes??[]).map(goodName).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(goodName).join(', ')||'-'}`;
+ const icon=(id,xx)=>id?`<g transform="translate(${xx} 5)">${goodIcon(id,24)}</g>`:'';
+ return `<path d="M${px} ${py}L${b.x+b.w/2} ${b.y+b.h/2}" fill="none" stroke="#74634a" stroke-width=".8" pointer-events="none"/><g class="trade-card" data-port="${esc(p.id)}" transform="translate(${b.x} ${b.y}) scale(${1/zoom})" tabindex="0" aria-label="${esc(title)}"><title>${esc(title)}</title><rect width="86" height="34" rx="5" fill="#fff8e7" stroke="#625238" stroke-width="1.4"/><text x="3" y="22" font-size="16" font-weight="bold" fill="#215b37">↑</text>${icon(p.makes?.[0],14)}${(p.makes?.length??0)>1?`<text x="30" y="32" font-size="9" fill="#215b37">+${p.makes.length-1}</text>`:""}<text x="44" y="22" font-size="16" font-weight="bold" fill="#813c1d">↓</text>${icon(p.needs?.[0],55)}${(p.needs?.length??0)>1?`<text x="71" y="32" font-size="9" fill="#813c1d">+${p.needs.length-1}</text>`:""}</g>`;
+ }).join('');
+}

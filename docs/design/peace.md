@@ -1,6 +1,6 @@
 # Mechanic 3: peace between realms (letters suspended)
 
-Third mechanic of the piracy set (assigned by the main agent on 22 Oct 2026; owner approval is recorded in the owner channel, not here). Flag `g.peace` OFF (also needs `g.marque` for letters); nothing calls it from the daily loop or the UI yet, so the game is unchanged and the player sees nothing.
+Third mechanic of the piracy set. Flag `g.peace` OFF (also needs `g.marque` for letters); nothing calls it from the daily loop or the UI yet, so the game is unchanged and the player sees nothing.
 
 ## Rules (numbers are first values to tune with the sweep)
 - Two realms are at peace from a dated treaty (data/peaces.json, each row with a source) or from a seeded random peace: one draw per realm pair per 6-year epoch, 30% chance, a window starting inside the epoch and lasting 2 to 6 years. It is a pure function of (seed, pair, day): no stored state, a reload cannot change the calendar. Realms under one monarch are never at peace in this sense (they cannot be named anyway).
