@@ -5,16 +5,27 @@ export const newCamera = (W, H) => ({ W, H, x: 0, y: 0, zoom: 1 });
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 export function clampCamera(c) {
   c.zoom = clamp(c.zoom, MIN_ZOOM, MAX_ZOOM);
-  const w = c.W / c.zoom, h = c.H / c.zoom;
+  const [, , w, h] = viewBox(c);
   c.x = clamp(c.x, 0, c.W - w); c.y = clamp(c.y, 0, c.H - h);
   return c;
 }
-export const viewBox = (c) => [c.x, c.y, c.W / c.zoom, c.H / c.zoom];
+export const viewBox = (c) => {
+  const w = c.W / c.zoom, h = c.aspect ? Math.min(c.H, w / c.aspect) : c.H / c.zoom;
+  return [c.x, c.y, w, h];
+};
+export function resizeCamera(c, aspect) {
+  const [x,y,w,h] = viewBox(c), cx=x+w/2, cy=y+h/2;
+  c.aspect = Number.isFinite(aspect) && aspect > 0 ? aspect : undefined;
+  const [,,nw,nh]=viewBox(c); c.x=cx-nw/2;c.y=cy-nh/2;return clampCamera(c);
+}
+export function centerCamera(c, x, y) {
+  const [,,w,h]=viewBox(c);c.x=x-w/2;c.y=y-h/2;return clampCamera(c);
+}
 // Zoom by `factor` keeping the world point under (fx, fy) (fractions 0..1 of the view) fixed.
 export function zoomAt(c, factor, fx = 0.5, fy = 0.5) {
   const [vx, vy, vw, vh] = viewBox(c), px = vx + fx * vw, py = vy + fy * vh;
   c.zoom = clamp(c.zoom * factor, MIN_ZOOM, MAX_ZOOM);
-  const w = c.W / c.zoom, h = c.H / c.zoom;
+  const [, , w, h] = viewBox(c);
   c.x = px - fx * w; c.y = py - fy * h;
   return clampCamera(c);
 }

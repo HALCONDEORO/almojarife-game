@@ -14,7 +14,7 @@ import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
 import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
-import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
+import { newCamera, zoomAt, panBy, viewBox, markerScale, resizeCamera, centerCamera } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
@@ -107,6 +107,16 @@ mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercanc
 // a drag must not count as a click on a port
 mapEl.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
 const X = (lon) => (lon - x0) * sc, Y = (lat) => (y1 - lat) * sc * 1.25;
+let cameraReady = false, wholeChart = false;
+const syncMapViewport = () => {
+  const r=mapEl.getBoundingClientRect(); if(r.width<1||r.height<1)return;
+  resizeCamera(cam,wholeChart ? undefined : r.width/r.height);
+  if(!cameraReady && g?.ships?.length){ const p=shipPosition(world,ship(),0);centerCamera(cam,X(p.lon),Y(p.lat));cameraReady=true; }
+  applyCam();
+  $("map-overview").textContent=lang === "es" ? (wholeChart ? "Volver a mi barco" : "Toda la carta") : (wholeChart ? "Back to my ship" : "Whole chart");
+};
+new ResizeObserver(syncMapViewport).observe(mapEl);
+$("map-overview").onclick=()=>{wholeChart=!wholeChart;cam.zoom=1;cam.x=cam.y=0;cameraReady=wholeChart;syncMapViewport();};
 const cityName = (id) => world.nodes[id]?.name ?? id; // an unknown id shows as the id, it never throws
 
 document.documentElement.lang = lang;
@@ -192,6 +202,7 @@ function act(fn) {
 }
 
 function render() {
+  $("map-overview").textContent=lang === "es" ? (wholeChart ? "Volver a mi barco" : "Toda la carta") : (wholeChart ? "Back to my ship" : "Whole chart");
   document.getElementById('sea-modal')?.remove();
   if(g.pending?.event==='sea-pirates'||g.encounterReport){
    playing=false;const modal=document.createElement('div');modal.id='sea-modal';modal.innerHTML=encounterDialogHtml(g,lang);document.body.appendChild(modal);

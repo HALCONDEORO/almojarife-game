@@ -22,3 +22,7 @@ test("markers stay near constant on screen", () => {
   assert.ok(markerScale(8) < 0.2 && markerScale(8) > 0.1);
   assert.ok(markerScale(2) < markerScale(1));
 });
+import {resizeCamera,centerCamera} from '../src/view/camera.mjs';
+test('wide viewport fills its aspect without changing world geography',()=>{const c=newCamera(800,1000);resizeCamera(c,2);centerCamera(c,300,800);const[x,y,w,h]=viewBox(c);assert.equal(w/h,2);assert.ok(y>0);assert.ok(y+h<=1000);});
+test('resize preserves centre when away from edges',()=>{const c=newCamera(800,1000);zoomAt(c,2);resizeCamera(c,2);centerCamera(c,400,500);resizeCamera(c,1);const[x,y,w,h]=viewBox(c);assert.equal(x+w/2,400);assert.equal(y+h/2,500);});
+test('portrait keeps the complete world and legacy has no aspect override',()=>{const c=newCamera(800,1000);resizeCamera(c,.4);assert.equal(viewBox(c)[3],1000);const legacy=newCamera(800,1000);assert.deepEqual(viewBox(legacy),[0,0,800,1000]);});
