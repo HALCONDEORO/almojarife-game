@@ -1,4 +1,5 @@
 import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml } from "../src/view/ui2d.mjs";
+import { logHtml } from "../src/view/logview.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
@@ -289,8 +290,7 @@ function render() {
     el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
     el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
   });
-  const logLine = (l) => l.key === "event" ? `${t.day} ${l.day}: ${l.txt?.[lang] ?? ""}` : t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
-  $("log").innerHTML = g.log.map((l) => `<div>${logLine(l)}</div>`).join("");
+  $("log").innerHTML = logHtml(g.log,t,lang,cityName);
   // panel: in navigation mode the map stands alone (P3); the panel only pops up for a pending
   // event. In the city view it carries the port services inside the city window.
   let h = "";
