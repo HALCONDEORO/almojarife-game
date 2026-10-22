@@ -7,6 +7,7 @@ import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
 import { repOf } from "./rank.mjs";
+import { wallsAllow } from "./plague.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
 export const BUILDING_TYPES = Object.freeze({
@@ -42,10 +43,15 @@ export const BUILDING_TYPES = Object.freeze({
   posito: Object.freeze({ recipe: "posito", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   hospital: Object.freeze({ recipe: "hospital", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
   alhondiga: Object.freeze({ recipe: "alhondiga", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  // Sanitation and faith against calamity (block C2, plague module): caminos and pozo stand
+  // anywhere; hospital and capilla only inside expanded walls (wallsAllow in plague.mjs).
+  caminos: Object.freeze({ recipe: "caminos", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  pozo: Object.freeze({ recipe: "pozo", fee: 150, buildDays: 2, upkeep: 1, maxLevel: 3 }),
+  capilla: Object.freeze({ recipe: "capilla", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
 });
 
-/** Types owned by the city-life module: offered to build only while g.citylife exists. */
-export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga"]);
+/** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */
+export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla"]);
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
 export function plotPrice(world, cityId, plot) {
@@ -103,6 +109,7 @@ export function quoteConstruction(g, cityId, plotId, type) {
   const spec = BUILDING_TYPES[type];
   if (!spec) return { ok: false, reason: "unknown type" };
   if (CIVIC_BUILDINGS.includes(type) && !g.citylife) return { ok: false, reason: "unknown type" }; // civic types exist only with the city-life flag (off games cannot build them even by direct call)
+  if (!wallsAllow(g, cityId, type)) return { ok: false, reason: "walls required" }; // hospital and capilla stand inside expanded walls (plague module)
   if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
@@ -204,6 +211,7 @@ export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
   posito: 2, hospital: 6, alhondiga: 3, // city-life civic types (own tuning; only buildable with the flag on)
+  caminos: 1, pozo: 1, capilla: 3,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;

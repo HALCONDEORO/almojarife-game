@@ -33,6 +33,7 @@ import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.m
 import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
+import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { prizeLocked } from "./privateering.mjs";
@@ -85,6 +86,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === true, credit: opts.credit === true, legumes: opts.legumes === true, pottery: opts.pottery === true, pirateFight: opts.pirateFight === true, marque: opts.marque === true, household: opts.household === true, profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   if(houses)g.regionalRivals=true;
   if (opts.citylife === true) g.citylife = initCitylife(world); // city-life flag, OFF by default: no key at all in an off game (saves stay identical)
+  if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
@@ -128,6 +130,7 @@ function dayTick(g) {
   }
   accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
+  if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
@@ -182,7 +185,7 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
-    for (const e of Object.values(g.market[c.id])) e.pop = (c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id); // houses add their people (and city life its drift) before demand is computed
+    for (const e of Object.values(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id)); // houses add their people (and city life its drift) before demand is computed; a plague shuts people in
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
