@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "note": "Which court judges a charge, by port or by realm. Only rows with a source that states the court are listed; every other port with a council uses its realm's general officers (no claim). Names are in the game's own words.",
+  "byPort": {
+    "sevilla": { "name": { "es": "Casa de la Contratación", "en": "House of Trade" }, "source": "https://revistascientificas.us.es/index.php/HID/article/download/4440/3882/13307", "note": "Cargo not registered was treated as illegally brought in and confiscated; suits over seizure were heard at the Casa in Seville (cover: late 16th century)." }
+  },
+  "byRealm": {
+    "castile": { "name": { "es": "Alcalde de sacas", "en": "Export-ban magistrate" }, "source": "https://www.um.es/lexico-comercio-medieval/index.php/v/lexico/75531", "note": "Officers of the Castilian customs who stopped banned goods leaving Castile." },
+    "aragon": { "name": { "es": "Consulado de Mar", "en": "Sea Consulate" }, "source": "https://ajuntament.barcelona.cat/arxiumunicipal/arxiuhistoric/sites/default/files/pdfs_interns/02.03%20Consolat%20de%20Mar_Presentacio.pdf", "note": "Special jurisdiction in commercial and maritime matters. The source gives the framework only; no concrete fines." }
+  }
+}
