@@ -18,11 +18,19 @@ export function makeHeir(parent, year, rng) {
   const fresh = pool[Math.floor(rng.next() * pool.length)];
   return newPersona(year - 20, parent.generation + 1, [...inherited, fresh]);
 }
-/** Money-neutral split: heir gets estate minus the cut, rounded down; the lost part is returned so a ledger can post it. Total never grows. */
-export function inherit(estate) {
-  if (!Number.isFinite(estate) || estate < 0) throw new RangeError("inherit: estate must be a finite number >= 0");
-  const lost = Math.ceil(estate * INHERITANCE_CUT), kept = estate - lost;
-  return { kept, lost };
+/** Money-neutral split in explicit integer cents (1 coin = 100 cents). lost = ceil(cut) but never more than the estate, so kept >= 0 and kept + lost === estate exactly. */
+export function inherit(estateCents) {
+  if (!Number.isSafeInteger(estateCents) || estateCents < 0) throw new RangeError("inherit: estate must be a non-negative integer number of cents");
+  const lostCents = Math.min(estateCents, Math.ceil(estateCents * INHERITANCE_CUT));
+  return { keptCents: estateCents - lostCents, lostCents };
 }
-/** Reputation and brotherhood standing pass with a cut; never rise. */
-export const passStanding = (value) => Math.max(0, Math.floor(value * REPUTATION_KEPT));
+/** Prestige (rank, brotherhood standing) is never negative; it passes with a cut and never rises. */
+export function passPrestige(value) {
+  if (!Number.isFinite(value) || value < 0) throw new RangeError("passPrestige: prestige must be a finite number >= 0");
+  return Math.floor(value * REPUTATION_KEPT);
+}
+/** Reputation is signed. Good name passes with the cut; a bad name passes in full (an heir does not start clean from a scandal). Never rises in magnitude of good, never improves bad. */
+export function passReputation(value) {
+  if (!Number.isFinite(value)) throw new RangeError("passReputation: reputation must be finite");
+  return value >= 0 ? Math.floor(value * REPUTATION_KEPT) : Math.ceil(value);
+}
