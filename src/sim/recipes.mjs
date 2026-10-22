@@ -20,6 +20,7 @@ export const RECIPES = Object.freeze({
   brewery: Object.freeze({ timber: 8, bricks: 5, ironware: 1 }),
   brickworks: Object.freeze({ timber: 8, bricks: 2, ironware: 2 }),
   soapworks: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }),
+  pottery: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }), // construction (study 4.3 row brickworks, soapworks, pottery)
   esparto_field: Object.freeze({ timber: 5, bricks: 1, ironware: 1 }),
   ranch: Object.freeze({ timber: 7, bricks: 2, ironware: 2 }),
   armory: Object.freeze({ timber: 10, bricks: 4, ironware: 3 }),
@@ -32,6 +33,7 @@ export const RECIPES = Object.freeze({
   brew: Object.freeze({ grain: 3 }),
   boil: Object.freeze({ olive_oil: 1 }),
   firing: Object.freeze({ timber: 2 }),
+  kiln: Object.freeze({ timber: 2 }), // study 5, pottery A: 2 timber -> 2 pottery
   // Primary producers take nothing from the market: the land yields the good (seasonal, see SEASON_PEAK).
 });
 export const OUTPUTS = Object.freeze({
@@ -40,6 +42,7 @@ export const OUTPUTS = Object.freeze({
   brew: Object.freeze({ beer: 2 }),
   boil: Object.freeze({ soap: 2 }),
   firing: Object.freeze({ bricks: 2 }),
+  kiln: Object.freeze({ pottery: 2 }),
 });
 /** Cost and availability for purchasing recipe inputs directly at a local market. No mutation. */
 export function quoteRecipe(world, market, city, recipe, batches = 1) {

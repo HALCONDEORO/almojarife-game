@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { PRODUCERS, BUILDING_TYPES } from "../src/game/buildings.mjs";
 import { RECIPES, OUTPUTS } from "../src/sim/recipes.mjs";
-import { PER_1000 } from "../src/sim/classes.mjs";
+import { PER_1000, OPTIONAL_PER_1000 } from "../src/sim/classes.mjs";
 
 const world = loadWorld(), goods = Object.keys(world.goods);
 const SERVICE_BUILDINGS = new Set(["house", "warehouse", "dock"]); // they change the port, they do not make a good
@@ -29,7 +29,7 @@ test("every good has a user: a port that needs it, citizen demand, or a recipe i
   }
 });
 test("no recipe or building refers to a good that does not exist", () => {
-  const known = new Set(goods);
+  const known = new Set([...goods, ...Object.keys(OPTIONAL_PER_1000), "pottery"]); // optional goods exist only in games started with their flag (src/sim/optional_goods.mjs)
   for (const [name, r] of Object.entries(RECIPES)) for (const g of Object.keys(r)) assert.ok(known.has(g), `${name} uses unknown good ${g}`);
   for (const [name, o] of Object.entries(OUTPUTS)) for (const g of Object.keys(o)) assert.ok(known.has(g), `${name} outputs unknown good ${g}`);
   for (const [b, d] of Object.entries(PRODUCERS)) assert.ok(known.has(d.output), `${b} outputs unknown good ${d.output}`);

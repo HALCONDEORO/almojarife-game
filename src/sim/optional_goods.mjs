@@ -15,6 +15,20 @@ export function withKidMeat(world) {
   return w;
 }
 
+/** Pottery: a processor good (2 timber -> 2 pottery, study 5 pottery A, base 40 so margin +54% at base prices). Makers: Valencia (Manises) and Sevilla (Triana),
+ *  sourced in docs/design/production-chains-study.md section 8 (Manises: doi 10.26882/histagrar.090e03f, revistas.um.es/medievalismo/article/view/210581;
+ *  Triana: doi 10.33349/2014.85.3440). Porto is not listed: no source. Consumers are the study's section 4.4 proposal. The kiln building exists only with this good. */
+export const POTTERY = Object.freeze({ good: "pottery", base: 40, makers: Object.freeze(["valencia", "sevilla"]), consumers: Object.freeze(["lisboa", "cadiz", "palma", "malaga", "argel", "oran"]) });
+export function withPottery(world) {
+  const w = structuredClone(world);
+  w.goods[POTTERY.good] = { base: POTTERY.base };
+  for (const c of w.cities) {
+    if (POTTERY.makers.includes(c.id) && !c.makes.includes(POTTERY.good)) c.makes.push(POTTERY.good);
+    if (POTTERY.consumers.includes(c.id) && !c.needs.includes(POTTERY.good)) c.needs.push(POTTERY.good);
+  }
+  return w;
+}
+
 /** Legumes (chickpeas and broad beans): the poor's second staple. Sources: González-Mariscal, Revista de Historia Económica 2015 (Seville 1521-1540:
  *  a labourer ate 148 g/day against 450 g of bread; chickpea 5.2 mrs/kg against bread 6.6, so base 20 against grain 22);
  *  the best white chickpeas came from Coria del Río and Puebla del Río beside Seville (historiacocina.com/es/sevilla-legumbres, on Pedro Barroso),
