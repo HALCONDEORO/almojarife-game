@@ -51,3 +51,10 @@ export function spriteGeometry(plot){
  const p=placement(plot),scale=p.width*.94/400;
  return {anchor:p.anchor,scale,left:p.anchor.x-256*scale,top:p.anchor.y-500*scale,width:512*scale,height:512*scale};
 }
+
+/** Fade only a nearer silhouette that covers the selected plot centre. */
+export function obscuresSelection(front,selected){
+ if(!selected||front.id===selected.id||placement(front).depth<=placement(selected).depth)return false;
+ const g=spriteGeometry(front),c=project(selected.x+selected.w/2,selected.y+selected.d/2);
+ return c.x>g.left&&c.x<g.left+g.width&&c.y>g.top&&c.y<g.top+g.height;
+}
