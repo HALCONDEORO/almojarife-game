@@ -364,7 +364,7 @@ export function bestPorts(g, ship) {
 /** Bank: borrow at a port where one of your ships is docked. */
 export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g), post);
 export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
-export const bankRoom = (g) => loanRoom(g, netWorth(g));
+export const bankRoom = (g, city) => loanRoom(g, netWorth(g), city); // pass the port: the lender of that port sets the terms
 export { loansOwed };
 export { setRoute, setRouteAdv, clearRoute };
 import { removeFromConvoy } from "./convoys.mjs";

@@ -44,6 +44,7 @@ import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { contactsOf, hireContact, fireContact, CONTACT_PRICE, CONTACT_MAX } from "../src/game/contacts.mjs";
 import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR } from "../src/sim/clock.mjs"; // TICKS_PER_DAY comes via game.mjs
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
+import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
 import { warehouseCap, setRoute, setRouteAdv, clearRoute, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceDay, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
@@ -416,8 +417,8 @@ function render() {
       else if (!pr.isHome) h += `<p><i>${t.officeOwned}</i></p>`;
       if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
-      const room = bankRoom(g), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
-      h += `<p>${t.bankInfo.replace("{r}", Math.round(LOAN_RATE * 100)).replace("{m}", fmt(loanCapFor(g, LOAN_MAX)))}</p><p>${t.bankRoom}: <b>${fmt(room)}</b> · ${t.bankOwed}: <b>${fmt(loansOwed(g))}</b></p>`;
+      const room = bankRoom(g, s.at), tm = termsFor(g, s.at), capHere = tm.room !== 1 ? Math.floor(loanCapFor(g, LOAN_MAX) * tm.room / 100) * 100 : loanCapFor(g, LOAN_MAX), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
+      h += `<p>${t.bankInfo.replace("{r}", +(LOAN_RATE * tm.rate * 100).toFixed(2)).replace("{m}", fmt(capHere))}</p><p>${t.bankRoom}: <b>${fmt(room)}</b> · ${t.bankOwed}: <b>${fmt(loansOwed(g))}</b></p>`;
       h += amts.map((a) => `<button data-loan="${a}">${t.bankTake.replace("{a}", fmt(a))}</button>`).join(" ");
       const ls = g.loans ?? [];
       h += ls.length ? ls.map((l) => `<div class="card">${t.bankLoan.replace("{d}", l.taken).replace("{l}", fmt(l.left)).replace("{u}", l.due)}<br><button data-repay="${l.id}:all" ${g.cash > 0 ? "" : "disabled"}>${t.bankRepay}</button> <button data-repay="${l.id}:100" ${g.cash >= 100 ? "" : "disabled"}>${t.bankRepay100}</button></div>`).join("") : `<p><i>${t.bankNone}</i></p>`;

@@ -1,5 +1,5 @@
 import { loanCapFor } from "./rank.mjs";
-import { termsFor, recordDefault, recordPaid } from "./payrep.mjs";
+import { termsFor, recordDefault, recordPaid, accrueLoanInterest } from "./payrep.mjs";
 // The moneylender (bank). Pure game logic: no DOM. Any port has one; you borrow while a ship of yours is docked there.
 // Loans cost LOAN_RATE of what is left, every weekly settlement (cheaper than the 2% overdraft, so asking is better than falling short).
 // Total borrowing is capped at half of your net worth, rounded down to LOAN_STEP, and never above LOAN_MAX.
@@ -40,7 +40,7 @@ export function repayLoan(g, id, amount, post = () => {}) {
   const pay = r2(Math.min(Number(amount), l.left, Math.max(g.cash, 0)));
   if (!(pay > 0)) return { ok: false, reason: "no cash" };
   g.cash = r2(g.cash - pay); l.left = r2(l.left - pay);
-  if (l.left <= 0) { g.loans.splice(g.loans.indexOf(l), 1); if (g.day < l.due) recordPaid(g, l.city); }
+  if (l.left <= 0) { g.loans.splice(g.loans.indexOf(l), 1); if (g.day < l.due) recordPaid(g, l); }
   post(g, "loanPaid", { amt: pay });
   return { ok: true, paid: pay };
 }
@@ -53,3 +53,6 @@ export function processLoans(g, post = () => {}) {
   }
   return r2(taken);
 }
+
+/** Settlement hook: credit the weekly interest to each open loan for the payment record (flag credit only). */
+export const accrueWeeklyLoanInterest = (g) => accrueLoanInterest(g, loansOf(g));

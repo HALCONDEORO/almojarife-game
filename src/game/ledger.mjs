@@ -5,7 +5,7 @@ import { captainWage } from "./captains.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
 import { cannonUpkeep, splitCost, dailyUpkeep } from "./crew.mjs";
 import { tollsDue } from "./tolls.mjs";
-import { loanInterest, loanInterestRaw, processLoans } from "./bank.mjs";
+import { loanInterest, loanInterestRaw, processLoans, accrueWeeklyLoanInterest } from "./bank.mjs";
 export const SETTLE_EVERY = 7, MAX_REPORTS = 52, MAX_INBOX = 60;
 // Cash may go negative (an overdraft). Each settlement charges OVERDRAFT_RATE of the deficit. Below -OVERDRAFT_LIMIT the house is bankrupt.
 export const OVERDRAFT_RATE = 0.02, OVERDRAFT_LIMIT = 3000;
@@ -72,6 +72,7 @@ export function settleWeek(g) {
   const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round((cost+(a.captains?.[ship]??0)) * 100) / 100, captain: r2(a.captains?.[ship]??0), ...splitCost(cost, a.cannons?.[ship] ?? 0, a.wages?.[ship] ?? null) }));
   const tolls = tollsDue(g), week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterestRaw(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + tolls + interest + lint);
   g.cash = r2(g.cash - owed);
+  accrueWeeklyLoanInterest(g); // each open loan records the interest it just paid (payment reputation, flag credit)
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
   const blines = Object.entries(a.buildings ?? {}).map(([plot, cost]) => ({ plot, cost: r2(cost) }));
