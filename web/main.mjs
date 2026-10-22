@@ -1,4 +1,4 @@
-import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml } from "../src/view/ui2d.mjs";
+import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml, reports2dHtml } from "../src/view/ui2d.mjs";
 import { logHtml } from "../src/view/logview.mjs";
 import { warehouseHeader2d, bankHeader2d, store2dWrap, store2dWindowClass } from "../src/view/ui2d_store.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
@@ -736,14 +736,16 @@ $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
   if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
-  const styled = kind === "msg" && ui2dEnabled(location.search);
-  const body = () => styled ? inbox2dHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k) : kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + chronicleHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
-  const draw = () => { el.innerHTML = styled ? `<section class="box wide ui2d-window" role="dialog" aria-modal="true" aria-labelledby="ui2d-title"><header class="ui2d-heading"><span aria-hidden="true">✉</span><h2 id="ui2d-title">${LT[lang].messages}</h2><button id="l-close">${LT[lang].close}</button></header><div class="ui2d-content">${body()}</div></section>` : `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
-    $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); if(styled)$("msg").focus(); };
+  const styled = ui2dEnabled(location.search);
+  const reportBody=()=>{const weekly=reportsHtml(g,lang,fmt,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmt,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmt,cityName),encounters=encountersHtml(g,lang);return styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters;};
+  const body = () => kind === "rep" ? reportBody() : styled ? inbox2dHtml(g,lang,fmt,cityName,(k)=>T[lang].goods[k]??k) : inboxHtml(g,lang,fmt,cityName,(k)=>T[lang].goods[k]??k);
+  const draw = () => { el.innerHTML = styled ? `<section class="box wide ui2d-window${kind==='rep'?' ui2d-reports':''}" role="dialog" aria-modal="true" aria-labelledby="ui2d-title"><header class="ui2d-heading"><span aria-hidden="true">${kind==='rep'?'▤':'✉'}</span><h2 id="ui2d-title">${kind==='rep'?LT[lang].reports:LT[lang].messages}</h2><button id="l-close">${LT[lang].close}</button></header><div class="ui2d-content">${body()}</div></section>` : `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
+    $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); if(styled)$(kind).focus(); };
     if(styled)el.querySelector(".ui2d-window").onkeydown=e=>{
       if(e.key==="Escape"){e.preventDefault();$("l-close").click();}
-      if(e.key==="Tab"){const buttons=[...el.querySelectorAll("button:not(:disabled)")],first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+      if(e.key==="Tab"){const buttons=[...el.querySelectorAll("button:not(:disabled),a[href]")],first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
     };
+    el.querySelectorAll('[data-report-target]').forEach(button=>button.onclick=()=>el.querySelector(`#${button.dataset.reportTarget}`)?.scrollIntoView({block:'start'}));
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
     el.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { const id=e.dataset.msg; markRead(g, Number(id)); draw(); if(styled)el.querySelector(`[data-msg="${id}"]`)?.focus(); }); };
   draw();

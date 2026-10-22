@@ -29,3 +29,10 @@ export function hall2dHtml(hv,t,fmt,respect,lang){
  (cityLines.length?`<div class="ui2d-city-lines">${cityLines.map(l=>`<p>${esc(l)}</p>`).join('')}</div>`:'')+
  `<h3>${esc(t.hallDerechos)}</h3><div class="ui2d-duties">`+card('◎',lang==='es'?'Mercado':'Market',line('hallFee',{p:hv.feePct}))+card('⚓',lang==='es'?'Puerto':'Port',line('hallToll',{d:hv.tollDiv,x:hv.tollDiscountPct}))+`</div><section class="ui2d-hall-ledger"><p><b>${line('hallCaja',{c:fmt(hv.caja)})}</b></p><p>${line('hallLevies',{s:(hv.sisa>0?'+':'')+hv.sisa,p:(hv.portazgo>0?'+':'')+hv.portazgo})}</p><p class="ui2d-meeting">▤ ${line('hallNext',{d:hv.nextMeeting})}</p></section><p class="ui2d-hall-note">${esc(t.hallNote)}</p></div>`;
 }
+
+/** Decorates the existing reports without recalculating or dropping report data. */
+export function reports2dHtml(weekly,chronicle,voyages,encounters,lang){
+ const labels=lang==='es'?['Cuentas semanales','Crónica de la casa','Diario de viajes','Encuentros en el mar']:['Weekly accounts','House chronicle','Voyage log','Encounters at sea'];
+ const ids=['weekly','chronicle','voyages','encounters'],parts=[weekly.replace(/^<h2>[^<]*<\/h2>/,''),chronicle,voyages,encounters];
+ return `<nav class="ui2d-report-nav" aria-label="${LT[lang].reports}">`+ids.map((id,i)=>`<button type="button" data-report-target="ui2d-${id}">${labels[i]}</button>`).join('')+`</nav>`+parts.map((html,i)=>`<section class="ui2d-report-section" id="ui2d-${ids[i]}" aria-label="${labels[i]}">${i===0?`<h3>${labels[i]}</h3>`:''}${html||`<p>${lang==='es'?'Aún no hay registros.':'No records yet.'}</p>`}</section>`).join('');
+}
