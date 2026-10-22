@@ -17,7 +17,7 @@ export function validateNeedsCalibration(policy){
    if(cell.kind!=='game-assumption'&&cell.sourcePopulation!=='all-inhabitants')warnings.push(at(c+' source population differs from full class; extrapolation must remain explicit'));
   }
   if(row.physicalUnit==='kg-bread-equivalent'&&(!Number.isFinite(row.breadGrainFactor)||row.breadGrainFactor<=0||!row.breadGrainEvidence))errors.push(at('bread to grain factor and evidence required'));
-  if(row.physicalUnit==='metre'&&row.marketUnit==='kg'&&(!row.fabricKgPerMetre||!row.fabricEvidence))errors.push(at('fabric length cannot become cargo mass without conversion evidence'));
+  if(row.physicalUnit==='metre'&&row.marketUnit==='kg'&&(!Number.isFinite(row.fabricKgPerMetre)||row.fabricKgPerMetre<=0||!row.fabricEvidence))errors.push(at('fabric length cannot become cargo mass without conversion evidence'));
   if(row.energyKcalPerKg!==undefined){
    if(!Number.isFinite(row.energyKcalPerKg)||row.energyKcalPerKg<=0)errors.push(at('invalid energy density'));
    if(!row.energyPreparationState||row.energyPreparationState==='unknown')errors.push(at('preparation state required before energy/cargo integration'));

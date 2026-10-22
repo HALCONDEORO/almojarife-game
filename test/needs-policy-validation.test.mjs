@@ -7,3 +7,14 @@ test('unknown chickpea preparation prevents cargo energy integration',()=>{const
 test('cooked versus dry conversion needs explicit yield and evidence',()=>{const x={...row(),energyKcalPerKg:1200,energyPreparationState:'cooked',cargoPreparationState:'dry'};assert.equal(validateNeedsCalibration({legumes:x}).ok,false);x.preparationYield=2;x.preparationEvidence='explicit hypothetical test yield';assert.equal(validateNeedsCalibration({legumes:x}).ok,true);});
 test('bread and cloth unit gaps are blockers, not defaults',()=>{const b={...row(),physicalUnit:'kg-bread-equivalent'};assert.equal(validateNeedsCalibration({grain:b}).ok,false);b.breadGrainFactor=1;b.breadGrainEvidence='test assumption';assert.equal(validateNeedsCalibration({grain:b}).ok,true);const c={...row(),physicalUnit:'metre',marketUnit:'kg'};assert.equal(validateNeedsCalibration({cloth:c}).ok,false);});
 test('invalid quantities or missing class never silently produce a policy',()=>{const x=row();x.cargoPhysicalUnits=0;delete x.classes.rich;assert.equal(validateNeedsCalibration({food:x}).errors.length,2);});
+test('all physical conversion factors reject negative zero nonfinite and string inputs',()=>{
+ const invalid=[-1,0,Infinity,NaN,'bogus','1'];
+ for(const value of invalid){
+  for(const key of ['cargoPhysicalUnits','populationEquivalent'])assert.equal(validateNeedsCalibration({x:{...row(),[key]:value}}).ok,false,`${key} ${value}`);
+  assert.equal(validateNeedsCalibration({cloth:{...row(),physicalUnit:'metre',marketUnit:'kg',fabricKgPerMetre:value,fabricEvidence:'explicit scenario'}}).ok,false,`fabric ${value}`);
+  assert.equal(validateNeedsCalibration({grain:{...row(),physicalUnit:'kg-bread-equivalent',breadGrainFactor:value,breadGrainEvidence:'explicit scenario'}}).ok,false,`bread ${value}`);
+  assert.equal(validateNeedsCalibration({legumes:{...row(),energyKcalPerKg:1200,energyPreparationState:'cooked',cargoPreparationState:'dry',preparationYield:value,preparationEvidence:'explicit scenario'}}).ok,false,`yield ${value}`);
+  assert.equal(validateNeedsCalibration({food:{...row(),energyKcalPerKg:value,energyPreparationState:'raw',cargoPreparationState:'raw'}}).ok,false,`energy ${value}`);
+ }
+ const valid={...row(),physicalUnit:'metre',marketUnit:'kg',fabricKgPerMetre:.25,fabricEvidence:'explicit scenario'};assert.equal(validateNeedsCalibration({cloth:valid}).ok,true);
+});
