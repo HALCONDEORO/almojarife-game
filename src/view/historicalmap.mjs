@@ -1,6 +1,6 @@
 import {goodIcon} from "../../web/icons.mjs";
 // Original SVG/UI. Informational only: no economy, discovery or warfare effects.
-export const HISTORICAL_MAPS_ENABLED=false;
+export const HISTORICAL_MAPS_ENABLED=true;
 export const MAP_MODES=['geographic','political','leagues','trade'];
 const TEXT={es:{trade:'Rutas y producción',label:'Mapa',geographic:'Geográfico',political:'Político',leagues:'Ligas y hermandades',unknown:'Sin atribución verificada',ports:'Colores de puertos; no fronteras territoriales.',pending:'Datos históricos pendientes de verificar para este año.'},en:{trade:'Trade routes and production',label:'Map',geographic:'Geographic',political:'Political',leagues:'Leagues and brotherhoods',unknown:'No verified attribution',ports:'Port colours, not territorial boundaries.',pending:'Historical data not yet verified for this year.'}};
 const COLORS=['#9e3f35','#315b83','#587346','#8a5b94','#a87820','#287d79','#74503b'];
