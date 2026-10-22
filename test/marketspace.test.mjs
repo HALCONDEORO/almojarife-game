@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+test('only market uses expanded trade window; small screens retain viewport and controls reserve',()=>{const js=readFileSync('web/main.mjs','utf8'),css=readFileSync('web/pwin.css','utf8');assert.match(js,/w.dataset.cityPanel=tb/);assert.match(css,/data-city-panel="market"/);assert.match(css,/width:min\(1000px,calc\(100vw - 24px\)\)/);assert.match(css,/var\(--game-header-height,120px\) - 220px/);});
