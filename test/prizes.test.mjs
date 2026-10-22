@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,doSail,advanceDay,sellShip,shipValue,SELL_RATE,PRIZE_SELL_RATE} from '../src/game/game.mjs';
-import {resolvePirates,claimPrize,prizeFor,PRIZE_HULL_MIN,PRIZE_HULL_SPAN} from '../src/game/encounterdaily.mjs';
+import {resolvePirates,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encounterDialogHtml} from '../src/view/encounterview.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 import {SHIP_TYPES} from '../src/sim/trade.mjs';
@@ -10,7 +10,7 @@ const world=loadWorld();
 function fight(resultWanted){
  const choice=resultWanted==='escaped'?'flee':'fight';
  for(let i=1;i<200;i++){
-  const g=newGame(world);g.eventsOn=true;g.seed=0;
+  const g=newGame(world);g.eventsOn=true;g.seed=0;g.pirateFight=true;
   const s=g.ships[0];doSail(g,s,'barcelona');
   g.pending={event:'sea-pirates',ship:s.id,day:g.day,hour:0,id:`t:${i}`,escapeChance:50};
   const e=resolvePirates(g,choice);
@@ -23,8 +23,7 @@ function arrive(g,s){let n=0;while(s.voyage&&n++<400)advanceDay(g);assert.ok(!s.
 test('a won fight offers a seeded prize; escaped and raided offer none',()=>{
  const w=fight('repelled');
  assert.ok(w.e.prize);assert.ok(['barca','cog','caravel'].includes(w.e.prize.type));
- assert.ok(w.e.prize.hull>=PRIZE_HULL_MIN&&w.e.prize.hull<PRIZE_HULL_MIN+PRIZE_HULL_SPAN);
- assert.deepEqual(prizeFor(w.g,w.e.id),w.e.prize,'offer is reproducible from seed and id');
+ assert.ok(w.e.prize.hull>=1&&w.e.prize.hull<=100,'prize hull is what the battle left');
  assert.equal(fight('escaped').e.prize,undefined);
  assert.equal(fight('raided').e.prize,undefined);
 });

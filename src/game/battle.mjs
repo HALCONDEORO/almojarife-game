@@ -26,16 +26,16 @@ export function lootPlan(cargo, freeHold, prices = {}, cap = LOOT_CAP) {
   return loot;
 }
 
-/** opts: { finish: "capture" | "plunder" | "sink" (attacker's choice when it wins, default "capture"), freeHold, prices }. rolls: 4 values in [0,1). */
+/** opts: { damage (hull points per round at even odds, default ROUND_DAMAGE), lootCap (default LOOT_CAP), finish: "capture" | "plunder" | "sink" (attacker's choice when it wins, default "capture"), freeHold, prices }. rolls: 4 values in [0,1). */
 export function resolveBattle(att, def, rolls, opts = {}) {
   if (!Array.isArray(rolls) || rolls.length < ROUNDS + 1) throw Error("need ROUNDS + 1 rolls");
   rolls.slice(0, ROUNDS + 1).forEach(unit);
-  const finish = opts.finish ?? "capture";
+  const finish = opts.finish ?? "capture", damage = opts.damage ?? ROUND_DAMAGE;
   if (!["capture", "plunder", "sink"].includes(finish)) throw Error("unknown finish");
   let hA = hullOf(att), hD = hullOf(def), cA = crewOf(att), cD = crewOf(def), rounds = 0;
   for (let i = 0; i < ROUNDS && hA > 0 && hD > 0; i++, rounds++) {
     const fA = firepower(att, hA), fD = firepower(def, hD), share = fA / (fA + fD);
-    const dD = Math.round(ROUND_DAMAGE * share * (0.5 + rolls[i])), dA = Math.round(ROUND_DAMAGE * (1 - share) * (0.5 + rolls[(i + 1) % ROUNDS]));
+    const dD = Math.round(damage * share * (0.5 + rolls[i])), dA = Math.round(damage * (1 - share) * (0.5 + rolls[(i + 1) % ROUNDS]));
     hD = Math.max(0, hD - dD); hA = Math.max(0, hA - dA);
     cD = Math.max(0, cD - Math.floor(dD / 4)); cA = Math.max(0, cA - Math.floor(dA / 4));
   }
@@ -54,7 +54,7 @@ export function resolveBattle(att, def, rolls, opts = {}) {
   else attackerWins = boardStrength(att, cA) * (0.5 + rolls[ROUNDS]) > boardStrength(def, cD) * (1.5 - rolls[ROUNDS]);
   if (!attackerWins) { rep.result = "defender-won"; return rep; }
   if (finish === "sink") { rep.result = "defender-sunk"; rep.defenderShipSunk = true; sinkAll(); return rep; }
-  rep.loot = lootPlan(cargo, opts.freeHold ?? Infinity, opts.prices);
+  rep.loot = lootPlan(cargo, opts.freeHold ?? Infinity, opts.prices, opts.lootCap ?? LOOT_CAP);
   if (finish === "capture") { rep.result = "captured"; rep.captured = true; } else rep.result = "plundered";
   return rep;
 }

@@ -67,3 +67,16 @@ test('when both ships sink, both cargoes are destroyed and counted',()=>{
  }
  assert.ok(found,'at least one both-sunk fight in the sample');
 });
+import {fightPirates,pirateShip} from '../src/game/piratefight.mjs';
+test('pirate fight: reproducible, pure, shape of applyEncounter, real pirate ship',()=>{
+ const s=ship({cannons:2,gunCond:100,cargo:{salt:40}}),before=JSON.stringify(s);
+ const a=fightPirates(s,5,'e1'),b=fightPirates(s,5,'e1');assert.equal(JSON.stringify(s),before);assert.deepEqual(a,b);
+ assert.deepEqual(pirateShip(5,'e1'),pirateShip(5,'e1'));assert.equal(pirateShip(5,'e1').owner,'pirates');
+ assert.ok(['repelled','raided'].includes(a.outcome.result));assert.ok(a.outcome.hullLoss>=0&&a.outcome.hullLoss<=100);
+ let won=0,armedWon=0;for(let i=0;i<300;i++){if(fightPirates(ship(),1,'u'+i).outcome.result==='repelled')won++;if(fightPirates(ship({cannons:3,gunCond:100,captain:{defence:2}}),1,'u'+i).outcome.result==='repelled')armedWon++;}
+ assert.ok(armedWon>won+60,'weapons make the player win more: '+won+' vs '+armedWon);assert.ok(won>5,'an unarmed ship can still win sometimes');
+});
+import {newGame as newGameFlag} from '../src/game/game.mjs';import {loadWorld as loadWorldFlag} from '../src/sim/world.mjs';
+test('pirate fight flag is off by default and saved as a boolean',()=>{
+ assert.equal(newGameFlag(loadWorldFlag()).pirateFight,false);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:true}).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:1}).pirateFight,false);
+});
