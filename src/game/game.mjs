@@ -261,6 +261,7 @@ export function sellShip(g, ship) {
   if (g.ships.length <= 1) return { ok: false, reason: "last ship" };
   if (cargoUsed(ship) > 0) return { ok: false, reason: "hold not empty" };
   const v = shipValue(ship); g.cash += v; g.ships.splice(g.ships.indexOf(ship), 1);
+  if (ship.convoy && g.convoys?.[ship.convoy]) { const cv = g.convoys[ship.convoy]; cv.ships = cv.ships.filter((x) => x !== ship.id); if (cv.ships.length < 2) { const [last] = cv.ships; const ls = g.ships.find((x) => x.id === last); if (ls) delete ls.convoy; delete g.convoys[ship.convoy]; } delete ship.convoy; } // a sold ship leaves its convoy; a single hull is no convoy
   return { ok: true, value: v };
 }
 export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
@@ -345,3 +346,4 @@ export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g) => loanRoom(g, netWorth(g));
 export { loansOwed };
 export { setRoute, setRouteAdv, clearRoute };
+export { formConvoy, leaveConvoy, disbandConvoy, sailConvoy, escortOf, convoyOf } from "./convoys.mjs";

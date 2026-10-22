@@ -4,10 +4,11 @@ import {defenceOf} from './crew.mjs';
 const skill=(ship,key)=>{const n=ship.captain?.[key];return Number.isSafeInteger(n)&&n>=0&&n<=3?n:0;};
 const unit=n=>{if(!Number.isFinite(n)||n<0||n>=1)throw Error('roll must be finite in [0,1)');return n;};
 /** Resolve a single encounter with supplied random draws. No mutation, money or hidden user choice. */
-export function encounterOutcome(ship,kind,roll){
+export function encounterOutcome(ship,kind,roll,extraDefence=0){
  const r=unit(roll);
+ if(!Number.isFinite(extraDefence)||extraDefence<0)throw Error('bad escort');
  if(kind==='pirates'){
-  const defence=defenceOf(ship)+skill(ship,'defence')*6;
+  const defence=defenceOf(ship)+skill(ship,'defence')*6+Math.round(extraDefence);
   const chance=Math.min(0.9,0.2+defence/150);
   const won=r<chance;
   return {kind,result:won?'repelled':'raided',defence,chance,hullLoss:won?2:10,cargoLossPct:won?0:20,delay:won?0:1};
