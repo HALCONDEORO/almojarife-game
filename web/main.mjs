@@ -1,3 +1,4 @@
+import { enabled as ui2dEnabled, inbox2dHtml } from "../src/view/ui2d.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
@@ -717,12 +718,18 @@ $("new").onclick = () => showMenu();
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
   if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
-  const body = () => kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + chronicleHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
-  const draw = () => { el.innerHTML = `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
-    $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); };
+  const styled = kind === "msg" && ui2dEnabled(location.search);
+  const body = () => styled ? inbox2dHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k) : kind === "rep" ? reportsHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + chronicleHtml(g, lang, fmt, (k) => T[lang].goods[k] ?? k) + `<h3>${voyagesTitle(lang)}</h3>` + voyagesHtml(g, lang, fmt, cityName) + encountersHtml(g,lang) : inboxHtml(g, lang, fmt, cityName, (k) => T[lang].goods[k] ?? k);
+  const draw = () => { el.innerHTML = styled ? `<section class="box wide ui2d-window" role="dialog" aria-modal="true" aria-labelledby="ui2d-title"><header class="ui2d-heading"><span aria-hidden="true">✉</span><h2 id="ui2d-title">${LT[lang].messages}</h2><button id="l-close">${LT[lang].close}</button></header><div class="ui2d-content">${body()}</div></section>` : `<div class="box wide">${body()}<p><button id="l-close">${LT[lang].close}</button></p></div>`; el.hidden = false;
+    $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); if(styled)$("msg").focus(); };
+    if(styled)el.querySelector(".ui2d-window").onkeydown=e=>{
+      if(e.key==="Escape"){e.preventDefault();$("l-close").click();}
+      if(e.key==="Tab"){const buttons=[...el.querySelectorAll("button:not(:disabled)")],first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+    };
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
-    el.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); draw(); }); };
+    el.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { const id=e.dataset.msg; markRead(g, Number(id)); draw(); if(styled)el.querySelector(`[data-msg="${id}"]`)?.focus(); }); };
   draw();
+  if(styled)$("l-close").focus();
 }
 $("rep").onclick = () => showLedger("rep");
 $("msg").onclick = () => showLedger("msg");
