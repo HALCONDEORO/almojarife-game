@@ -67,3 +67,42 @@ test('when both ships sink, both cargoes are destroyed and counted',()=>{
  }
  assert.ok(found,'at least one both-sunk fight in the sample');
 });
+import {fightPirates,pirateShip} from '../src/game/piratefight.mjs';
+test('pirate fight: reproducible, pure, shape of applyEncounter, real pirate ship',()=>{
+ const s=ship({cannons:2,gunCond:100,cargo:{salt:40}}),before=JSON.stringify(s);
+ const a=fightPirates(s,5,'e1'),b=fightPirates(s,5,'e1');assert.equal(JSON.stringify(s),before);assert.deepEqual(a,b);
+ assert.deepEqual(pirateShip(5,'e1'),pirateShip(5,'e1'));assert.equal(pirateShip(5,'e1').owner,'pirates');
+ assert.ok(['repelled','raided'].includes(a.outcome.result));assert.ok(a.outcome.hullLoss>=0&&a.outcome.hullLoss<=100);
+ let won=0,armedWon=0;for(let i=0;i<300;i++){if(fightPirates(ship(),1,'u'+i).outcome.result==='repelled')won++;if(fightPirates(ship({cannons:3,gunCond:100,captain:{defence:2}}),1,'u'+i).outcome.result==='repelled')armedWon++;}
+ assert.ok(armedWon>won+60,'weapons make the player win more: '+won+' vs '+armedWon);assert.ok(won>5,'an unarmed ship can still win sometimes');
+});
+import {newGame as newGameFlag} from '../src/game/game.mjs';import {loadWorld as loadWorldFlag} from '../src/sim/world.mjs';
+test('pirate fight flag is off by default and saved as a boolean',()=>{
+ assert.equal(newGameFlag(loadWorldFlag()).pirateFight,false);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:true}).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:1}).pirateFight,false);
+});
+import {MAX_CANNONS as MAXC} from '../src/game/crew.mjs';
+import {resolvePirates as resolveP,prizeFor as prizeForP} from '../src/game/encounterdaily.mjs';
+import {doSail as doSailP} from '../src/game/game.mjs';
+function pirateRun(flag,i){
+ const g=newGameFlag(loadWorldFlag(),undefined,{pirateFight:flag});g.eventsOn=true;g.seed=3;const s=g.ships[0];doSailP(g,s,'barcelona');
+ g.pending={event:'sea-pirates',ship:s.id,day:g.day,hour:0,id:`p:${i}`,escapeChance:50};
+ return {g,e:resolveP(g,'fight')};
+}
+test('flag OFF: every won fight offers the old seeded prize (parity with the single-roll path)',()=>{
+ let won=0;for(let i=0;i<100;i++){const {g,e}=pirateRun(false,i);if(e.result==='repelled'){won++;assert.deepEqual(e.prize,prizeForP(g,e.id));}else assert.equal(e.prize,undefined);}
+ assert.ok(won>20,'some fights are won: '+won);
+});
+test('flag ON: prize comes from the fought ship; pirates never exceed the hull cannon cap; escort never lowers own skill',()=>{
+ let prizes=0;for(let i=0;i<100;i++){const {e}=pirateRun(true,i);if(e.prize){prizes++;assert.ok(e.prize.hull>=1&&e.prize.hull<=100);}}
+ assert.ok(prizes>0);
+ for(let i=0;i<200;i++){const p=pirateShip(7,'c'+i),n=Object.values(p.weapons).reduce((a,b)=>a+b,0);assert.ok(n<=(MAXC[p.type]??0),'cap '+p.type+' '+n);}
+ const s=ship({cannons:2,gunCond:100,captain:{defence:3},cargo:{salt:40}});
+ for(const esc of [0,1,5,6,7,18,40]){const a=fightPirates(s,2,'k',esc),b=fightPirates(s,2,'k',0);assert.ok(a.outcome.hullLoss<=b.outcome.hullLoss+0,'escort '+esc);}
+});
+test('a sunk pirate never leaves a prize; a prize needs a living hull',()=>{
+ let sunk=0,prized=0;
+ for(let i=0;i<600;i++){const f=fightPirates(ship(i%2?{cannons:3,gunCond:100,captain:{defence:3},crew:14}:{type:'nao',cannons:8,gunCond:100,captain:{defence:3},crew:40}),11,'s'+i);
+  if(f.battle.attackerShipSunk||f.battle.hullA<=0){sunk++;assert.equal(f.prize,null,'sunk pirate '+i);}
+  if(f.prize){prized++;assert.ok(f.battle.hullA>0);}}
+ assert.ok(prized>0,'prizes seen: '+prized);if(!sunk)console.log('note: no sunk pirate in this sample; the guard is also covered by the hullA check');
+});

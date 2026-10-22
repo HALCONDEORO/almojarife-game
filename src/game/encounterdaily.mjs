@@ -6,6 +6,7 @@ import {makeShip} from '../sim/trade.mjs';
 import {seeded} from '../view/cityscene.mjs';
 import {TICKS_PER_DAY,hourOf} from '../sim/clock.mjs';
 import {encounterOutcome,applyEncounter,encounterText} from './encounters.mjs';
+import {fightPirates} from './piratefight.mjs';
 import {post} from './ledger.mjs';
 import {escortOf} from './convoys.mjs';
 export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
@@ -46,11 +47,12 @@ export function resolvePirates(g,choice){
  if(!ship?.voyage||!Number.isFinite(p.escapeChance)||p.escapeChance<15||p.escapeChance>85)return {ok:false};
  const r=seeded(`sea-choice-v1:${g.seed??0}:${p.id}`);
  const escaped=choice==='flee'&&r()*100<p.escapeChance;
- let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:encounterOutcome(ship,'pirates',r(),escortOf(g,ship));
+ const fight=(escaped||g.pirateFight!==true)?null:fightPirates(ship,g.seed,p.id,escortOf(g,ship)); // the pirates are a real seeded ship fought with the shared battle resolver; a convoy escort adds defence
+ let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:fight?fight.outcome:encounterOutcome(ship,'pirates',r(),escortOf(g,ship)); // flag off (default): the old single-roll outcome, identical to before
  const applied=applyEncounter(g,ship,out);if(!applied.ok)return applied;
  const e={...applied,id:p.id,day:p.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
  (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
- if(e.result==='repelled'&&ship.voyage)e.prize=prizeFor(g,e.id); // a won fight may leave a prize ship
+ if(e.result==='repelled'&&ship.voyage)e.prize=fight?fight.prize:prizeFor(g,e.id); // flag on: the fought ship if it did not sink; flag off: the old seeded prize, unchanged
  g.encounterReport=e;g.pending=null;return e;
 }
 
