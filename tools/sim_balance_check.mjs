@@ -10,15 +10,45 @@ import { readFileSync } from "node:fs";
 import { OVERDRAFT_LIMIT } from "../src/game/ledger.mjs";
 
 // BALANCE_DAYS: shorter horizon for the fast PR gate; unset = full run.
+// Extra game seeds for bots B and C. Default 1,2,3; BALANCE_SEEDS=none turns them off explicitly (never silent). Seeds are uint32.
+const seedsEnv = process.env.BALANCE_SEEDS ?? "1,2,3";
+const seeds = seedsEnv === "none" ? [] : seedsEnv.split(",").map((x) => (/^\d+$/.test(x) ? Number(x) : NaN));
+if (seeds.some((x) => !Number.isSafeInteger(x) || x > 4294967295) || new Set(seeds).size !== seeds.length) throw new Error("BALANCE_SEEDS must be 'none' or a comma list of distinct uint32 integers");
 const report = process.argv[2]
   ? JSON.parse(readFileSync(process.argv[2], "utf8"))
-  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", ...(process.env.BALANCE_DAYS || process.env.BALANCE_SEEDS ? [process.env.BALANCE_DAYS ?? "36500"] : []), ...(process.env.BALANCE_SEEDS ? [process.env.BALANCE_SEEDS] : [])], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+  : JSON.parse(execFileSync(process.execPath, ["tools/sim_buildings_economy.mjs", process.env.BALANCE_DAYS ?? "36500", seeds.join(",")], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const checks = [], warnings = [];
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
 const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
 const H = [365, 1825, 3650, 10950, 18250, 36500].filter((h) => report.horizons?.includes(h));
+
+// Bots B and C: the same final and per-horizon checks run for the default game (prefix "") and for every extra game seed.
+function checkBC(prefix, B, C) {
+  check(`${prefix}B: builder bot never halts (0 events)`, B.haltEvents, B.haltEvents === 0, "0");
+  check(`${prefix}B: builder bot ends richer than 4,500 start`, B.cashEnd, within(B.cashEnd, 4501, Infinity), "> 4500");
+  check(`${prefix}B: workshop produces (>= 50 batches)`, B.produced, within(B.produced, 50, Infinity), ">= 50");
+
+  check(`${prefix}C: poor bot's saltworks gets built`, C.buildOk, C.buildOk === true, "true");
+  check(`${prefix}C: wages halt it within 180 days`, C.firstHaltDay, Number.isInteger(C.firstHaltDay) && C.firstHaltDay <= 180, "1-180");
+  check(`${prefix}C: still halted at day 365`, C.haltedEnd, C.haltedEnd === true, "true");
+  for (const h of H) {
+    const tag = { 365: "1y", 1825: "5y", 3650: "10y", 10950: "30y", 18250: "50y", 36500: "100y" }[h] ?? (h + "d");
+    const bH = B.horizons?.[h], cH = C.horizons?.[h];
+  if (bH) {
+    check(`${prefix}B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
+    check(`${prefix}B@${tag}: cash plus stored/cargo goods above 4,500`, bH.netWorth ?? bH.cash, within(bH.netWorth ?? bH.cash, 4501, Infinity), "> 4500");
+    check(`${prefix}B@${tag}: workshop never halted`, bH.haltEvents, bH.haltEvents === 0, "0");
+    const prev = H[H.indexOf(h) - 1], pH = prev ? B.horizons?.[prev] : null;
+    if (pH) {
+      check(`${prefix}B@${tag}: production grows vs previous horizon`, bH.produced, bH.produced > pH.produced, "> " + pH.produced);
+      check(`${prefix}B@${tag}: cash grows vs previous horizon`, bH.cash, bH.cash > pH.cash, "> " + pH.cash);
+    }
+  }
+  if (cH) check(`${prefix}C@${tag}: poor bot stays halted (no silent recovery)`, cH.halted, cH.halted === true, "true");
+  }
+}
 
 // The campaign deadline still ends the game at day 365 (free-play scenarios record the would-be result).
 for (const [key, sc] of Object.entries(report.scenarios ?? {})) {
@@ -42,27 +72,7 @@ const npcCashYear1 = A.horizons?.[365]?.npcCash;
 const npcGrowthA = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
 check("A: NPC cash growth x0.5-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.5, 30), "0.5-30");
 
-const B = report.scenarios?.B_builder_bot ?? {};
-check("B: builder bot never halts (0 events)", B.haltEvents, B.haltEvents === 0, "0");
-check("B: builder bot ends richer than 4,500 start", B.cashEnd, within(B.cashEnd, 4501, Infinity), "> 4500");
-check("B: workshop produces (>= 50 batches)", B.produced, within(B.produced, 50, Infinity), ">= 50");
-
-const C = report.scenarios?.C_poor_bot ?? {};
-check("C: poor bot's saltworks gets built", C.buildOk, C.buildOk === true, "true");
-check("C: wages halt it within 180 days", C.firstHaltDay, Number.isInteger(C.firstHaltDay) && C.firstHaltDay <= 180, "1-180");
-check("C: still halted at day 365", C.haltedEnd, C.haltedEnd === true, "true");
-
-// Extra game seeds (BALANCE_SEEDS=1,2,3): bots B and C must pass the same hard checks with every seed.
-for (const [seed, sr] of Object.entries(report.seedRuns ?? {})) {
-  const b = sr.B_builder_bot ?? {}, c = sr.C_poor_bot ?? {};
-  check(`B seed ${seed}: builder bot never halts`, b.haltEvents, b.haltEvents === 0, "0");
-  check(`B seed ${seed}: ends richer than 4,500 start`, b.cashEnd, within(b.cashEnd, 4501, Infinity), "> 4500");
-  check(`B seed ${seed}: workshop produces (>= 50 batches)`, b.produced, within(b.produced, 50, Infinity), ">= 50");
-  check(`C seed ${seed}: saltworks gets built`, c.buildOk, c.buildOk === true, "true");
-  check(`C seed ${seed}: wages halt it within 180 days`, c.firstHaltDay, Number.isInteger(c.firstHaltDay) && c.firstHaltDay <= 180, "1-180");
-  check(`C seed ${seed}: still halted at day 365`, c.haltedEnd, c.haltedEnd === true, "true");
-}
-
+const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bot ?? {};
 // NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.
 // The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,
 // so each band is set from the measured values within +-2 years of the horizon: low = 0.5 x the minimum, high = 4 x the maximum.
@@ -78,17 +88,13 @@ for (const h of H) {
     const [wLo, wHi] = NPC_WORTH_BAND[h] ?? [10000, 1000000];
     check(`A@${tag}: NPC worth (cash + cargo) in band [${wLo}, ${wHi}]`, aH.npcWorth ?? aH.npcCash, within(aH.npcWorth ?? aH.npcCash, wLo, wHi), `${wLo}-${wHi}`);
   }
-  if (bH) {
-    check(`B@${tag}: price index in band [0.80, 1.40]`, bH.priceIndex, within(bH.priceIndex, 0.8, 1.4), "0.80-1.40");
-    check(`B@${tag}: cash plus stored/cargo goods above 4,500`, bH.netWorth ?? bH.cash, within(bH.netWorth ?? bH.cash, 4501, Infinity), "> 4500");
-    check(`B@${tag}: workshop never halted`, bH.haltEvents, bH.haltEvents === 0, "0");
-    const prev = H[H.indexOf(h) - 1], pH = prev ? B.horizons?.[prev] : null;
-    if (pH) {
-      check(`B@${tag}: production grows vs previous horizon`, bH.produced, bH.produced > pH.produced, "> " + pH.produced);
-      check(`B@${tag}: cash grows vs previous horizon`, bH.cash, bH.cash > pH.cash, "> " + pH.cash);
-    }
-  }
-  if (cH) check(`C@${tag}: poor bot stays halted (no silent recovery)`, cH.halted, cH.halted === true, "true");
+}
+
+checkBC("", B, C);
+for (const seed of seeds) {
+  const sr = report.seedRuns?.[seed];
+  check(`seed ${seed}: B and C were run`, sr ? "present" : "missing", !!(sr?.B_builder_bot && sr?.C_poor_bot), "present");
+  if (sr?.B_builder_bot && sr?.C_poor_bot) checkBC(`seed ${seed} `, sr.B_builder_bot, sr.C_poor_bot);
 }
 
 // Known long-term mechanics issues, measured: reported as WARN so the log shows them
