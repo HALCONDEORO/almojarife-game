@@ -37,3 +37,11 @@ export function mainland(bounds){
  const back=Math.max(maxX-minX,maxY-minY)*8;
  return [[minX-back,minY-back],[maxX+3,minY-back],[maxX+3,minY-12],[maxX+3,minY],[maxX+3,maxY-5],[maxX+3,maxY+5],[maxX-5,maxY+5],[minX,maxY+5],[minX-12,maxY+5],[minX-back,maxY+5]];
 }
+
+/** Decorative waterfront stays outside every canonical plot, not a purchasable dock. */
+export function harbourLayout(bounds){
+ const {minX,minY,maxX,maxY}=bounds;
+ if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid harbour');
+ const edge=maxX+3,span=maxY-minY;
+ return {edge,span,piers:Array.from({length:3},(_,i)=>({x:edge,y:minY+span*(.22+i*.25),w:7+i%2*2,d:2.1}))};
+}
