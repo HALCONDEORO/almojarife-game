@@ -26,7 +26,7 @@ export const PER_1000 = {
   timber:     { poor: 0.2, middle: 0.3, rich: 0.3 },
   iron:       { poor: 0.1, middle: 0.25, rich: 0.25 },
   ironware:   { poor: 0.1, middle: 0.3, rich: 0.2 },
-  meat:       { poor: 0.1, middle: 0.3, rich: 0.5 },
+  meat:       { poor: 0.1, middle: 0.28, rich: 1.0 }, // Seville 1481: the elite ate ~3.6x the average neighbour (González Arce 2022); rich/average here 3.7 in a great port
   leather:    { poor: 0.05, middle: 0.2, rich: 0.4 },
   esparto:    { poor: 0.1, middle: 0.2, rich: 0.1 },
   wool:       { poor: 0.2, middle: 0.4, rich: 0.3 },
@@ -54,3 +54,21 @@ export function demandBy(pop, good, ratio = 1) {
   return out;
 }
 export const totalDemand = (pop, good, ratio = 1) => CLASSES.reduce((a, c) => a + demandBy(pop, good, ratio)[c], 0);
+
+/** Whole basket of a city per class at today's prices: { poor: {good: units/day}, middle: {...}, rich: {...} }.
+ *  ratioOf(good) is the price ratio (price / base) a good has in the city. Pure. A shared class budget
+ *  (one purse per class for the whole basket) spends from this and nothing else; units are fractional, rounding is the market's job. */
+export function basketBy(pop, ratioOf = () => 1) {
+  const out = { poor: {}, middle: {}, rich: {} };
+  for (const good of Object.keys(PER_1000)) {
+    const d = demandBy(pop, good, ratioOf(good));
+    for (const c of CLASSES) out[c][good] = d[c];
+  }
+  return out;
+}
+/** Coins per class and day that the basket costs at the given prices: the income a class needs to keep its whole basket. */
+export function basketCost(pop, priceOf, ratioOf = () => 1) {
+  const b = basketBy(pop, ratioOf), out = {};
+  for (const c of CLASSES) out[c] = Object.entries(b[c]).reduce((a, [g, u]) => a + u * priceOf(g), 0);
+  return out;
+}

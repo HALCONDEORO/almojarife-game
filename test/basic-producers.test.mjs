@@ -59,11 +59,15 @@ test("sawmill produces evenly all year (no season peak for timber), level 1 rest
 test("primary production needs no cash and consumes nothing else", () => {
   const g = activeBuilding("bilbao", "bilbao:4", "mine", 3); // level 3, day 0: 2 batches -> 2 iron
   g.cash = 0;
-  const before = JSON.stringify(Object.fromEntries(Object.entries(g.market.bilbao).filter(([k]) => k !== "iron")));
+  // Compare goods, not the shared accounting book stored in the grain cell.
+  const otherGoods=()=>Object.fromEntries(Object.entries(g.market.bilbao).filter(([k])=>k!=="iron").map(([k,{commerce,...e}])=>[k,e]));
+  const before = JSON.stringify(otherGoods());
+  const account=g.market.bilbao.grain.commerce, cash=account.cash,basis=account.inventoryBasis.iron;
   const iron = g.market.bilbao.iron.stock;
   workshopTick(g, "bilbao");
   assert.equal(g.market.bilbao.iron.stock, iron + 2);
-  assert.equal(JSON.stringify(Object.fromEntries(Object.entries(g.market.bilbao).filter(([k]) => k !== "iron"))), before);
+  assert.equal(JSON.stringify(otherGoods()), before);
+  assert.equal(account.cash,cash);assert.equal(account.inventoryBasis.iron,basis+2*g.world.goods.iron.base);
   assert.equal(g.cash, 0);
 });
 

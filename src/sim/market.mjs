@@ -1,4 +1,6 @@
-import { totalDemand } from "./classes.mjs";
+import { settleHouseholdDemand } from "./households.mjs";
+import { openProcurement } from "./procurement.mjs";
+import { totalDemand, classCounts, demandBy } from "./classes.mjs";
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
 // Written from first principles; not derived from any other game's data.
 export function makeMarket(world) {
@@ -8,9 +10,10 @@ export function makeMarket(world) {
     for (const g of Object.keys(world.goods)) {
       const makes = c.makes.includes(g), needs = c.needs.includes(g);
       const target = Math.round(c.pop / 100 * (makes ? 3 : needs ? 1 : 1.5));
-      m[c.id][g] = { stock: target, target, makes, needs, rate: Math.max(1, Math.round(c.pop / 1000)), pop: c.pop };
+      m[c.id][g] = { stock: target, target, makes, needs, rate: Math.max(1, Math.round(c.pop / 1000)), pop: c.pop, base: world.goods[g].base };
     }
   }
+  for(const city of Object.values(m))openProcurement(world,city);
   return m;
 }
 /** Bring a loaded market up to the current world: any city or good added since the save was written
@@ -22,6 +25,7 @@ export function fillMissingMarketRows(world, market) {
     const row = (market[city] ??= {});
     for (const [good, e] of Object.entries(goods)) if (!row[good]) { row[good] = e; added++; }
   }
+  for(const city of Object.values(market)){for(const [g,e]of Object.entries(city))if(world.goods[g])e.base=world.goods[g].base;openProcurement(world,city);}
   return added;
 }
 /** price = base * (target/stock)^elasticity, clamped to 0.4x-3x. */
@@ -63,12 +67,37 @@ export function tickMarket(market, day, world) {
 }
 /** One day for ONE city (market[cityId]): the same formulas and quantities as a full tickMarket day. */
 export function tickMarketCity(city, day, world) {
-  for (const [good, e] of Object.entries(city)) {
-    if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
-    e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
-    const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
-    const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
-    const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
-    e.stock = Math.max(0, e.stock - used);
+  // makeMarket records base prices so the public simulation API remains valid
+  // without world. Older saves receive the same data from the live world.
+  const goods = world?.goods ?? Object.fromEntries(Object.entries(city).map(([g,e])=>[g,{base:e.base}]));
+  const pricingWorld={goods};
+  if(Object.values(goods).some(e=>!Number.isFinite(e.base)||e.base<=0))throw new Error('market requires base prices');
+  const account=openProcurement(pricingWorld,city);
+  for (const [good,e]of Object.entries(city)) {
+    e.base=goods[good].base;
+    const before=e.stock;
+    if(e.makes)e.stock=Math.min(e.target*4,e.stock+Math.round(e.rate*2*seasonMul(good,day)));
+    e.stock=Math.min(e.target*4,e.stock+Math.round(e.rate*.4));
+    const value=(e.stock-before)*e.base;
+    account.inventoryBasis[good]=(account.inventoryBasis[good]??0)+value;account.localSupplyValue+=value;
   }
+  const counts=classCounts(Object.values(city)[0].pop);
+  const q=settleHouseholdDemand(pricingWorld,city,account,{
+    counts,incomePerPerson:HOUSEHOLD_INCOME,
+    food:HOUSEHOLD_FOOD,
+    demandBy:(good,ratio)=>{
+      const e=city[good],d=demandBy(e.pop,good,ratio),mul=DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1)*Math.min(1.5,e.stock/Math.max(1,e.target));
+      return Object.fromEntries(Object.entries(d).map(([k,n])=>[k,n*mul]));
+    }
+  });
+  for(const [g,n]of Object.entries(q.consumedByGood)){
+    const basis=account.inventoryBasis[g]??0,removed=Math.round(basis*n/Math.max(1,city[g].stock+n));
+    account.inventoryBasis[g]=basis-removed;account.consumedBasis+=removed;
+  }
+  account.cash+=q.retailRevenue;account.retail+=q.retailRevenue;
+  account.householdIncome=(account.householdIncome??0)+Object.values(q.byClass).reduce((n,c)=>n+c.income,0);
 }
+// Explicit simulation policy, not historical wages. Initial research values;
+// calibration and essential-food fulfillment remain separate acceptance work.
+export const HOUSEHOLD_INCOME=Object.freeze({poor:.48,middle:1.20,rich:4.65});
+export const HOUSEHOLD_FOOD=Object.freeze(['grain','fish','meat','salt','olive_oil','beer','wine','sugar']);
