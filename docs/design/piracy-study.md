@@ -1,6 +1,6 @@
 # Piracy, naval combat and plunder: study and design proposal
 
-Owner request (22 Oct 2026): weapons need a use. Bots, players and pirates can attack each other; a convoy ship with a captain
+Design brief (22 Oct 2026, project backlog): weapons need a use. Bots, players and pirates can attack each other; a convoy ship with a captain
 can turn pirate, attack other bots' ships, plunder them and break ships; this costs reputation. Study how other games do it, then
 propose a design for Almojarife. Same mechanic and same rules for player and bots. Sailors' gear and ship weapons come from the
 armory PR (#230, docs/design/armory.md).
