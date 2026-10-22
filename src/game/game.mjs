@@ -26,6 +26,7 @@ import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
+import { arrivalIdentity } from "./identity.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
@@ -87,6 +88,8 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if(houses)g.regionalRivals=true;
   if (opts.citylife === true) g.citylife = initCitylife(world); // city-life flag, OFF by default: no key at all in an off game (saves stay identical)
   if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
+  if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
+  if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
@@ -166,6 +169,7 @@ function arrive(g, s) {
   arrivalJustice(g, s); // flag off or no data: nothing
   arrivalNews(g, s.at); // dockside talk: price news from passing ships
   arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
+  arrivalIdentity(g, s.at); // first docking: the port shows its character (flag off: nothing)
   campaignEvent(g, { kind: "arrive", city: s.at }, MISSION);
 }
 /** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
