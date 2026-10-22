@@ -22,6 +22,7 @@ export const RECIPES = Object.freeze({
   soapworks: Object.freeze({ timber: 8, bricks: 4, ironware: 2 }),
   esparto_field: Object.freeze({ timber: 5, bricks: 1, ironware: 1 }),
   ranch: Object.freeze({ timber: 7, bricks: 2, ironware: 2 }),
+  armory: Object.freeze({ timber: 10, bricks: 4, ironware: 3 }),
   dock: Object.freeze({ timber: 10, bricks: 1, ironware: 1 }),
   fishery: Object.freeze({ timber: 5, bricks: 1, ironware: 1, cloth: 2 }),
   ironworks: Object.freeze({ timber: 10, bricks: 3, ironware: 3 }),

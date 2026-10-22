@@ -3,6 +3,7 @@
 import { route } from "./world.mjs";
 import { ticksForKm } from "./clock.mjs";
 import { price } from "./market.mjs";
+import { loadWeight } from "./armament.mjs";
 
 export const SHIP_TYPES = {
   barca: { capacity: 25, kmPerDay: 100, upkeepPerDay: 1, price: 900, buildDays: 8 },
@@ -10,6 +11,8 @@ export const SHIP_TYPES = {
   caravel: { capacity: 40, kmPerDay: 140, upkeepPerDay: 3, price: 3000, buildDays: 12 },
   nao: { capacity: 110, kmPerDay: 80, upkeepPerDay: 5, price: 5200, buildDays: 25 },
 };
+/** Hold space of a ship: its type capacity minus the weight of mounted weapons and sailors' gear. Never negative. */
+export const shipCapacity = (ship) => Math.max(0, SHIP_TYPES[ship.type].capacity - loadWeight(ship));
 export const FEE = 0.02; // market fee on every deal, both sides
 
 export function makeShip(id, type, at) {
@@ -51,7 +54,7 @@ export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   if (typeof cash !== "number" || !Number.isFinite(cash) || cash < 0) return { ok: false, reason: "bad cash" };
   const e = market[ship.at]?.[good];
   if (!e) return { ok: false, reason: "no market" };
-  qty = Math.min(qty, e.stock, SHIP_TYPES[ship.type].capacity - cargoUsed(ship));
+  qty = Math.min(qty, e.stock, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   let n = 0, cost = 0;
   while (n < qty) {
     const unit = Math.ceil(price(world, e, good) * (1 + fee));
@@ -84,7 +87,7 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
 export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good];
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
-  const room = SHIP_TYPES[ship.type].capacity - cargoUsed(ship);
+  const room = Math.max(0, shipCapacity(ship) - cargoUsed(ship));
   const lim = Math.min(qty, e.stock, room);
   const sim = { ...e }; let n = 0, cost = 0;
   while (n < lim) {

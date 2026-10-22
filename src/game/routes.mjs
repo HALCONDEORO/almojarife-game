@@ -2,7 +2,7 @@
 // A route is: buy `out` at port A, sail to port B, sell it, optionally buy `back` there, sail home, repeat.
 // Pure game logic, no DOM. The ship uses the normal buy/sell/sail rules, so prices, fees, hold space and cash all apply.
 import { post } from "./ledger.mjs";
-import { cargoUsed, SHIP_TYPES, FEE } from "../sim/trade.mjs";
+import { cargoUsed, SHIP_TYPES, shipCapacity, FEE } from "../sim/trade.mjs";
 import { feeMul } from "./reputation.mjs";
 import { price } from "../sim/market.mjs";
 
@@ -29,7 +29,7 @@ export function processRoutes(g, ops) {
       const q = s.cargo[sellGood], res = ops.doSell(g, s, sellGood, q);
       if (res.ok) { r.legs++; post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     }
-    if (buyGood) ops.doBuy(g, s, buyGood, SHIP_TYPES[s.type].capacity - cargoUsed(s));
+    if (buyGood) ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
     if (atA && (s.cargo[r.out] ?? 0) === 0) { // need the outbound good, not just any cargo
       if (r.stuck++ === 0) post(g, "routeStuck", { ship: s.id, city: s.at, good: r.out });
@@ -108,7 +108,7 @@ function processRouteAdv(g, s, r, ops) {
     if (res.ok) { traded = true; post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
   }
   for (const rule of stop.buy) {
-    const room = SHIP_TYPES[s.type].capacity - cargoUsed(s);
+    const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
     if (room <= 0) break;
     const qty = planBuy(g, s, rule.good, room, Math.max(0, g.cash - r.minCash), rule.maxPrice);
     if (qty <= 0) continue;

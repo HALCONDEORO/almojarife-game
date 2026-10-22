@@ -27,6 +27,8 @@ export const BUILDING_TYPES = Object.freeze({
   brickworks: Object.freeze({ recipe: "brickworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   esparto_field: Object.freeze({ recipe: "esparto_field", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   ranch: Object.freeze({ recipe: "ranch", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  // Armory: sells ship weapons and sailors' gear; outside the 16-building production cap like dock and office (docs/design/armory.md).
+  armory: Object.freeze({ recipe: "armory", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
   // Private dock: your ships pay less port toll in this city per active level (docs/design/dock-building.md).
   dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
   // Fishery: huts, nets and small boats; yields fresh fish where the city catches it (docs/design/fish-chain.md).
@@ -189,7 +191,7 @@ export function sellQuote(world, market, city, good, qty) {
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
   house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
-  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, soapworks: 6, esparto_field: 5, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
+  oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
