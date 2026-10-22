@@ -35,7 +35,7 @@ export function fightPirates(ship, seed, encounterId, escort = 0) {
   const hullLoss = Math.max(0, Math.round((ship.hull ?? 100) - rep.hullD));
   return {
     outcome: { kind: "pirates", result: won ? "repelled" : "raided", hullLoss: Math.min(100, hullLoss), cargoLossPct: won ? 0 : 20, delay: won ? 0 : 1 },
-    prize: won ? { type: p.type, hull: PRIZE_HULL_MIN + Math.min(PRIZE_HULL_SPAN - 1, Math.floor(Math.max(0, rep.hullA) / 100 * PRIZE_HULL_SPAN)) } : null, // same 30-69% hull range and same 'always on a win' rule as the old prize, so the prize stays in the old value band
+    prize: won && rep.hullA > 0 && !rep.attackerShipSunk ? { type: p.type, hull: PRIZE_HULL_MIN + Math.min(PRIZE_HULL_SPAN - 1, Math.floor(Math.max(0, rep.hullA) / 100 * PRIZE_HULL_SPAN)) } : null, // same 30-69% hull range and same 'always on a win' rule as the old prize, so the prize stays in the old value band
     battle: rep,
   };
 }

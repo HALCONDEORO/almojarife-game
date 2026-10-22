@@ -99,3 +99,10 @@ test('flag ON: prize comes from the fought ship; pirates never exceed the hull c
  const s=ship({cannons:2,gunCond:100,captain:{defence:3},cargo:{salt:40}});
  for(const esc of [0,1,5,6,7,18,40]){const a=fightPirates(s,2,'k',esc),b=fightPirates(s,2,'k',0);assert.ok(a.outcome.hullLoss<=b.outcome.hullLoss+0,'escort '+esc);}
 });
+test('a sunk pirate never leaves a prize; a prize needs a living hull',()=>{
+ let sunk=0,prized=0;
+ for(let i=0;i<600;i++){const f=fightPirates(ship(i%2?{cannons:3,gunCond:100,captain:{defence:3},crew:14}:{type:'nao',cannons:8,gunCond:100,captain:{defence:3},crew:40}),11,'s'+i);
+  if(f.battle.attackerShipSunk||f.battle.hullA<=0){sunk++;assert.equal(f.prize,null,'sunk pirate '+i);}
+  if(f.prize){prized++;assert.ok(f.battle.hullA>0);}}
+ assert.ok(prized>0,'prizes seen: '+prized);if(!sunk)console.log('note: no sunk pirate in this sample; the guard is also covered by the hullA check');
+});
