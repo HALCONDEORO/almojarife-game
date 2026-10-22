@@ -35,7 +35,10 @@ export function mainland(bounds){
  const {minX,minY,maxX,maxY}=bounds;
  if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid mainland');
  const back=Math.max(maxX-minX,maxY-minY)*8;
- return [[minX-back,minY-back],[maxX+3,minY-back],[maxX+3,minY-12],[maxX+3,minY],[maxX+3,maxY-5],[maxX+3,maxY+5],[maxX-5,maxY+5],[minX,maxY+5],[minX-12,maxY+5],[minX-back,maxY+5]];
+ const coast=[];
+ // The working quay remains straight, the other coast bends away from the town.
+ for(let i=0;i<=20;i++){const x=maxX-5-(maxX-minX+35)*i/20;coast.push([x,maxY+5+Math.sin(i*.27)**2*10+Math.sin(i*.68)**2*2]);}
+ return [[minX-back,minY-back],[maxX+3,minY-back],[maxX+3,minY-12],[maxX+3,minY],[maxX+3,maxY-5],[maxX+3,maxY+5],...coast,[minX-back,maxY+18]];
 }
 
 /** Decorative waterfront stays outside every canonical plot, not a purchasable dock. */
