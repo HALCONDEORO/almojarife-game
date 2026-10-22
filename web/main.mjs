@@ -1,3 +1,4 @@
+import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
@@ -293,6 +294,7 @@ function render() {
   // event. In the city view it carries the port services inside the city window.
   let h = "";
   const pe = pendingEvent(g), inCity = !!document.getElementById("v3d");
+  if(inCity&&city2dEnabled(location.search))$("v3d").querySelector("iframe").contentWindow.postMessage({kind:"city2d-state",city:s.at,buildings:g.buildings?.[s.at]??{},tick:g.tick,labels:Object.fromEntries(buildingsRows(g,s.at).map(r=>[r.plotId,buildingLabel(t,r)]))},location.origin);
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   if (inCity || pe) {
@@ -640,7 +642,7 @@ function closeCityWindow() {
 function close3d() {
   const d=$("v3d"); if(!d)return;
   const p=$("panel"), home=$("panel-home"); if(p&&home)home.appendChild(p);
-  d.remove();document.body.classList.remove("in-city-3d");
+  d.city2dResize?.disconnect();d.remove();document.body.classList.remove("in-city-3d");
   if (automaticTime && planningResume && !manualPause) playing = true;
   planningResume = false;
 }
@@ -657,7 +659,8 @@ function open3d(s0) {
   shipWin=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="proto3d/index.html?${q}" title="${t.tabCity} 3D"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button><button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
+  if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.height=Math.max(120,d.clientHeight-d.querySelector(".city-controls").offsetHeight)+"px";};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
   d.querySelector("[data-map]").onclick=close3d;
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
