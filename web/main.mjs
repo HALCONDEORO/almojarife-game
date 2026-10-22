@@ -417,7 +417,7 @@ function render() {
       else if (!pr.isHome) h += `<p><i>${t.officeOwned}</i></p>`;
       if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
-      const room = bankRoom(g, s.at), tm = termsFor(g, s.at), capHere = tm.room !== 1 ? Math.floor(loanCapFor(g, LOAN_MAX) * tm.room / 100) * 100 : loanCapFor(g, LOAN_MAX), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
+      const room = bankRoom(g, s.at), tm = termsFor(g, s.at), capHere = tm.room < 1 ? Math.floor(loanCapFor(g, LOAN_MAX) * tm.room / 100) * 100 : loanCapFor(g, LOAN_MAX), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
       h += `<p>${t.bankInfo.replace("{r}", +(LOAN_RATE * tm.rate * 100).toFixed(2)).replace("{m}", fmt(capHere))}</p><p>${t.bankRoom}: <b>${fmt(room)}</b> · ${t.bankOwed}: <b>${fmt(loansOwed(g))}</b></p>`;
       h += amts.map((a) => `<button data-loan="${a}">${t.bankTake.replace("{a}", fmt(a))}</button>`).join(" ");
       const ls = g.loans ?? [];

@@ -18,7 +18,7 @@ export function loanRoom(g, netWorth, city) {
   const total = Math.min(loanCapFor(g, LOAN_MAX), Math.floor(Math.max(netWorth, 0) * 0.5 / LOAN_STEP) * LOAN_STEP);
   const t = city ? termsFor(g, city) : null; // payment reputation (flag credit): the lender of this port offers more or less
   if (t?.refuse) return 0;
-  return Math.max(0, (t && t.room !== 1 ? Math.floor(total * t.room / LOAN_STEP) * LOAN_STEP : total) - owed);
+  return Math.max(0, (t && t.room < 1 ? Math.floor(total * t.room / LOAN_STEP) * LOAN_STEP : total) - owed); // good standing never lifts the room past the neutral cap (rank cap and half of net worth): it only buys a cheaper rate
 }
 const docked = (g, city) => g.ships.some((s) => s.at === city && !s.voyage);
 /** Borrow `amount` (a multiple of LOAN_STEP). Returns { ok, reason?, loan? }. */
@@ -30,7 +30,7 @@ export function takeLoan(g, city, amount, netWorth, post = () => {}) {
   const loan = { id: (g.nextLoan = (g.nextLoan ?? 0) + 1), city, principal: amount, left: amount, taken: g.day, due: g.day + LOAN_TERM_DAYS };
   if (g.credit === true) loan.rate = LOAN_RATE * termsFor(g, city).rate; // the rate is agreed at signing
   (g.loans ??= []).push(loan); g.cash += amount;
-  post(g, "loan", { city, amt: amount, rate: Math.round(LOAN_RATE * 100), dueDay: loan.due });
+  post(g, "loan", { city, amt: amount, rate: +((loan.rate ?? LOAN_RATE) * 100).toFixed(2), dueDay: loan.due });
   return { ok: true, loan };
 }
 /** Pay back up to `amount` of one loan, from positive cash only. */

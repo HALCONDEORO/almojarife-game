@@ -7,7 +7,7 @@ export const PAY_MIN = -3, PAY_MAX = 2;
 export const REP_MIN_LIFE_DAYS = 28, REP_MIN_WEEKS_PAID = 4, REP_GAIN_COOLDOWN_DAYS = 56;
 /** Terms by level: how much of the normal credit room is offered, how the rate scales, and whether the lender refuses. */
 export const TERMS = Object.freeze({
-  2: { room: 1.25, rate: 0.75 }, 1: { room: 1.1, rate: 0.9 }, 0: { room: 1, rate: 1 },
+  2: { room: 1, rate: 0.75 }, 1: { room: 1, rate: 0.9 }, 0: { room: 1, rate: 1 },
   [-1]: { room: 0.75, rate: 1.25 }, [-2]: { room: 0.5, rate: 1.5 }, [-3]: { room: 0, rate: 1.5, refuse: true },
 });
 export const payRepOf = (g, city) => (g.credit === true ? g.payRep?.[city] ?? 0 : 0);
