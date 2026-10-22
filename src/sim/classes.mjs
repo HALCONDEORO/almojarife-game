@@ -38,6 +38,10 @@ export const PER_1000 = {
   pepper:     { poor: 0, middle: 0.25, rich: 2.0 },
   silk:       { poor: 0, middle: 0.1, rich: 2.5 },
 };
+/** Goods that exist only in games started with their flag (src/sim/optional_goods.mjs). Same units as PER_1000; absent from PER_1000 so the flag-OFF game never sees them. */
+export const OPTIONAL_PER_1000 = Object.freeze({
+  kid_meat: Object.freeze({ poor: 0, middle: 0.05, rich: 0.5 }), // a luxury: Barcelona sold kid as luxury meat (Estudio, meat sources 22/10)
+});
 /** Highest price, as a multiple of the base price, that each class will still pay. */
 export const TOLERANCE = { poor: 1.4, middle: 2, rich: 3 };
 
@@ -49,7 +53,7 @@ export function affordMul(cls, ratio) {
 }
 /** Daily demand of a city for a good, per class, at a price ratio. Fractions are kept; the market rounds the total. */
 export function demandBy(pop, good, ratio = 1) {
-  const n = classCounts(pop), row = PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
+  const n = classCounts(pop), row = PER_1000[good] ?? OPTIONAL_PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
   for (const c of CLASSES) out[c] = n[c] / 1000 * row[c] * affordMul(c, ratio);
   return out;
 }

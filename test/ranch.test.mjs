@@ -7,7 +7,7 @@ import {PER_1000} from '../src/sim/classes.mjs';
 const world=loadWorld();
 test('ranch is a primary producer of meat with leather as by-product',()=>{
  const d=PRODUCERS.ranch;
- assert.equal(d.primary,true);assert.equal(d.output,'meat');assert.deepEqual({...d.byproducts},{leather:1});
+ assert.equal(d.primary,true);assert.equal(d.output,'meat');assert.deepEqual({...d.byproducts},{leather:1,kid_meat:1});
  assert.equal(d.pattern,WORKSHOP_BATCH_PATTERN);assert.ok(RECIPES[BUILDING_TYPES.ranch.recipe]);
  for(const g of ['meat','leather']){assert.ok(world.goods[g].base>0);assert.ok(PER_1000[g].rich>0);assert.ok(world.cities.some(c=>c.needs.includes(g)),g+' has a consumer');}
 });
