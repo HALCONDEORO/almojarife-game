@@ -92,3 +92,25 @@ test("an off game plays byte-identical to before the feature (golden parity)", (
   const strip = (g) => { const s = JSON.parse(JSON.stringify(serialize(g, "T", 1))).state; delete s.cityMemory; delete s.memoryDeeds; delete s.memoryGossip; return s; };
   assert.deepEqual(strip(on), strip(a));
 });
+test("bot deeds fade like yours and surface as the ambient Ayuntamiento line", () => {
+  const g = mk({ cityMemory: true });
+  memoryDeed(g, "cadiz", "botGrievance", 120);
+  const now = memoryOf(g, "cadiz").bots;
+  assert.ok(now > 0);
+  for (let i = 0; i < MEMORY_HALFLIFE; i++) advanceDay(g);
+  assert.ok(Math.abs(memoryOf(g, "cadiz").bots - now / 2) < 1e-6); // same halflife as favor and grievance
+  // a city that remembers only the foreign merchants says so
+  const h = mk({ cityMemory: true });
+  memoryDeed(h, "cadiz", "botGrievance", 500);
+  const line = memoryLine(h, "cadiz");
+  assert.equal(line.kind, "bots");
+  assert.ok(line.txt.es.includes("mercaderes") && line.txt.en.includes("merchants"));
+  // your own record, when strong, speaks first
+  memoryDeed(h, "cadiz", "favor", 5000);
+  assert.equal(memoryLine(h, "cadiz").kind, "favor");
+  // and the ambient line rides into the Ayuntamiento view
+  assert.equal(hallView(h, "cadiz").memory.kind, "favor");
+  const b = mk({ cityMemory: true });
+  memoryDeed(b, "cadiz", "botGrievance", 500);
+  assert.equal(hallView(b, "cadiz").memory.kind, "bots");
+});

@@ -13,21 +13,23 @@ export const MEMORY_REP_MAX = 5;      // the most memory can move respect, eithe
 export const MEMORY_GOSSIP_MIN = 50;  // weighted units below which the talk has faded
 export const MEMORY_GOSSIP_DAYS = 20; // dockside does not repeat itself every day
 
-/** Record a grain deed, whoever did it. kind: "favor" | "grievance" (yours) | "botGrievance" (ambient). Flag off: nothing stored. */
+/** Record a grain deed, whoever did it. kind: "favor" | "grievance" (yours) | "botGrievance" (ambient).
+ *  Flag off: nothing stored. Bot deeds are entries like yours, so they fade at the same rate. */
 export function memoryDeed(g, cityId, kind, qty) {
   if (g?.cityMemory !== true || !(qty > 0)) return;
   const all = (g.memoryDeeds ??= {});
-  const c = (all[cityId] ??= { favor: [], grievance: [], botGrievance: 0 });
-  if (kind === "botGrievance") { c.botGrievance += qty; return; }
-  c[kind].push({ day: g.day, qty });
-  if (c[kind].length > 40) c[kind].shift(); // the oldest stories fall off the end
+  const c = (all[cityId] ??= { favor: [], grievance: [], bots: [] });
+  const list = kind === "botGrievance" ? c.bots : c[kind];
+  list.push({ day: g.day, qty });
+  if (list.length > 40) list.shift(); // the oldest stories fall off the end
 }
 const weight = (day, now) => Math.pow(0.5, Math.max(0, now - day) / MEMORY_HALFLIFE);
 const side = (g, list) => (list ?? []).reduce((a, d) => a + d.qty * weight(d.day, g.day), 0);
 /** Weighted favor and grievance the city holds against/for you, right now. */
 export function memoryOf(g, cityId) {
   const c = g?.cityMemory === true ? g.memoryDeeds?.[cityId] : null;
-  return { favor: side(g, c?.favor), grievance: side(g, c?.grievance), bots: c?.botGrievance ?? 0 };
+  // old saves stored botGrievance as one undecayed number; entries supersede it (the flag never ran in production)
+  return { favor: side(g, c?.favor), grievance: side(g, c?.grievance), bots: side(g, c?.bots) };
 }
 /** Bounded respect offset from memory, added inside repOf. Flag off: 0. */
 export function memoryRep(g, cityId) {
@@ -52,13 +54,23 @@ export function memoryGossipLine(g, cityId) {
     en: `${name} has not forgotten the grain you carried off when bread was short.`,
   } };
 }
-/** One line for the Ayuntamiento tab, or null when there is nothing to hold. */
+/** One line for the Ayuntamiento tab, or null when there is nothing to hold.
+ *  Your deeds come first; when the city holds nothing against you but remembers the
+ *  foreign merchants who drained its grain in the famine, it says that instead. */
 export function memoryLine(g, cityId) {
   if (g?.cityMemory !== true) return null;
   const m = memoryOf(g, cityId);
-  if (Math.max(m.favor, m.grievance) < MEMORY_GOSSIP_MIN) return null;
-  const good = m.favor >= m.grievance;
-  return { kind: good ? "favor" : "grievance", txt: good
-    ? { es: "La ciudad te guarda buen recuerdo.", en: "The city remembers you kindly." }
-    : { es: "La ciudad no te ha perdonado aquel grano.", en: "The city has not forgiven you that grain." } };
+  if (Math.max(m.favor, m.grievance) >= MEMORY_GOSSIP_MIN) {
+    const good = m.favor >= m.grievance;
+    return { kind: good ? "favor" : "grievance", txt: good
+      ? { es: "La ciudad te guarda buen recuerdo.", en: "The city remembers you kindly." }
+      : { es: "La ciudad no te ha perdonado aquel grano.", en: "The city has not forgiven you that grain." } };
+  }
+  if (m.bots >= MEMORY_GOSSIP_MIN) {
+    return { kind: "bots", txt: {
+      es: "Aún se habla de los mercaderes forasteros que se cebaron con el grano en la carestía.",
+      en: "Folk still talk of the foreign merchants who feasted on the grain when bread was dear.",
+    } };
+  }
+  return null;
 }
