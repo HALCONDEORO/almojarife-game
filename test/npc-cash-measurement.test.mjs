@@ -8,11 +8,11 @@ import { join } from 'node:path';
 function check({year1 = 2000, final = 200000, start = 1000, omitYear = false} = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'npc-cash-'));
   try {
-    const report = {days: 36500, horizons: [], seconds: 0, scenarios: {
+    const report = {days: 36500, horizons: [365, 1825, 3650, 10950, 18250, 36500], seconds: 0, scenarios: {
       A_no_player: {npcCash: [start, final], horizons: omitYear ? {} : {365: {npcCash: year1}}}
     }};
     const path = join(dir, 'report.json'); writeFileSync(path, JSON.stringify(report));
-    const r = spawnSync(process.execPath, ['tools/sim_balance_check.mjs', path], {encoding: 'utf8'});
+    const r = spawnSync(process.execPath, ['tools/sim_balance_check.mjs', path], {encoding: 'utf8', env: {...process.env, BALANCE_SEEDS: 'none'}}); // synthetic report: the horizon list must match days, no extra seeds
     assert.equal(r.error, undefined);
     return r.stdout.split('\n').find((line) => line.includes('NPC cash growth x0.5-x30 over 365d'));
   } finally { rmSync(dir, {recursive: true, force: true}); }
