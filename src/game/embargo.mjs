@@ -15,7 +15,7 @@ export const embargoOn = (g, port) => g?.embargo === true && grainShort(g, port)
 export function embargoNotice(g, port) {
   const seen = (g.embargoSeen ??= {}); if (seen[port] === g.day) return false; seen[port] = g.day;
   const name = g.world.nodes[port]?.name ?? port;
-  post(g, "warn", { city: port, txt: {
+  post(g, "info", { city: port, txt: {
     es: `El concejo de ${name} no vende grano: el pan escasea y lo guarda para sus vecinos. Vuelve cuando haya más en los almacenes, o trae tú grano al puerto.`,
     en: `The council of ${name} will not sell grain: bread is short and it keeps the stock for its own people. Come back when the stores recover, or bring grain to the port yourself.` } });
   return true;

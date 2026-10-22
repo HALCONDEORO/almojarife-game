@@ -1,3 +1,4 @@
+import { messageText } from "../src/view/ledgerview.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
@@ -23,4 +24,11 @@ test("a refusal leaves one notice per port and day, in Spanish and English, and 
   assert.match(JSON.stringify(msgs[0]), /no vende grano/); assert.match(JSON.stringify(msgs[0]), /will not sell grain/);
   g.day += 1; doBuy(g, s, "grain", 1); assert.equal((g.inbox ?? g.ledger?.inbox).filter((m) => /grano/.test(JSON.stringify(m))).length, 2);
   const off = mk(false, 0.1); doBuy(off.g, off.s, "grain", 1); assert.equal(off.g.embargoSeen, undefined);
+});
+test("the refusal notice renders as the council text in both languages, not as a maintenance reminder", () => {
+  const { g, s } = mk(true, 0.1); doBuy(g, s, "grain", 1);
+  const m = (g.inbox ?? []).find((x) => /grano|grain/.test(JSON.stringify(x)));
+  const fmt = (x) => String(x);
+  assert.match(messageText(m, "es", fmt), /^El concejo de .* no vende grano/); assert.match(messageText(m, "en", fmt), /^The council of .* will not sell grain/);
+  assert.doesNotMatch(messageText(m, "es", fmt), /mantenimiento/i); assert.doesNotMatch(messageText(m, "en", fmt), /maintenance/i);
 });
