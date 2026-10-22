@@ -1,3 +1,4 @@
+import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
@@ -194,6 +195,7 @@ function act(fn) {
 }
 
 function render() {
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaText(g.tick+s.voyage.ticksLeft)});
   document.getElementById('sea-modal')?.remove();
   if(g.pending?.event==='sea-pirates'||g.encounterReport){
    playing=false;const modal=document.createElement('div');modal.id='sea-modal';modal.innerHTML=encounterDialogHtml(g,lang);document.body.appendChild(modal);
