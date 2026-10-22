@@ -31,19 +31,27 @@ function bestPlan(world, market, ship, cash) {
   return best;
 }
 
-/** One decision for an idle ship. Mutates ship, market and trader. Returns what it did. */
-export function aiStep(world, market, trader, ship) {
+/** One decision for an idle ship. Mutates ship, market and trader. Returns what it did.
+ *  Optional hooks let a harness apply player rules: feeMul(city) scales the market fee,
+ *  onSale/onBuy report (city, good, scarcityBefore, revenue|cost) for reputation tracking. */
+export function aiStep(world, market, trader, ship, hooks = {}) {
   if (ship.voyage) return null;
+  const fee = FEE * (hooks.feeMul?.(ship.at) ?? 1);
   for (const good of Object.keys(ship.cargo)) {
-    const s = sell(world, market, ship, good, ship.cargo[good]);
-    if (s.ok) trader.cash += s.revenue;
+    const e = market[ship.at]?.[good];
+    const scarcity = e ? e.target / Math.max(1, e.stock) : 0;
+    const s = sell(world, market, ship, good, ship.cargo[good], fee);
+    if (s.ok) { trader.cash += s.revenue; hooks.onSale?.(ship.at, good, scarcity, s.revenue); }
   }
   if (cargoUsed(ship) > 0) return null;
   const plan = bestPlan(world, market, ship, trader.cash);
   if (!plan) return null;
-  const b = buy(world, market, ship, trader.cash, plan.good, plan.qty);
+  const eb = market[ship.at]?.[plan.good];
+  const scarcityB = eb ? eb.target / Math.max(1, eb.stock) : 0;
+  const b = buy(world, market, ship, trader.cash, plan.good, plan.qty, fee);
   if (!b.ok) return null;
   trader.cash -= b.cost;
+  hooks.onBuy?.(ship.at, plan.good, scarcityB, b.cost);
   sail(world, ship, plan.dest);
   return plan;
 }
