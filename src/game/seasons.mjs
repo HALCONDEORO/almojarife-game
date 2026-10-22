@@ -39,7 +39,7 @@ export function seasonsTick(g) {
   seen.season = season;
   const name = g.world.nodes[docked.at]?.name ?? g.world.cities.find((c) => c.id === docked.at)?.name ?? docked.at;
   const goods = inSeason(g.world, docked.at, g.day);
-  const es = goods.length ? ` Es tiempo de ${goods.map((x) => GOOD_ES[x] ?? x).join(" y ")}.` : "";
+  const es = goods.length ? ` Es tiempo ${`de ${goods.map((x) => GOOD_ES[x] ?? x).join(" y ")}`.replace(/^de el /, "del ")}.` : "";
   const en = goods.length ? ` It is ${goods.map((x) => GOOD_EN[x] ?? x).join(" and ")} season.` : "";
   post(g, "info", { city: docked.at, txt: {
     es: `Llega ${SEASON_ES[season]} a ${name}: ${FLAVOR[season].es}.${es}`,

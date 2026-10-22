@@ -54,3 +54,11 @@ test("the seen season survives a save and reload, and seasons move no money", ()
   assert.equal(typeof h.cash, "number");
   assert.equal(h.cash, cash);
 });
+
+test("the Spanish notice says 'del' and never 'de el'", () => {
+  const g = mk({ citySeasons: true });
+  g.day = 175; g.tick = 175 * 24 * 60; g.seasonSeen = { season: "winter" };
+  seasonsTick(g);
+  const text = JSON.stringify(inbox(g));
+  assert.doesNotMatch(text, /de el /);
+});
