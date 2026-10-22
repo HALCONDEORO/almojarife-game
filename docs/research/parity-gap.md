@@ -4,6 +4,27 @@ Goal set by the project owner: before inviting the public, the game should reach
 
 Status key: DONE, PARTIAL, TODO.
 
+## Status on main f2b90a7 (22 Oct 2026), checked against the code
+
+Method: read the source and data on main, not play-tested. "PR" means open and not merged.
+
+| Area | Done on main | Open PR | Missing |
+|---|---|---|---|
+| Trading | 33 ports, 19 goods, supply and demand prices, AI traders, fees, price alerts, fog and charts | | Quantity preview and average price before buying; weekly consumption screen per port (not verified) |
+| Ships and fleet | 4 types (barque, cog, caravel, nao), shipyard, crew and wages, armory with gun wear, daily hull wear at sea (sim/trade.mjs), storm encounters resolved automatically at sea (encounters.mjs, encounterdaily.mjs) | Convoys #185 | Shipyard levels, winter frozen ports |
+| Automation | Captains with routes, steward | | Managers for offices, trading office without a ship in port |
+| Economy depth | Social classes with demand, production buildings and workshops, warehouse, dock, bank, loans, bankruptcy | Household purses #229 (fails the balance gate), import of missing materials #172, smokehouse #197 | Processed-goods layer beyond the current chains, migration and satisfaction |
+| City and politics | 7 ranks, respect per city, town hall (mayor, councillors, levies, meetings), tavern contacts | Council contracts #171 | Building permits, public buildings (well, hospital, chapel), mayor elections with a vote, Hansa-wide politics |
+| Pirates and combat | Pirate encounters, cannons and gear, seeded battle resolver (merged, not wired) | | Player boarding and capture (phase 1, held), sieges and princes |
+| Events | Port closure scares (plague), market shocks | | Fire, famine, celebrations (not verified) |
+| Family and home | Start city only | | Family, heirs, home town mechanics |
+| Insurance, blockade | | | Not started (outside 1.0 scope in the roadmap) |
+| Campaign | Data-driven missions with story text, ordered steps, deadlines, rewards and unlocks (campaigns.mjs) | | Remaining mission content for the planned acts |
+
+Proposed order: close the open PRs, then pirate phase 1 on the resolver, then events (fire, famine), family and home town, permits and public buildings, Hansa politics, insurance and blockade, sieges.
+
+## Original checklist (19 Oct, kept for history; the table above supersedes it)
+
 ## Checklist (in build order)
 
 ### A. Core trading loop (foundation)
