@@ -24,12 +24,19 @@ export function newcombe(n11, n10, n01, n00) {
 }
 
 function binomCdf(k, m, th) { // P(X <= k), X ~ Bin(m, th)
-  let s = 0, c = 1; // c = C(m,i)
-  for (let i = 0; i <= k; i++) {
-    s += c * Math.pow(th, i) * Math.pow(1 - th, m - i);
-    c = c * (m - i) / (i + 1);
+  // log-space recurrence: the naive C(m,i) * th^i * (1-th)^(m-i) overflows the
+  // coefficient (Infinity * 0 = NaN) and underflows the powers for plausible m.
+  if (th <= 0) return k >= 0 ? 1 : 0;
+  if (th >= 1) return k >= m ? 1 : 0;
+  const lTh = Math.log(th), l1Th = Math.log(1 - th);
+  let lp = m * l1Th, max = lp; const lps = [lp];
+  for (let i = 1; i <= k; i++) {
+    lp += Math.log(m - i + 1) - Math.log(i) + lTh - l1Th;
+    lps.push(lp); if (lp > max) max = lp;
   }
-  return s;
+  let s = 0;
+  for (const l of lps) s += Math.exp(l - max);
+  return s * Math.exp(max); // exp(max) may underflow to 0: then the tail truly is < alpha
 }
 
 // One-sided 95% Clopper-Pearson upper limit for n10 out of m, by bisection.
@@ -87,7 +94,7 @@ export function normInv(p) { // Acklam
 export function bca(values, stat = mean, { B = 5000, alpha = 0.05, seed = 1 } = {}) {
   const n = values.length;
   if (n === 0 || values.some(v => !Number.isFinite(v))) return { lower: NaN, upper: NaN, status: "undefined" };
-  if (values.every(v => v === values[0])) return { lower: values[0], upper: values[0], status: "constant" };
+  if (values.every(v => v === values[0])) { const c = stat(values); return { lower: c, upper: c, status: "constant" }; } // the interval describes stat(values), not the raw sample
   const th = stat(values), rnd = rng(seed), bs = new Array(B);
   for (let b = 0; b < B; b++) { const s = new Array(n); for (let i = 0; i < n; i++) s[i] = values[Math.floor(rnd() * n)]; bs[b] = stat(s); }
   bs.sort((x, y) => x - y);

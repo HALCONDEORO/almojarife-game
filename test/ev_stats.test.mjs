@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ruinBound, bca, passesUpper, zc, sampleSd } from "../tools/ev/stats.mjs";
+import { ruinBound, bca, passesUpper, zc, sampleSd, cpUpper } from "../tools/ev/stats.mjs";
 
 // Reference values computed independently with Python/scipy (protocol v13, N=224). Tolerance 0.001 pp.
 const REF = [
@@ -40,4 +40,16 @@ test("z_c uses sd of A and falls back to the floor when sd is 0", () => {
   assert.equal(zc([2, 4], 2, 1), 1.5);
   assert.equal(zc([2, 4], 0, 3), 1);
   assert.ok(sampleSd([1, 2, 3]) === 1);
+});
+
+test("bca constant sample describes stat(values), not the raw value", () => {
+  const r = bca([-2, -2], (xs) => -(xs.reduce((a, b) => a + b, 0) / xs.length));
+  assert.equal(r.status, "constant"); assert.equal(r.lower, 2); assert.equal(r.upper, 2);
+});
+
+test("cpUpper stays stable for plausible large samples (no coefficient overflow)", () => {
+  const u = cpUpper(1000, 2000); // 50% successes: upper limit must sit just above 0.5
+  assert.ok(u > 0.5 && u < 0.6, `cpUpper(1000,2000)=${u}`);
+  assert.ok(cpUpper(0, 2000) < 0.01);
+  assert.equal(cpUpper(2000, 2000), 1);
 });
