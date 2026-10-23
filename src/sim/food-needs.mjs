@@ -1,4 +1,4 @@
-export const PHYSICAL_NEEDS_ENABLED=false;
+export const PHYSICAL_NEEDS_ENABLED=true; // default ON (Marco 23/10); note: no consumer imports it today, zero behavioural effect
 export const ADULT_EQUIVALENT_COEFFICIENT=1; // explicit scenario assumption, not calibrated demography
 // Physical quantities separate from market scale, production and affordability.
 // Evidence is heterogeneous: reconstructed worker basket, institutional allowance,

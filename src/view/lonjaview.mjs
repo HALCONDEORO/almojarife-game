@@ -3,7 +3,7 @@
 // or save fields belong here. Opt-in experiment behind ?lonja=1.
 import { quote, priceHistory, trendPct } from "../game/game.mjs";
 
-export const lonjaEnabled = (search) => new URLSearchParams(search).get("lonja") === "1";
+export const lonjaEnabled = (search) => new URLSearchParams(search).get("lonja") !== "0"; // default ON (Marco 23/10); ?lonja=0 opts out
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
