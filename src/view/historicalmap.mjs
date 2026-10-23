@@ -48,7 +48,7 @@ export function leaguePortLayer({enabled=false,ports=[],year,data,lang='es',x,y}
 }
 // Hand-set original cartographic callouts for dense clusters; offsets are screen
 // marker units, so they remain readable with the existing inverse zoom scaling.
-export function mapLabelPlacement(id){return ({lisboa:{x:-18,y:-14,anchor:'end'},setubal:{x:18,y:22,anchor:'start'},santander:{x:-18,y:-16,anchor:'end'},bilbao:{x:0,y:32,anchor:'middle'},sansebastian:{x:18,y:-14,anchor:'start'},ceuta:{x:26,y:-12,anchor:'start'},tanger:{x:-18,y:-12,anchor:'end'},tetuan:{x:42,y:10,anchor:'start'},arcila:{x:-18,y:-14,anchor:'end'},larache:{x:-18,y:20,anchor:'end'},huelva:{x:-18,y:-14,anchor:'end'},tarragona:{x:0,y:24,anchor:'middle'},oran:{x:-18,y:4,anchor:'end'},faro:{x:0,y:24,anchor:'middle'}})[id]??{x:14,y:4,anchor:'start'};}
+export function mapLabelPlacement(id){return ({lisboa:{x:-18,y:-14,anchor:'end'},setubal:{x:18,y:22,anchor:'start'},santander:{x:-18,y:-16,anchor:'end'},bilbao:{x:0,y:32,anchor:'middle'},sansebastian:{x:18,y:-14,anchor:'start'},ceuta:{x:26,y:-12,anchor:'start'},tanger:{x:-18,y:-12,anchor:'end'},tetuan:{x:42,y:10,anchor:'start'},arcila:{x:-24,y:2,anchor:'end'},larache:{x:-18,y:20,anchor:'end'},huelva:{x:-18,y:-14,anchor:'end'},tarragona:{x:0,y:24,anchor:'middle'},oran:{x:-18,y:4,anchor:'end'},faro:{x:0,y:24,anchor:'middle'},mazagan:{x:0,y:26,anchor:'middle'},casablanca:{x:-20,y:-16,anchor:'end'}})[id]??{x:14,y:4,anchor:'start'};}
 
 /** Stable collision-free cards in map coordinates at overview zoom. */
 const cardLayouts=new Map();
