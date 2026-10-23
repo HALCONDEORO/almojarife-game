@@ -13,7 +13,7 @@ import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
-import { planTrip } from "./freenav.mjs";
+import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
@@ -275,11 +275,27 @@ export function doGoTo(g, ship, lat, lon) {
   const plan = planTrip(g.world, ship, lat, lon);
   if (!plan.ok) return plan;
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
-  const from = ship.voyage?.from ?? ship.at, wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)();
+  // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
+  const pos = docked ? null : locate(g.world, ship);
+  const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
+  // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
+  const wind = docked ? 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)() : (ship.voyage.wind ?? 1);
   const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
   const ticks = Math.max(1, Math.round(ticksForKm(plan.km, spec.kmPerDay) / (mul * wind)));
-  ship.voyage = { from, to: plan.to, ticksLeft: ticks, totalTicks: ticks, path: plan.path, km: plan.km, wind, pts: plan.pts, ...(plan.toPort ? {} : { free: true }) };
-  if (docked && plan.toPort) openVoyage(g, ship, from, plan.to);
+  const prevSailLogged = ship.voyage?.sailLogged === true;
+  ship.voyage = { from, to: plan.to, ticksLeft: ticks, totalTicks: ticks, path: plan.path, km: plan.km, wind, pts: plan.pts, ...(plan.toPort ? {} : { free: true }), sailLogged: prevSailLogged };
+  say(g, "sail", { ship: ship.id, city: plan.to, hours: Math.max(1, Math.round(ticks / TICKS_PER_HOUR)) });
+  if (plan.toPort) {
+    // Ledger: the ship's open entry is retargeted only while nothing closed it - no sale booked
+    // and no docking at its port (ship.at is still the port the leg left from); a closed leg earns its own entry.
+    const last = (g.voyages ?? []).find((v) => v.ship === ship.id); // openVoyage prepends: first match is the ship's latest entry
+    if (last && last.sold === 0 && last.to !== ship.at) { last.from = from; last.to = plan.to; }
+    else openVoyage(g, ship, from, plan.to);
+    // Chart: ordering into a port sighted up close puts it on the chart at once.
+    if (discover(g, plan.to)) say(g, "discovered", { city: plan.to });
+    // Missions: a port-bound outing logs one sail event; rerouting keeps the one already logged.
+    if (!ship.voyage.sailLogged) { campaignEvent(g, { kind: "sail", to: plan.to }, MISSION); ship.voyage.sailLogged = true; }
+  }
   return { ok: true, ticks, km: Math.round(plan.km), toPort: plan.toPort };
 }
 export function doSail(g, ship, to) {
@@ -293,6 +309,7 @@ export function doSail(g, ship, to) {
   if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
   if (r.ok) campaignEvent(g, { kind: "sail", to }, MISSION);
+  if (r.ok && ship.voyage) ship.voyage.sailLogged = true; // this outing already logged its departure; reroutes will not log again
   return r;
 }
 /** Buy a second ship (caravel) at the port where ship[0] is docked. */

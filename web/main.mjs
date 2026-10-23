@@ -636,7 +636,7 @@ function renderShipWin() {
   const d = document.createElement("section");
   d.id = "shipwin"; d.className = "pwin"; d.setAttribute("role", "dialog");
   d.setAttribute("aria-label", `${t.types[s.type]} ${s.id}`);
-  const hp = { fmt, cityName, types: t.types, goods: t.goods, eta: (sh) => etaText(g.tick + sh.voyage.ticksLeft) };
+  const hp = { fmt, cityName, types: t.types, goods: t.goods, eta: (sh) => sh.voyage?.anchored ? t.anchored : etaText(g.tick + sh.voyage.ticksLeft) };
   d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${t.types[s.type]} ${s.id}</span><button class="pwin-close" data-swclose="1">${t.close} (Esc)</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
   document.body.appendChild(d);
   const handle = d.querySelector(".pwin-handle"); let drag = null;
