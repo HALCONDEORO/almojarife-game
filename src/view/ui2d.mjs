@@ -1,7 +1,7 @@
-// Opt-in presentation only. No simulation or save fields belong here.
+// Default ON (owner order 23/10); ?ui2d=0 opts out.
 import { LT, messageText } from './ledgerview.mjs';
 const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-export const enabled=search=>new URLSearchParams(search).get('ui2d')==='1';
+export const enabled=search=>new URLSearchParams(search).get('ui2d')!=='0'; // default ON (Marco 23/10); ?ui2d=0 opts out
 const categories={
  es:{port:'Puerto',house:'Casa mercantil',bank:'Banco',council:'Concejo',report:'Informe',read:'Leído',new:'Sin leer',intro:'Las noticias de tu casa y del puerto, en un solo lugar.'},
  en:{port:'Port',house:'Trading house',bank:'Bank',council:'Council',report:'Report',read:'Read',new:'Unread',intro:'News from your trading house and the port, in one place.'}

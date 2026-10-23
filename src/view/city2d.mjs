@@ -14,7 +14,7 @@ export function resolveVisual(plot,b){const state=visualState(b),type=b?.type||p
 /** Cosmetic only. Never stored in a save or used by the simulation. */
 export function houseStyle(id){let n=0;for(const c of String(id))n=(n*31+c.charCodeAt(0))>>>0;return ['poor','comfortable','rich'][n%3];}
 export function assetKey(plot,b){const v=resolveVisual(plot,b);return `${v.type==='house'?'house_'+houseStyle(plot.id):v.type}:${v.level}`;}
-export function enabled(search){return new URLSearchParams(search).get('city2d')==='1';}
+export function enabled(search){return new URLSearchParams(search).get('city2d')!=='0';} // default ON (Marco 23/10: turn every off flag on); ?city2d=0 opts out
 
 /** Presentation coast. Every point remains outside the occupied bounding rectangle. */
 export function shoreline(bounds,seed='city'){

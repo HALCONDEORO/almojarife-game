@@ -8,11 +8,12 @@ const g = {
   hist: { cadiz: { grain: Array.from({ length: 30 }, (_, i) => 30 + (i % 7)), fish: [12] } },
 };
 
-test("flag: only ?lonja=1 turns the experiment on", () => {
+test("flag: lonja defaults ON (owner order 23/10), only ?lonja=0 opts out, independent of ui2d", () => {
   assert.equal(lonjaEnabled("?lonja=1"), true);
   assert.equal(lonjaEnabled("?lonja=0"), false);
-  assert.equal(lonjaEnabled(""), false);
-  assert.equal(lonjaEnabled("?ui2d=1"), false);
+  assert.equal(lonjaEnabled(""), true);
+  assert.equal(lonjaEnabled("?ui2d=1"), true);
+  assert.equal(lonjaEnabled("?ui2d=0"), true);
 });
 
 test("chart: one polyline for a real series, empty for a short one", () => {

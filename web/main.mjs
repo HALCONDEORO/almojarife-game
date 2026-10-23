@@ -860,8 +860,9 @@ function showMenu() {
   $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
 }
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
+// freeNav defaults ON for new games (Marco 23/10: all flags on); existing saves keep their own flag.
 function showCreate(name) {
-  t = T[lang]; let freeNav = false; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  t = T[lang]; let freeNav = true; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
