@@ -22,7 +22,11 @@ export const WALL_UPKEEP = 2;                          // per active level and d
 export const WALL_POP = 25;                            // effective population per KEPT level (half a house level), own tuning
 
 /** Fresh state for a new game with the flag on: a bare level map per city. */
-export function initWalls() { return Object.create(null); }
+/**
+ * A plain object, never Object.create(null): the JSON save round-trip returns plain
+ * objects, and deepStrictEqual would fail the save tests on the prototype mismatch.
+ */
+export function initWalls() { return {}; }
 
 const cityName = (g, cityId) => g.world.cities.find((c) => c.id === cityId)?.name ?? cityId;
 const legacyLevel = (g, cityId) => ((g.plague?.walls?.[cityId] ?? 0) >= 1 ? 1 : 0); // saves from before the module read as level 1
