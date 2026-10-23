@@ -447,7 +447,7 @@ function render() {
         h += here.length ? here.map((a) => `<div class="card"><small>${line(a)}</small> <button data-al-x="${a.good}">${t.admClear}</button></div>`).join("") : `<p><i>${t.alNone}</i></p>`;
         if (elsewhere) h += `<p><small>${t.alElse.replace("{n}", elsewhere)}</small></p>`; }
     } else if (tab === "route") {
-      const rt = s.route, gn = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
+      const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
       h += `<p>${t.routeInfo}</p>`;
       const stopLine = (st) => {
         const b = st.buy.map((x) => `${t.routeBuyW} ${gn(x.good)}${x.maxPrice != null ? " " + t.routeIfLe.replace("{p}", x.maxPrice) : ""}`).join(", ") || t.routeNoBuy;
@@ -466,12 +466,12 @@ function render() {
       h += `<p><b>${t.routeAdv}</b></p><p>${t.routeAdvInfo}</p>`;
       d.stops.forEach((st, i) => {
         const cityOpts = others.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
-        const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gn(k)}</option>`).join("");
+        const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join("");
         h += `<div class="rumor">${t.routeStop.replace("{n}", i + 1)}: <select id="rts-city-${i}">${cityOpts}</select> ${t.routeBuyIf}: <select id="rts-bg-${i}">${goodOpts(st.buyGood)}</select> <input id="rts-bp-${i}" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"> ${t.routeSellIf}: <select id="rts-sg-${i}">${goodOpts(st.sellGood)}</select> <input id="rts-sp-${i}" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"> <button id="rts-del-${i}">${t.routeDelStop}</button></div>`;
       });
       h += `<div class="rumor"><button id="rts-add">${t.routeAddStop}</button> ${t.routeMinCash}: <input id="rts-mincash" type="number" min="0" step="1" size="6" value="${d.minCash}"> <button id="rts-set2">${t.routeSetAdv}</button></div>`;
       h += rt ? `<div class="card">${t.routeNow.replace("{a}", cityName(rt.a)).replace("{b}", cityName(rt.b)).replace("{out}", gn(rt.out)).replace("{back}", rt.back ? t.routeBackTxt.replace("{g}", gn(rt.back)) : "").replace("{n}", rt.legs)}<br><button id="rt-cancel">${t.routeCancel}</button></div>` : `<p><i>${t.routeNone}</i></p>`;
-      h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
+      h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gnTxt(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gnTxt(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
     } else if (tab === "city") {
       const nd2 = world.nodes[s.at], pop2 = nd2.pop ?? 8000, ks = Object.keys(g.world.goods), ent = g.market[s.at];
       const rows = cityRows(pop2, ks, (k) => affordRatio(ent[k], g.world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
@@ -479,9 +479,9 @@ function render() {
       h += `<p>${t.cityInfo}</p><div class="cityclasses">` + rows.map((r) => `<div class="card"><b>${cn[r.cls]}</b>: ${fmt(r.count)} ${t.cityCitizens} (${r.pct} %)<br>${t.cityBuys}: ${r.top.map((x) => goodIcon(x.good) + t.goods[x.good]).join(", ") || "-"}` + (r.priced_out.length ? `<br><i>${t.cityOut}: ${r.priced_out.map((k) => t.goods[k]).join(", ")}</i>` : "") + `</div>`).join("") + `</div>`;
       { const cto = offerOf(g, s.at), cta = activeContracts(g);
         h += `<h3>${t.ctTitle}</h3><p>${t.ctInfo}</p>`;
-        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", t.goods[cto.good] ?? cto.good).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= CONTRACT_MAX_ACTIVE ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= CONTRACT_MAX_ACTIVE ? ` <small>${t.ctFull.replace("{n}", CONTRACT_MAX_ACTIVE)}</small>` : ""}</div>`;
+        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= CONTRACT_MAX_ACTIVE ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= CONTRACT_MAX_ACTIVE ? ` <small>${t.ctFull.replace("{n}", CONTRACT_MAX_ACTIVE)}</small>` : ""}</div>`;
         else if (!cta.some((x) => x.city === s.at)) h += `<p><i>${t.ctNone}</i></p>`;
-        if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", t.goods[x.good] ?? x.good).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay)).join("<br>") + `</p>`; }
+        if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay)).join("<br>") + `</p>`; }
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
       const hv = hallView(g, s.at);

@@ -114,7 +114,7 @@ function dataTab(g, s, t, hp) {
     ? `<p>${t.atSea.replace("{from}", cn(s.voyage.from)).replace("{to}", cn(s.voyage.to)).replace("{eta}", hp.eta(s))}</p>`
     : `<p>${t.atPort.replace("{city}", cn(s.at))}</p>`;
   if (s.route) {
-    const r = s.route, goodsName = (k) => hp.goods[k] ?? k;
+    const r = s.route, goodsName = (k) => goodIcon(k, 16) + (hp.goods[k] ?? k);
     h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;
   if (s.prize) h += `<p><i>${t.prize}</i></p>`;
