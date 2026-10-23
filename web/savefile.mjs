@@ -9,3 +9,27 @@ export function saveFileName(day, now = new Date()) {
   const stamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
   return `almojarife-save-${stamp}${Number.isFinite(day) ? `-dia${day}` : ""}.json`;
 }
+
+/**
+ * Restore rotation: parks the current save in TMP_KEY, writes the backup into the live slot,
+ * then rotates the parked save into BACKUP_KEY. Both copies exist in storage before any
+ * overwrite, so a quota failure mid-rotation never destroys either save. Throws on the two
+ * guarded writes so the caller aborts with a message and the original state stays put; the
+ * final rotation failure keeps the parked copy in TMP_KEY instead of deleting it.
+ */
+export function restoreRotate(store, saveKey, cur, backupText) {
+  if (cur) store.setItem(TMP_KEY, cur);
+  try {
+    store.setItem(saveKey, backupText);
+  } catch (e) {
+    if (cur) try { store.removeItem(TMP_KEY); } catch {}
+    throw e;
+  }
+  if (cur) {
+    let rotated = true;
+    try { store.setItem(BACKUP_KEY, cur); } catch { rotated = false; }
+    if (rotated) try { store.removeItem(TMP_KEY); } catch {}
+  } else {
+    try { store.removeItem(BACKUP_KEY); } catch {}
+  }
+}
