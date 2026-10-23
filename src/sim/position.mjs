@@ -11,7 +11,7 @@ export function shipPosition(world, ship, tickFrac = 0) {
   const done = Math.min(1, Math.max(0, (v.totalTicks - v.ticksLeft + Math.min(1, Math.max(0, tickFrac))) / v.totalTicks));
   let want = total * done;
   for (let i = 0; i + 1 < path.length; i++) {
-    const a = pointOf(world, path[i]), b = pointOf(world, path[i + 1]);
+    const a = pointOf(world, path[i], v.pts), b = pointOf(world, path[i + 1], v.pts);
     const d = haversineKm(a, b);
     if (want <= d || i + 2 === path.length) {
       const t = d === 0 ? 1 : Math.min(1, want / d);
@@ -19,6 +19,6 @@ export function shipPosition(world, ship, tickFrac = 0) {
     }
     want -= d;
   }
-  return pointOf(world, v.to);
+  return pointOf(world, v.to, v.pts);
 }
-function pointOf(world, id) { const n = world.nodes[id]; return { lat: n.lat, lon: n.lon }; }
+function pointOf(world, id, pts) { const n = pts?.[id] ?? world.nodes[id]; return { lat: n.lat, lon: n.lon }; }

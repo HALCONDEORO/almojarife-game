@@ -13,7 +13,7 @@ export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
 // Per tick: P(at least one encounter in a full day at sea) = 1-(1-p_tick)^240 = SEA_ENCOUNTER_CHANCE exactly.
 export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS_PER_DAY);
 export function automaticEncounter(g,ship){
- if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage)return null;
+ if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored)return null;
  const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
  (g.encounterTicks??={})[key]=g.tick;
  const r=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);

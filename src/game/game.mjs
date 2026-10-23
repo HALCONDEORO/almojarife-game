@@ -13,6 +13,8 @@ import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
 import { route } from "../sim/world.mjs";
+import { planTrip } from "./freenav.mjs";
+import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
@@ -238,7 +240,7 @@ export function advanceTick(g) {
 }
 export function waitUntilArrival(g, ship) {
   let n = 0;
-  while (ship.voyage && !g.over && !g.pending && !g.encounterReport && n++ < 400) advanceDay(g);
+  while (ship.voyage && !ship.voyage.anchored && !g.over && !g.pending && !g.encounterReport && n++ < 400) advanceDay(g);
 }
 export function doBuy(g, ship, good, qty) {
   if (g.over) return { ok: false, reason: "game over" };
@@ -260,6 +262,25 @@ export function doSell(g, ship, good, qty) {
   const r = sell(g.world, g.market, ship, good, qty, f);
   if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
   return r;
+}
+/** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
+export function doGoTo(g, ship, lat, lon) {
+  if (g.freeNav !== true) return { ok: false, reason: "off" };
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
+  if (ship.convoy && g.convoys?.[ship.convoy]) return { ok: false, reason: "convoy" }; // a convoy sails together to a port
+  if (speedFactor(ship) <= 0) return { ok: false, reason: "crew" };
+  const docked = !ship.voyage;
+  if (docked && heldNow(g, ship)) return { ok: false, reason: "held" };
+  const plan = planTrip(g.world, ship, lat, lon);
+  if (!plan.ok) return plan;
+  if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
+  const from = ship.voyage?.from ?? ship.at, wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)();
+  const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
+  const ticks = Math.max(1, Math.round(ticksForKm(plan.km, spec.kmPerDay) / (mul * wind)));
+  ship.voyage = { from, to: plan.to, ticksLeft: ticks, totalTicks: ticks, path: plan.path, km: plan.km, wind, pts: plan.pts, ...(plan.toPort ? {} : { free: true }) };
+  if (docked && plan.toPort) openVoyage(g, ship, from, plan.to);
+  return { ok: true, ticks, km: Math.round(plan.km), toPort: plan.toPort };
 }
 export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
