@@ -2,14 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ruinBound, bca, passesUpper, zc, sampleSd, cpUpper } from "../tools/ev/stats.mjs";
 
-// Reference values computed independently with Python/scipy (protocol v13, N=224). Tolerance 0.001 pp.
+// Reference values computed independently in Python (bisection on the exact binomial
+// CDF for Clopper-Pearson; Newcombe 1998 method 10 with continuity correction on phi).
+// Protocol v13, N=224. Tolerance 0.001 pp.
 const REF = [
   [[0, 0, 0, 224], 1.3393, 1.1934],
   [[0, 3, 0, 221], 3.3035, 3.3035],
-  [[0, 2, 2, 220], 1.8721, 1.8721],
+  [[0, 2, 2, 220], 1.8671, 1.8671],
   [[0, 1, 0, 223], 1.9760, 1.9760],
-  [[10, 3, 0, 211], 3.1515, 3.1515],
-  [[10, 2, 2, 210], 1.8073, 1.8073],
+  [[10, 3, 0, 211], 3.2885, 3.2885],
+  [[10, 2, 2, 210], 1.9492, 1.9492],
+  // Regression (external v2 P1): method 8 gave 1.9905% here, under the 0.02
+  // margin; the corrected method 10 bound is 2.1260%, which fails it.
+  [[1, 1, 0, 222], 2.1260, 2.1260],
 ];
 for (const [t, fin, nw] of REF) {
   test(`ruin bound ${t.join(",")}`, () => {

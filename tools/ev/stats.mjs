@@ -7,9 +7,13 @@ export function wilson(x, N, z = Z90) {
   return [Math.max(0, (c - w) / d), Math.min(1, (c + w) / d)];
 }
 
-function phiOf(n11, n10, n01, n00) {
+function phiOf(n11, n10, n01, n00, N) {
   const den = (n11 + n10) * (n01 + n00) * (n11 + n01) * (n10 + n00);
-  return den === 0 ? 0 : (n11 * n00 - n10 * n01) / Math.sqrt(den);
+  if (den === 0) return 0;
+  // Method 10 continuity correction: shrink the numerator toward zero by N/2.
+  let num = n11 * n00 - n10 * n01;
+  num = num > 0 ? Math.max(num - N / 2, 0) : Math.min(num + N / 2, 0);
+  return num / Math.sqrt(den);
 }
 
 // Newcombe 1998 method 10, paired difference p1 - p2 (p1 = B ruin, p2 = A ruin).
@@ -17,7 +21,7 @@ export function newcombe(n11, n10, n01, n00) {
   const N = n11 + n10 + n01 + n00;
   const p1 = (n10 + n11) / N, p2 = (n01 + n11) / N, d = p1 - p2;
   const [l1, u1] = wilson(n10 + n11, N), [l2, u2] = wilson(n01 + n11, N);
-  const phi = phiOf(n11, n10, n01, n00);
+  const phi = phiOf(n11, n10, n01, n00, N);
   const upper = d + Math.sqrt((u1 - p1) ** 2 + (p2 - l2) ** 2 - 2 * phi * (u1 - p1) * (p2 - l2));
   const lower = d - Math.sqrt((p1 - l1) ** 2 + (u2 - p2) ** 2 - 2 * phi * (p1 - l1) * (u2 - p2));
   return { d, lower, upper, phi };
