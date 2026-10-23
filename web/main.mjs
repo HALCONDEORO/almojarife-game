@@ -267,7 +267,7 @@ function render() {
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");
-    if (!tools) { tools = document.createElement("div"); tools.id = "historical-map-tools"; $("map").before(tools); }
+    if (!tools) { tools = document.createElement("div"); tools.id = "historical-map-tools"; $("mapleft").append(tools); }
     const wasOpen = tools.querySelector("details")?.open ?? false;
     tools.innerHTML = mapModeControls({enabled:true,mode:mapMode,lang});
     tools.querySelector("details").open = wasOpen;
@@ -297,7 +297,7 @@ function render() {
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
-    if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("map").after(key); }
+    if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("mapleft").append(key); }
     key.innerHTML=historical.legend;
   }
   m += historical.svg;
