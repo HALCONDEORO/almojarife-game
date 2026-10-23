@@ -152,8 +152,8 @@ function dayTick(g) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
     accrueDay(g, s);
   }
-  accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
-  accrueWalls(g); // active walls add their daily upkeep to the weekly book (flag off: nothing)
+  const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  accrueWalls(g, buildingCommit); // walls share today's cash budget with buildings (flag off: nothing)
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)

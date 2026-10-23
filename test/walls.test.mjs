@@ -10,6 +10,7 @@ import { newGame, advanceDay, advanceTick } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { buyOffice, buyPlot, quoteConstruction } from "../src/game/buildings.mjs";
 import { wallsLevel, wallsKeptLevel, quoteWalls, startWalls, tickWalls, accrueWalls, WALL_MAX_LEVEL, WALL_POP, WALL_UPKEEP } from "../src/game/walls.mjs";
+import { accrueBuildings } from "../src/game/buildings.mjs";
 import { wallsAllow } from "../src/game/plague.mjs";
 import { settleWeek } from "../src/game/ledger.mjs";
 
@@ -90,6 +91,20 @@ test("upkeep accrues into the weekly book and settleWeek pays it", () => {
   g.day = 7; // settle day
   const r = settleWeek(g);
   assert.ok(r && g.cash < before, "the weekly book collects wall upkeep");
+});
+
+test("buildings and walls share one daily cash budget (Codex finding 23/10)", () => {
+  const g = game(); rich(g);
+  g.walls.cadiz = { level: 2, state: "active" };
+  const committed = accrueBuildings(g);
+  assert.equal(typeof committed, "number", "accrueBuildings reports its commitment");
+  // Contract: whatever buildings already committed today is not available to the walls.
+  g.cash = WALL_UPKEEP * 2; // exactly the wall upkeep
+  accrueWalls(g, g.cash);   // ...but buildings already spent it all
+  assert.equal(g.walls.cadiz.unkept, true, "walls go unkept once buildings consumed today's cash");
+  assert.equal(g.accrued?.buildings?.["walls:cadiz"] ?? 0, 0, "no wall upkeep accrued");
+  g.cash = 1e6; accrueWalls(g, 0); // hysteresis resumes with cash in hand
+  assert.equal(g.walls.cadiz.unkept, false);
 });
 
 test("unkept hysteresis: broke walls stand but their bonus suspends; cash resumes", () => {
