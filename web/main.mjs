@@ -275,7 +275,17 @@ function activeMissionLine() {
 function syncMissionEcho() {
   const d = $("v3d"); if (!d) return;
   const line = activeMissionLine(), open = !d.querySelector(".city-window")?.hidden;
-  const cm = $("city-mission"); if (cm) { cm.textContent = line ?? ""; cm.hidden = !line || open; }
+  const cm = $("city-mission");
+  if (cm) {
+    cm.textContent = line ?? ""; cm.hidden = !line || open;
+    // The 2D city has its own toolbar (nav) at the top of the iframe: dock the line 6px below
+    // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
+    let top = "";
+    try { const fr = d.querySelector("iframe"), nav = fr?.contentDocument?.querySelector("nav");
+      if (fr && nav) top = (fr.getBoundingClientRect().top + nav.getBoundingClientRect().bottom + 6 - d.getBoundingClientRect().top) + "px";
+    } catch { /* cross-document read unavailable: keep stylesheet top */ }
+    cm.style.top = top;
+  }
   const hm = $("handle-mission"); if (hm) { hm.textContent = line ?? ""; hm.title = line ?? ""; hm.hidden = !line; }
 }
 function render() {
@@ -739,7 +749,7 @@ function closeCityWindow() {
 function close3d() {
   const d=$("v3d"); if(!d)return;
   const p=$("panel"), home=$("panel-home"); if(p&&home)home.appendChild(p);
-  d.city2dResize?.disconnect();d.remove();document.body.classList.remove("in-city-3d");
+  d.city2dResize?.disconnect();d.city2dNavObs?.disconnect();d.remove();document.body.classList.remove("in-city-3d");
   if (automaticTime && planningResume && !manualPause) playing = true;
   planningResume = false;
 }
@@ -759,7 +769,11 @@ function open3d(s0) {
   const d=document.createElement("div");d.id="v3d";
   d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button>${lonjaEnabled(location.search)?`<button data-city-tab="lonja">${t.tabLonja}</button>`:""}<button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
   syncMissionEcho();
-  if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.height=Math.max(120,d.clientHeight-d.querySelector(".city-controls").offsetHeight)+"px";};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
+  d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
+    try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
+      if (nav) { d.city2dNavObs?.disconnect(); d.city2dNavObs = new MutationObserver(() => syncMissionEcho()); d.city2dNavObs.observe(nav, { attributes: true, childList: true, subtree: true, attributeFilter: ["hidden", "class", "style"] }); }
+    } catch { /* cross-document watch unavailable: load/resize hooks still cover placement */ } });
+  if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.height=Math.max(120,d.clientHeight-d.querySelector(".city-controls").offsetHeight)+"px";syncMissionEcho();};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
   d.querySelector("[data-map]").onclick=close3d;
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
