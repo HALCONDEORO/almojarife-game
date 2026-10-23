@@ -21,7 +21,7 @@ import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
 import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
-import { newCamera, zoomAt, panBy, viewBox, markerScale, contentFraction, contentScale } from "../src/view/camera.mjs";
+import { newCamera, zoomAt, panBy, viewBox, markerScale, portHitRadius, contentFraction, contentScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
@@ -117,6 +117,10 @@ mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercanc
 // a drag must not count as a click on a port
 mapEl.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
 const X = (lon) => (lon - x0) * sc, Y = (lat) => (y1 - lat) * sc * 1.25;
+// Click targets never straddle two ports: each marker's hit radius is capped at half the
+// distance to its nearest neighbour (dense clusters like Ceuta/Tetuan stay unambiguous).
+const cityPx = new Map(world.cities.map((c) => [c.id, { x: X(c.lon), y: Y(c.lat) }]));
+const hitR = (id) => { const a = cityPx.get(id); let best = Infinity; for (const [oid, b] of cityPx) { if (oid !== id) best = Math.min(best, Math.hypot(a.x - b.x, a.y - b.y)); } return portHitRadius(best); };
 const cityName = (id) => world.nodes[id]?.name ?? id; // an unknown id shows as the id, it never throws
 
 document.documentElement.lang = lang;
@@ -283,7 +287,7 @@ function render() {
     if (!isDiscovered(g, c.id)) continue; // fog of war
     const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
-    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="14" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" pointer-events="none">${c.name}</text></g>`;
+    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:pointer">${c.name}</text></g>`;
   }
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   if (HISTORICAL_MAPS_ENABLED) {

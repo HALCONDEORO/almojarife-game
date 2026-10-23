@@ -38,3 +38,6 @@ export function contentFraction(rect, vb, clientX, clientY) {
   const fx = (clientX - rect.left - ox) / (vb[2] * s), fy = (clientY - rect.top - oy) / (vb[3] * s);
   return [Math.min(1, Math.max(0, fx)), Math.min(1, Math.max(0, fy))];
 }
+// Click-target radius for a port marker: never wider than half the distance to its nearest
+// neighbour, so dense clusters (Ceuta/Tetuan, Lisboa/Setubal) keep unambiguous clicks.
+export const portHitRadius = (nearest) => Math.max(9, Math.min(14, nearest / 2));
