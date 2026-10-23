@@ -30,6 +30,8 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Screenshots
 
+_Captured from the playable build (main @ 78687e6, 23 Oct 2026); refresh when the UI changes so they never show unmerged work._
+
 | The 3D port | Trade in the market |
 |---|---|
 | ![3D port view with the city toolbar](docs/img/port3d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
