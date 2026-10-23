@@ -141,6 +141,7 @@
     "ironware"
    ],
    "needs": [
+    "grain",
     "wine",
     "olive_oil",
     "sugar",
