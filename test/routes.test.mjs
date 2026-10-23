@@ -75,7 +75,7 @@ test("route tab source: goods is declared before the advanced-route editor uses 
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
   const use = route.indexOf("goods.map");
-  const decl = route.indexOf("const goods = Object.keys(world.goods)");
+  const decl = route.indexOf("const goods = Object.keys(g.world.goods)");
   assert.ok(use > 0 && decl > 0 && decl < use, "goods must be declared before first use in the route tab");
 });
 

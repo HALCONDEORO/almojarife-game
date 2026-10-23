@@ -338,9 +338,9 @@ function render() {
       const market2d=ui2dEnabled(location.search);
       if(market2d)h+=`<div class="ui2d-market-intro"><h3>${t.tabMarket} · ${cityName(s.at)}</h3><p>${t.cash}: <b>${fmt(g.cash)}</b> · ${t.hold}: <b>${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}</b></p></div>`;
       h += `<table${market2d?' class="ui2d-market"':""}><thead><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr></thead>`;
-      for (const gd of Object.keys(world.goods)) {
-        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, q = Math.max(1, Math.min(qtys[gd] ?? 10, 999)), pb = previewBuy(world, g.market, s, g.cash, gd, q, FEE * feeMul(g, s.at)), ps = previewSell(world, g.market, s, gd, q, FEE * feeMul(g, s.at));
-        const p = quote(g, s.at, gd), base = world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
+      for (const gd of Object.keys(g.world.goods)) {
+        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, q = Math.max(1, Math.min(qtys[gd] ?? 10, 999)), pb = previewBuy(g.world, g.market, s, g.cash, gd, q, FEE * feeMul(g, s.at)), ps = previewSell(g.world, g.market, s, gd, q, FEE * feeMul(g, s.at));
+        const p = quote(g, s.at, gd), base = g.world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
         h += `<tbody><tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td data-label="${t.price}" style="color:${col}" title="${tag === "" ? "" : tag === "▼" ? t.cheap : t.dear}">${spark(priceHistory(g, s.at, gd), col)}${tag} ${p}${(() => { const tp = trendPct(g, s.at, gd); return tp === null || tp === 0 ? "" : ` <small class="tr" title="${t.trend7}">${tp > 0 ? "+" : ""}${tp}%</small>`; })()}</td><td data-label="${t.stock}">${g.market[s.at][gd].stock} ${(() => { const lv = stockLevel(g.market[s.at][gd]); const cl = { scarce: "#b3261e", short: "#b26a00", normal: "#6b6355", plenty: "#1e7a34" }[lv]; return `<small style="color:${cl}" title="${t.lvlInfo[lv]}">${t.lvl[lv]}</small>`; })()}</td><td data-label="${t.hold}">${have}${stored ? ` <small title="${t.warehouse}">+${stored}</small>` : ""}</td>` +
           `<td class="qty" data-label="${t.qtyLbl}"><button data-q="${gd}:-1" aria-label="-1">−</button><b>${q}</b><button data-q="${gd}:1" aria-label="+1">+</button><button data-q="${gd}:10">10</button><button data-q="${gd}:max">Max</button></td></tr>` +
           `<tr class="deal"><td colspan="5"><button data-b="${gd}:${q}" ${pb.qty ? "" : "disabled"}>${t.buy} ${q}</button> <button data-s="${gd}:${q}" ${ps.qty ? "" : "disabled"}>${t.sell} ${q}</button> <button data-s="${gd}:all" ${have ? "" : "disabled"}>${t.sell} ${t.sellAll}</button> <br><small>${pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmt(pb.cost)).replace("{a}", pb.avg).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : ""}${ps.qty ? " | " + t.dealSell.replace("{q}", ps.qty).replace("{c}", fmt(ps.revenue)).replace("{a}", ps.avg).replace("{n}", ps.next) + (ps.hasBasis ? ` (${Math.abs(ps.profit)} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : ""}</small></td></tr></tbody>`;
@@ -348,7 +348,7 @@ function render() {
       h += `</table>`;
       { const here = alertsOf(g, s.at), elsewhere = alertsOf(g).length - here.length, line = (a) => `${goodIcon(a.good) || ""}${t.goods[a.good] ?? a.good} ${a.dir === "below" ? t.alBelow : t.alAbove} ${fmt(a.price)}`;
         h += `<h4>${t.alTitle}</h4><p><small>${t.alInfo}</small></p>`;
-        h += `<div class="rumor"><select id="al-good">${Object.keys(world.goods).map((k) => `<option value="${k}">${t.goods[k]}</option>`).join("")}</select> <select id="al-dir"><option value="below">${t.alBelow}</option><option value="above">${t.alAbove}</option></select> <input id="al-price" type="number" min="1" size="5" placeholder="${t.alPrice}"> <button id="al-set">${t.alSet}</button> <small id="al-msg" style="color:#a11"></small></div>`;
+        h += `<div class="rumor"><select id="al-good">${Object.keys(g.world.goods).map((k) => `<option value="${k}">${t.goods[k]}</option>`).join("")}</select> <select id="al-dir"><option value="below">${t.alBelow}</option><option value="above">${t.alAbove}</option></select> <input id="al-price" type="number" min="1" size="5" placeholder="${t.alPrice}"> <button id="al-set">${t.alSet}</button> <small id="al-msg" style="color:#a11"></small></div>`;
         h += here.length ? here.map((a) => `<div class="card"><small>${line(a)}</small> <button data-al-x="${a.good}">${t.admClear}</button></div>`).join("") : `<p><i>${t.alNone}</i></p>`;
         if (elsewhere) h += `<p><small>${t.alElse.replace("{n}", elsewhere)}</small></p>`; }
     } else if (tab === "route") {
@@ -366,7 +366,7 @@ function render() {
       } else {
   
       }
-      const goods = Object.keys(world.goods);
+      const goods = Object.keys(g.world.goods);
       const d = (routeDrafts[s.id] ??= newRouteDraft(s.at, others.map((c) => c.id)));
       h += `<p><b>${t.routeAdv}</b></p><p>${t.routeAdvInfo}</p>`;
       d.stops.forEach((st, i) => {
@@ -378,8 +378,8 @@ function render() {
       h += rt ? `<div class="card">${t.routeNow.replace("{a}", cityName(rt.a)).replace("{b}", cityName(rt.b)).replace("{out}", gn(rt.out)).replace("{back}", rt.back ? t.routeBackTxt.replace("{g}", gn(rt.back)) : "").replace("{n}", rt.legs)}<br><button id="rt-cancel">${t.routeCancel}</button></div>` : `<p><i>${t.routeNone}</i></p>`;
       h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gn(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
     } else if (tab === "city") {
-      const nd2 = world.nodes[s.at], pop2 = nd2.pop ?? 8000, ks = Object.keys(world.goods), ent = g.market[s.at];
-      const rows = cityRows(pop2, ks, (k) => affordRatio(ent[k], world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
+      const nd2 = world.nodes[s.at], pop2 = nd2.pop ?? 8000, ks = Object.keys(g.world.goods), ent = g.market[s.at];
+      const rows = cityRows(pop2, ks, (k) => affordRatio(ent[k], g.world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
       { const eff = cityEffects(g, s.at); if (eff.popBonus) h += `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.pop + eff.popBonus)).replace("{b}", fmt(eff.popBonus))}</b></p>`; }
       h += `<p>${t.cityInfo}</p><div class="cityclasses">` + rows.map((r) => `<div class="card"><b>${cn[r.cls]}</b>: ${fmt(r.count)} ${t.cityCitizens} (${r.pct} %)<br>${t.cityBuys}: ${r.top.map((x) => goodIcon(x.good) + t.goods[x.good]).join(", ") || "-"}` + (r.priced_out.length ? `<br><i>${t.cityOut}: ${r.priced_out.map((k) => t.goods[k]).join(", ")}</i>` : "") + `</div>`).join("") + `</div>`;
       { const cto = offerOf(g, s.at), cta = activeContracts(g);
@@ -481,7 +481,7 @@ function render() {
       if (!wh) h += `<p>${t.whInfo}</p><button data-wh="1" ${g.cash < WAREHOUSE_PRICE ? "disabled" : ""}>${t.buyWh.replace("{p}", fmt(WAREHOUSE_PRICE))}</button>`;
       else {
         h += `<table><tr><th>${t.good}</th><th>${t.hold}</th><th>${t.warehouse}</th><th></th></tr>`;
-        for (const gd of Object.keys(world.goods)) {
+        for (const gd of Object.keys(g.world.goods)) {
           const inHold = s.cargo[gd] ?? 0, inWh = wh.goods[gd] ?? 0; if (!inHold && !inWh) continue;
           h += `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td>${inHold}</td><td>${inWh}</td><td><button data-st="${gd}" ${inHold ? "" : "disabled"}>${t.store}</button><button data-tk="${gd}" ${inWh ? "" : "disabled"}>${t.take}</button></td></tr>`;
         }
@@ -489,7 +489,7 @@ function render() {
         const adm = stewardOf(g, s.at), admRules = Object.entries(adm?.rules ?? {});
         h += `<h4>${t.admTitle}</h4><p><small>${t.admInfo}</small></p>`;
         h += admRules.length ? `<table>` + admRules.map(([gd, r]) => `<tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td><small>${t.admRule.replace("{b}", r.buyBelow || "-").replace("{n}", r.buyTo || "-").replace("{v}", r.sellAbove || "-").replace("{k}", r.sellKeep || 0)}</small></td><td><button data-admclr="${gd}">${t.admClear}</button></td></tr>`).join("") + `</table>` : `<p><i>${t.admNoRules}</i></p>`;
-        h += `<div class="rumor"><select id="adm-good">${Object.keys(world.goods).map((k) => `<option value="${k}">${t.goods[k]}</option>`).join("")}</select> <input id="adm-buy" type="number" min="0" placeholder="${t.admBuy}" size="6"> <input id="adm-to" type="number" min="0" placeholder="${t.admTo}" size="4"> <input id="adm-sell" type="number" min="0" placeholder="${t.admSell}" size="6"> <input id="adm-keep" type="number" min="0" placeholder="${t.admKeep}" size="4"> <button id="adm-set">${t.admSet}</button> <small id="adm-msg" style="color:#a11"></small></div>`;
+        h += `<div class="rumor"><select id="adm-good">${Object.keys(g.world.goods).map((k) => `<option value="${k}">${t.goods[k]}</option>`).join("")}</select> <input id="adm-buy" type="number" min="0" placeholder="${t.admBuy}" size="6"> <input id="adm-to" type="number" min="0" placeholder="${t.admTo}" size="4"> <input id="adm-sell" type="number" min="0" placeholder="${t.admSell}" size="6"> <input id="adm-keep" type="number" min="0" placeholder="${t.admKeep}" size="4"> <button id="adm-set">${t.admSet}</button> <small id="adm-msg" style="color:#a11"></small></div>`;
         h += `<div class="rumor">${t.admReserve}: <input id="adm-res" type="number" min="0" value="${adm?.reserve ?? 0}" size="6"> <button id="adm-resset">${t.admReserveSet}</button></div>`;
       }
     }
@@ -514,7 +514,7 @@ function render() {
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
     const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;
-    qtys[gd] = v === "max" ? Math.max(1, previewBuy(world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : Math.max(1, cur + +v);
+    qtys[gd] = v === "max" ? Math.max(1, previewBuy(g.world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : Math.max(1, cur + +v);
     render();
   });
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
