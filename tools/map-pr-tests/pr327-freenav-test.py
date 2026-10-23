@@ -58,6 +58,8 @@ try:
  def emptypoint(hp):
   return json.loads(js("""JSON.stringify((()=>{const g=%s;for(const [dx,dy] of [[1.6,0],[-1.6,0],[0,1.6],[0,-1.6],[1.3,1.3],[-1.3,1.3],[1.3,-1.3],[-1.3,-1.3],[2.2,0],[0,2.2]]){const x=g.x+g.rs*dx+12*Math.sign(dx),y=g.y+g.rs*dy+12*Math.sign(dy);if(y>innerHeight-10||x>innerWidth-10||x<0||y<0)continue;const el=document.elementFromPoint(x,y);if(el&&el.closest('#map')&&!el.closest('[data-c],[data-ship]'))return [x,y]}return null})())"""%json.dumps(hp)))
  def hinttxt(): return js('document.querySelector("#hint")?.textContent||""')
+ def portname(p):
+  return js("""(()=>{const el=document.querySelector('g.city[data-c=\\"%s\\"] text');return el?el.textContent.trim():null})()"""%p)
  def navhint():
   h=hinttxt();return 'mar navegable' in h or 'navigable sea' in h
  # a point outside the navigable network (far from every lane): real map content, not an overlay/port/ship
@@ -138,8 +140,7 @@ try:
  op=portgeom(others[0]);assert op
  rclick(op['x'],op['y'])
  assert not ctxopen(),'ON: right click on a port must NOT open the classic menu'
- assert '→' in card() and others[0] not in card().lower() or '→' in card(),'ON: voyage card must show a direct order, got %r'%card()
- assert '→' in card(),'ON: voyage card must show a route after the direct order, got %r'%card()
+ assert '→' in card() and portname(others[0]) in card(),'ON: voyage card must name the clicked port %s as destination, got %r'%(portname(others[0]),card())
  print('PASS ON: right click on port %s orders directly, no menu, card: %s'%(others[0],card().splitlines()[0][:80]))
  g=portgeom(hp);ep=emptypoint(g);assert ep,'no empty map point found near home (ON)'
  rclick(ep[0],ep[1])
@@ -149,10 +150,11 @@ try:
  # 4) ON persistence across save/quit/continue
  quittotitle();continuetomap()
  op=portgeom(others[0]);assert op
+ c0=card() # restored voyage card: a dead right-click handler would leave it untouched
  rclick(op['x'],op['y'])
  assert not ctxopen(),'ON after continue: classic menu must NOT open'
- assert '→' in card(),'ON after continue: card must show the direct order, got %r'%card()
- print('PASS ON persistence: direct order still works after quit+continue, no menu')
+ assert '→' in card() and portname(others[0]) in card() and card()!=c0,'ON after continue: the click must retarget the ship to the clicked port %s, got %r (before: %r)'%(portname(others[0]),card(),c0)
+ print('PASS ON persistence: post-reload right click retargets the ship to %s, no menu, card: %s'%(portname(others[0]),card().splitlines()[0][:80]))
  assert not errors,'page JS exceptions: '+json.dumps(errors)[:800]
  print('PASS no JS exceptions during the whole flow')
  print('ALL PASS pr327-freenav (%s)'%SHA)
