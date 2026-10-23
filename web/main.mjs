@@ -14,6 +14,7 @@ import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview
 import { shipWindowHtml } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
+import { createMenuGuard } from "../src/view/menuguard.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponsOf, weaponCount, weaponPower, buyGear } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
 import { lonjaEnabled, lonjaHtml } from "../src/view/lonjaview.mjs";
@@ -833,7 +834,11 @@ function openMenu(city, x, y) {
   const d = document.createElement("div"); d.id = "ctx"; d.setAttribute("role", "menu"); d.style.cssText = `left:${Math.min(x, innerWidth - 230)}px;top:${Math.min(y, innerHeight - 90)}px`;
   d.innerHTML = items.map((it) => `<button role="menuitem" data-m="${it.id}" ${it.enabled ? "" : "disabled"}>${(it.id === "sail" ? t.ctxSail.replace("{d}", est.ok ? "≈ " + hoursOf(est.ticks) + " h" : "-") : t.ctxSelect).replace("{city}", cityName(city))}</button>`).join("");
   document.body.appendChild(d);
-  d.querySelectorAll("button").forEach((b) => b.onclick = () => { closeMenu(); if (b.dataset.m === "sail") sailToTarget(); else render(); });
+  // The gesture that opened this menu ends over it: its trailing click must not
+  // fire the first item. A new pointer press arms the items; keyboard (detail 0) always works.
+  const guard = createMenuGuard();
+  document.addEventListener("pointerdown", guard.arm, { capture: true, once: true });
+  d.querySelectorAll("button").forEach((b) => b.onclick = (e) => { if (!guard.accepts(e.detail)) return; closeMenu(); if (b.dataset.m === "sail") sailToTarget(); else render(); });
   render();
 }
 document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx")) closeMenu(); });
