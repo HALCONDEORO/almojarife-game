@@ -22,3 +22,11 @@ test("yard scene is valid-looking SVG with one cradle per order, max 4, and hand
   const many = yardSceneSvg({ orders: [o("cog"), o("nao"), o("barca"), o("cog"), o("nao")], day: 5 });
   assert.equal((many.match(/fill="#5a8a3a"/g) || []).length, 4);
 });
+
+test("the hull under construction follows the class and the build phases", () => {
+  const early = { type: "nao", readyDay: 100 }, late = { type: "nao", readyDay: 12 }, day = 10;
+  const e = yardSceneSvg({ orders: [early], day }), l = yardSceneSvg({ orders: [late], day });
+  assert.ok(l.length > e.length, "late-phase hull draws masts and planking");
+  const barca = yardSceneSvg({ orders: [{ type: "barca", readyDay: 12 }], day });
+  assert.notEqual(l, barca, "class changes the slipway hull");
+});

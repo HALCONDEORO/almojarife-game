@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { citySceneSvg, houseCount, daylight, seeded } from "../src/view/cityscene.mjs";
+import { shipDescriptor } from "../src/view/shipvisual.mjs";
 test("the same port always looks the same, and different ports differ", () => {
   const a = { id: "cadiz", pop: 12000, day: 10 };
   assert.equal(citySceneSvg(a), citySceneSvg({ ...a }));
@@ -27,4 +28,20 @@ test("output is a well-formed svg string", () => {
   const s = citySceneSvg({ id: "bilbao", pop: 6000, warehouse: true, ships: 3 });
   assert.ok(s.startsWith("<svg") && s.endsWith("</svg>"));
   assert.equal(s.split("<svg").length, 2);
+});
+
+test("docked ships follow the real ship descriptors: class, damage, armament and gear", () => {
+  const mk = (over) => shipDescriptor({ id: 1, type: "cog", hull: 100, weapons: {}, gunCond: 100, gear: 0, crew: 8, ...over });
+  const one = (d) => citySceneSvg({ id: "cadiz", pop: 12000, ships: [d] });
+  const intact = one(mk({})), nao = one(mk({ type: "nao" }));
+  assert.notEqual(intact, nao, "class changes the docked silhouette");
+  assert.ok(one(mk({ hull: 40 })).includes('y="2" width="9" height="6"'), "worn hull draws a plank patch");
+  assert.ok(one(mk({ hull: 20 })).includes('y="3" width="9" height="6"'), "battered hull draws a second patch");
+  const armed = one(mk({ weapons: { cannon: 2 } }));
+  assert.ok((armed.match(/height="2.4"/g) || []).length === 2, "one gunport tick per mounted piece");
+  assert.ok(one(mk({ gear: 2 })).includes('y="-6"'), "sailors' gear shows as deck crates");
+});
+test("docked list still accepts a plain count and caps at three", () => {
+  const s = citySceneSvg({ id: "cadiz", pop: 12000, ships: 9 });
+  assert.equal((s.match(/translate\(\d+ 150\)/g) || []).length, 3);
 });
