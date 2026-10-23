@@ -1,6 +1,6 @@
 # 3D feasibility (desktop target)
 
-Status: study, no code in the game yet. Rule: the game targets desktop; mobile must not break but is not a design driver.
+Status: study, no code in the game yet. Rule: the game is desktop-only; mobile is out of scope and is not a design driver.
 
 ## Measured
 - three.js r170 `build/three.module.min.js`: 691,648 bytes minified, 170,739 bytes gzip-9 (fetched from the jsDelivr copy of the npm package, 2026-10-19). GitHub Pages serves gzip, so the first load costs about 170 KB on the wire.
