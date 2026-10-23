@@ -167,13 +167,14 @@ function drawShips() {
     seen.add(id);
     let el = shipEls.get(id);
     if (el && el.parentNode !== layer) layer.appendChild(el); // render() rebuilt the map: re-attach the preserved element, keeping its identity and listeners (recreating it here would re-break real clicks)
-    const ckey = `${sh.type}|${mine}|${mine ? g.ships.indexOf(sh) : ""}|${sh.id}|${isSel}`; // position and heading are attributes, not content
+    const hullBand = (sh.hull ?? 100) >= 70 ? 2 : (sh.hull ?? 100) >= 30 ? 1 : 0; // icon content bands: position and heading are attributes, not content
+    const ckey = `${sh.type}|${mine}|${mine ? g.ships.indexOf(sh) : ""}|${sh.id}|${isSel}|${weaponCount(sh)}|${gunCond(sh) < 50 ? 0 : 1}|${hullBand}`;
     if (el && el._ckey !== ckey) { el.remove(); shipEls.delete(id); el = null; }
     if (!el) {
       el = document.createElementNS("http://www.w3.org/2000/svg", "g");
       el._ckey = ckey;
       if (mine) { el.setAttribute("data-ship", g.ships.indexOf(sh)); el.style.cursor = "pointer"; el.setAttribute("pointer-events", "all"); }
-      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}`;
+      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0, weapons: weaponCount(sh), maxGuns: maxCannons(sh), gun: gunCond(sh), hull: sh.hull ?? 100 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}`;
       if (mine) {
         el.onclick = () => {
           const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
