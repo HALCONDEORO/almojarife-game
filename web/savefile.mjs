@@ -17,10 +17,14 @@ export function saveFileName(day, now = new Date()) {
  * anything reuses TMP_KEY. Throws if the parked copy cannot be rotated in: callers abort and
  * every copy stays where it is.
  */
-export function finishPendingRotation(store) {
+export function finishPendingRotation(store, isValid = () => true) {
   let parked;
   try { parked = store.getItem(TMP_KEY); } catch { return; }
   if (parked == null) return;
+  if (!isValid(parked)) { // a corrupt parked copy must never replace a valid backup
+    try { store.removeItem(TMP_KEY); } catch {}
+    return;
+  }
   store.setItem(BACKUP_KEY, parked);
   try { store.removeItem(TMP_KEY); } catch {}
 }

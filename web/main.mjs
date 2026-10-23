@@ -258,6 +258,8 @@ function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, 
 function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
 function getBackup() { try { return localStorage.getItem(BACKUP_KEY); } catch { return null; } }
 function getTmp() { try { return localStorage.getItem(TMP_KEY); } catch { return null; } }
+function isValidSaveText(txt) { try { unpackGame(JSON.parse(txt), world); return true; } catch { return false; } }
+function recoverRotations() { try { finishPendingRotation(localStorage, isValidSaveText); return true; } catch { return false; } }
 function exportSave(raw = localStorage.getItem(SAVE_KEY), day = loadSaved()?.g?.day) { if (!raw) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); a.download = saveFileName(day); a.click(); URL.revokeObjectURL(a.href); }
 const cityIds = world.cities.map((c) => c.id), cityIdSet = new Set(cityIds);
 const routeDrafts = {}; // advanced-route editor drafts, per ship id
@@ -942,11 +944,11 @@ function showTitle() {
   $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
     if (!getBackup() && !getTmp()) return;
-    try { finishPendingRotation(localStorage); } catch { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
+    if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
     const b = getBackup(); if (!b) return;
     try { unpackGame(JSON.parse(b), world); } catch { $("t-msg").textContent = t.badSave; return; }
     if (!confirm(t.restConfirm)) return;
-    const cur = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY), cur = raw && isValidSaveText(raw) ? raw : null; // a corrupt current is not worth parking
     try { restoreRotate(localStorage, SAVE_KEY, cur, b); } catch { $("t-msg").textContent = t.errB; return; } // fail-closed: nothing is overwritten unless both copies are safe
     showTitle(); $("t-msg").textContent = t.restDone;
   };
@@ -956,8 +958,8 @@ function showTitle() {
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
     let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    const prev = localStorage.getItem(SAVE_KEY), packed = JSON.stringify(packGame(r.g, r.company));
-    try { finishPendingRotation(localStorage); } catch { $("t-msg").textContent = t.errB; return; } // never overwrite backup slots with a parked copy pending
+    const prevRaw = localStorage.getItem(SAVE_KEY), prev = prevRaw && isValidSaveText(prevRaw) ? prevRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // a corrupt current is not worth parking; the old backup stays
+    if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // never overwrite backup slots with a parked copy pending
     if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
     g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;

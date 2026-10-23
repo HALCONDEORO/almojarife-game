@@ -125,3 +125,36 @@ test("import rotation on healthy storage leaves the imported save live and prev 
   assert.equal(st.getItem(BACKUP_KEY), "A");
   assert.equal(st.getItem(TMP_KEY), null);
 });
+
+test("recovery drops a corrupt parked copy and keeps the valid backup", () => {
+  const st = fakeStore();
+  st.setItem(SAVE, "C");
+  st.setItem(BACKUP_KEY, "B");
+  st.setItem(TMP_KEY, "corrupt");
+  finishPendingRotation(st, (txt) => txt !== "corrupt");
+  assert.equal(st.getItem(BACKUP_KEY), "B", "valid backup survives");
+  assert.equal(st.getItem(TMP_KEY), null, "corrupt parked copy discarded");
+});
+test("recovery rotates a valid parked copy when a validator is given", () => {
+  const st = fakeStore();
+  st.setItem(BACKUP_KEY, "B");
+  st.setItem(TMP_KEY, "good");
+  finishPendingRotation(st, (txt) => txt === "good");
+  assert.equal(st.getItem(BACKUP_KEY), "good");
+  assert.equal(st.getItem(TMP_KEY), null);
+});
+test("codex scenario: corrupt parked copy can never clobber a valid backup after quota clears", () => {
+  // live corrupt, backup valid B; import C with the final rotation hitting quota.
+  const st = fakeStore();
+  st.setItem(SAVE, "corrupt");
+  st.setItem(BACKUP_KEY, "B");
+  st.failOn = (k) => k === BACKUP_KEY;
+  restoreRotate(st, SAVE, "corrupt", "C");
+  assert.equal(st.getItem(SAVE), "C");
+  assert.equal(st.getItem(TMP_KEY), "corrupt");
+  // Quota clears, user clicks restore: recovery validates and drops the corrupt copy.
+  st.failOn = () => false;
+  finishPendingRotation(st, (txt) => txt !== "corrupt");
+  assert.equal(st.getItem(BACKUP_KEY), "B", "B is never replaced by corrupt content");
+  assert.equal(st.getItem(TMP_KEY), null);
+});
