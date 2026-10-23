@@ -40,6 +40,7 @@ import { cityPlots } from "../src/view3d/cityplots.mjs";
 import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
+import { quoteWalls, startWalls, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX_LEVEL, WALL_UPKEEP, WALL_BUILD_DAYS } from "../src/game/walls.mjs";
 import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
 import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
@@ -386,7 +387,7 @@ function render() {
   // event. In the city view it carries the port services inside the city window.
   let h = "";
   const pe = pendingEvent(g), inCity = !!document.getElementById("v3d");
-  if(inCity&&city2dEnabled(location.search))$("v3d").querySelector("iframe").contentWindow.postMessage({kind:"city2d-state",walls:g.plague?.walls?.[s.at]??0,city:s.at,buildings:g.buildings?.[s.at]??{},tick:g.tick,labels:Object.fromEntries(buildingsRows(g,s.at).map(r=>[r.plotId,buildingLabel(t,r)]))},location.origin);
+  if(inCity&&city2dEnabled(location.search))$("v3d").querySelector("iframe").contentWindow.postMessage({kind:"city2d-state",walls:wallsLevel(g,s.at),city:s.at,buildings:g.buildings?.[s.at]??{},tick:g.tick,labels:Object.fromEntries(buildingsRows(g,s.at).map(r=>[r.plotId,buildingLabel(t,r)]))},location.origin);
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   if (inCity || pe) {
@@ -406,7 +407,8 @@ function render() {
       if (!bldAction) return "";
       const layA = plotsCache[s.at];
       let card = "", canPay = false;
-      if (bldAction.kind === "buy") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); if (o) { card = `<b>${t.bldBuy.replace("{p}", fmt(o.price))}</b> ${o.id} <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small>`; canPay = g.cash >= o.price; } }
+      if (bldAction.kind === "walls") { const o = quoteWalls(g, s.at); if (o.ok) { card = `<b>${t.wallTitle} · ${t.wallLevel.replace("{l}", o.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.level * WALL_UPKEEP)}</small>`; canPay = g.cash >= o.cost; } else { card = `<b>${t.wallTitle}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : whyText(t, o.reason)}</small>`; } }
+      else if (bldAction.kind === "buy") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); if (o) { card = `<b>${t.bldBuy.replace("{p}", fmt(o.price))}</b> ${o.id} <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small>`; canPay = g.cash >= o.price; } }
       else if (bldAction.kind === "build") { const o = buildOffers(g, s.at, bldAction.plotId).find((x) => x.type === bldAction.type); if (o?.ok) { card = `<b>${t.bldTypes[bldAction.type]}</b> ${bldAction.plotId}<br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>`; canPay = o.affordable; } else if (o) { card = `<b>${t.bldTypes[bldAction.type]}</b> ${bldAction.plotId}<br><small style="color:#a11">${whyText(t, o.reason)}</small>`; } }
       else if (bldAction.kind === "upgrade") { const o = upgradeOffer(g, s.at, bldAction.plotId); if (o?.ok) { card = `<b>${t.bldTypes[o.type]}</b> ${bldAction.plotId}<br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>`; canPay = o.affordable; } }
       return card ? `<div class="card">${card}<br><button data-bldconf="1" ${canPay ? "" : "disabled"}>${t.bldConfirm}</button> <button data-bldcancel="1">${t.bldCancel}</button>${canPay ? "" : ` <small>${t.capCash}</small>`}${bldError ? ` <small style="color:#a11">${bldError}</small>` : ""}</div>` : "";
@@ -496,6 +498,15 @@ function render() {
       h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.pop + eff.popBonus)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
       if (eff.jobs) h += `<p><b>${t.bldJobsLine.replace("{j}", fmt(eff.jobs)).replace("{f}", fmt(eff.free)).replace("{s}", Math.round(eff.staffing * 100))}</b></p>` + (eff.staffing < 1 ? `<p><b style="color:#a11">${t.bldJobsShort.replace("{s}", Math.round(eff.staffing * 100))}</b></p>` : "");
       h += bldCard();
+      if (g.walls) { // city walls (flag on): city-level works, no plot needed
+        const wl = wallsLevel(g, s.at), wk = wallsKeptLevel(g, s.at), wr = g.walls[s.at], wq = quoteWalls(g, s.at);
+        h += `<h3>${t.wallTitle}</h3><p><b>${wl ? t.wallLevel.replace("{l}", wl).replace("{m}", WALL_MAX_LEVEL) : t.wallNone}</b>${wk ? ` · ${t.bldFxH.replace("{n}", fmt(wk * WALL_POP))}` : ""}${wl ? ` · ${t.bldUpkeep.replace("{u}", wl * WALL_UPKEEP)}` : ""}</p><p><small>${t.wallInfo.replace("{p}", WALL_POP)}</small></p>`;
+        if (wr?.nextLevel && wr.readyTick > g.tick) h += `<p>${t.bldState.construction} ${wr.nextLevel} · ${t.bldReady.replace("{d}", Math.ceil(wr.readyTick / TICKS_PER_DAY)).replace("{p}", Math.max(0, Math.min(99, Math.round(100 * (1 - (wr.readyTick - g.tick) / (WALL_BUILD_DAYS * wr.nextLevel * TICKS_PER_DAY))))))}</p>`;
+        if (wr?.unkept) h += `<p><b style="color:#a11">${t.wallUnkept}</b></p>`;
+        if (wq.ok) h += `<p><button data-wallact="1" ${g.cash < wq.cost ? "disabled" : ""}>${t.wallBuild.replace("{l}", wq.level).replace("{p}", fmt(wq.cost))}</button>${g.cash < wq.cost ? ` <small>${t.capCash}</small>` : ""}</p>`;
+        else if (wq.reason === "max level") h += `<p><small>${t.bldMax}</small></p>`;
+        else if (!wr?.nextLevel) h += `<p><small>${whyText(t, wq.reason)}</small></p>`; // works under way already show their progress line above
+      }
       const own = buildingsRows(g, s.at);
       if (!hasOffice(g, s.at)) h += `<p><i>${t.bldNeedOffice}</i></p>`; // building is office-gated
       else {
@@ -637,11 +648,13 @@ function render() {
     if (e.dataset.bldact.startsWith("restart|")) { const ra = parseBldAct(e.dataset.bldact); if (ra) act(() => restartBuilding(g, s.at, ra.plotId)); return; }
     bldAction = parseBldAct(e.dataset.bldact); bldError = null; render();
   });
+  P.querySelectorAll("[data-wallact]").forEach((e) => e.onclick = () => { bldAction = { kind: "walls", plotId: s.at + ":walls" }; bldError = null; render(); }); // city-level works: fake plot id keeps the sailed-away guard working
   P.querySelector("[data-bldcancel]")?.addEventListener("click", () => { bldAction = null; bldError = null; render(); });
   P.querySelector("[data-bldconf]")?.addEventListener("click", () => { const a0 = bldAction; if (!a0) return;
     let r = null;
     act(() => {
       if (a0.kind === "buy") { const p = (Array.isArray(plotsCache[s.at]) ? plotsCache[s.at] : []).find((x) => x.id === a0.plotId); r = p ? buyPlot(g, s.at, p) : { ok: false, reason: "bad plot" }; }
+      else if (a0.kind === "walls") r = startWalls(g, s.at);
       else r = startConstruction(g, s.at, a0.plotId, a0.type);
     });
     if (r && !r.ok) { bldError = r.reason ?? "error"; render(); return; } // keep the card armed and say why
@@ -770,7 +783,7 @@ function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   if (automaticTime) { planningResume = playing && !manualPause; playing = false; }
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
-  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(g.plague?.walls?.[s0.at]??0), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
+  const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
   d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button>${lonjaEnabled(location.search)?`<button data-city-tab="lonja">${t.tabLonja}</button>`:""}<button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
   syncMissionEcho();
