@@ -45,10 +45,10 @@ test("building plots are 2 m apart even at level 3 and never overlap houses", ()
   for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i].x - sorted[i].w / 2 - (sorted[i - 1].x + sorted[i - 1].w / 2) >= 2, sorted[i].id);
   for (const id of ["cadiz", "lisboa", "sevilla"]) for (const pop of [3000, 12000, 40000]) for (const h of pl(id, pop).houses) for (const b of BUILDINGS) assert.ok(!(Math.abs(h.x - b.x) < (b.w + h.w) / 2 && h.z > FRONT_Z - b.d - h.d / 2), `${id} ${pop} ${b.id}`);
 });
-test("camera pose follows the guide: FOV 35, zoom and yaw are clamped", () => {
-  assert.equal(CAMERA.fov, 35);
+test("camera pose follows the guide: FOV 42, zoom and yaw are clamped", () => {
+  assert.equal(CAMERA.fov, 42);
   const a = cameraPose(1, 0); assert.deepEqual([a.x, a.y, a.z], [0, 22, 42]);
-  const far = cameraPose(5, 0), near = cameraPose(0.01, 0); assert.ok(far.y <= 4 + 18 * 1.3 + 1e-9 && near.y >= 4 + 18 * 0.7 - 1e-9);
+  const far = cameraPose(5, 0), near = cameraPose(0.01, 0); assert.ok(far.y <= 9 + 13 * 1.3 + 1e-9 && near.y >= 9 + 13 * 0.7 - 1e-9);
   const y1 = cameraPose(1, 9), y2 = cameraPose(1, CAMERA.yawMax); assert.ok(Math.abs(y1.x - y2.x) < 1e-9);
 });
 test("a ray at a building picks it, a ray at the sky picks nothing", async () => {
