@@ -264,7 +264,7 @@ function act(fn) {
   fn();
   const newOrder = g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]));
   if (newOrder) pauseNote = null; // a fresh departure or route order always retires the arrival note
-  if (newOrder && automaticTime) { manualPause = false; if ($("v3d")) planningResume = true; else playing = true; } // automatic time resumes on a new order; manual pause stays manual
+  if (newOrder && automaticTime) { manualPause = false; if ($("v3d")) planningResume = true; else playing = true; } // new orders resume the clock only when automatic time is enabled
   if (g.day !== day) { progress = 0; tickAcc = 0; } // wait buttons advance whole days
   autosave(); render();
 }
