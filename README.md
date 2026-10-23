@@ -14,10 +14,11 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Why you might like it
 
-- **A living market.** 33 ports, 12 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
+- **A living market.** 33 ports, 22 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
 - **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time. Ports you have not visited stay hidden until you buy a chart for them.
 - **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
-- **A full port.** Market, shipyard (pick a ship class on an illustrated slipway, build it, repair, sell), warehouse with a steward who keeps standing buy/sell orders, tavern (hire captains, buy news), bank (loans with weekly interest and a cap that grows with your rank), and your buildings: plots, houses, workshops, warehouses and offices.
+- **A full port.** Market, shipyard (pick a ship class on an illustrated slipway, build it, repair, sell), warehouse with a steward who keeps standing buy/sell orders, tavern (hire captains, buy news), bank (loans with weekly interest and a cap that grows with your rank), the town hall (council duties, respect, time-limited delivery contracts), and your buildings: buy city plots and raise anything from houses, workshops and warehouses to farms, mines, fisheries and workshops of a dozen trades, with upkeep and staffing.
+- **A guided rise.** A mission engine drives a growing campaign: an opening chain that teaches the trade, plus optional side missions with deadlines and rewards.
 - **Trade while you sleep.** Send a ship on an automatic route between ports, with optional price guards and a cash brake, and it keeps trading on its own.
 - **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
 - **Captains and the sea.** Captains with navigation, weather and defence skills change how a ship sails, weathers storms and fights pirates. Storms, pirates, fair winds and drifting cargo bring choices at sea; win a pirate fight and you may keep the enemy ship as a prize. Prices of ports you have not visited are rumours with an age and an error margin.
@@ -56,11 +57,10 @@ The game is being built in public, in small pull requests with tests and review.
 
 **Still missing or in progress:**
 
-- **The campaign.** Today there is the opening goal (50,000 coins in 365 days) and three scripted campaign chapters, of which the first is playable. The full mission arc (a data-driven mission engine, varied requirements, narrative, side missions and rewards) is being added mission by mission: the engine and the first missions are in open pull requests, the rest are queued.
-- **Town-council contracts** (time-limited delivery jobs) are written and in review, not merged yet.
-- **A city-centred interface.** Clicking a port or a docked ship will open the city view, P3-style; navigation will show a selected ship's route. In progress.
-- **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs). The honest numbers today: the opening goal is too easy for optimal play (in 33 measured bot playthroughs, the faster strategies won on a median day 36), loans carry no real risk, and silk dominates profits. Fixes are queued behind the harness.
-- **Smaller mechanics** already written and in review: an improved bankruptcy flow (a basic one exists today), and importing building materials for construction.
+- **The campaign.** The mission engine and the first missions (an opening main chain and two side missions) are playable. The full arc - varied requirements, narrative, more side missions and rewards - is being added mission by mission.
+- **A richer city-centred interface.** Clicking a port already opens a city view with market, buildings, council and office tabs; more of the interface is moving city-side, piece by piece.
+- **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs) and fixes keep landing: loans now carry real risk (foreclosure), the bankruptcy flow is kinder, and production respects staffing. The opening goal is still easier than intended for optimal play; tuning continues behind the harness.
+- **Importing building materials** for construction is written and in review, not merged yet.
 - **Sound, tutorial, full 3D for every city, world map by historical milestones.** Not started.
 - **The name** "Almojarife" is provisional.
 
