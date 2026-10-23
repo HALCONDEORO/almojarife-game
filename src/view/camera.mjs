@@ -40,4 +40,8 @@ export function contentFraction(rect, vb, clientX, clientY) {
 }
 // Click-target radius for a port marker: never wider than half the distance to its nearest
 // neighbour, so dense clusters (Ceuta/Tetuan, Lisboa/Setubal) keep unambiguous clicks.
-export const portHitRadius = (nearest) => Math.max(9, Math.min(14, nearest / 2));
+// The floor is 8, not 9: Lisboa/Setubal are 17.9 units apart and 9 would overlap by 0.1.
+export const portHitRadius = (nearest) => Math.max(8, Math.min(14, nearest / 2));
+// Port-name size grows gently with zoom (screen size ~ zoom^0.5), so names read well both
+// on the full chart and zoomed in; placements are audited per zoom level in maplabels.test.
+export const labelFontSize = (zoom) => 20 * Math.pow(zoom, 0.35);

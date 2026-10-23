@@ -21,7 +21,7 @@ import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
 import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
-import { newCamera, zoomAt, panBy, viewBox, markerScale, portHitRadius, contentFraction, contentScale } from "../src/view/camera.mjs";
+import { newCamera, zoomAt, panBy, viewBox, markerScale, portHitRadius, labelFontSize, contentFraction, contentScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
@@ -90,6 +90,8 @@ function scaleMarkers() {
   const k = markerScale(cam.zoom);
   mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
   mapEl.querySelectorAll("#static line").forEach((el) => el.setAttribute("stroke-width", 1.5 * k));
+  const fs = labelFontSize(cam.zoom).toFixed(2); // names stay readable from full chart to close zoom
+  mapEl.querySelectorAll("g.city text").forEach((el) => el.setAttribute("font-size", fs));
 }
 // Cursor fractions of the VIEWED MAP CONTENT, not the raw viewport: with preserveAspectRatio
 // meet the map is letterboxed inside a wider/shorter pane, and anchoring zoom to the viewport

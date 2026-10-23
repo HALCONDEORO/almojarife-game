@@ -43,10 +43,18 @@ test("content scale picks the limiting dimension", () => {
 });
 
 import { portHitRadius } from "../src/view/camera.mjs";
-test("port hit radius: capped at 14, halved in dense clusters, never below 9", () => {
+test("port hit radius: capped at 14, halved in dense clusters, floor 8 (Lisboa/Setubal are 17.9 apart)", () => {
   assert.equal(portHitRadius(Infinity), 14);
   assert.equal(portHitRadius(40), 14);
   assert.equal(portHitRadius(22.6), 11.3); // Ceuta/Tetuan: clicks stay unambiguous
-  assert.equal(portHitRadius(10), 9);
-  assert.equal(portHitRadius(0), 9);
+  assert.equal(portHitRadius(17.9), 8.95); // Lisboa/Setubal: 9 would overlap by 0.1
+  assert.equal(portHitRadius(10), 8);
+  assert.equal(portHitRadius(0), 8);
+});
+
+import { labelFontSize } from "../src/view/camera.mjs";
+test("label font size grows gently with zoom (screen size ~ zoom^0.5)", () => {
+  assert.equal(labelFontSize(1), 20);
+  assert.ok(labelFontSize(8) > labelFontSize(4) && labelFontSize(4) > labelFontSize(2) && labelFontSize(2) > labelFontSize(1));
+  assert.ok(labelFontSize(8) < 45); // bounded: close zoom does not blow names up
 });
