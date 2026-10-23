@@ -252,7 +252,8 @@ let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
-function autosave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
+let inTitle = true; // boot lands on the title screen over a throwaway background game
+function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
 function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
 const cityIds = world.cities.map((c) => c.id), cityIdSet = new Set(cityIds);
 const routeDrafts = {}; // advanced-route editor drafts, per ship id
@@ -919,11 +920,12 @@ function showCreate(name) {
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
     $("p-back").onclick = () => showTitle();
-    $("p-go").onclick = () => { read(); playing = false; progress = 0; tickAcc = 0; start(pf, true, { freeNav }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+    $("p-go").onclick = () => { read(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   };
   draw();
 }
 function showTitle() {
+  inTitle = true;
   t = T[lang]; const saved = loadSaved(), el = $("title");
   el.innerHTML = `<div class="box"><h1>El Almojarife</h1><p>${t.tagline}</p>` +
     `<label>${t.company}<br><input id="co-in" maxlength="30" value="${t.defCo}"></label><br>` +
@@ -932,14 +934,14 @@ function showTitle() {
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
   $("t-start").onclick = () => showCreate($("co-in").value);
-  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
     let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; autosave(); render(); el.hidden = true;
+    g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; autosave(); render(); el.hidden = true;
     try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
