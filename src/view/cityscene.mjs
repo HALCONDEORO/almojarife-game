@@ -55,11 +55,11 @@ export function citySceneSvg({ id, pop, warehouse = false, shipyard = true, ship
       s += `<path d="M${(mx + 1.5).toFixed(1)} ${(-mh + 2).toFixed(1)} H${(mx + 19 * k).toFixed(1)} V${(-mh + 34).toFixed(1)} H${(mx + 1.5).toFixed(1)}Z" fill="#f2e8cc" stroke="#3a2a1a" stroke-width=".8"/>`;
     }
     if (d) {
-      if (worn) s += `<rect x="${(18 * k).toFixed(1)} y="2" width="9" height="6" fill="#3a2a1a" opacity=".8"/>`; // plank patch: hull damage cue
-      if (battered) s += `<rect x="${(48 * k).toFixed(1)} y="3" width="9" height="6" fill="#3a2a1a" opacity=".8"/>`;
+      if (worn) s += `<rect x="${(18 * k).toFixed(1)}" y="2" width="9" height="6" fill="#3a2a1a" opacity=".8"/>`; // plank patch: hull damage cue
+      if (battered) s += `<rect x="${(48 * k).toFixed(1)}" y="3" width="9" height="6" fill="#3a2a1a" opacity=".8"/>`;
       const n = Math.min(d.weapons, d.maxGuns); // gunports along the hull, one tick per mounted piece; worn pieces are short dashes
-      for (let g2 = 0; g2 < n; g2++) s += `<rect x="${((16 + g2 * 12) * k).toFixed(1)} y="${(6 + ht * 0.2).toFixed(1)}" width="${d.gun < 50 ? 2 : 4}" height="2.4" fill="#1a0d06"/>`;
-      for (let g3 = 0; g3 < d.gear; g3++) s += `<rect x="${(30 * k + g3 * 7).toFixed(1)} y="-6" width="5" height="6" fill="#8a6a3a" stroke="#3a2a1a" stroke-width=".6"/>`; // sailors' gear stowed on deck
+      for (let g2 = 0; g2 < n; g2++) s += `<rect x="${((16 + g2 * 12) * k).toFixed(1)}" y="${(6 + ht * 0.2).toFixed(1)}" width="${d.gun < 50 ? 2 : 4}" height="2.4" fill="#1a0d06"/>`;
+      for (let g3 = 0; g3 < d.gear; g3++) s += `<rect x="${(30 * k + g3 * 7).toFixed(1)}" y="-6" width="5" height="6" fill="#8a6a3a" stroke="#3a2a1a" stroke-width=".6"/>`; // sailors' gear stowed on deck
     }
     s += `</g>`;
   });
