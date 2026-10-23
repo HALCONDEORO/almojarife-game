@@ -140,10 +140,15 @@ const hoursOf = (ticks) => Math.max(1, Math.round(ticks / TICKS_PER_HOUR)); // w
 const etaText = (tick) => { const p = tickParts(tick); return t.eta.replace("{d}", p.day).replace("{h}", String(p.hour).padStart(2, "0")); };
 const etaPlain = (tick) => { const p = tickParts(tick); return `${lang === "es" ? "día" : "day"} ${p.day}, ${String(p.hour).padStart(2, "0")}:00`; };
 const trails = {}; // view only: recent screen positions per ship, for the wake
+const shipEls = new Map(); // keyed ship markers, preserved across frames: rebuilding them every rAF destroyed the pressed element before mouseup, so a real click on a ship icon never fired
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
   const all = [...g.ai.map((a) => ({ sh: a.ship, mine: false, id: "ai" + a.ship.id })), ...g.ships.map((sh, i) => ({ sh, mine: true, sel: i === sel, id: "p" + sh.id }))];
-  let h = "", wakes = "";
+  // Wakes are decoration (pointer-events:none, nothing clickable): cheap to rebuild every frame.
+  let wakesEl = layer.firstElementChild;
+  if (!wakesEl || !wakesEl.classList.contains("wakes")) { wakesEl = document.createElementNS("http://www.w3.org/2000/svg", "g"); wakesEl.setAttribute("class", "wakes"); wakesEl.setAttribute("pointer-events", "none"); layer.prepend(wakesEl); }
+  let wakes = "";
+  const seen = new Set();
   for (const { sh, mine, sel: isSel, id } of all) {
     const f = tickAcc / tickDurationMs(); // fraction of the current tick, for smooth drawing
     const p = shipPosition(world, sh, f), pt = { x: X(p.lon), y: Y(p.lat) };
@@ -153,24 +158,45 @@ function drawShips() {
       ang = headingDeg({ x: X(qb.lon), y: Y(qb.lat) }, { x: X(q.lon), y: Y(q.lat) }) ?? 0;
       wakes += wakeSvg(pushTrail(trails, id, pt));
     } else delete trails[id];
-    h += `<g data-mx="${pt.x}" data-my="${pt.y}" ${mine ? `data-ship="${g.ships.indexOf(sh)}" style="cursor:pointer" pointer-events="all"` : ""}>${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
+    seen.add(id);
+    let el = shipEls.get(id);
+    if (el && el.parentNode !== layer) layer.appendChild(el); // render() rebuilt the map: re-attach the preserved element, keeping its identity and listeners (recreating it here would re-break real clicks)
+    const ckey = `${sh.type}|${mine}|${mine ? g.ships.indexOf(sh) : ""}|${sh.id}|${isSel}`; // position and heading are attributes, not content
+    if (el && el._ckey !== ckey) { el.remove(); shipEls.delete(id); el = null; }
+    if (!el) {
+      el = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      el._ckey = ckey;
+      if (mine) { el.setAttribute("data-ship", g.ships.indexOf(sh)); el.style.cursor = "pointer"; el.setAttribute("pointer-events", "all"); }
+      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}`;
+      if (mine) {
+        el.onclick = () => {
+          const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
+          if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
+          if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+        };
+        // The icon is hittable now, so right-clicks must keep behaving as if it were not there:
+        // docked (covering its port's dot) -> that port's own handler; at sea -> pass the click
+        // through to whatever is underneath (another port's menu, open sea, freeNav, ...).
+        el.oncontextmenu = (ev) => {
+          const s2 = g.ships[+el.dataset.ship];
+          if (s2 && !s2.voyage) {
+            const ce = mapEl.querySelector(`g.city[data-c="${s2.at}"]`);
+            if (ce && ce.oncontextmenu) { ce.oncontextmenu(ev); return; }
+          }
+          el.style.pointerEvents = "none";
+          const under = document.elementFromPoint(ev.clientX, ev.clientY);
+          el.style.pointerEvents = "";
+          if (under && under !== el) under.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: ev.clientX, clientY: ev.clientY, button: 2 }));
+        };
+      }
+      shipEls.set(id, el);
+      layer.appendChild(el);
+    }
+    el.dataset.mx = pt.x; el.dataset.my = pt.y;
+    const rot = el.firstElementChild; if (rot) rot.setAttribute("transform", `rotate(${ang}) scale(1.7)`);
   }
-  layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
-  layer.querySelectorAll("[data-ship]").forEach((el) => {
-    el.onclick = () => {
-      const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
-      if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
-      if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
-    };
-    // A docked own ship covers its port's dot; forward right-clicks to that port's own
-    // handler (looked up live, so whatever the port does on right-click applies here too).
-    el.oncontextmenu = (ev) => {
-      const sh = g.ships[+el.dataset.ship];
-      if (!sh || sh.voyage) return;
-      const ce = mapEl.querySelector(`g.city[data-c="${sh.at}"]`);
-      if (ce && ce.oncontextmenu) ce.oncontextmenu(ev);
-    };
-  });
+  for (const [id, el] of shipEls) if (!seen.has(id)) { el.remove(); shipEls.delete(id); }
+  wakesEl.innerHTML = wakes; scaleMarkers();
 }
 function stepTicks(n) {
   for (let i = 0; i < n; i++) {
@@ -302,7 +328,12 @@ function render() {
     key.innerHTML=historical.legend;
   }
   m += historical.svg;
-  $("map").innerHTML = `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}<g id="shipsLayer" pointer-events="none"></g>`;
+  { // rebuild the map around the ships layer instead of replacing it: removing the layer mid-gesture cancels the browser's click dispatch on ship icons
+    const map = $("map"), shipsKeep = $("shipsLayer");
+    for (const ch of [...map.childNodes]) if (ch !== shipsKeep) ch.remove();
+    map.insertAdjacentHTML("afterbegin", `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}`);
+    if (!shipsKeep) map.insertAdjacentHTML("beforeend", `<g id="shipsLayer" pointer-events="none"></g>`);
+  }
   drawShips(); scaleMarkers();
   $("map").querySelectorAll("g.city").forEach((el) => {
     el.onclick = () => {
