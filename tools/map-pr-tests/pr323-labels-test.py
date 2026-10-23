@@ -3,12 +3,27 @@ WT=sys.argv[1] if len(sys.argv)>1 else os.environ.get('MAPTEST_WT','.')
 HERE=os.path.dirname(os.path.abspath(__file__))
 FIXTURE=os.environ.get('MAPTEST_SAVE',os.path.join(HERE,'fixtures','all-discovered-save.json'))
 PROFILE=tempfile.mkdtemp(prefix='maptest-profile-')
+SHOTS=os.environ.get('MAPTEST_SHOTS') or tempfile.mkdtemp(prefix='maptest-shots-')
+import socket
+def _freeport():
+ sk=socket.socket();sk.bind(('127.0.0.1',0));p=sk.getsockname()[1];sk.close();return p
+HTTP_PORT=_freeport();CDP_PORT=_freeport()
 import subprocess,time,json,urllib.request,websocket,base64,math
-s=subprocess.Popen(['python3','-m','http.server','8889','--bind','127.0.0.1'],cwd=WT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-c=subprocess.Popen(['google-chrome','--headless','--no-sandbox','--enable-unsafe-swiftshader','--remote-debugging-port=9342','--remote-allow-origins=*','--user-data-dir='+PROFILE,'--window-size=1366,768','http://127.0.0.1:8889/web/?city2d=1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+SHA=subprocess.check_output(['git','-C',WT,'rev-parse','--short','HEAD'],text=True).strip()
+import re as _re
+_charts=open(os.path.join(WT,'src','game','charts.mjs')).read()
+EXPECTED_PORTS=len(set(_re.findall(r'"([a-z_]+)"'," ".join(_re.findall(r'ports:\s*Object\.freeze\(\[([^\]]+)\]\)',_charts)))))
 errors=[]
+s=None;c=None
 try:
- time.sleep(2);tabs=json.load(urllib.request.urlopen('http://127.0.0.1:9342/json'));ws=websocket.create_connection(next(t['webSocketDebuggerUrl']for t in tabs if t['type']=='page'));i=0
+ s=subprocess.Popen(['python3','-m','http.server',str(HTTP_PORT),'--bind','127.0.0.1'],cwd=WT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ c=subprocess.Popen(['google-chrome','--headless','--no-sandbox','--enable-unsafe-swiftshader','--remote-debugging-port='+str(CDP_PORT),'--remote-allow-origins=http://127.0.0.1:%d'%HTTP_PORT,'--user-data-dir='+PROFILE,'--window-size=1366,768','http://127.0.0.1:%d/web/?city2d=1'%HTTP_PORT],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ tabs=None
+ for _ in range(40):
+  try:tabs=json.load(urllib.request.urlopen('http://127.0.0.1:%d/json'%CDP_PORT,timeout=2));break
+  except Exception:time.sleep(.25)
+ if not tabs:raise SystemExit('chrome CDP did not become ready on 127.0.0.1:%d (is google-chrome installed?)'%CDP_PORT)
+ ws=websocket.create_connection(next(t['webSocketDebuggerUrl']for t in tabs if t['type']=='page'),origin='http://127.0.0.1:%d'%HTTP_PORT);i=0
  ws.settimeout(15)
  def call(m,p={}):
   global i;i+=1;ws.send(json.dumps({'id':i,'method':m,'params':p}))
@@ -46,13 +61,15 @@ try:
  payload=open(FIXTURE).read()
  js('localStorage.setItem("almojarife.save.v1",'+json.dumps(payload)+')')
  call('Network.enable');call('Network.setCacheDisabled',{'cacheDisabled':True});call('Page.reload',{'ignoreCache':True});time.sleep(3)
- js("if(document.querySelector('#t-lang')?.textContent==='ES')document.querySelector('#t-lang').click()");time.sleep(.2)
+ for _ in range(3):
+  if js("(document.querySelector('#t-lang')?.textContent||'').trim()")=='EN':break
+  js("document.querySelector('#t-lang')?.click()");time.sleep(.3)
  js('document.querySelector("#t-cont").click()');time.sleep(5)
  js('document.querySelector("[data-map]").click()');time.sleep(1)
  n=js('document.querySelectorAll("g.city[data-c]").length')
- assert n==33,'expected 33 ports, got '+str(n)
+ assert n==EXPECTED_PORTS,'expected %d ports, got '%EXPECTED_PORTS+str(n)
  ov=json.loads(js(OVJS));assert not ov,'zoom1 collisions: '+json.dumps(ov)
- print('zoom1 overlap audit (real rendered text): clean, 33 ports')
+ print('zoom1 overlap audit (real rendered text): clean, %d ports'%EXPECTED_PORTS)
  fa=portgeom('faro');hu=portgeom('huelva')
  dist=math.hypot(fa['x']-hu['x'],fa['y']-hu['y'])
  print('faro hitR %.1f labelW %.1f | huelva hitR %.1f labelW %.1f | center dist %.1f'%(fa['rs'],fa['w'],hu['rs'],hu['w'],dist))
@@ -96,12 +113,16 @@ try:
  g=portgeom('ceuta');click((g['l']+g['rr'])/2,(g['tp']+g['b'])/2);assert targetring('ceuta'),'zoomed ceuta label click failed'
  print('zoomed cluster label clicks correct')
  shot=call('Page.captureScreenshot',{'format':'png'})
- open('/downloads/main323-gibraltar-zoom.png','wb').write(base64.b64decode(shot['data']))
+ open(os.path.join(SHOTS,'pr323-gibraltar-zoom.png'),'wb').write(base64.b64decode(shot['data']))
  js('document.getElementById("map").dispatchEvent(new MouseEvent("dblclick",{bubbles:true}))');time.sleep(.3)
  shot=call('Page.captureScreenshot',{'format':'png'})
- open('/downloads/main323-map-zoom1.png','wb').write(base64.b64decode(shot['data']))
+ open(os.path.join(SHOTS,'pr323-map-zoom1.png'),'wb').write(base64.b64decode(shot['data']))
  print('ERRORS:',len(errors))
  for e in errors[:5]:print(' -',e)
  assert not errors
- print('MAIN323 2d95bffd LABELS ALL PASS')
-finally:c.terminate();c.wait();s.terminate();s.wait()
+ print('PR323-LABELS',SHA,'ALL PASS (shots in %s)'%SHOTS)
+finally:
+ for p in (c,s):
+  if p:p.terminate();p.wait()
+ import shutil;shutil.rmtree(PROFILE,ignore_errors=True)
+ if not os.environ.get('MAPTEST_SHOTS'):shutil.rmtree(SHOTS,ignore_errors=True)

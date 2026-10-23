@@ -3,12 +3,27 @@ WT=sys.argv[1] if len(sys.argv)>1 else os.environ.get('MAPTEST_WT','.')
 HERE=os.path.dirname(os.path.abspath(__file__))
 FIXTURE=os.environ.get('MAPTEST_SAVE',os.path.join(HERE,'fixtures','all-discovered-save.json'))
 PROFILE=tempfile.mkdtemp(prefix='maptest-profile-')
+SHOTS=os.environ.get('MAPTEST_SHOTS') or tempfile.mkdtemp(prefix='maptest-shots-')
+import socket
+def _freeport():
+ sk=socket.socket();sk.bind(('127.0.0.1',0));p=sk.getsockname()[1];sk.close();return p
+HTTP_PORT=_freeport();CDP_PORT=_freeport()
 import subprocess,time,json,urllib.request,websocket
-s=subprocess.Popen(['python3','-m','http.server','8887','--bind','127.0.0.1'],cwd=WT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-c=subprocess.Popen(['google-chrome','--headless','--no-sandbox','--enable-unsafe-swiftshader','--remote-debugging-port=9341','--remote-allow-origins=*','--user-data-dir='+PROFILE,'--window-size=1366,768','http://127.0.0.1:8887/web/?city2d=1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+SHA=subprocess.check_output(['git','-C',WT,'rev-parse','--short','HEAD'],text=True).strip()
+import re as _re
+_charts=open(os.path.join(WT,'src','game','charts.mjs')).read()
+EXPECTED_PORTS=len(set(_re.findall(r'"([a-z_]+)"'," ".join(_re.findall(r'ports:\s*Object\.freeze\(\[([^\]]+)\]\)',_charts)))))
 errors=[]
+s=None;c=None
 try:
- time.sleep(2);tabs=json.load(urllib.request.urlopen('http://127.0.0.1:9341/json'));ws=websocket.create_connection(next(t['webSocketDebuggerUrl']for t in tabs if t['type']=='page'));i=0
+ s=subprocess.Popen(['python3','-m','http.server',str(HTTP_PORT),'--bind','127.0.0.1'],cwd=WT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ c=subprocess.Popen(['google-chrome','--headless','--no-sandbox','--enable-unsafe-swiftshader','--remote-debugging-port='+str(CDP_PORT),'--remote-allow-origins=http://127.0.0.1:%d'%HTTP_PORT,'--user-data-dir='+PROFILE,'--window-size=1366,768','http://127.0.0.1:%d/web/?city2d=1'%HTTP_PORT],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ tabs=None
+ for _ in range(40):
+  try:tabs=json.load(urllib.request.urlopen('http://127.0.0.1:%d/json'%CDP_PORT,timeout=2));break
+  except Exception:time.sleep(.25)
+ if not tabs:raise SystemExit('chrome CDP did not become ready on 127.0.0.1:%d (is google-chrome installed?)'%CDP_PORT)
+ ws=websocket.create_connection(next(t['webSocketDebuggerUrl']for t in tabs if t['type']=='page'),origin='http://127.0.0.1:%d'%HTTP_PORT);i=0
  ws.settimeout(10)
  def call(m,p={}):
   global i;i+=1;ws.send(json.dumps({'id':i,'method':m,'params':p}))
@@ -107,5 +122,9 @@ try:
  print('ERRORS:',len(errors))
  for e in errors[:5]:print(' -',e)
  assert not errors
- print('MAP321 MAIN 706ad8c: LETTERBOX ZOOM/PAN + NO-BANDS + DOCKED-SHIP CONTEXT MENU ALL PASS')
-finally:c.terminate();c.wait();s.terminate();s.wait()
+ print('MAP321',SHA,': LETTERBOX ZOOM/PAN + NO-BANDS + DOCKED-SHIP CONTEXT MENU ALL PASS')
+finally:
+ for p in (c,s):
+  if p:p.terminate();p.wait()
+ import shutil;shutil.rmtree(PROFILE,ignore_errors=True)
+ if not os.environ.get('MAPTEST_SHOTS'):shutil.rmtree(SHOTS,ignore_errors=True)
