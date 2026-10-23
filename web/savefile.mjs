@@ -11,16 +11,32 @@ export function saveFileName(day, now = new Date()) {
 }
 
 /**
- * Restore rotation: parks the current save in TMP_KEY, writes the backup into the live slot,
- * then rotates the parked save into BACKUP_KEY. Both copies exist in storage before any
- * overwrite, so a quota failure mid-rotation never destroys either save. Throws on the two
- * guarded writes so the caller aborts with a message and the original state stays put; the
- * final rotation failure keeps the parked copy in TMP_KEY instead of deleting it.
+ * Pending-rotation recovery. A failed earlier rotation leaves the previous save parked in
+ * TMP_KEY (live slot already holds the restored copy, backup slot not yet rotated). Completing
+ * the pending rotation is what makes the next restore a true undo, and it must run before
+ * anything reuses TMP_KEY. Throws if the parked copy cannot be rotated in: callers abort and
+ * every copy stays where it is.
  */
-export function restoreRotate(store, saveKey, cur, backupText) {
+export function finishPendingRotation(store) {
+  let parked;
+  try { parked = store.getItem(TMP_KEY); } catch { return; }
+  if (parked == null) return;
+  store.setItem(BACKUP_KEY, parked);
+  try { store.removeItem(TMP_KEY); } catch {}
+}
+
+/**
+ * Restore/import rotation. Requires finishPendingRotation() first (no parked copy).
+ * Parks the current save in TMP_KEY, writes the new content into the live slot, then rotates
+ * the parked save into BACKUP_KEY. Both copies exist in storage before any overwrite, so a
+ * quota failure mid-rotation never destroys either save. Throws on the two guarded writes so
+ * the caller aborts with a message and the original state stays put; if the final rotation
+ * fails the parked copy stays in TMP_KEY (recovered by the next finishPendingRotation).
+ */
+export function restoreRotate(store, saveKey, cur, newLiveText) {
   if (cur) store.setItem(TMP_KEY, cur);
   try {
-    store.setItem(saveKey, backupText);
+    store.setItem(saveKey, newLiveText);
   } catch (e) {
     if (cur) try { store.removeItem(TMP_KEY); } catch {}
     throw e;

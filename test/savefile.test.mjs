@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { saveFileName, BACKUP_KEY, TMP_KEY, restoreRotate } from "../web/savefile.mjs";
+import { saveFileName, BACKUP_KEY, TMP_KEY, finishPendingRotation, restoreRotate } from "../web/savefile.mjs";
 
 test("dated export name carries the date and the game day", () => {
   assert.equal(saveFileName(41, new Date(2026, 9, 23)), "almojarife-save-2026-10-23-dia41.json");
@@ -23,11 +23,13 @@ test("rotation slot key is stable and distinct from save and backup keys", () =>
 
 const fakeStore = (failOn = () => false) => {
   const m = new Map();
-  return {
+  const st = {
     getItem: (k) => (m.has(k) ? m.get(k) : null),
-    setItem: (k, v) => { if (failOn(k)) throw new Error("quota"); m.set(k, String(v)); },
+    setItem: (k, v) => { if (st.failOn(k)) throw new Error("quota"); m.set(k, String(v)); },
     removeItem: (k) => { m.delete(k); },
+    failOn,
   };
+  return st;
 };
 const SAVE = "almojarife.save.v1";
 
@@ -65,4 +67,61 @@ test("restore with no current save drops the backup slot", () => {
   restoreRotate(st, SAVE, null, "backup");
   assert.equal(st.getItem(SAVE), "backup");
   assert.equal(st.getItem(BACKUP_KEY), null);
+});
+
+test("pending-rotation recovery completes the parked copy into the backup slot", () => {
+  const st = fakeStore();
+  st.setItem(TMP_KEY, "parked");
+  st.setItem(BACKUP_KEY, "oldbackup");
+  finishPendingRotation(st);
+  assert.equal(st.getItem(BACKUP_KEY), "parked");
+  assert.equal(st.getItem(TMP_KEY), null);
+});
+test("recovery failure throws and leaves every slot untouched", () => {
+  const st = fakeStore();
+  st.setItem(SAVE, "current");
+  st.setItem(BACKUP_KEY, "oldbackup");
+  st.setItem(TMP_KEY, "parked");
+  st.failOn = (k) => k === BACKUP_KEY;
+  assert.throws(() => finishPendingRotation(st));
+  assert.equal(st.getItem(SAVE), "current");
+  assert.equal(st.getItem(BACKUP_KEY), "oldbackup");
+  assert.equal(st.getItem(TMP_KEY), "parked", "parked copy is not lost");
+});
+test("second restore after a failed rotation is a true undo of the first", () => {
+  // First restore: live write succeeds but the backup rotation fails (quota).
+  const st = fakeStore();
+  st.setItem(SAVE, "A");
+  st.setItem(BACKUP_KEY, "B");
+  st.failOn = (k) => k === BACKUP_KEY;
+  restoreRotate(st, SAVE, "A", "B");
+  assert.equal(st.getItem(SAVE), "B");
+  assert.equal(st.getItem(TMP_KEY), "A", "A parked after the failed rotation");
+  st.failOn = () => false;
+  // Storage healthy again: the handler recovers the pending rotation first,
+  // then restores the backup it reads AFTER recovery (A), undoing the restore.
+  finishPendingRotation(st);
+  assert.equal(st.getItem(BACKUP_KEY), "A");
+  restoreRotate(st, SAVE, st.getItem(SAVE), st.getItem(BACKUP_KEY));
+  assert.equal(st.getItem(SAVE), "A", "undo returns to the pre-restore save");
+  assert.equal(st.getItem(BACKUP_KEY), "B");
+  assert.equal(st.getItem(TMP_KEY), null);
+});
+test("import rotation keeps the old backup when the imported write fails", () => {
+  // Import path: prev parked first, then the imported write fails: old backup survives.
+  const m = new Map([[SAVE, "A"], [BACKUP_KEY, "B"]]);
+  const st = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { if (k === SAVE) throw new Error("quota"); m.set(k, String(v)); }, removeItem: (k) => m.delete(k) };
+  assert.throws(() => restoreRotate(st, SAVE, "A", "imported"));
+  assert.equal(st.getItem(SAVE), "A");
+  assert.equal(st.getItem(BACKUP_KEY), "B", "old backup not clobbered by a failed import");
+  assert.equal(st.getItem(TMP_KEY), null);
+});
+test("import rotation on healthy storage leaves the imported save live and prev in backup", () => {
+  const st = fakeStore();
+  st.setItem(SAVE, "A");
+  st.setItem(BACKUP_KEY, "B");
+  restoreRotate(st, SAVE, "A", "imported");
+  assert.equal(st.getItem(SAVE), "imported");
+  assert.equal(st.getItem(BACKUP_KEY), "A");
+  assert.equal(st.getItem(TMP_KEY), null);
 });
