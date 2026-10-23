@@ -16,7 +16,7 @@ test("pure: 2% a year over 52 weeks, never above cash, zero for no worth", () =>
 });
 test("flag off by default: state identical to a game that never heard of it, and no funds appear", () => {
   const a = newGame(world, "cadiz", { seed: 3, events: true }), b = newGame(world, "cadiz", { seed: 3, events: true, household: false });
-  assert.equal(a.household, false);
+  assert.ok(!("household" in a), "OFF adds no key to the state"); assert.ok(!("household" in b), "explicit false adds no key either");
   for (let i = 0; i < 200; i++) { advanceDay(a); advanceDay(b); }
   assert.equal(hash(a), hash(b)); assert.equal(a.cityFunds, undefined); assert.equal(a.cityHealth, undefined);
   assert.ok(!(a.reports ?? []).some((r) => "household" in r));
