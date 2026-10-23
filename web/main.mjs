@@ -802,7 +802,7 @@ function showMenu() {
 }
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
 function showCreate(name) {
-  t = T[lang]; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  t = T[lang]; let freeNav = false; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
@@ -814,14 +814,14 @@ function showCreate(name) {
       `<div><div>${t.crest}</div><div class="prev">${crestSvg(pf.crest, 96, "prev")}${portraitSvg(pf.portrait, pf.crest.c1, 96)}</div>` +
       `<label>${t.shield} <select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label> <label>${t.division} <select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label> <label>${t.charge} <select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
       `<div>${t.c1}</div><div>${swatch("c1")}</div><div>${t.c2}</div><div>${swatch("c2")}</div></div></div>` +
-      `<p><label><input type="checkbox" id="p-freenav"> ${t.freeNavLbl}</label> <small>${t.freeNavInfo}</small></p><p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
+      `<p><label><input type="checkbox" id="p-freenav" ${freeNav ? "checked" : ""}> ${t.freeNavLbl}</label> <small>${t.freeNavInfo}</small></p><p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
     $("p-co").value = pf.company; $("p-ch").value = pf.character; // set as values, never parsed as HTML
-    const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; };
+    const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; freeNav = $("p-freenav").checked === true; };
     el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
     $("p-back").onclick = () => showTitle();
-    $("p-go").onclick = () => { read(); playing = false; progress = 0; tickAcc = 0; start(pf, true, { freeNav: $("p-freenav").checked === true }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+    $("p-go").onclick = () => { read(); playing = false; progress = 0; tickAcc = 0; start(pf, true, { freeNav }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   };
   draw();
 }
