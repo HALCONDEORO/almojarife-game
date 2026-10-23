@@ -23,6 +23,7 @@ const S = {
   soap: '<rect x="4" y="9" width="16" height="10" rx="5" fill="#e8e2d0" stroke="#b8b09a" stroke-width="1"/><ellipse cx="12" cy="14" rx="4" ry="2" fill="#d4ccb4"/><circle cx="17" cy="6" r="2" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/><circle cx="20" cy="3.5" r="1.4" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/><circle cx="14" cy="4" r="1.1" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/>',
   beer: '<path d="M6 8h10v11a2 2 0 01-2 2H8a2 2 0 01-2-2z" fill="#d99a2b" stroke="#8a6a1f" stroke-width="1"/><path d="M16 10h2a3 3 0 010 6h-2" fill="none" stroke="#8a6a1f" stroke-width="1.6"/><path d="M6 8c-1-3 2-4 3-3 1-2 4-2 5 0 1-1 3 0 2 3z" fill="#f5ead0"/>',
 };
+const escAttr = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export const goodIcon = (id, size = 22) =>
-  `<svg class="gi" role="img" aria-label="${id}" width="${size}" height="${size}" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:4px">${S[id] ?? '<circle cx="12" cy="12" r="8" fill="#bbb"/>'}</svg>`;
+  `<svg class="gi" role="img" aria-label="${escAttr(id)}" width="${size}" height="${size}" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:4px">${S[id] ?? '<circle cx="12" cy="12" r="8" fill="#bbb"/>'}</svg>`;
 export const ICON_IDS = Object.keys(S);
