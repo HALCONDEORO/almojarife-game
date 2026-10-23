@@ -1,4 +1,4 @@
-// Optional goods: data that joins the world only when a game is started with the matching flag (default OFF).
+// Optional goods: data that joins the world when a game starts with the matching flag (default ON per owner order 23/10; pass false/1 to disable).
 // With the flag OFF nothing here runs, so the world, the markets and every simulation are exactly as without this file.
 /** Kid meat (cabrito): a luxury meat. Source: Estudio's meat dossier (22/10): in Barcelona kid was a luxury meat and mutton the common one;
  *  breeding zones Sevilla/Jerez and Menorca (Menorca and Jerez are not ports of this map, so Sevilla is the only producer);

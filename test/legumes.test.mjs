@@ -7,7 +7,8 @@ import {PER_1000,OPTIONAL_PER_1000,demandBy} from '../src/sim/classes.mjs';
 const world=loadWorld();
 test('flag OFF path: no legumes in the world, markets or demand table (default is ON per owner directive 2026-10-23; OFF stays available explicitly)',()=>{
  assert.equal('legumes' in world.goods,false);assert.equal('legumes' in PER_1000,false);
- const g=newGame(world,'cadiz',{freePlay:true,legumes:false,pottery:false,kidMeat:false});assert.equal(g.legumes,false); // isolated: the other optional goods default ON now and would wrap the worldassert.equal(g.market.sevilla.legumes,undefined);assert.equal(g.world,world);
+ const g=newGame(world,'cadiz',{freePlay:true,legumes:false,pottery:false,kidMeat:false});assert.equal(g.legumes,false); // isolated: the other optional goods default ON now and would wrap the world
+ assert.equal(g.market.sevilla.legumes,undefined);assert.equal(g.world,world);
 });
 test('flag ON is the default (owner directive 2026-10-23)',()=>{
  const g=newGame(world,'cadiz',{freePlay:true});assert.equal(g.legumes,true);assert.ok(g.market.sevilla.legumes);assert.notEqual(g.world,world);

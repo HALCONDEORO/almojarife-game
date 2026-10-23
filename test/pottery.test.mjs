@@ -1,4 +1,4 @@
-// Pottery and the kiln (docs/design/production-chains-study.md, pottery A: 2 timber -> 2 pottery). Optional good: only in games started with {pottery:true}.
+// Pottery and the kiln (docs/design/production-chains-study.md, pottery A: 2 timber -> 2 pottery). Optional good: in every game by default (owner order 23/10); {pottery:false} or 1 plays without it.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
