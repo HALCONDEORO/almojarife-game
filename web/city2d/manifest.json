@@ -1,2113 +1,2221 @@
 {
-  "version": 1,
-  "sourceCommit": "47a13be536268f5fe349d8cc77ac9f0b3ce2523d",
-  "origin": "Generated original illustration, matching internally generated v3 reference; no third party assets. Not CC0. No exclusive rights claim.",
-  "assets": {
-    "farm:1": {
-      "type": "farm",
-      "level": 1,
-      "file": "assets/farm-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        72,
-        106,
-        446,
-        327
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "8045b79a05238b59ed4ab89f7b32ab7992b6eaa5f46782043cb74dcbe462517a"
-    },
-    "farm:2": {
-      "type": "farm",
-      "level": 2,
-      "file": "assets/farm-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        551,
-        31,
-        955,
-        340
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "78458c6cd7a25cdff7aa53ef0b6d0a3504b880204d75f4fea39084749d344dae"
-    },
-    "farm:3": {
-      "type": "farm",
-      "level": 3,
-      "file": "assets/farm-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        1050,
-        7,
-        1463,
-        343
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "2c67c16da55e9ae2cce1f9ddb9c3ab78883e2e148c79c9f8c26d6e4b28e71a24"
-    },
-    "pasture:1": {
-      "type": "pasture",
-      "level": 1,
-      "file": "assets/pasture-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        91,
-        438,
-        449,
-        672
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "988f047bae4f8fa5dd10f56071ab19d375fc29686eac3f3ddeb1eee545443a08"
-    },
-    "pasture:2": {
-      "type": "pasture",
-      "level": 2,
-      "file": "assets/pasture-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        557,
-        378,
-        953,
-        667
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "1a6a9b9bb83e9e13aff553ee964ca637dd25f672c160b643bb3fcae7dda8d691"
-    },
-    "pasture:3": {
-      "type": "pasture",
-      "level": 3,
-      "file": "assets/pasture-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        1050,
-        335,
-        1458,
-        666
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "87d8133c561f5fe5c8764a3d8bc2e11001aac741ed9ea5ef2130962f7595d435"
-    },
-    "sawmill:1": {
-      "type": "sawmill",
-      "level": 1,
-      "file": "assets/sawmill-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        89,
-        750,
-        445,
-        998
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7ac3889eaaaafbca38683bd930e77389d1f1b7e6cb6170bae45fdb58186cf615"
-    },
-    "sawmill:2": {
-      "type": "sawmill",
-      "level": 2,
-      "file": "assets/sawmill-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        556,
-        680,
-        954,
-        996
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "e96e23f566445aa9f6b0e7b001af86e4ef8a0f878ff6a8b799d50c7d55abd572"
-    },
-    "sawmill:3": {
-      "type": "sawmill",
-      "level": 3,
-      "file": "assets/sawmill-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-a.png",
-      "sourceBox": [
-        1056,
-        642,
-        1468,
-        1003
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "cfe72164c2e51e91618ce27ba1c405ddf18e3b93426ce73a49b34ea6cc4701e2"
-    },
-    "mine:1": {
-      "type": "mine",
-      "level": 1,
-      "file": "assets/mine-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        58,
-        125,
-        438,
-        353
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "2f5d2f3f741e0b14b0a66da512fce28abdb8da8cf50cc72af14eb350c9c10115"
-    },
-    "mine:2": {
-      "type": "mine",
-      "level": 2,
-      "file": "assets/mine-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        530,
-        28,
-        959,
-        358
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7b488629b69031a720fbacf37e4a133036006696f50d33cc924929497f973f8c"
-    },
-    "mine:3": {
-      "type": "mine",
-      "level": 3,
-      "file": "assets/mine-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        1038,
-        6,
-        1495,
-        364
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "01017b93acc3e3e7beb902eb2dfb505703f5d38a10bc20b7aaca523215c948b2"
-    },
-    "oil_mill:1": {
-      "type": "oil_mill",
-      "level": 1,
-      "file": "assets/oil_mill-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        73,
-        448,
-        418,
-        652
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "cf1402f8c03fda09adfad059415302ab125b1087b36e64c7a8782ea8632d83c5"
-    },
-    "oil_mill:2": {
-      "type": "oil_mill",
-      "level": 2,
-      "file": "assets/oil_mill-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        530,
-        356,
-        956,
-        666
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "8ac9906cc326d16c432c6ae5ad5239d300ed14e2c6763df022f3519612b4c3a7"
-    },
-    "oil_mill:3": {
-      "type": "oil_mill",
-      "level": 3,
-      "file": "assets/oil_mill-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        1034,
-        347,
-        1497,
-        682
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ebf7725c64987ba832a65071b6608f5a6b898619893005bf8b54ec94fb4f82e8"
-    },
-    "vineyard:1": {
-      "type": "vineyard",
-      "level": 1,
-      "file": "assets/vineyard-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        43,
-        766,
-        406,
-        994
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d3e1e3e1baa658536b0c95f75adfd904506976657f14cd70b3a4ce1cf6444124"
-    },
-    "vineyard:2": {
-      "type": "vineyard",
-      "level": 2,
-      "file": "assets/vineyard-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        523,
-        684,
-        956,
-        991
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "17fac2d8f0a681b09690654363f1d91b854230d09912f99b8f6f5b3e3c3d3ea6"
-    },
-    "vineyard:3": {
-      "type": "vineyard",
-      "level": 3,
-      "file": "assets/vineyard-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-b.png",
-      "sourceBox": [
-        1033,
-        656,
-        1503,
-        1008
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "a933f2b5b6ddbbf4b1d4a851003731f043c4a0d2f392d4dab3a83ea99cdba109"
-    },
-    "saltworks:1": {
-      "type": "saltworks",
-      "level": 1,
-      "file": "assets/saltworks-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        50,
-        95,
-        458,
-        344
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "42bd2a165fba25e5ffedf3c5c95bf8c91b467ba036ed3a0572be0bcae55916b4"
-    },
-    "saltworks:2": {
-      "type": "saltworks",
-      "level": 2,
-      "file": "assets/saltworks-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        545,
-        7,
-        982,
-        341
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "50007ce6c1f8259ee86e54a50f3dfb8367c55c6fd1ab6a54b6614ee78ae9d395"
-    },
-    "saltworks:3": {
-      "type": "saltworks",
-      "level": 3,
-      "file": "assets/saltworks-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        1047,
-        2,
-        1494,
-        368
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "bf55f81f3f16f37984c64e6a253761aa3fe0676b9b40971ed765ae56b1285de2"
-    },
-    "brewery:1": {
-      "type": "brewery",
-      "level": 1,
-      "file": "assets/brewery-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        95,
-        439,
-        441,
-        657
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "f1325aa840f08b1732c3702cda44d21ae34f8a142c60865142ef1471229ce222"
-    },
-    "brewery:2": {
-      "type": "brewery",
-      "level": 2,
-      "file": "assets/brewery-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        562,
-        353,
-        980,
-        656
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "c368a188ec0e674fc709c9c72f61f2361cfb14594729702261f09ccc21914754"
-    },
-    "brewery:3": {
-      "type": "brewery",
-      "level": 3,
-      "file": "assets/brewery-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        1102,
-        356,
-        1484,
-        660
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "8fbd2c42a2c79e7f469622d50084a6821340f6670b4ba94025e110165cf442da"
-    },
-    "soapworks:1": {
-      "type": "soapworks",
-      "level": 1,
-      "file": "assets/soapworks-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        76,
-        733,
-        456,
-        995
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "fec09301d955f3e6fd6a73ff3a3c93fb56e8557c21fed5abd115abc5df719e2e"
-    },
-    "soapworks:2": {
-      "type": "soapworks",
-      "level": 2,
-      "file": "assets/soapworks-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        565,
-        662,
-        964,
-        1007
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "f77f26759d1ceb701dcda8c4976f6bea5757060c560a14652c6859e36306010f"
-    },
-    "soapworks:3": {
-      "type": "soapworks",
-      "level": 3,
-      "file": "assets/soapworks-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-produccion.png",
-      "sourceBox": [
-        1076,
-        656,
-        1487,
-        1010
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "72696e03ce1de2f877a28d36a4fb5339471fa36361e94ee4f5ce2d8f06149525"
-    },
-    "esparto_field:1": {
-      "type": "esparto_field",
-      "level": 1,
-      "file": "assets/esparto_field-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        65,
-        121,
-        415,
-        332
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "5c197bd2f21706bf80daf8e7c11c97e1cb34a7daac27fb47cb36fa362ceee95a"
-    },
-    "esparto_field:2": {
-      "type": "esparto_field",
-      "level": 2,
-      "file": "assets/esparto_field-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        545,
-        59,
-        944,
-        346
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "f1c4a1ea2b0bd402e20c878917dd8d67839bf5d6b9c8fe62dc1822569ad84467"
-    },
-    "esparto_field:3": {
-      "type": "esparto_field",
-      "level": 3,
-      "file": "assets/esparto_field-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        1052,
-        22,
-        1472,
-        342
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "60c1ae264da080fc17027a6f5308c214e4b8ac8be701921c6e804fc233cb75bb"
-    },
-    "ranch:1": {
-      "type": "ranch",
-      "level": 1,
-      "file": "assets/ranch-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        63,
-        443,
-        414,
-        659
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "245e5114989402c648ef7f383bf278aeab173fdce0c38d5f775bf7fa36187feb"
-    },
-    "ranch:2": {
-      "type": "ranch",
-      "level": 2,
-      "file": "assets/ranch-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        540,
-        384,
-        948,
-        663
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "80b9f8197256c1a416cb75b533fdc74289b05beef4e55b2c5323b6bf4f660537"
-    },
-    "ranch:3": {
-      "type": "ranch",
-      "level": 3,
-      "file": "assets/ranch-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        1050,
-        349,
-        1474,
-        670
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "69356afbc8bd9328776dbff0d0d6d2222e4b56f01f3d51583eef343ae33bccfa"
-    },
-    "posito:1": {
-      "type": "posito",
-      "level": 1,
-      "file": "assets/posito-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        104,
-        721,
-        357,
-        974
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7fc28bf59cc933745fd81247c21223a35aa48c8d415e24ab1eb5f2af3494d5fe"
-    },
-    "posito:2": {
-      "type": "posito",
-      "level": 2,
-      "file": "assets/posito-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        566,
-        680,
-        925,
-        996
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ec8930738c657b6a89f1b59804b8970003651d8958d47a51847a6bad930980bf"
-    },
-    "posito:3": {
-      "type": "posito",
-      "level": 3,
-      "file": "assets/posito-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-campo-civico.png",
-      "sourceBox": [
-        1110,
-        639,
-        1455,
-        999
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d4b79b84394ceed85221c99d197440d2e27f6976c8630f5551204baa087dded6"
-    },
-    "hospital:1": {
-      "type": "hospital",
-      "level": 1,
-      "file": "assets/hospital-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        123,
-        146,
-        426,
-        372
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d731b0ec1befbe39d789e502de306d52e5e4c4c9c95aacb2eca1d36cbed01356"
-    },
-    "hospital:2": {
-      "type": "hospital",
-      "level": 2,
-      "file": "assets/hospital-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        571,
-        80,
-        940,
-        369
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7b8746f4636fb6da70026fc3fa5cae12d83961429f0dcb047acf690345bf2795"
-    },
-    "hospital:3": {
-      "type": "hospital",
-      "level": 3,
-      "file": "assets/hospital-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        1073,
-        11,
-        1474,
-        384
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d2387fd7ee0e8847dd3d90616a450de3b98a2cbf10a693d2e63afa748cf55b1a"
-    },
-    "alhondiga:1": {
-      "type": "alhondiga",
-      "level": 1,
-      "file": "assets/alhondiga-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        110,
-        470,
-        426,
-        671
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ae6ada9d369646b7fd27d1ed0fabc81a92ec8df37ff8f8bbc04baccd9732270e"
-    },
-    "alhondiga:2": {
-      "type": "alhondiga",
-      "level": 2,
-      "file": "assets/alhondiga-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        574,
-        392,
-        956,
-        668
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "379d0377c788723beb4fd6264abcf2fe12749425f25b2f6d8b696ef88f3fe364"
-    },
-    "alhondiga:3": {
-      "type": "alhondiga",
-      "level": 3,
-      "file": "assets/alhondiga-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        1065,
-        385,
-        1494,
-        682
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "391d7e97b72526a45198b3e8b90dcbfdded17beaa912bed3f48163486763b6bf"
-    },
-    "capilla:1": {
-      "type": "capilla",
-      "level": 1,
-      "file": "assets/capilla-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        150,
-        756,
-        400,
-        992
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "e407ca3673dfea1158a17031eab150628cb7e8d5f29d860d81cfc52438e9311b"
-    },
-    "capilla:2": {
-      "type": "capilla",
-      "level": 2,
-      "file": "assets/capilla-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        586,
-        672,
-        915,
-        993
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7ec5e0b5ee8ecdd1f6b39c799d1ef87fe594aa5ba147b09415b128770f3a01f7"
-    },
-    "capilla:3": {
-      "type": "capilla",
-      "level": 3,
-      "file": "assets/capilla-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-civicos.png",
-      "sourceBox": [
-        1093,
-        653,
-        1472,
-        1003
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "efeb104272def6a44947d11fd26a356663024e969c6ce4f31f267a2ec0aa6d92"
-    },
-    "caminos:1": {
-      "type": "caminos",
-      "level": 1,
-      "file": "assets/caminos-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        65,
-        48,
-        477,
-        277
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "792c63a30cbee77b1b7444eb00912f8c851e74798a27f1430235bbb315be162b"
-    },
-    "caminos:2": {
-      "type": "caminos",
-      "level": 2,
-      "file": "assets/caminos-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        569,
-        54,
-        977,
-        276
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "eb59f13e570e04f651aa669e7b8f0490fc29e108e5d78777a58960c430a327ea"
-    },
-    "caminos:3": {
-      "type": "caminos",
-      "level": 3,
-      "file": "assets/caminos-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        1080,
-        57,
-        1476,
-        274
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "70c23282454afaece8943559514b4cad7b69c95d3c60fac587c206257502ee64"
-    },
-    "pozo:1": {
-      "type": "pozo",
-      "level": 1,
-      "file": "assets/pozo-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        141,
-        375,
-        414,
-        622
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "020c3850bfadc054c6079206f8f3887341569dad89069ef5ed4fa4249b60e1fa"
-    },
-    "pozo:2": {
-      "type": "pozo",
-      "level": 2,
-      "file": "assets/pozo-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        630,
-        343,
-        915,
-        625
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ae963ce27db69d748eccc99a8ee900aae835d9051fafeea2aeae71daa48b2696"
-    },
-    "pozo:3": {
-      "type": "pozo",
-      "level": 3,
-      "file": "assets/pozo-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        1105,
-        291,
-        1447,
-        633
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "317d2839085400898daee6eba7e9d0eb40609c073d462c50b96d011b7e1c2ad5"
-    },
-    "wall:1": {
-      "type": "wall",
-      "level": 1,
-      "file": "assets/wall-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        74,
-        685,
-        475,
-        955
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "8206e0f3e0637924f686615f72dd4f707db3fb5b7e6a17b5a1aa4d3b5f2590b4"
-    },
-    "wall:2": {
-      "type": "wall",
-      "level": 2,
-      "file": "assets/wall-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        540,
-        651,
-        979,
-        968
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d2a237076b729cf34a2dbc814cd6d188e32d6eb5a39bb912702730a3bd55b9d5"
-    },
-    "wall:3": {
-      "type": "wall",
-      "level": 3,
-      "file": "assets/wall-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-infraestructura.png",
-      "sourceBox": [
-        1047,
-        628,
-        1501,
-        975
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "197f5fb26ac0aef428109e5764606e3e972f769cebd328c7d142c144d588ec39"
-    },
-    "house:1": {
-      "type": "house",
-      "level": 1,
-      "file": "assets/house-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        145,
-        101,
-        462,
-        353
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "b55a82f5d4085ed70569d783bd685fa1509ad3d8b0ae3e7369942f80927248ce"
-    },
-    "house:2": {
-      "type": "house",
-      "level": 2,
-      "file": "assets/house-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        575,
-        30,
-        945,
-        370
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "2f452e7f53bd4e100ce9bdde1fe38e8aa13ee9deca2119ccfcfdf09f2e87d1c7"
-    },
-    "house:3": {
-      "type": "house",
-      "level": 3,
-      "file": "assets/house-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        1096,
-        14,
-        1408,
-        342
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "93bb6c5fc06b600ca77563f743e6b6d44780b4edc956d868c85db33331a7cf95"
-    },
-    "warehouse:1": {
-      "type": "warehouse",
-      "level": 1,
-      "file": "assets/warehouse-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        107,
-        431,
-        473,
-        685
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "b65ecbdf5ec2af792e98b803042ef331e684cf9d8f39fcefaff94db8daa52fc8"
-    },
-    "warehouse:2": {
-      "type": "warehouse",
-      "level": 2,
-      "file": "assets/warehouse-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        598,
-        379,
-        943,
-        688
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "b02d9ef3a454ec9201249f80bad23e55740af1d5e1af79a9fa83b7e3f6156f4c"
-    },
-    "warehouse:3": {
-      "type": "warehouse",
-      "level": 3,
-      "file": "assets/warehouse-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        1081,
-        345,
-        1427,
-        687
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "f940f321f2a2f1667c906a3bb6d603f5d99742002f727a8c9c0348006ef06f1b"
-    },
-    "workshop:1": {
-      "type": "workshop",
-      "level": 1,
-      "file": "assets/workshop-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        127,
-        734,
-        457,
-        994
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "9fe06db60971877b71ae7d5f500d510fe50509d10862e9bfa38dfdcc91a547c7"
-    },
-    "workshop:2": {
-      "type": "workshop",
-      "level": 2,
-      "file": "assets/workshop-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        596,
-        702,
-        952,
-        1001
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "9fe194941ddd16d1cd9aa54743f32a9daddaa2a898319060eb390e3817a44f44"
-    },
-    "workshop:3": {
-      "type": "workshop",
-      "level": 3,
-      "file": "assets/workshop-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-urbana.png",
-      "sourceBox": [
-        1072,
-        687,
-        1434,
-        1001
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "bfa229b460d34b101ccd90fcce39f5b317dce66ba9c2a1400becbacac1c7706c"
-    },
-    "ironworks:1": {
-      "type": "ironworks",
-      "level": 1,
-      "file": "assets/ironworks-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        106,
-        108,
-        434,
-        359
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "074961fb86755052b038d4dd2098a8315ceb04e67794b07fc5127bdf4ef73355"
-    },
-    "ironworks:2": {
-      "type": "ironworks",
-      "level": 2,
-      "file": "assets/ironworks-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        575,
-        41,
-        952,
-        357
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "aa2bc7707ae22a676772c782fd0aaa3b854e8fb5c67a8b2833d6569e48bd3949"
-    },
-    "ironworks:3": {
-      "type": "ironworks",
-      "level": 3,
-      "file": "assets/ironworks-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        1083,
-        9,
-        1463,
-        362
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "9632c7edc8a0ae4e78c408ef083e20ab2557738e9039c80e644669ed51445373"
-    },
-    "pottery:1": {
-      "type": "pottery",
-      "level": 1,
-      "file": "assets/pottery-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        122,
-        443,
-        426,
-        673
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "0fc5856a7b20484a955d51ac88aac40fb2d58b7cd053e80e6c381af78339f1bb"
-    },
-    "pottery:2": {
-      "type": "pottery",
-      "level": 2,
-      "file": "assets/pottery-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        579,
-        355,
-        941,
-        673
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "1ac87cf776da0caf5e60127e2666f3bc50f3ca2a32812b7c6c5cac62c0a3ccd1"
-    },
-    "pottery:3": {
-      "type": "pottery",
-      "level": 3,
-      "file": "assets/pottery-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        1086,
-        351,
-        1475,
-        673
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d4e1f12a3d79724b6afca00aded875e2e320faa2ad085698f12c6f4cfe99502c"
-    },
-    "brickworks:1": {
-      "type": "brickworks",
-      "level": 1,
-      "file": "assets/brickworks-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        106,
-        760,
-        433,
-        989
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "9bcd278135a6aeaef1c74c149fa8ba64198b45b68ef291ae21e0fc935d751d16"
-    },
-    "brickworks:2": {
-      "type": "brickworks",
-      "level": 2,
-      "file": "assets/brickworks-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        565,
-        694,
-        946,
-        992
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "3dab55685a6e21494515d5fb0dfe72e2d40d05b4d32888ab01ecd75ae67d8a0e"
-    },
-    "brickworks:3": {
-      "type": "brickworks",
-      "level": 3,
-      "file": "assets/brickworks-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-industria.png",
-      "sourceBox": [
-        1067,
-        670,
-        1500,
-        1017
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "9c09127b2857e85543d555944ad69c4407809b4e3e1f0802d387f5efd5ed1390"
-    },
-    "dock:1": {
-      "type": "dock",
-      "level": 1,
-      "file": "assets/dock-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        75,
-        48,
-        462,
-        321
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "03f888228ac644beab4ba8f165627f3d12f250b258ef8a834bc2511e7c8ea166"
-    },
-    "dock:2": {
-      "type": "dock",
-      "level": 2,
-      "file": "assets/dock-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        550,
-        41,
-        976,
-        338
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "406ba267c5a9e6ccd666924513f445f87031a545ceb6cfd18a39baaf372f0195"
-    },
-    "dock:3": {
-      "type": "dock",
-      "level": 3,
-      "file": "assets/dock-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        1057,
-        10,
-        1488,
-        345
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "fa4548ab7c024e90d51aa0efffa2c62e93aefc64a9394c870b8bfb3d22a43d95"
-    },
-    "fishery:1": {
-      "type": "fishery",
-      "level": 1,
-      "file": "assets/fishery-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        80,
-        401,
-        432,
-        653
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "4d6324893d736d497664ac164e7244a06e9b73d2d9d610ff5bffc749c73f31c3"
-    },
-    "fishery:2": {
-      "type": "fishery",
-      "level": 2,
-      "file": "assets/fishery-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        579,
-        343,
-        950,
-        655
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7f81a06fa5a9987f75218e85522338c6e73547d26bacb82f14efe44a31ef778e"
-    },
-    "fishery:3": {
-      "type": "fishery",
-      "level": 3,
-      "file": "assets/fishery-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        1074,
-        334,
-        1476,
-        668
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "0986cc7b150328082641e884b513892553afb5234ccb8fb7203b763e5977db99"
-    },
-    "armory:1": {
-      "type": "armory",
-      "level": 1,
-      "file": "assets/armory-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        106,
-        743,
-        425,
-        990
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "997496ba5e1656d618d0714c308034da149bb5a1bbff8f8a933b33fdb6d1e10e"
-    },
-    "armory:2": {
-      "type": "armory",
-      "level": 2,
-      "file": "assets/armory-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        596,
-        680,
-        936,
-        996
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7fc688c3591e0e5f107734c9516c69a3ccc879087307903aa8a1983ea4179750"
-    },
-    "armory:3": {
-      "type": "armory",
-      "level": 3,
-      "file": "assets/armory-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-niveles-puerto.png",
-      "sourceBox": [
-        1046,
-        658,
-        1447,
-        1005
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "aa3bbe4dd855ffc23319c67a9dc05ab23fb214773ff617127a97410876af7bb8"
-    },
-    "market:1": {
-      "type": "market",
-      "level": 1,
-      "file": "assets/market-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        98,
-        98,
-        421,
-        350
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "0f75810cd6b409473cee7823c951eff3b6d51c467b7a715a3db96219260c798e"
-    },
-    "market:2": {
-      "type": "market",
-      "level": 2,
-      "file": "assets/market-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        567,
-        30,
-        949,
-        353
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "1b5c060bf104a1be171c9e9ea075fc019e0963bc3f400161a6ab5194ffe5928e"
-    },
-    "market:3": {
-      "type": "market",
-      "level": 3,
-      "file": "assets/market-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        1061,
-        6,
-        1439,
-        356
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d519bb16efd140212569a2af1dffb3541d83d6d5bc6ac329c1b901043e6e4403"
-    },
-    "shipyard:1": {
-      "type": "shipyard",
-      "level": 1,
-      "file": "assets/shipyard-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        78,
-        428,
-        450,
-        664
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "48e0607fd39f95e871f335beb8c1e079085a7acef4bf19a7f5dada77f92017fb"
-    },
-    "shipyard:2": {
-      "type": "shipyard",
-      "level": 2,
-      "file": "assets/shipyard-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        555,
-        361,
-        958,
-        672
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "bdff12c13194ea8f0724733c86b15a2e47222db40e413efed89159abff186b4c"
-    },
-    "shipyard:3": {
-      "type": "shipyard",
-      "level": 3,
-      "file": "assets/shipyard-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "astillero3-grande.png",
-      "sourceBox": [
-        11,
-        27,
-        1253,
-        1254
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "5044b10a8f39b91295907d2685b9d65e77ee8cc636c39dd2e670f5a4a0c5a4e4"
-    },
-    "tavern:1": {
-      "type": "tavern",
-      "level": 1,
-      "file": "assets/tavern-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        94,
-        755,
-        443,
-        979
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "29b718e161a0f570547fa88805d8f623cf451746d389cd325116bb0af2143386"
-    },
-    "tavern:2": {
-      "type": "tavern",
-      "level": 2,
-      "file": "assets/tavern-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-a.png",
-      "sourceBox": [
-        572,
-        679,
-        940,
-        999
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "1f7f79fb48a5d7db2e0133b6a4714b9d3180001adf9d06fccd75c7977d2de95f"
-    },
-    "tavern:3": {
-      "type": "tavern",
-      "level": 3,
-      "file": "assets/tavern-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "servicios-nivel3-corregidos.png",
-      "sourceBox": [
-        906,
-        222,
-        1513,
-        803
-      ],
-      "baseWidth": 235,
-      "status": "art-review",
-      "fileSha256": "3f50c61e218048cb7e2549411dc4939155e9109e8184712e27157cb153d1579b"
-    },
-    "bank:1": {
-      "type": "bank",
-      "level": 1,
-      "file": "assets/bank-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        114,
-        116,
-        448,
-        366
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "b4e06f84d3b999dddcd4944736994354a7d7ea77256e37f761c051c0c5451d89"
-    },
-    "bank:2": {
-      "type": "bank",
-      "level": 2,
-      "file": "assets/bank-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        570,
-        26,
-        914,
-        359
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ada610fa8dcad0343856dd9c187a20f68532df310bf98ff2751ca637813120b6"
-    },
-    "bank:3": {
-      "type": "bank",
-      "level": 3,
-      "file": "assets/bank-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        1063,
-        16,
-        1439,
-        376
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "af63cdbde858c36193a28fd754ac147d5e9ea49af79bfc0ec29618ef24a5b74c"
-    },
-    "office:1": {
-      "type": "office",
-      "level": 1,
-      "file": "assets/office-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        142,
-        447,
-        440,
-        687
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7323a8cd7c6960666122009be233ec5589c7c9552d7be5d7256ebb1fd8b96193"
-    },
-    "office:2": {
-      "type": "office",
-      "level": 2,
-      "file": "assets/office-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        601,
-        369,
-        924,
-        689
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "bde2017cc3318163f007253b417bd4b396195231d6a0f9e6ade986890194375f"
-    },
-    "office:3": {
-      "type": "office",
-      "level": 3,
-      "file": "assets/office-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        1077,
-        356,
-        1414,
-        693
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "ba39170dee8fb8eedbf4d3b8f32e096148516e9a22d3c7c5ea91f727a29c7857"
-    },
-    "gate:1": {
-      "type": "gate",
-      "level": 1,
-      "file": "assets/gate-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        116,
-        739,
-        440,
-        992
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "1bef9821620d2a3966f47c125a45a67edd067fe7d65434a983b50f155a586375"
-    },
-    "gate:2": {
-      "type": "gate",
-      "level": 2,
-      "file": "assets/gate-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        567,
-        684,
-        932,
-        995
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "e1e53123f2b5dc86117aead98596f14a78303cd44af9d862814dc9e16d43a5c8"
-    },
-    "gate:3": {
-      "type": "gate",
-      "level": 3,
-      "file": "assets/gate-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "biblioteca-servicios-b.png",
-      "sourceBox": [
-        1030,
-        667,
-        1460,
-        1009
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "cea6cd8cabe8be536bc2c52f4a0c386142e6171ac3cb0571c74aa9f636c16dfb"
-    },
-    "house_poor:1": {
-      "type": "house_poor",
-      "level": 1,
-      "file": "assets/house_poor-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        123,
-        113,
-        406,
-        310
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "0fd5b7c4b39fc8b545134f4cd65a6e4e1422c50fb4bfdce896a2a9b353d403ae"
-    },
-    "house_poor:2": {
-      "type": "house_poor",
-      "level": 2,
-      "file": "assets/house_poor-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        582,
-        54,
-        940,
-        308
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "198a8ae5255908a13fc678009a481d651e13ca354d7a1df19386035c6beac79b"
-    },
-    "house_poor:3": {
-      "type": "house_poor",
-      "level": 3,
-      "file": "assets/house_poor-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        1112,
-        14,
-        1445,
-        316
-      ],
-      "baseWidth": 326,
-      "status": "art-review",
-      "fileSha256": "721f9f00e5dca3cfaecb9e5922969c8ded19042042062798d2e0d8bff90614ff"
-    },
-    "house_comfortable:1": {
-      "type": "house_comfortable",
-      "level": 1,
-      "file": "assets/house_comfortable-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        128,
-        383,
-        411,
-        622
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "7c6f4f4422dcda499a0d8986783ffebf8d3eaf192e7ba16bd2e0bd0f21dc7549"
-    },
-    "house_comfortable:2": {
-      "type": "house_comfortable",
-      "level": 2,
-      "file": "assets/house_comfortable-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        600,
-        329,
-        925,
-        632
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "2bc5a23a2280560279bb79f3edb6dbc42baac76753b8bf0ea3466f88bed6044d"
-    },
-    "house_comfortable:3": {
-      "type": "house_comfortable",
-      "level": 3,
-      "file": "assets/house_comfortable-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        1127,
-        323,
-        1421,
-        640
-      ],
-      "baseWidth": 389,
-      "status": "art-review",
-      "fileSha256": "10de7c616342a6c8fa880c10f2704364b48dacb753309f8a586061d9c46926a3"
-    },
-    "house_rich:1": {
-      "type": "house_rich",
-      "level": 1,
-      "file": "assets/house_rich-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        26,
-        661,
-        477,
-        1001
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "c3e623deae68d6b2e1f4d9b776462e6af5e7ac2ee253cc73fbee84677d18f2ab"
-    },
-    "house_rich:2": {
-      "type": "house_rich",
-      "level": 2,
-      "file": "assets/house_rich-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        529,
-        654,
-        1009,
-        1013
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "d348969006eaeef091769025ca6bebad0d643e0a196a4c7b246a2dad91468f5a"
-    },
-    "house_rich:3": {
-      "type": "house_rich",
-      "level": 3,
-      "file": "assets/house_rich-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "atlas": "casas-sociales-diferenciadas.png",
-      "sourceBox": [
-        1044,
-        610,
-        1514,
-        1017
-      ],
-      "baseWidth": 400,
-      "status": "art-review",
-      "fileSha256": "fa71d00978168e92c70fbf7d83632e98f540b3d8cdd6b51aba9bba5fd76d7128"
-    },
-    "construction:1": {
-      "file": "assets/construction-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "5571b4c55cf3682f935b634561ab8501dba9974270742d182b936edc6c1c0471"
-    },
-    "construction:2": {
-      "file": "assets/construction-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "8d719d05b59b133e4894daaf6e499410af0eb7cc7c8397f9f00ae81aff9316c2"
-    },
-    "construction:3": {
-      "file": "assets/construction-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "c8af2f0527979dab8c79a332ff089e5d8985da7eb514876efa7f344e0cec722d"
-    },
-    "prop:1": {
-      "file": "assets/prop-1.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "db38c1f129c3eeb0007045e28d5f49eaad68363a1c5770f59bf92a350cc09456"
-    },
-    "prop:2": {
-      "file": "assets/prop-2.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "d7762035a30ab0a1ccbb9d469b3cd51aa3c3530ef1e1713a0e5e134e779b67fe"
-    },
-    "prop:3": {
-      "file": "assets/prop-3.webp",
-      "anchor": [
-        256,
-        500
-      ],
-      "origin": "original generated illustration; biblioteca-estados.png",
-      "fileSha256": "32afb536e81ed322f9316deaf293401f9692fe1361794fa5919add31872c0c5b"
-    }
+ "version": 1,
+ "sourceCommit": "47a13be536268f5fe349d8cc77ac9f0b3ce2523d",
+ "origin": "Generated original illustration, matching internally generated v3 reference; no third party assets. Not CC0. No exclusive rights claim.",
+ "assets": {
+  "farm:1": {
+   "type": "farm",
+   "level": 1,
+   "file": "assets/farm-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    72,
+    106,
+    446,
+    327
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "8045b79a05238b59ed4ab89f7b32ab7992b6eaa5f46782043cb74dcbe462517a"
+  },
+  "farm:2": {
+   "type": "farm",
+   "level": 2,
+   "file": "assets/farm-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    551,
+    31,
+    955,
+    340
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "78458c6cd7a25cdff7aa53ef0b6d0a3504b880204d75f4fea39084749d344dae"
+  },
+  "farm:3": {
+   "type": "farm",
+   "level": 3,
+   "file": "assets/farm-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    1050,
+    7,
+    1463,
+    343
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "2c67c16da55e9ae2cce1f9ddb9c3ab78883e2e148c79c9f8c26d6e4b28e71a24"
+  },
+  "pasture:1": {
+   "type": "pasture",
+   "level": 1,
+   "file": "assets/pasture-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    91,
+    438,
+    449,
+    672
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "988f047bae4f8fa5dd10f56071ab19d375fc29686eac3f3ddeb1eee545443a08"
+  },
+  "pasture:2": {
+   "type": "pasture",
+   "level": 2,
+   "file": "assets/pasture-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    557,
+    378,
+    953,
+    667
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1a6a9b9bb83e9e13aff553ee964ca637dd25f672c160b643bb3fcae7dda8d691"
+  },
+  "pasture:3": {
+   "type": "pasture",
+   "level": 3,
+   "file": "assets/pasture-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    1050,
+    335,
+    1458,
+    666
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "87d8133c561f5fe5c8764a3d8bc2e11001aac741ed9ea5ef2130962f7595d435"
+  },
+  "sawmill:1": {
+   "type": "sawmill",
+   "level": 1,
+   "file": "assets/sawmill-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    89,
+    750,
+    445,
+    998
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7ac3889eaaaafbca38683bd930e77389d1f1b7e6cb6170bae45fdb58186cf615"
+  },
+  "sawmill:2": {
+   "type": "sawmill",
+   "level": 2,
+   "file": "assets/sawmill-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    556,
+    680,
+    954,
+    996
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "e96e23f566445aa9f6b0e7b001af86e4ef8a0f878ff6a8b799d50c7d55abd572"
+  },
+  "sawmill:3": {
+   "type": "sawmill",
+   "level": 3,
+   "file": "assets/sawmill-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-a.png",
+   "sourceBox": [
+    1056,
+    642,
+    1468,
+    1003
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "cfe72164c2e51e91618ce27ba1c405ddf18e3b93426ce73a49b34ea6cc4701e2"
+  },
+  "mine:1": {
+   "type": "mine",
+   "level": 1,
+   "file": "assets/mine-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    58,
+    125,
+    438,
+    353
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "2f5d2f3f741e0b14b0a66da512fce28abdb8da8cf50cc72af14eb350c9c10115"
+  },
+  "mine:2": {
+   "type": "mine",
+   "level": 2,
+   "file": "assets/mine-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    530,
+    28,
+    959,
+    358
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7b488629b69031a720fbacf37e4a133036006696f50d33cc924929497f973f8c"
+  },
+  "mine:3": {
+   "type": "mine",
+   "level": 3,
+   "file": "assets/mine-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    1038,
+    6,
+    1495,
+    364
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "01017b93acc3e3e7beb902eb2dfb505703f5d38a10bc20b7aaca523215c948b2"
+  },
+  "oil_mill:1": {
+   "type": "oil_mill",
+   "level": 1,
+   "file": "assets/oil_mill-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    73,
+    448,
+    418,
+    652
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "cf1402f8c03fda09adfad059415302ab125b1087b36e64c7a8782ea8632d83c5"
+  },
+  "oil_mill:2": {
+   "type": "oil_mill",
+   "level": 2,
+   "file": "assets/oil_mill-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    530,
+    356,
+    956,
+    666
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "8ac9906cc326d16c432c6ae5ad5239d300ed14e2c6763df022f3519612b4c3a7"
+  },
+  "oil_mill:3": {
+   "type": "oil_mill",
+   "level": 3,
+   "file": "assets/oil_mill-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    1034,
+    347,
+    1497,
+    682
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ebf7725c64987ba832a65071b6608f5a6b898619893005bf8b54ec94fb4f82e8"
+  },
+  "vineyard:1": {
+   "type": "vineyard",
+   "level": 1,
+   "file": "assets/vineyard-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    43,
+    766,
+    406,
+    994
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d3e1e3e1baa658536b0c95f75adfd904506976657f14cd70b3a4ce1cf6444124"
+  },
+  "vineyard:2": {
+   "type": "vineyard",
+   "level": 2,
+   "file": "assets/vineyard-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    523,
+    684,
+    956,
+    991
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "17fac2d8f0a681b09690654363f1d91b854230d09912f99b8f6f5b3e3c3d3ea6"
+  },
+  "vineyard:3": {
+   "type": "vineyard",
+   "level": 3,
+   "file": "assets/vineyard-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-b.png",
+   "sourceBox": [
+    1033,
+    656,
+    1503,
+    1008
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "a933f2b5b6ddbbf4b1d4a851003731f043c4a0d2f392d4dab3a83ea99cdba109"
+  },
+  "saltworks:1": {
+   "type": "saltworks",
+   "level": 1,
+   "file": "assets/saltworks-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    50,
+    95,
+    458,
+    344
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "42bd2a165fba25e5ffedf3c5c95bf8c91b467ba036ed3a0572be0bcae55916b4"
+  },
+  "saltworks:2": {
+   "type": "saltworks",
+   "level": 2,
+   "file": "assets/saltworks-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    545,
+    7,
+    982,
+    341
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "50007ce6c1f8259ee86e54a50f3dfb8367c55c6fd1ab6a54b6614ee78ae9d395"
+  },
+  "saltworks:3": {
+   "type": "saltworks",
+   "level": 3,
+   "file": "assets/saltworks-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    1047,
+    2,
+    1494,
+    368
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "bf55f81f3f16f37984c64e6a253761aa3fe0676b9b40971ed765ae56b1285de2"
+  },
+  "brewery:1": {
+   "type": "brewery",
+   "level": 1,
+   "file": "assets/brewery-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    95,
+    439,
+    441,
+    657
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "f1325aa840f08b1732c3702cda44d21ae34f8a142c60865142ef1471229ce222"
+  },
+  "brewery:2": {
+   "type": "brewery",
+   "level": 2,
+   "file": "assets/brewery-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    562,
+    353,
+    980,
+    656
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "c368a188ec0e674fc709c9c72f61f2361cfb14594729702261f09ccc21914754"
+  },
+  "brewery:3": {
+   "type": "brewery",
+   "level": 3,
+   "file": "assets/brewery-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    1102,
+    356,
+    1484,
+    660
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "8fbd2c42a2c79e7f469622d50084a6821340f6670b4ba94025e110165cf442da"
+  },
+  "soapworks:1": {
+   "type": "soapworks",
+   "level": 1,
+   "file": "assets/soapworks-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    76,
+    733,
+    456,
+    995
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "fec09301d955f3e6fd6a73ff3a3c93fb56e8557c21fed5abd115abc5df719e2e"
+  },
+  "soapworks:2": {
+   "type": "soapworks",
+   "level": 2,
+   "file": "assets/soapworks-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    565,
+    662,
+    964,
+    1007
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "f77f26759d1ceb701dcda8c4976f6bea5757060c560a14652c6859e36306010f"
+  },
+  "soapworks:3": {
+   "type": "soapworks",
+   "level": 3,
+   "file": "assets/soapworks-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-produccion.png",
+   "sourceBox": [
+    1076,
+    656,
+    1487,
+    1010
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "72696e03ce1de2f877a28d36a4fb5339471fa36361e94ee4f5ce2d8f06149525"
+  },
+  "esparto_field:1": {
+   "type": "esparto_field",
+   "level": 1,
+   "file": "assets/esparto_field-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    65,
+    121,
+    415,
+    332
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "5c197bd2f21706bf80daf8e7c11c97e1cb34a7daac27fb47cb36fa362ceee95a"
+  },
+  "esparto_field:2": {
+   "type": "esparto_field",
+   "level": 2,
+   "file": "assets/esparto_field-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    545,
+    59,
+    944,
+    346
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "f1c4a1ea2b0bd402e20c878917dd8d67839bf5d6b9c8fe62dc1822569ad84467"
+  },
+  "esparto_field:3": {
+   "type": "esparto_field",
+   "level": 3,
+   "file": "assets/esparto_field-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    1052,
+    22,
+    1472,
+    342
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "60c1ae264da080fc17027a6f5308c214e4b8ac8be701921c6e804fc233cb75bb"
+  },
+  "ranch:1": {
+   "type": "ranch",
+   "level": 1,
+   "file": "assets/ranch-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    63,
+    443,
+    414,
+    659
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "245e5114989402c648ef7f383bf278aeab173fdce0c38d5f775bf7fa36187feb"
+  },
+  "ranch:2": {
+   "type": "ranch",
+   "level": 2,
+   "file": "assets/ranch-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    540,
+    384,
+    948,
+    663
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "80b9f8197256c1a416cb75b533fdc74289b05beef4e55b2c5323b6bf4f660537"
+  },
+  "ranch:3": {
+   "type": "ranch",
+   "level": 3,
+   "file": "assets/ranch-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    1050,
+    349,
+    1474,
+    670
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "69356afbc8bd9328776dbff0d0d6d2222e4b56f01f3d51583eef343ae33bccfa"
+  },
+  "posito:1": {
+   "type": "posito",
+   "level": 1,
+   "file": "assets/posito-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    104,
+    721,
+    357,
+    974
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7fc28bf59cc933745fd81247c21223a35aa48c8d415e24ab1eb5f2af3494d5fe"
+  },
+  "posito:2": {
+   "type": "posito",
+   "level": 2,
+   "file": "assets/posito-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    566,
+    680,
+    925,
+    996
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ec8930738c657b6a89f1b59804b8970003651d8958d47a51847a6bad930980bf"
+  },
+  "posito:3": {
+   "type": "posito",
+   "level": 3,
+   "file": "assets/posito-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-campo-civico.png",
+   "sourceBox": [
+    1110,
+    639,
+    1455,
+    999
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d4b79b84394ceed85221c99d197440d2e27f6976c8630f5551204baa087dded6"
+  },
+  "hospital:1": {
+   "type": "hospital",
+   "level": 1,
+   "file": "assets/hospital-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    123,
+    146,
+    426,
+    372
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d731b0ec1befbe39d789e502de306d52e5e4c4c9c95aacb2eca1d36cbed01356"
+  },
+  "hospital:2": {
+   "type": "hospital",
+   "level": 2,
+   "file": "assets/hospital-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    571,
+    80,
+    940,
+    369
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7b8746f4636fb6da70026fc3fa5cae12d83961429f0dcb047acf690345bf2795"
+  },
+  "hospital:3": {
+   "type": "hospital",
+   "level": 3,
+   "file": "assets/hospital-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    1073,
+    11,
+    1474,
+    384
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d2387fd7ee0e8847dd3d90616a450de3b98a2cbf10a693d2e63afa748cf55b1a"
+  },
+  "alhondiga:1": {
+   "type": "alhondiga",
+   "level": 1,
+   "file": "assets/alhondiga-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    110,
+    470,
+    426,
+    671
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ae6ada9d369646b7fd27d1ed0fabc81a92ec8df37ff8f8bbc04baccd9732270e"
+  },
+  "alhondiga:2": {
+   "type": "alhondiga",
+   "level": 2,
+   "file": "assets/alhondiga-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    574,
+    392,
+    956,
+    668
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "379d0377c788723beb4fd6264abcf2fe12749425f25b2f6d8b696ef88f3fe364"
+  },
+  "alhondiga:3": {
+   "type": "alhondiga",
+   "level": 3,
+   "file": "assets/alhondiga-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    1065,
+    385,
+    1494,
+    682
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "391d7e97b72526a45198b3e8b90dcbfdded17beaa912bed3f48163486763b6bf"
+  },
+  "capilla:1": {
+   "type": "capilla",
+   "level": 1,
+   "file": "assets/capilla-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    150,
+    756,
+    400,
+    992
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "e407ca3673dfea1158a17031eab150628cb7e8d5f29d860d81cfc52438e9311b"
+  },
+  "capilla:2": {
+   "type": "capilla",
+   "level": 2,
+   "file": "assets/capilla-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    586,
+    672,
+    915,
+    993
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7ec5e0b5ee8ecdd1f6b39c799d1ef87fe594aa5ba147b09415b128770f3a01f7"
+  },
+  "capilla:3": {
+   "type": "capilla",
+   "level": 3,
+   "file": "assets/capilla-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-civicos.png",
+   "sourceBox": [
+    1093,
+    653,
+    1472,
+    1003
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "efeb104272def6a44947d11fd26a356663024e969c6ce4f31f267a2ec0aa6d92"
+  },
+  "caminos:1": {
+   "type": "caminos",
+   "level": 1,
+   "file": "assets/caminos-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    65,
+    48,
+    477,
+    277
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "792c63a30cbee77b1b7444eb00912f8c851e74798a27f1430235bbb315be162b"
+  },
+  "caminos:2": {
+   "type": "caminos",
+   "level": 2,
+   "file": "assets/caminos-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    569,
+    54,
+    977,
+    276
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "eb59f13e570e04f651aa669e7b8f0490fc29e108e5d78777a58960c430a327ea"
+  },
+  "caminos:3": {
+   "type": "caminos",
+   "level": 3,
+   "file": "assets/caminos-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    1080,
+    57,
+    1476,
+    274
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "70c23282454afaece8943559514b4cad7b69c95d3c60fac587c206257502ee64"
+  },
+  "pozo:1": {
+   "type": "pozo",
+   "level": 1,
+   "file": "assets/pozo-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    141,
+    375,
+    414,
+    622
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "020c3850bfadc054c6079206f8f3887341569dad89069ef5ed4fa4249b60e1fa"
+  },
+  "pozo:2": {
+   "type": "pozo",
+   "level": 2,
+   "file": "assets/pozo-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    630,
+    343,
+    915,
+    625
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ae963ce27db69d748eccc99a8ee900aae835d9051fafeea2aeae71daa48b2696"
+  },
+  "pozo:3": {
+   "type": "pozo",
+   "level": 3,
+   "file": "assets/pozo-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    1105,
+    291,
+    1447,
+    633
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "317d2839085400898daee6eba7e9d0eb40609c073d462c50b96d011b7e1c2ad5"
+  },
+  "wall:1": {
+   "type": "wall",
+   "level": 1,
+   "file": "assets/wall-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    74,
+    685,
+    475,
+    955
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "8206e0f3e0637924f686615f72dd4f707db3fb5b7e6a17b5a1aa4d3b5f2590b4"
+  },
+  "wall:2": {
+   "type": "wall",
+   "level": 2,
+   "file": "assets/wall-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    540,
+    651,
+    979,
+    968
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d2a237076b729cf34a2dbc814cd6d188e32d6eb5a39bb912702730a3bd55b9d5"
+  },
+  "wall:3": {
+   "type": "wall",
+   "level": 3,
+   "file": "assets/wall-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-infraestructura.png",
+   "sourceBox": [
+    1047,
+    628,
+    1501,
+    975
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "197f5fb26ac0aef428109e5764606e3e972f769cebd328c7d142c144d588ec39"
+  },
+  "house:1": {
+   "type": "house",
+   "level": 1,
+   "file": "assets/house-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    145,
+    101,
+    462,
+    353
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "b55a82f5d4085ed70569d783bd685fa1509ad3d8b0ae3e7369942f80927248ce"
+  },
+  "house:2": {
+   "type": "house",
+   "level": 2,
+   "file": "assets/house-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    575,
+    30,
+    945,
+    370
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "2f452e7f53bd4e100ce9bdde1fe38e8aa13ee9deca2119ccfcfdf09f2e87d1c7"
+  },
+  "house:3": {
+   "type": "house",
+   "level": 3,
+   "file": "assets/house-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    1096,
+    14,
+    1408,
+    342
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "93bb6c5fc06b600ca77563f743e6b6d44780b4edc956d868c85db33331a7cf95"
+  },
+  "warehouse:1": {
+   "type": "warehouse",
+   "level": 1,
+   "file": "assets/warehouse-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    107,
+    431,
+    473,
+    685
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "b65ecbdf5ec2af792e98b803042ef331e684cf9d8f39fcefaff94db8daa52fc8"
+  },
+  "warehouse:2": {
+   "type": "warehouse",
+   "level": 2,
+   "file": "assets/warehouse-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    598,
+    379,
+    943,
+    688
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "b02d9ef3a454ec9201249f80bad23e55740af1d5e1af79a9fa83b7e3f6156f4c"
+  },
+  "warehouse:3": {
+   "type": "warehouse",
+   "level": 3,
+   "file": "assets/warehouse-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    1081,
+    345,
+    1427,
+    687
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "f940f321f2a2f1667c906a3bb6d603f5d99742002f727a8c9c0348006ef06f1b"
+  },
+  "workshop:1": {
+   "type": "workshop",
+   "level": 1,
+   "file": "assets/workshop-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    127,
+    734,
+    457,
+    994
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "9fe06db60971877b71ae7d5f500d510fe50509d10862e9bfa38dfdcc91a547c7"
+  },
+  "workshop:2": {
+   "type": "workshop",
+   "level": 2,
+   "file": "assets/workshop-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    596,
+    702,
+    952,
+    1001
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "9fe194941ddd16d1cd9aa54743f32a9daddaa2a898319060eb390e3817a44f44"
+  },
+  "workshop:3": {
+   "type": "workshop",
+   "level": 3,
+   "file": "assets/workshop-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-urbana.png",
+   "sourceBox": [
+    1072,
+    687,
+    1434,
+    1001
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "bfa229b460d34b101ccd90fcce39f5b317dce66ba9c2a1400becbacac1c7706c"
+  },
+  "ironworks:1": {
+   "type": "ironworks",
+   "level": 1,
+   "file": "assets/ironworks-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    106,
+    108,
+    434,
+    359
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "074961fb86755052b038d4dd2098a8315ceb04e67794b07fc5127bdf4ef73355"
+  },
+  "ironworks:2": {
+   "type": "ironworks",
+   "level": 2,
+   "file": "assets/ironworks-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    575,
+    41,
+    952,
+    357
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "aa2bc7707ae22a676772c782fd0aaa3b854e8fb5c67a8b2833d6569e48bd3949"
+  },
+  "ironworks:3": {
+   "type": "ironworks",
+   "level": 3,
+   "file": "assets/ironworks-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    1083,
+    9,
+    1463,
+    362
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "9632c7edc8a0ae4e78c408ef083e20ab2557738e9039c80e644669ed51445373"
+  },
+  "pottery:1": {
+   "type": "pottery",
+   "level": 1,
+   "file": "assets/pottery-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    122,
+    443,
+    426,
+    673
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "0fc5856a7b20484a955d51ac88aac40fb2d58b7cd053e80e6c381af78339f1bb"
+  },
+  "pottery:2": {
+   "type": "pottery",
+   "level": 2,
+   "file": "assets/pottery-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    579,
+    355,
+    941,
+    673
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1ac87cf776da0caf5e60127e2666f3bc50f3ca2a32812b7c6c5cac62c0a3ccd1"
+  },
+  "pottery:3": {
+   "type": "pottery",
+   "level": 3,
+   "file": "assets/pottery-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    1086,
+    351,
+    1475,
+    673
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d4e1f12a3d79724b6afca00aded875e2e320faa2ad085698f12c6f4cfe99502c"
+  },
+  "brickworks:1": {
+   "type": "brickworks",
+   "level": 1,
+   "file": "assets/brickworks-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    106,
+    760,
+    433,
+    989
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "9bcd278135a6aeaef1c74c149fa8ba64198b45b68ef291ae21e0fc935d751d16"
+  },
+  "brickworks:2": {
+   "type": "brickworks",
+   "level": 2,
+   "file": "assets/brickworks-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    565,
+    694,
+    946,
+    992
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "3dab55685a6e21494515d5fb0dfe72e2d40d05b4d32888ab01ecd75ae67d8a0e"
+  },
+  "brickworks:3": {
+   "type": "brickworks",
+   "level": 3,
+   "file": "assets/brickworks-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-industria.png",
+   "sourceBox": [
+    1067,
+    670,
+    1500,
+    1017
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "9c09127b2857e85543d555944ad69c4407809b4e3e1f0802d387f5efd5ed1390"
+  },
+  "dock:1": {
+   "type": "dock",
+   "level": 1,
+   "file": "assets/dock-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    75,
+    48,
+    462,
+    321
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "03f888228ac644beab4ba8f165627f3d12f250b258ef8a834bc2511e7c8ea166"
+  },
+  "dock:2": {
+   "type": "dock",
+   "level": 2,
+   "file": "assets/dock-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    550,
+    41,
+    976,
+    338
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "406ba267c5a9e6ccd666924513f445f87031a545ceb6cfd18a39baaf372f0195"
+  },
+  "dock:3": {
+   "type": "dock",
+   "level": 3,
+   "file": "assets/dock-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    1057,
+    10,
+    1488,
+    345
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "fa4548ab7c024e90d51aa0efffa2c62e93aefc64a9394c870b8bfb3d22a43d95"
+  },
+  "fishery:1": {
+   "type": "fishery",
+   "level": 1,
+   "file": "assets/fishery-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    80,
+    401,
+    432,
+    653
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "4d6324893d736d497664ac164e7244a06e9b73d2d9d610ff5bffc749c73f31c3"
+  },
+  "fishery:2": {
+   "type": "fishery",
+   "level": 2,
+   "file": "assets/fishery-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    579,
+    343,
+    950,
+    655
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7f81a06fa5a9987f75218e85522338c6e73547d26bacb82f14efe44a31ef778e"
+  },
+  "fishery:3": {
+   "type": "fishery",
+   "level": 3,
+   "file": "assets/fishery-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    1074,
+    334,
+    1476,
+    668
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "0986cc7b150328082641e884b513892553afb5234ccb8fb7203b763e5977db99"
+  },
+  "armory:1": {
+   "type": "armory",
+   "level": 1,
+   "file": "assets/armory-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    106,
+    743,
+    425,
+    990
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "997496ba5e1656d618d0714c308034da149bb5a1bbff8f8a933b33fdb6d1e10e"
+  },
+  "armory:2": {
+   "type": "armory",
+   "level": 2,
+   "file": "assets/armory-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    596,
+    680,
+    936,
+    996
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7fc688c3591e0e5f107734c9516c69a3ccc879087307903aa8a1983ea4179750"
+  },
+  "armory:3": {
+   "type": "armory",
+   "level": 3,
+   "file": "assets/armory-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-niveles-puerto.png",
+   "sourceBox": [
+    1046,
+    658,
+    1447,
+    1005
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "aa3bbe4dd855ffc23319c67a9dc05ab23fb214773ff617127a97410876af7bb8"
+  },
+  "market:1": {
+   "type": "market",
+   "level": 1,
+   "file": "assets/market-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    98,
+    98,
+    421,
+    350
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "0f75810cd6b409473cee7823c951eff3b6d51c467b7a715a3db96219260c798e"
+  },
+  "market:2": {
+   "type": "market",
+   "level": 2,
+   "file": "assets/market-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    567,
+    30,
+    949,
+    353
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1b5c060bf104a1be171c9e9ea075fc019e0963bc3f400161a6ab5194ffe5928e"
+  },
+  "market:3": {
+   "type": "market",
+   "level": 3,
+   "file": "assets/market-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    1061,
+    6,
+    1439,
+    356
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d519bb16efd140212569a2af1dffb3541d83d6d5bc6ac329c1b901043e6e4403"
+  },
+  "shipyard:1": {
+   "type": "shipyard",
+   "level": 1,
+   "file": "assets/shipyard-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    78,
+    428,
+    450,
+    664
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "48e0607fd39f95e871f335beb8c1e079085a7acef4bf19a7f5dada77f92017fb"
+  },
+  "shipyard:2": {
+   "type": "shipyard",
+   "level": 2,
+   "file": "assets/shipyard-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    555,
+    361,
+    958,
+    672
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "bdff12c13194ea8f0724733c86b15a2e47222db40e413efed89159abff186b4c"
+  },
+  "shipyard:3": {
+   "type": "shipyard",
+   "level": 3,
+   "file": "assets/shipyard-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "astillero3-grande.png",
+   "sourceBox": [
+    11,
+    27,
+    1253,
+    1254
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "5044b10a8f39b91295907d2685b9d65e77ee8cc636c39dd2e670f5a4a0c5a4e4"
+  },
+  "tavern:1": {
+   "type": "tavern",
+   "level": 1,
+   "file": "assets/tavern-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    94,
+    755,
+    443,
+    979
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "29b718e161a0f570547fa88805d8f623cf451746d389cd325116bb0af2143386"
+  },
+  "tavern:2": {
+   "type": "tavern",
+   "level": 2,
+   "file": "assets/tavern-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-a.png",
+   "sourceBox": [
+    572,
+    679,
+    940,
+    999
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1f7f79fb48a5d7db2e0133b6a4714b9d3180001adf9d06fccd75c7977d2de95f"
+  },
+  "tavern:3": {
+   "type": "tavern",
+   "level": 3,
+   "file": "assets/tavern-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "servicios-nivel3-corregidos.png",
+   "sourceBox": [
+    906,
+    222,
+    1513,
+    803
+   ],
+   "baseWidth": 235,
+   "status": "art-review",
+   "fileSha256": "3f50c61e218048cb7e2549411dc4939155e9109e8184712e27157cb153d1579b"
+  },
+  "bank:1": {
+   "type": "bank",
+   "level": 1,
+   "file": "assets/bank-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    114,
+    116,
+    448,
+    366
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "b4e06f84d3b999dddcd4944736994354a7d7ea77256e37f761c051c0c5451d89"
+  },
+  "bank:2": {
+   "type": "bank",
+   "level": 2,
+   "file": "assets/bank-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    570,
+    26,
+    914,
+    359
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ada610fa8dcad0343856dd9c187a20f68532df310bf98ff2751ca637813120b6"
+  },
+  "bank:3": {
+   "type": "bank",
+   "level": 3,
+   "file": "assets/bank-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    1063,
+    16,
+    1439,
+    376
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "af63cdbde858c36193a28fd754ac147d5e9ea49af79bfc0ec29618ef24a5b74c"
+  },
+  "office:1": {
+   "type": "office",
+   "level": 1,
+   "file": "assets/office-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    142,
+    447,
+    440,
+    687
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7323a8cd7c6960666122009be233ec5589c7c9552d7be5d7256ebb1fd8b96193"
+  },
+  "office:2": {
+   "type": "office",
+   "level": 2,
+   "file": "assets/office-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    601,
+    369,
+    924,
+    689
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "bde2017cc3318163f007253b417bd4b396195231d6a0f9e6ade986890194375f"
+  },
+  "office:3": {
+   "type": "office",
+   "level": 3,
+   "file": "assets/office-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    1077,
+    356,
+    1414,
+    693
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "ba39170dee8fb8eedbf4d3b8f32e096148516e9a22d3c7c5ea91f727a29c7857"
+  },
+  "gate:1": {
+   "type": "gate",
+   "level": 1,
+   "file": "assets/gate-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    116,
+    739,
+    440,
+    992
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1bef9821620d2a3966f47c125a45a67edd067fe7d65434a983b50f155a586375"
+  },
+  "gate:2": {
+   "type": "gate",
+   "level": 2,
+   "file": "assets/gate-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    567,
+    684,
+    932,
+    995
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "e1e53123f2b5dc86117aead98596f14a78303cd44af9d862814dc9e16d43a5c8"
+  },
+  "gate:3": {
+   "type": "gate",
+   "level": 3,
+   "file": "assets/gate-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "biblioteca-servicios-b.png",
+   "sourceBox": [
+    1030,
+    667,
+    1460,
+    1009
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "cea6cd8cabe8be536bc2c52f4a0c386142e6171ac3cb0571c74aa9f636c16dfb"
+  },
+  "house_poor:1": {
+   "type": "house_poor",
+   "level": 1,
+   "file": "assets/house_poor-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    123,
+    113,
+    406,
+    310
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "0fd5b7c4b39fc8b545134f4cd65a6e4e1422c50fb4bfdce896a2a9b353d403ae"
+  },
+  "house_poor:2": {
+   "type": "house_poor",
+   "level": 2,
+   "file": "assets/house_poor-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    582,
+    54,
+    940,
+    308
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "198a8ae5255908a13fc678009a481d651e13ca354d7a1df19386035c6beac79b"
+  },
+  "house_poor:3": {
+   "type": "house_poor",
+   "level": 3,
+   "file": "assets/house_poor-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    1112,
+    14,
+    1445,
+    316
+   ],
+   "baseWidth": 326,
+   "status": "art-review",
+   "fileSha256": "721f9f00e5dca3cfaecb9e5922969c8ded19042042062798d2e0d8bff90614ff"
+  },
+  "house_comfortable:1": {
+   "type": "house_comfortable",
+   "level": 1,
+   "file": "assets/house_comfortable-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    128,
+    383,
+    411,
+    622
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7c6f4f4422dcda499a0d8986783ffebf8d3eaf192e7ba16bd2e0bd0f21dc7549"
+  },
+  "house_comfortable:2": {
+   "type": "house_comfortable",
+   "level": 2,
+   "file": "assets/house_comfortable-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    600,
+    329,
+    925,
+    632
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "2bc5a23a2280560279bb79f3edb6dbc42baac76753b8bf0ea3466f88bed6044d"
+  },
+  "house_comfortable:3": {
+   "type": "house_comfortable",
+   "level": 3,
+   "file": "assets/house_comfortable-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    1127,
+    323,
+    1421,
+    640
+   ],
+   "baseWidth": 389,
+   "status": "art-review",
+   "fileSha256": "10de7c616342a6c8fa880c10f2704364b48dacb753309f8a586061d9c46926a3"
+  },
+  "house_rich:1": {
+   "type": "house_rich",
+   "level": 1,
+   "file": "assets/house_rich-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    26,
+    661,
+    477,
+    1001
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "c3e623deae68d6b2e1f4d9b776462e6af5e7ac2ee253cc73fbee84677d18f2ab"
+  },
+  "house_rich:2": {
+   "type": "house_rich",
+   "level": 2,
+   "file": "assets/house_rich-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    529,
+    654,
+    1009,
+    1013
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d348969006eaeef091769025ca6bebad0d643e0a196a4c7b246a2dad91468f5a"
+  },
+  "house_rich:3": {
+   "type": "house_rich",
+   "level": 3,
+   "file": "assets/house_rich-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "atlas": "casas-sociales-diferenciadas.png",
+   "sourceBox": [
+    1044,
+    610,
+    1514,
+    1017
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "fa71d00978168e92c70fbf7d83632e98f540b3d8cdd6b51aba9bba5fd76d7128"
+  },
+  "construction:1": {
+   "file": "assets/construction-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "5571b4c55cf3682f935b634561ab8501dba9974270742d182b936edc6c1c0471"
+  },
+  "construction:2": {
+   "file": "assets/construction-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "8d719d05b59b133e4894daaf6e499410af0eb7cc7c8397f9f00ae81aff9316c2"
+  },
+  "construction:3": {
+   "file": "assets/construction-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "c8af2f0527979dab8c79a332ff089e5d8985da7eb514876efa7f344e0cec722d"
+  },
+  "prop:1": {
+   "file": "assets/prop-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "db38c1f129c3eeb0007045e28d5f49eaad68363a1c5770f59bf92a350cc09456"
+  },
+  "prop:2": {
+   "file": "assets/prop-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "d7762035a30ab0a1ccbb9d469b3cd51aa3c3530ef1e1713a0e5e134e779b67fe"
+  },
+  "prop:3": {
+   "file": "assets/prop-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "origin": "original generated illustration; biblioteca-estados.png",
+   "fileSha256": "32afb536e81ed322f9316deaf293401f9692fe1361794fa5919add31872c0c5b"
+  },
+  "carniceria:1": {
+   "type": "carniceria",
+   "level": 1,
+   "file": "assets/carniceria-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "047aa71b305eff608c420ddd76b2e242ceeae22340d2ce522d5b83e3cb9614f5"
+  },
+  "carniceria:2": {
+   "type": "carniceria",
+   "level": 2,
+   "file": "assets/carniceria-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "7dab60e7da9c4d98d259da5add2a5560770f0e33ad991d3befd0b628de7a6cf2"
+  },
+  "carniceria:3": {
+   "type": "carniceria",
+   "level": 3,
+   "file": "assets/carniceria-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "584f6e45ee180d6983b092ccec50bd2ed188893b3722f124a7d708c1c318e0d5"
+  },
+  "molino:1": {
+   "type": "molino",
+   "level": 1,
+   "file": "assets/molino-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "e576c507d3cf38099d0eda20787796144011290aa9e72fdb53118595e6b0c206"
+  },
+  "molino:2": {
+   "type": "molino",
+   "level": 2,
+   "file": "assets/molino-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "0c58bacd1cd3ee676d73a5a7a1690ae0a39bc15c353dd10c7a2ad58eedd92cbf"
+  },
+  "molino:3": {
+   "type": "molino",
+   "level": 3,
+   "file": "assets/molino-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "d8007fb652a5b81f73233b1409aa50acbb1c2cf6ada60097b76ab43b92318d38"
+  },
+  "corral:1": {
+   "type": "corral",
+   "level": 1,
+   "file": "assets/corral-1.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "1b4d47249e4e2ad10e23ad3d25b744b97daa0b1b126b7432bc4b1c4933722e4f"
+  },
+  "corral:2": {
+   "type": "corral",
+   "level": 2,
+   "file": "assets/corral-2.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "e02b795108b53b5e60bd71da9e6fff9ec68eae11aa9b293e239afcfe0c22c57f"
+  },
+  "corral:3": {
+   "type": "corral",
+   "level": 3,
+   "file": "assets/corral-3.webp",
+   "anchor": [
+    256,
+    500
+   ],
+   "baseWidth": 400,
+   "status": "art-review",
+   "fileSha256": "8ee454afdd2eda2265f98574fa5a7d219c3ea1e34579106d3b0a605bc8328d29"
   }
+ }
 }

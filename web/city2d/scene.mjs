@@ -3,9 +3,11 @@ import {project,placement,resolveVisual,assetKey,mainland,harbourLayout,harbourS
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 const wallsLvl=(v)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<=3?n:0}; // numeric wall level 0-3 (WALL_MAX_LEVEL); anything else is 0, never truthy garbage
 let walls=wallsLvl(q.get('walls')),bld={},labels={},tick=0,ships=[];function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
-const names={house:'Casa',warehouse:'Almacén',workshop:'Taller',farm:'Granja',pasture:'Dehesa',sawmill:'Aserradero',mine:'Mina',oil_mill:'Almazara',vineyard:'Viñedo',saltworks:'Salina',brewery:'Cervecería',soapworks:'Jabonería',pottery:'Alfarería',brickworks:'Ladrillera',esparto_field:'Espartizal',ranch:'Ganadería',armory:'Armería',dock:'Muelle',fishery:'Pesquería',ironworks:'Fragua',posito:'Pósito',hospital:'Hospital',alhondiga:'Alhóndiga',caminos:'Caminos',pozo:'Pozo',capilla:'Capilla',market:'Mercado',shipyard:'Astillero',tavern:'Taberna',bank:'Banco',office:'Oficina'};
-let bounds,manifestBounds,layout,manifest,images={},zoom=1,dx=0,dy=0,selected=null,hover=null,drag=null,moved=0,grid=false,preview=false,animate=!matchMedia('(prefers-reduced-motion: reduce)').matches,frame=0,last=0,dirty=true;
-const boot=async()=>{layout=await cityPlots(city,pop);bounds={minX:Math.max(0,Math.min(...layout.plots.map(p=>p.x))-4),minY:Math.max(0,Math.min(...layout.plots.map(p=>p.y))-4),maxX:Math.max(...layout.plots.map(p=>p.x+p.w))+4,maxY:Math.max(...layout.plots.map(p=>p.y+p.d))+4};manifestBounds=[[bounds.minX,bounds.minY],[bounds.maxX,bounds.minY],[bounds.maxX,bounds.maxY],[bounds.minX,bounds.maxY]].map(([x,y])=>project(x,y));manifest=await(await fetch('manifest.json')).json();await Promise.all(Object.entries(manifest.assets).map(async([k,v])=>{const im=new Image;im.src=v.file;try{await im.decode();images[k]=im}catch{throw Error('Missing art '+v.file)}}));for(const n of ['cobble','muelle','barco','arboles']){const im=new Image;im.src='assets/'+n+'.webp';await im.decode();images[n]=im}for(const[k,n]of Object.entries(names)){if(['market','shipyard','tavern','bank','office'].includes(k))continue;const o=document.createElement('option');o.value=k;o.textContent=n;$('type').append(o)}fit();requestAnimationFrame(loop);window.__ready=true;try{parent.postMessage({kind:"city2d-ready",city},location.origin)}catch{}};
+const qnames=parse(q.get('names'),{}),qtnames=parse(q.get('tnames'),{});
+const names={house:'Casa',warehouse:'Almacén',workshop:'Taller',farm:'Granja',pasture:'Dehesa',sawmill:'Aserradero',mine:'Mina',oil_mill:'Almazara',vineyard:'Viñedo',saltworks:'Salina',brewery:'Cervecería',soapworks:'Jabonería',pottery:'Alfarería',brickworks:'Ladrillera',esparto_field:'Espartizal',ranch:'Ganadería',armory:'Armería',dock:'Muelle',fishery:'Pesquería',ironworks:'Fragua',posito:'Pósito',hospital:'Hospital',alhondiga:'Alhóndiga',caminos:'Caminos',pozo:'Pozo',capilla:'Capilla',market:'Mercado',shipyard:'Astillero',tavern:'Taberna',bank:'Banco',office:'Oficina',carniceria:'Carnicería',molino:'Molino',corral:'Corral de comedias'};
+const dispNames=()=>({...names,...qtnames,...qnames}); // the parent always sends localized names/tnames (office and warehouse included); the ES map is the standalone default
+let bounds,manifestBounds,layout,manifest,images={},visTop={},zoom=1,dx=0,dy=0,selected=null,hover=null,drag=null,moved=0,grid=false,preview=false,animate=!matchMedia('(prefers-reduced-motion: reduce)').matches,frame=0,last=0,dirty=true;
+const boot=async()=>{layout=await cityPlots(city,pop);bounds={minX:Math.max(0,Math.min(...layout.plots.map(p=>p.x))-4),minY:Math.max(0,Math.min(...layout.plots.map(p=>p.y))-4),maxX:Math.max(...layout.plots.map(p=>p.x+p.w))+4,maxY:Math.max(...layout.plots.map(p=>p.y+p.d))+4};manifestBounds=[[bounds.minX,bounds.minY],[bounds.maxX,bounds.minY],[bounds.maxX,bounds.maxY],[bounds.minX,bounds.maxY]].map(([x,y])=>project(x,y));manifest=await(await fetch('manifest.json')).json();await Promise.all(Object.entries(manifest.assets).map(async([k,v])=>{const im=new Image;im.src=v.file;try{await im.decode();images[k]=im}catch{throw Error('Missing art '+v.file)}}));const vc=document.createElement('canvas');vc.width=vc.height=128;const vg=vc.getContext('2d',{willReadFrequently:true});for(const[k,im]of Object.entries(images)){vg.clearRect(0,0,128,128);vg.drawImage(im,0,0,128,128);const d=vg.getImageData(0,0,128,128).data;let r=0;while(r<128){let hit=false;for(let c=51;c<77;c++)if(d[(r*128+c)*4+3]>10){hit=true;break}if(hit)break;r++}let b=127;while(b>r){let hit=false;for(let c=0;c<128;c++)if(d[(b*128+c)*4+3]>10){hit=true;break}if(hit)break;b--}visTop[k]=(r+(b-r)*0.30)/128}for(const n of ['cobble','muelle','barco','arboles']){const im=new Image;im.src='assets/'+n+'.webp';await im.decode();images[n]=im}for(const[k,n]of Object.entries(dispNames())){if(['market','shipyard','tavern','bank','office'].includes(k))continue;const o=document.createElement('option');o.value=k;o.textContent=n;$('type').append(o)}fit();buildLabels();requestAnimationFrame(loop);window.__ready=true;try{parent.postMessage({kind:"city2d-ready",city},location.origin)}catch{}};
 const xy=(x,y)=>{const p=project(x,y);return{x:canvas.width/2+(p.x+dx)*zoom,y:35+(p.y+dy)*zoom}};
 function polygon(p){ctx.beginPath();placement(p).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
 function fit(){dirty=true;if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const pts=manifestBounds,minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x)),minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));zoom=Math.min((innerWidth-30)/(maxX-minX+40),(innerHeight-180)/(maxY-minY+100));zoom=Math.max(.15,zoom);dx=-(minX+maxX)/2;dy=(innerHeight/2+25-35)/zoom-(minY+maxY)/2;draw(0)}
@@ -19,10 +21,16 @@ function drawWalls(){
  if(!walls)return;
  // The expansion exists only when the real simulation owns it. Rear walls occupy empty perimeter margins.
  const edges=[[[bounds.minX+1,bounds.minY+1],[bounds.maxX-1,bounds.minY+1]],[[bounds.minX+1,bounds.minY+1],[bounds.minX+1,bounds.maxY-1]]];
- for(const [start,end]of edges){const a=xy(...start),b=xy(...end),h=24*zoom;
- ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-h);ctx.lineTo(a.x,a.y-h);ctx.closePath();const g=ctx.createLinearGradient(a.x,a.y-h,b.x,b.y);g.addColorStop(0,'#e4d3ab');g.addColorStop(1,'#a18d65');ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#826d4b';ctx.lineWidth=1*zoom;ctx.stroke();
- const n=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(9*zoom));for(let i=0;i<=n;i++){const f=i/n,x=a.x+(b.x-a.x)*f,y=a.y+(b.y-a.y)*f;ctx.fillStyle='#decca4';ctx.fillRect(x-3*zoom,y-h-5*zoom,6*zoom,6*zoom);ctx.strokeStyle='#ab9771';ctx.beginPath();ctx.moveTo(x,y-h/2);ctx.lineTo(x,y);ctx.stroke()}
- for(const f of [0,.5,1]){const x=a.x+(b.x-a.x)*f,y=a.y+(b.y-a.y)*f;ctx.fillStyle='#cbb68a';ctx.fillRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.strokeStyle='#7f6b48';ctx.strokeRect(x-7*zoom,y-37*zoom,14*zoom,37*zoom);ctx.fillStyle='#6a6048';ctx.fillRect(x-1.5*zoom,y-27*zoom,3*zoom,8*zoom);for(let i=-1;i<=1;i++){ctx.fillStyle='#e2cfaa';ctx.fillRect(x+(i*5-2)*zoom,y-42*zoom,4*zoom,7*zoom)}}
+ const lvl=walls; // art level == state level (wall:1..3/gate:1..3 exist in the manifest)
+ let gx=null,bestY=1/0; // the gate stands where the main road leaves the city through the rear edge
+ for(const seg of layout.paths||[])for(const pt of [seg.beg,seg.end]){if(pt&&pt.y<bestY){bestY=pt.y;gx=pt.x}}
+ for(const [start,end]of edges){
+  const len=Math.hypot(end[0]-start[0],end[1]-start[1]),n=Math.max(1,Math.round(len/1.7));
+  const g=start[1]===end[1]?Math.min(Math.max(gx??((start[0]+end[0])/2),start[0]+3.4),end[0]-3.4):null;
+  for(let i=0;i<=n;i++){const f=i/n,x=start[0]+(end[0]-start[0])*f,y=start[1]+(end[1]-start[1])*f;
+   if(g!==null&&Math.abs(x-g)<3.3)continue; // the gate interrupts the rear wall
+   sprite({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl]);} // art overlap: the tower end of one tile meets the wall end of the next
+  if(g!==null)sprite({x:g-3,y:start[1]-3,w:6,d:6},images['gate:'+lvl]);
  }
 }
 function boatSprite(p,t){
@@ -66,6 +74,55 @@ function drawHarbour(t){
  // Cosmetic dockworkers follow the apron, never simulation citizens or jobs.
  for(let i=0;i<7;i++){const f=(i/7+(animate?t*.009:0))%1,p=xy(edge-1.2,bounds.minY+3+f*(span-9)),step=animate?Math.sin(t*5+i)*1.4:0;ctx.fillStyle='#5b5a413b';ctx.beginPath();ctx.ellipse(p.x+2*zoom,p.y+zoom,4*zoom,1.8*zoom,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#4e4c39';ctx.lineWidth=1.3*zoom;ctx.beginPath();ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x-step*zoom,p.y);ctx.moveTo(p.x,p.y-3*zoom);ctx.lineTo(p.x+step*zoom,p.y);ctx.stroke();ctx.fillStyle=['#775746','#68746a','#9d8761'][i%3];ctx.fillRect(p.x-1.7*zoom,p.y-8*zoom,3.4*zoom,5*zoom);ctx.fillStyle='#cfb18b';ctx.beginPath();ctx.arc(p.x,p.y-9*zoom,1.8*zoom,0,Math.PI*2);ctx.fill()}
 }
+let labEls=[];
+const SVC=['market','shipyard','tavern','bank','office','warehouse'];
+function buildLabels(){
+ for(const l of labEls)l.el.remove();labEls=[];
+ if(!layout)return;
+ const dn=dispNames();
+ for(const p of layout.plots){
+  const owned=!!bld[p.id],svc=SVC.includes(p.type)&&+p.id.split(':')[1]<6,town=p.type.startsWith('town:');
+  const txt=owned?(labels[p.id]):(svc||town)?dn[p.type]:null;
+  if(!txt)continue;
+  const el=document.createElement('div');el.className='bldlab';el.textContent=txt;el.title=txt;
+  const kind=owned?'plot':'building',msgId=owned?p.id:p.type;
+  el.addEventListener('click',()=>parent.postMessage({kind,id:msgId},location.origin));
+  document.body.appendChild(el);
+  el.style.display='block';const r=el.getBoundingClientRect();el.style.display='none'; // measured once; the text never changes
+  labEls.push({p,el,w:r.width,h:r.height});
+ }
+}
+function placeLabels(){
+ const items=[];
+ for(const{p,el,w,h}of labEls){
+  const g=spriteGeometry(p),x=canvas.width/2+(g.left+g.width/2+dx)*zoom;let key=assetKey(p,bld[p.id]||{type:p.type,level:1,state:'active'});if(!images[key])key=p.type+':1';const y=35+(g.top+dy)*zoom+(visTop[key]||0)*g.height*zoom;
+  if(x<-60||x>canvas.width+60||y<120||y>canvas.height+40){el.style.display='none';continue} // 120 keeps labels clear of the toolbar and the parent's docked mission line (#345)
+  items.push({el,w,h,ax:x,ay:y,x,y,own:bld[p.id]?0:1});
+ }
+ // Owned names keep anchor priority; service/town labels yield or hide in dense clusters.
+ items.sort((a,b)=>a.own-b.own);
+ const placed=[],RING=[[0,0],[0,-14],[-15,-8],[15,-8],[0,-28],[-26,-16],[26,-16],[0,-42],[-18,-36],[18,-36],[-34,-26],[34,-26]];
+ for(const it of items){
+  let spot=null;
+  for(const[ox,oy]of RING){
+   const x=it.ax+ox,y=it.ay+oy;
+   if(y-it.h<120)continue;
+   let hit=false;
+   for(const q of placed){
+    const cw=Math.min(x+it.w/2,q.x+q.w/2)-Math.max(x-it.w/2,q.x-q.w/2),ch=Math.min(y,q.y)-Math.max(y-it.h,q.y-q.h);
+    if(cw>0&&ch>0){hit=true;break}
+   }
+   if(!hit){spot={x,y};break}
+  }
+  if(!spot){it.el.style.display='none';continue} // suppression beats drifting onto another building
+  it.x=spot.x;it.y=spot.y;placed.push(it);
+  it.el.style.display='block';it.el.style.left=it.x+'px';it.el.style.top=it.y+'px';
+  if(Math.hypot(it.x-it.ax,it.y-it.ay)>10){ // short leader ties a displaced label to its own building
+   ctx.save();ctx.strokeStyle='#1b2a3388';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(it.x,it.y+2);ctx.lineTo(it.ax,it.ay+2);ctx.stroke();
+   ctx.strokeStyle='#ffe9b0cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(it.x,it.y+2);ctx.lineTo(it.ax,it.ay+2);ctx.stroke();ctx.restore();
+  }
+ }
+}
 function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
  const c=mainland(bounds).map(([x,y])=>xy(x,y));ctx.beginPath();ctx.moveTo((c[0].x+c[c.length-1].x)/2,(c[0].y+c[c.length-1].y)/2);c.forEach((p,i)=>{const n=c[(i+1)%c.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.fillStyle='#b8a67a';ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();ctx.save();ctx.clip();
  // Fine deterministic earth grain rather than repeating rectangular sprite tiles.
@@ -101,11 +158,12 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
 
  }
  if(selected){const b=bld[selected.id];$('tip').textContent=(labels[selected.id]||names[b?.type||selected.type]||'Parcela')+' · '+selected.id+(preview?' · '+names[$('type').value]+' '+$('level').value+' · Vista previa sin compra':'')}
+ placeLabels();
  window.__city2d={city,walls,plots:layout.plots.length,owned:Object.keys(bld).length,selected:selected?.id||null,preview,grid,animate,frame,zoom,points:layout.plots.map(p=>({id:p.id,...xy(p.x+p.w/2,p.y+p.d/2)}))};
 }
 function loop(ms){if((animate||dirty)&&ms-last>=33){last=ms;frame++;draw(animate?ms/1000:0);dirty=false}requestAnimationFrame(loop)}
 function pick(e){const r=canvas.getBoundingClientRect();for(const p of [...layout.plots].reverse()){polygon(p);if(ctx.isPointInPath(e.clientX-r.left,e.clientY-r.top))return p}return null}
 canvas.onpointerdown=e=>{dirty=true;drag={x:e.clientX,y:e.clientY};moved=0;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{dirty=true;if(drag){const x=e.clientX-drag.x,y=e.clientY-drag.y;moved+=Math.abs(x)+Math.abs(y);dx+=x/zoom;dy+=y/zoom;drag={x:e.clientX,y:e.clientY}}else hover=pick(e)};canvas.onpointerup=e=>{dirty=true;drag=null;if(moved>6)return;selected=pick(e);if(!selected)return;hover=selected;draw(0);if(preview)return;const service=+selected.id.split(':')[1]<6&&!bld[selected.id];parent.postMessage({kind:service?'building':'plot',id:service?selected.type:selected.id},location.origin)};canvas.onpointercancel=()=>drag=null;canvas.addEventListener('wheel',e=>{dirty=true;e.preventDefault();const z0=zoom,z1=Math.max(.1,Math.min(4,z0*(e.deltaY<0?1.1:.9)));if(z1===z0)return;const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;dx+=(sx-canvas.width/2)*(1/z1-1/z0);dy+=(sy-35)*(1/z1-1/z0);zoom=z1},{passive:false}); // one registration; the world point under the cursor stays fixed
 document.querySelector('nav').addEventListener('click',()=>dirty=true);document.querySelector('nav').addEventListener('change',()=>dirty=true);$('fit').onclick=fit;$('plus').onclick=()=>zoom=Math.min(4,zoom*1.3);$('minus').onclick=()=>zoom=Math.max(.1,zoom/1.3);$('grid').onclick=()=>{grid=!grid;$('grid').setAttribute('aria-pressed',grid)};$('build').onclick=()=>{preview=!preview;grid=preview;$('build').setAttribute('aria-pressed',preview);$('grid').setAttribute('aria-pressed',grid);$('type').hidden=!preview;$('level').hidden=!preview};$('motion').setAttribute('aria-pressed',animate);$('motion').onclick=()=>{animate=!animate;$('motion').setAttribute('aria-pressed',animate)};addEventListener('resize',fit);
-addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.kind!=='city2d-state'||e.data.city!==city)return;dirty=true;walls=wallsLvl(e.data.walls);bld=e.data.buildings||{};labels=e.data.labels||{};tick=e.data.tick||0;ships=Array.isArray(e.data.ships)?e.data.ships:[]});
+addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.kind!=='city2d-state'||e.data.city!==city)return;dirty=true;walls=wallsLvl(e.data.walls);bld=e.data.buildings||{};labels=e.data.labels||{};tick=e.data.tick||0;ships=Array.isArray(e.data.ships)?e.data.ships:[];buildLabels()});
 boot().catch(e=>{console.error(e);window.__error=String(e); $('error').hidden=false;$('error').textContent='No se pudo cargar la ciudad. Puedes seguir usando el panel de edificios o volver al mapa.'});
