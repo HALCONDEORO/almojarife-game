@@ -80,7 +80,7 @@ Priority by impact, one small PR each with tests and ES screenshots:
 5. guilds: membership fee, benefits, rules
 6. auctions: lots of goods/ships, rival bids
 7. rivals: stronger AI with strategies and personalities
-Graphics engine in parallel: waves, day/night, animated port, performance, mobile; 3D study after.
+Graphics engine in parallel: waves, day/night, animated port, performance; 3D study after.
 - crew and guns (21:23): crew (sailors, soldiers with light arms) and artillery (bombards/cannons by era and class) with cost, cargo weight taken, upkeep, effect on pirate events and naval combat; data in JSON. Next after the illustrated shipyard.
 
 ## Ten ideas from the owner (21:29), all accepted. Fictional characters only; own mechanics, no copied content.
@@ -99,8 +99,8 @@ Also queued: crew and guns, illustrated shipyard, buildings and factories, guild
 - more building types per city (owner 21:33), each with its own function and its own goods (workshop, mill, brewery, rope walk, smithy, bakery, market hall, customs house, chapel...), data in JSON; fits "buildings and factories"
 - DONE (owner 08:29, 20/10): weekly settlement of ship upkeep, weekly reports and a message inbox with header buttons. Next on this line: crew wages, guns and building upkeep as extra weekly cost lines; interest on debt with the credit feature. See docs/design/weekly-settlement.md
 
-## Platform rule (owner, 21:55)
-The game is made for desktop computers. Mobile is no longer a priority: it must not break, but it does not drive design, performance budgets or the 3D decision.
+## Platform rule (owner, 23 Oct 2026)
+The game is desktop-only: Windows, Mac and Linux browsers with keyboard and mouse. Mobile is out of scope entirely: no mobile support is required, planned or tested, and it does not drive design, performance budgets or the 3D decision.
 - DONE (owner 09:12, 20/10, "more uses for reports and messages"): low-cash warning the day before settlement, and a debt message when the bill cannot be paid in full.
 - MORE USES FOR REPORTS AND MESSAGES, ranked by value (with the main objection):
   1. DONE (per good; per route still open). Profit per trade in the weekly report. Value: high, the player learns what works. Objection: needs a trade log; keep it to the last 52 weeks.

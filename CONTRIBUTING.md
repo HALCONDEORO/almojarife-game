@@ -8,6 +8,8 @@ This is a hobby, non-commercial, open-source game. Ideas, bug reports, historica
 3. Run `sh tools/fetch_data.sh` once (it downloads a pinned Natural Earth dataset over HTTPS, no credentials needed), then `npm test`. Node 20 or newer.
 4. Open a pull request that says what changed and why. Add a screenshot if the screen changes.
 
+The game is desktop-only: check changes in a desktop browser (Windows, Mac, Linux) with keyboard and mouse. Phones and tablets are out of scope.
+
 ## Where to start
 - Issues labelled `good first issue`.
 - Adding content without writing code: see [docs/guides/ADD-CONTENT.md](docs/guides/ADD-CONTENT.md) (a port, a good, a language).
