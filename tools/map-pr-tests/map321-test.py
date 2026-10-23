@@ -45,7 +45,7 @@ try:
   assert a,'no visible ports'
   return a[0]
  def emptypoint():
-  return json.loads(js('''JSON.stringify((()=>{const r=document.getElementById("map").getBoundingClientRect();for(const [fx,fy] of [[.5,.55],[.35,.6],[.65,.55],[.5,.5],[.4,.4],[.6,.4]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(y>innerHeight-10||x>innerWidth-10)continue;const el=document.elementFromPoint(x,y);if(el&&!el.closest("[data-c],[data-ship]"))return [x,y]}return null})())'''))
+  return json.loads(js('''JSON.stringify((()=>{const r=document.getElementById("map").getBoundingClientRect();for(const [fx,fy] of [[.5,.55],[.35,.6],[.65,.55],[.5,.5],[.4,.4],[.6,.4]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(y>innerHeight-10||x>innerWidth-10)continue;const el=document.elementFromPoint(x,y);if(el&&el.closest("#map")&&!el.closest("[data-c],[data-ship]"))return [x,y]}return null})())'''))
  def wheel(x,y,dy): call('Input.dispatchMouseEvent',{'type':'mouseWheel','x':x,'y':y,'deltaX':0,'deltaY':dy});time.sleep(.15)
  def drag(x,y,dx,dy):
   call('Input.dispatchMouseEvent',{'type':'mousePressed','x':x,'y':y,'button':'left','buttons':1,'clickCount':1})
