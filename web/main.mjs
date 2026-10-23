@@ -914,14 +914,14 @@ function showTitle() {
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
   $("t-start").onclick = () => showCreate($("co-in").value);
-  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; progress = 0; tickAcc = 0; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => { const blob = new Blob([localStorage.getItem(SAVE_KEY)], { type: "application/json" }), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "almojarife-save.json"; a.click(); URL.revokeObjectURL(a.href); };
   $("t-imp").onclick = () => $("t-file").click();
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
     let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    g = r.g; company = r.company; sel = 0; playing = false; progress = 0; tickAcc = 0; autosave(); render(); el.hidden = true;
+    g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; autosave(); render(); el.hidden = true;
     try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
