@@ -6,6 +6,7 @@ import { makeTexture } from "./textures.mjs";
 import { makeHouse } from "./buildings/house.mjs";
 import { makeMarket } from "./buildings/market.mjs";
 import { makeTavern, makeInn } from "./buildings/tavern.mjs";
+import { makeBellTower } from "./buildings/tower.mjs";
 export { makeHarborCrane } from "./buildings/market.mjs";
 
 export const QUAY_TOP = 1.2, QUAY_EDGE_Z = -2, FRONT_Z = -9; // 7 m of quay between the edge and the building fronts
@@ -24,6 +25,10 @@ export function buildingLevel(id, pop = 8000, upgrades = {}) {
   const bySize = pop >= 25000 ? 3 : pop >= 10000 ? 2 : 1, up = Number.isInteger(upgrades?.[id]) ? upgrades[id] : 1;
   return Math.max(1, Math.min(3, Math.max(bySize, up)));
 }
+/** Dusk lighting: from LIT_TOD on, some town windows glow warm. Deterministic per window. Pure. */
+export const LIT_TOD = 0.7;
+export function litAt(seedKey, tod) { return tod >= LIT_TOD && seeded("lit:" + seedKey)() < 0.45; }
+
 /** The market's look: marked by the harbour crane or rebuilt as an exchange hall (lonja). Estudio picks once here. */
 export const MARKET_STYLES = ["crane", "lonja"], MARKET_STYLE = "crane";
 /** Which game panel a building opens; the warehouse opens the store. null for anything else (houses, water, unknown ids). */
@@ -39,7 +44,20 @@ export function portLayout(id, pop = 8000) {
   const free = houses.filter((h) => !BUILDINGS.some((b) => Math.abs(h.x - b.x) < (b.w + h.w) / 2 + 1 && h.z + h.d / 2 > FRONT_Z - b.d - 1)); // keep the plots clear
   // Typed buildings by district: the artisan quarter sits on the quay rows, the chapel stands on the top row. Bigger towns keep more of them.
   for (const [type, row, min] of [["inn", 0, 8], ["smithy", 1, 12], ["chapel", 3, 16]]) { const h = free.length >= min ? free.find((x) => x.row === row && x.type === "house") : null; if (h) h.type = type; }
-  return { houses: free, tower: { x: 12, z: -45, h: 18 }, quayZ: QUAY_EDGE_Z };
+  const tower = { x: 12, z: -45, h: 18 };
+  // cypresses on the hillside flanks: one per three houses, never touching a house or the tower
+  const trees = [];
+  for (let i = 0, tn = Math.max(4, Math.round(n / 2)); i < tn && trees.length < tn; i++) {
+    let placed = false;
+    for (let t = 0; t < 6 && !placed; t++) { // a few candidate spots each; keep the first that fits
+      const x = -33 + rnd() * 66, z = -20 - rnd() * 23;
+      if (Math.abs(x - tower.x) < 4 && Math.abs(z - tower.z) < 4) continue;
+      if (free.some((h) => Math.abs(x - h.x) < h.w / 2 + 1.2 && Math.abs(z - h.z) < h.d / 2 + 1.2)) continue;
+      if (trees.some((o) => Math.abs(x - o.x) < 2.4 && Math.abs(z - o.z) < 2.4)) continue;
+      trees.push({ x, z, y: slopeY(z), h: 3 + rnd() * 2 }); placed = true;
+    }
+  }
+  return { houses: free, trees, tower, quayZ: QUAY_EDGE_Z };
 }
 
 /** Sky, light and fog colours for a time of day t in 0..1 (0 dawn, .5 noon, 1 dusk). Pure, testable. */
@@ -105,9 +123,9 @@ export function fuseStatic(THREE, root, { castShadow = true, receiveShadow = tru
 }
 
 /** A typed town building (inn, smithy, chapel): each type keeps its own silhouette in the same materials family as the houses. */
-export function makeTownBuilding(THREE, type, { w = 4, d = 4, h = 3.6, tint = 0 } = {}) {
+export function makeTownBuilding(THREE, type, { w = 4, d = 4, h = 3.6, tint = 0, lit = [] } = {}) {
   const g = new THREE.Group(), wall = [0xece3cf, 0xe3d6b8, 0xefe8d8][Math.floor(tint * 3) % 3], timber = 0x6a4325, dark = 0x2b2118, stone = 0xcfc4a8;
-  if (type === "inn") return makeInn(THREE, { w, d, h, tint }); // the inn lives in the tavern family module
+  if (type === "inn") return makeInn(THREE, { w, d, h, tint, lit }); // the inn lives in the tavern family module
   if (type === "smithy") { // soot-stained, stone chimney, the forge window keeps its glow (never fused)
     const hh = Math.max(2.6, h - 0.4);
     put(THREE, g, new THREE.BoxGeometry(w, hh, d), std(THREE, 0x9c8a70), 0, hh / 2, 0);
@@ -163,7 +181,7 @@ export function gpuWaves(water, { quayEdgeZ = QUAY_EDGE_Z } = {}) {
 }
 
 export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, warehouse = false, tod = 0.5, upgrades = {}, plots3d = [], marketStyle = MARKET_STYLE } = {}) {
-  const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
+  const scene = new THREE.Scene(), L0 = portLayout(id, pop), L = plots3d.length ? { ...L0, houses: housesClearOf(L0.houses, plots3d.map((p) => p?.rect).filter(Boolean)), trees: housesClearOf(L0.trees ?? [], plots3d.map((p) => p?.rect).filter(Boolean)) } : L0, sk = skyFor(tod);
   const mats = new Map(), M = (color, o = {}) => { const k = color + JSON.stringify(o); if (!mats.has(k)) { const { tex, perMetre, ...rest } = o; const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...rest }); if (tex) m.userData.texKind = tex + "@" + (perMetre ?? 0.4); mats.set(k, m); } return mats.get(k); };
   const add = (parent, geo, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; parent.add(m); return m; };
   const box = (p, w, h, d, c, x, y, z, o) => add(p, o?.tex ? boxUVmetres(new THREE.BoxGeometry(w, h, d), w, h, d) : new THREE.BoxGeometry(w, h, d), M(c, o), x, y, z);
@@ -186,11 +204,19 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
     g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3)); g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals(); const hill = new THREE.Mesh(g, M(0x9a8b5a, { side: THREE.DoubleSide })); hill.receiveShadow = true; scene.add(hill); }
   // houses: the family module owns the walls now
   for (const h of L.houses) {
-    if (h.type !== "house") { const g = makeTownBuilding(THREE, h.type, h); g.name = "town:" + h.type; g.userData.building = "town:" + h.type; g.position.set(h.x, h.y, h.z); scene.add(g); continue; } // typed town buildings stay clickable
-    const g = makeHouse(THREE, h); g.position.set(h.x, h.y, h.z); scene.add(g); // the house family lives in its own module now
+    if (h.type !== "house") { const g = makeTownBuilding(THREE, h.type, { ...h, lit: [litAt(id + ":" + h.x + "a", tod), litAt(id + ":" + h.x + "b", tod)] }); g.name = "town:" + h.type; g.userData.building = "town:" + h.type; g.position.set(h.x, h.y, h.z); scene.add(g); continue; } // typed town buildings stay clickable
+    const g = makeHouse(THREE, { ...h, lit: [litAt(id + ":" + h.x + "a", tod), litAt(id + ":" + h.x + "b", tod)] }); g.position.set(h.x, h.y, h.z); scene.add(g); // the house family lives in its own module now
+  }
+  // cypresses on the hillside
+  for (const tr of L.trees ?? []) {
+    const g = new THREE.Group(); g.name = "tree"; g.position.set(tr.x, tr.y, tr.z);
+    add(g, new THREE.CylinderGeometry(0.09, 0.13, 0.7, 5), M(0x4a3421), 0, 0.35, 0, false);
+    add(g, new THREE.ConeGeometry(0.65, tr.h, 7), M(0x2e4a2a), 0, 0.6 + tr.h / 2, 0);
+    add(g, new THREE.ConeGeometry(0.4, tr.h * 0.4, 7), M(0x35552e), 0, 0.6 + tr.h * 0.85, 0, false);
+    scene.add(g);
   }
   // bell tower far back
-  { const t = L.tower, g = new THREE.Group(); g.position.set(t.x, slopeY(t.z), t.z); box(g, 3.2, t.h - 3, 3.2, 0xece3cf, 0, (t.h - 3) / 2, 0); hip(g, 3.6, 3.6, 3, 0, t.h - 3, 0, 0x9b4a2b); box(g, 1.2, 1.6, 0.3, 0x2b2118, 0, t.h - 4.5, 1.6); box(g, 0.12, 1.8, 0.12, 0x6a4325, 0, t.h + 0.7, 0); const bf = makeFlag(THREE, { color: 0xb33a2a, len: 1.6, h: 0.42 }); bf.position.set(0.06, t.h + 1.35, 0); g.add(bf); scene.add(g); }
+  { const t = L.tower, g = makeBellTower(THREE, { h: t.h }); g.position.set(t.x, slopeY(t.z), t.z); const bf = makeFlag(THREE, { color: 0xb33a2a, len: 1.6, h: 0.42 }); bf.position.set(0.06, t.h + 1.55, 0); g.add(bf); scene.add(g); }
   // clickable buildings
   const stone = 0xcfc4a8, wall = 0xece3cf, awn = [0xb33a2a, 0xf1e8cf], dark = 0x2b2118, timber = 0x6a4325;
   for (const b of BUILDINGS) {
@@ -200,6 +226,10 @@ export function buildPortScene(THREE, { id = "cadiz", pop = 8000, ships = 1, war
       const w = lv >= 2 ? 10 : 7, d = 6, h = 5, zc = z0 - d / 2; box(g, w, h, d, stone, 0, h / 2, zc); hip(g, w, d, 1.8, 0, h, zc, lv >= 3 ? 0x8a6a3a : 0x7e3b22);
       const n = lv >= 2 ? 5 : 3; for (let i = 0; i < n; i++) { const px = -((n - 1) / 2) * 1.6 + i * 1.6; add(g, new THREE.CylinderGeometry(0.25, 0.25, h - 0.6, 10), M(wall), px, (h - 0.6) / 2, z0 + 1.2); }
       box(g, n * 1.6, 0.4, 2, stone, 0, h - 0.4, z0 + 1.0); if (lv >= 2) box(g, 1.2, 1.2, 0.2, 0xb33a2a, 0, h - 1.4, z0 + 0.05);
+      // windows behind the colonnade: more and bigger as the bank grows (level 1: 2, 2: 4, 3: 6)
+      const winXs = lv >= 2 ? [-3.2, -1.6, 1.6, 3.2] : [-1.6, 1.6], winYs = lv >= 3 ? [2.0, 3.4] : [2.6];
+      let nw2 = 0; for (const wy of winYs) for (const wx of winXs) { if (lv === 3 && wy === 2.0 && Math.abs(wx) === 3.2) continue; const m2 = box(g, 0.6, 0.8, 0.1, dark, wx, wy, z0 + 0.02); m2.userData.win = true; box(g, 0.12, 0.8, 0.08, timber, wx - 0.42, wy, z0 + 0.02); box(g, 0.12, 0.8, 0.08, timber, wx + 0.42, wy, z0 + 0.02); nw2++; }
+      g.userData.windows = nw2; // the fuse merges the panes away; the group keeps the count
       if (lv >= 3) { for (let i = 0; i < 3; i++) box(g, w * 0.5, 0.2, 0.35, stone, 0, 0.1 + i * 0.2, z0 + 2.2 - i * 0.35); box(g, w * 0.8, 0.14, 0.14, 0xc9962a, 0, h + 1.8, zc, { emissive: 0xc9962a, emissiveIntensity: 0.15 }); for (const sx of [-1, 1]) add(g, new THREE.ConeGeometry(0.3, 1, 6), M(0xc9962a, { emissive: 0xc9962a, emissiveIntensity: 0.15 }), sx * (w / 2 - 0.4), h + 0.5, zc); }
     } else if (b.id === "market") {
       const mk = makeMarket(THREE, { level: lv, style: marketStyle }); mk.position.z = z0; g.add(mk); // market family module: built relative to its front line, mounted at FRONT_Z

@@ -7,8 +7,8 @@ const sign = (THREE, g, x, y, z, plate = 0x8a5a1e) => {
   put(THREE, g, new THREE.BoxGeometry(0.08, 0.8, 0.08), std(THREE, PAL.timber), x, y + 0.4, z);
   put(THREE, g, new THREE.BoxGeometry(0.7, 0.5, 0.06), std(THREE, plate), x, y, z);
 };
-const window_ = (THREE, g, x, y, z) => {
-  put(THREE, g, new THREE.BoxGeometry(0.55, 0.6, 0.06), std(THREE, PAL.dark), x, y, z);
+const window_ = (THREE, g, x, y, z, lit = false) => {
+  put(THREE, g, new THREE.BoxGeometry(0.55, 0.6, 0.06), lit ? std(THREE, 0xffd27a, { emissive: 0xffb860, emissiveIntensity: 0.55 }) : std(THREE, PAL.dark), x, y, z).userData.win = true;
   for (const so of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.18, 0.6, 0.05), std(THREE, PAL.timber), x + so * 0.37, y, z);
 };
 
@@ -45,7 +45,7 @@ export function makeTavern(THREE, { level = 1, state = "active" } = {}) {
 }
 
 /** Town inn: two floors, timber gallery and a hanging sign. */
-export function makeInn(THREE, { w = 4, d = 4, h = 3.6, tint = 0, state = "active" } = {}) {
+export function makeInn(THREE, { w = 4, d = 4, h = 3.6, tint = 0, state = "active", lit = [] } = {}) {
   const g = new THREE.Group(), wall = PAL.walls[Math.floor(tint * 3) % 3], hh = h + 1.8;
   if (state === "construction") {
     put(THREE, g, new THREE.BoxGeometry(w + 1.2, 0.5, d + 0.7), std(THREE, PAL.base, { tex: "stone", perMetre: 0.22 }), 0, 0.25, 0);
@@ -59,7 +59,7 @@ export function makeInn(THREE, { w = 4, d = 4, h = 3.6, tint = 0, state = "activ
   for (const sx of [-1, 1]) put(THREE, g, new THREE.BoxGeometry(0.15, 2.6, 0.15), std(THREE, PAL.timber), sx * w * 0.32, 1.3, d / 2 + 0.9);
   sign(THREE, g, w / 2 + 0.6, 1.9, d / 2 + 0.3);
   put(THREE, g, new THREE.BoxGeometry(0.8, 1.3, 0.08), std(THREE, PAL.dark), 0, 0.5 + 0.75, (d + 0.5) / 2 + 0.04);
-  window_(THREE, g, -w * 0.28, 0.5 + hh * 0.7, (d + 0.5) / 2 + 0.04); window_(THREE, g, w * 0.28, 0.5 + hh * 0.7, (d + 0.5) / 2 + 0.04);
+  window_(THREE, g, -w * 0.28, 0.5 + hh * 0.7, (d + 0.5) / 2 + 0.04, lit[0]); window_(THREE, g, w * 0.28, 0.5 + hh * 0.7, (d + 0.5) / 2 + 0.04, lit[1]);
   g.userData.buildingType = "inn";
   return g;
 }
