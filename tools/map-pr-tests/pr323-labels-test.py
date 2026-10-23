@@ -4,6 +4,7 @@ HERE=os.path.dirname(os.path.abspath(__file__))
 FIXTURE=os.environ.get('MAPTEST_SAVE',os.path.join(HERE,'fixtures','all-discovered-save.json'))
 PROFILE=tempfile.mkdtemp(prefix='maptest-profile-')
 SHOTS=os.environ.get('MAPTEST_SHOTS') or tempfile.mkdtemp(prefix='maptest-shots-')
+os.makedirs(SHOTS,exist_ok=True)
 import socket
 def _freeport():
  sk=socket.socket();sk.bind(('127.0.0.1',0));p=sk.getsockname()[1];sk.close();return p
