@@ -151,3 +151,20 @@ test("default game (walls ON): the hospital offer is gated until the first wall 
   assert.equal(wallsLevel(g, "cadiz"), 1, "the wall completed");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").ok, "hospital offered once the wall stands");
 });
+
+test("a completed modern record subsumes the legacy marker; a stale marker never resurrects an unpaid watch", () => {
+  const g = game();
+  g.plague = { walls: { cadiz: 1 } }; // pre-module save marker
+  assert.equal(wallsLevel(g, "cadiz"), 1, "legacy marker reads as level 1 while no modern wall stands");
+  assert.equal(wallsKeptLevel(g, "cadiz"), 1, "legacy walls predate upkeep and count as kept");
+  g.walls.cadiz = { nextLevel: 2, readyTick: g.tick + 10 }; // works under way: the old wall still stands
+  assert.equal(wallsLevel(g, "cadiz"), 1, "works under way never drop the old wall");
+  assert.equal(wallsKeptLevel(g, "cadiz"), 1, "kept while the upgrade is built");
+  g.walls.cadiz = { level: 2, state: "active" };
+  assert.equal(wallsLevel(g, "cadiz"), 2, "completed modern wall subsumes the marker");
+  assert.equal(wallsKeptLevel(g, "cadiz"), 2, "kept while paid");
+  g.cash = 0; accrueWalls(g);
+  assert.equal(g.walls.cadiz.unkept, true, "watch goes unpaid");
+  assert.equal(wallsKeptLevel(g, "cadiz"), 0, "no bonus while unpaid: the stale marker must not resurrect it");
+  assert.equal(wallsLevel(g, "cadiz"), 2, "the wall still stands, only the bonus stops");
+});

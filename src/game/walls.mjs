@@ -32,14 +32,17 @@ const cityName = (g, cityId) => g.world.cities.find((c) => c.id === cityId)?.nam
 const legacyLevel = (g, cityId) => ((g.plague?.walls?.[cityId] ?? 0) >= 1 ? 1 : 0); // saves from before the module read as level 1
 const underConstruction = (g, cityId) => { const w = g.walls?.[cityId]; return !!(w && w.nextLevel && w.readyTick > g.tick); };
 
-/** Wall level of a city: the modern record wins, legacy plague.walls=1 reads as 1. */
+/** Wall level of a city: a COMPLETED modern record owns the truth and subsumes any legacy marker; legacy plague.walls=1 reads as 1 only while no modern wall stands (works under way never drop the old wall). */
 export function wallsLevel(g, cityId) {
-  return Math.max(g.walls?.[cityId]?.level ?? 0, legacyLevel(g, cityId));
+  const w = g.walls?.[cityId];
+  if ((w?.level ?? 0) >= 1) return w.level;
+  return legacyLevel(g, cityId);
 }
-/** Level that counts for bonuses today: zero while the watch is unpaid. Legacy walls predate upkeep and count as kept. */
+/** Level that counts for bonuses today: zero while the modern watch is unpaid (a stale legacy marker never resurrects it). Legacy walls predate upkeep and count as kept. */
 export function wallsKeptLevel(g, cityId) {
   const w = g.walls?.[cityId];
-  return Math.max(w && !w.unkept ? w.level ?? 0 : 0, legacyLevel(g, cityId));
+  if ((w?.level ?? 0) >= 1) return w.unkept ? 0 : w.level;
+  return legacyLevel(g, cityId);
 }
 
 /** Quote the next wall level: materials at the local market plus the labor fee, full level cost. No mutation. */
