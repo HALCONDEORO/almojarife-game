@@ -139,7 +139,8 @@ export function missionView(g, lang, h = NO_HELPERS) {
     return { id, optional: m.optional, title: m.title[lang] ?? m.title.es,
       stepLabel: st.done ? '' : (step.label[lang] ?? step.label.es).replace('{qty}', step.qty ?? '').replace('{n}', step.atLeast ?? '').replace('{ports}', step.ports ?? ''),
       progress: step.qty && !st.done ? Math.min(st.count ?? 0, step.qty) + '/' + step.qty
-        : step.kind === 'respectPorts' && !st.done ? portsWithRespect(g, step, h) + '/' + step.ports : '',
+        : step.kind === 'respectPorts' && !st.done ? portsWithRespect(g, step, h) + '/' + step.ports
+        : step.kind === 'respect' && !st.done ? Math.min(Math.floor(h.repOf(g, step.city === 'home' ? g.profile?.home : step.city)), step.atLeast) + '/' + step.atLeast : '',
       daysLeft: m.deadline && !st.done && !st.failed ? m.deadline - g.day : null,
       done: st.done, failed: st.failed };
   });

@@ -100,3 +100,13 @@ test('M2 stays open with respect in only one port; missionView shows port progre
  assert.equal(v.stepLabel,'Respeto 20 en 2 puertos distintos');
  assert.equal(v.progress,'1/2');
 });
+test("s1 shows real respect points toward the home-port bar, capped at the goal",()=>{
+ const h={post:()=>{},addRespect:()=>{},repOf:(g,c)=>({cadiz:7})[c]??0,netWorth:()=>0};
+ const g={day:1,cash:0,profile:{home:'cadiz'},market:{cadiz:{}},campaign:{active:['s1-gremio'],missions:{'s1-gremio':{step:0,count:0,done:false,failed:false}}}};
+ const v=missionView(g,'es',h)[0];
+ assert.equal(v.title,'Nombre en casa');
+ assert.equal(v.stepLabel,'Respeto 20 en tu puerto de origen');
+ assert.equal(v.progress,'7/20'); // floor of points earned by selling at home
+ const h2={...h,repOf:(g,c)=>({cadiz:23})[c]??0};
+ assert.equal(missionView(g,'es',h2)[0].progress,'20/20'); // display caps at the bar even before the daily tick completes it
+});
