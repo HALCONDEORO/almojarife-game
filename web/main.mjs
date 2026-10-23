@@ -949,7 +949,7 @@ function showTitle() {
     showTitle(); $("t-msg").textContent = t.restDone;
   };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
-  $("t-exp").onclick = exportSave;
+  $("t-exp").onclick = () => exportSave(); // wrap: the click event must not become the payload argument
   $("t-imp").onclick = () => $("t-file").click();
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
