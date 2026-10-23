@@ -436,7 +436,7 @@ export function bestPorts(g, ship) {
     const there = { ...ship, at: c.id, voyage: null };
     let revenue = 0, profit = 0, any = false;
     for (const [good, q] of Object.entries(ship.cargo)) {
-      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, there));
+      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, c.id));
       if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
     }
     if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
