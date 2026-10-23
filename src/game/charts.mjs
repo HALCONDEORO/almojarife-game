@@ -9,7 +9,7 @@ export const CHART_BASE = 120, CHART_PER_PORT = 70, ROUTE_RUMOR_PRICE = 60;
 /** The coasts a chart can cover: every city exactly once (test-enforced). */
 export const COASTS = Object.freeze({
   luz: Object.freeze({ ports: Object.freeze(["cadiz", "huelva", "sevilla", "malaga", "almeria"]) }),
-  portugal: Object.freeze({ ports: Object.freeze(["lisboa", "setubal", "faro", "porto"]) }),
+  portugal: Object.freeze({ ports: Object.freeze(["lisboa", "setubal", "faro", "porto", "lagos"]) }),
   cantabrico: Object.freeze({ ports: Object.freeze(["vigo", "coruna", "santander", "bilbao", "sansebastian"]) }),
   levante: Object.freeze({ ports: Object.freeze(["cartagena", "alicante", "valencia", "tarragona", "barcelona"]) }),
   baleares: Object.freeze({ ports: Object.freeze(["palma", "ibiza"]) }),

@@ -7,7 +7,7 @@ test("economy report labels scope and separates all arrival strategies", () => {
   assert.match(r.sampling, /every 30 days/);
   assert.deepEqual(Object.keys(r.arrivalsByStrategy), ["greedy", "wanderer", "shuttle"]);
   for (const x of Object.values(r.arrivalsByStrategy)) {
-    assert.equal(Object.keys(x).length, 33);
+    assert.equal(Object.keys(x).length, 34);
     assert.ok(Object.values(x).every((v) => Number.isSafeInteger(v) && v >= 0));
   }
   assert.equal(r.brokeShare, undefined);

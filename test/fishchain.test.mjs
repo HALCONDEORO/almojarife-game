@@ -17,7 +17,7 @@ const NO_FISH = world.cities.filter((c) => !c.makes.includes("fish")).map((c) =>
 test("fish is the one fish good: base price, market rows everywhere, dried fish is retired", () => {
   assert.equal(world.goods.fish.base, 20);
   assert.equal(world.goods.dried_fish, undefined);
-  assert.equal(FISH_TOWNS.length, 18); assert.ok(NO_FISH.length > 0);
+  assert.equal(FISH_TOWNS.length, 19); assert.ok(NO_FISH.length > 0);
   const g = newGame(world, "cadiz", { cash: 10000 });
   for (const c of world.cities) assert.ok(g.market[c.id].fish, `market row in ${c.id}`);
   assert.ok(!g.market.sevilla.fish.makes);
