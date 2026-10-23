@@ -32,7 +32,7 @@ import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSv
 import { previewBuy, previewSell, FEE } from "../src/sim/trade.mjs";
 import { stockLevel } from "../src/game/stocklevel.mjs";
 import { citySceneSvg } from "../src/view/cityscene.mjs";
-import { BACKUP_KEY, saveFileName } from "./savefile.mjs";
+import { BACKUP_KEY, TMP_KEY, saveFileName } from "./savefile.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml, RESPECT_NAMES } from "../src/view/rankview.mjs";
 import { repOf, respectOf } from "../src/game/rank.mjs";
@@ -944,9 +944,10 @@ function showTitle() {
     try { unpackGame(JSON.parse(b), world); } catch { $("t-msg").textContent = t.badSave; return; }
     if (!confirm(t.restConfirm)) return;
     const cur = localStorage.getItem(SAVE_KEY);
-    try { localStorage.setItem(SAVE_KEY, b); } catch { $("t-msg").textContent = t.errB; return; } // atomic: on failure nothing moved, the backup is still there
-    if (cur) try { localStorage.setItem(BACKUP_KEY, cur); } catch {} // losing the swap-back never loses the restored save
-    else localStorage.removeItem(BACKUP_KEY); // nothing to swap back to
+    if (cur) try { localStorage.setItem(TMP_KEY, cur); } catch { $("t-msg").textContent = t.errB; return; } // abort: both copies must be preserved before any overwrite
+    try { localStorage.setItem(SAVE_KEY, b); } catch { try { localStorage.removeItem(TMP_KEY); } catch {} $("t-msg").textContent = t.errB; return; } // atomic: SAVE stays cur, backup still b
+    if (cur) { try { localStorage.setItem(BACKUP_KEY, cur); } catch {} try { localStorage.removeItem(TMP_KEY); } catch {} } // on failure cur survives in TMP_KEY, never lost
+    else try { localStorage.removeItem(BACKUP_KEY); } catch {} // nothing to swap back to
     showTitle(); $("t-msg").textContent = t.restDone;
   };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
