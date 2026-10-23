@@ -1,4 +1,4 @@
-// Opt-in presentation only. No simulation or save fields belong here.
+// Default ON (owner order 23/10); ?ui2d=0 opts out.
 import { LT, messageText } from './ledgerview.mjs';
 const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export const enabled=search=>new URLSearchParams(search).get('ui2d')!=='0'; // default ON (Marco 23/10); ?ui2d=0 opts out

@@ -1,4 +1,4 @@
-// Telemetry only. Default off; never changes prices, demand, stocks or traders.
+// Telemetry only. Default ON (owner order 23/10); never changes prices, demand, stocks or traders.
 import {classCounts,demandBy,CLASSES}from './classes.mjs';
 import {legacyNeedsPolicy,physicalNeeds,recordNeeds}from './needs.mjs';
 export const NEEDS_LEDGER_ENABLED=true; // default ON (Marco 23/10); telemetry only, never changes prices/demand/stocks/traders

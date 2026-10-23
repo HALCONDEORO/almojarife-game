@@ -1,6 +1,6 @@
 // Lonja (exchange): the city's price-history hall. Presentation only: it reads the recorded price
 // history (priceHistory/trendPct, 30 days kept) and draws one small chart per good. No simulation
-// or save fields belong here. Opt-in experiment behind ?lonja=1.
+// Default ON (owner order 23/10); ?lonja=0 opts out.
 import { quote, priceHistory, trendPct } from "../game/game.mjs";
 
 export const lonjaEnabled = (search) => new URLSearchParams(search).get("lonja") !== "0"; // default ON (Marco 23/10); ?lonja=0 opts out
