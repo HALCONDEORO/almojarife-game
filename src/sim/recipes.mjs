@@ -34,6 +34,10 @@ export const RECIPES = Object.freeze({
   caminos: Object.freeze({ bricks: 6, timber: 2, ironware: 1 }),
   pozo: Object.freeze({ timber: 2, bricks: 6, ironware: 1 }),
   capilla: Object.freeze({ timber: 6, bricks: 8, ironware: 1, cloth: 2 }),
+  // Civic follow-up (docs/design/civic-buildings-2.md): meat market, mill, playhouse. Same material family.
+  carniceria: Object.freeze({ timber: 8, bricks: 8, ironware: 2 }),
+  molino: Object.freeze({ timber: 10, bricks: 6, ironware: 3 }),
+  corral: Object.freeze({ timber: 12, bricks: 8, ironware: 1, cloth: 4 }),
   // Production transforms, unlike construction sinks, put output into stock.
   weave: Object.freeze({ wool: 4 }),
   forge: Object.freeze({ iron: 2, timber: 1 }),
