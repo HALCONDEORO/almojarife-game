@@ -22,3 +22,22 @@ test("markers stay near constant on screen", () => {
   assert.ok(markerScale(8) < 0.2 && markerScale(8) > 0.1);
   assert.ok(markerScale(2) < markerScale(1));
 });
+import { contentFraction, contentScale } from "../src/view/camera.mjs";
+test("content fractions are identity when the content fills the viewport", () => {
+  const rect = { left: 0, top: 0, width: 800, height: 829 };
+  assert.deepEqual(contentFraction(rect, [0, 0, 800, 829], 400, 414.5), [0.5, 0.5]);
+  assert.deepEqual(contentFraction(rect, [0, 0, 800, 829], 0, 0), [0, 0]);
+});
+test("content fractions skip the letterbox margins of a wide short pane", () => {
+  const rect = { left: 20, top: 227, width: 1240, height: 352 }; // pane wider than the map aspect
+  const vb = [0, 0, 800, 829], s = 352 / 829, ox = (1240 - 800 * s) / 2;
+  const [fx, fy] = contentFraction(rect, vb, 20 + ox + 400 * s, 227 + 176);
+  assert.ok(Math.abs(fx - 0.5) < 1e-9 && Math.abs(fy - 0.5) < 1e-9);
+  // a point over the left margin clamps to the content's left edge
+  assert.equal(contentFraction(rect, vb, 20, 227 + 176)[0], 0);
+  assert.equal(contentFraction(rect, vb, 20 + 1240, 227 + 176)[0], 1);
+});
+test("content scale picks the limiting dimension", () => {
+  assert.equal(contentScale({ width: 1240, height: 352 }, [0, 0, 800, 829]), 352 / 829);
+  assert.equal(contentScale({ width: 400, height: 900 }, [0, 0, 800, 829]), 0.5);
+});
