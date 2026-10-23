@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay } from "../src/game/game.mjs";
-import { takeLoan, processLoans, loanRoom, loansOwed } from "../src/game/bank.mjs";
+import { logSell } from "../src/game/ledger.mjs";
+import { takeLoan, processLoans, loanRoom, loansOwed, LOAN_RATE } from "../src/game/bank.mjs";
 import { foreclose, lenderLocked, SEIZE_RATE, LOCK_DAYS } from "../src/game/foreclosure.mjs";
 import { botFinanceView } from "../src/game/botcredit.mjs";
 import { messageText } from "../src/view/ledgerview.mjs";
@@ -12,7 +13,7 @@ const mk = (o = {}) => { const g = newGame(world, "cadiz", { freePlay: true, for
 const base = (g, k) => g.world.goods[k].base;
 const due = (g) => { g.day = g.loans[0].due; };
 test("flag off by default: an unpaid loan behaves as before, no lock, goods untouched", () => {
-  const g = mk({ foreclosure: false }); assert.equal(g.foreclosure, false);
+  const g = mk({ foreclosure: false }); assert.ok(!("foreclosure" in g), "OFF adds no key to the state"); assert.ok(!("loanLock" in g));
   takeLoan(g, "cadiz", 1000, 5000); g.cash = 100; g.ships[0].cargo = { grain: 50 }; due(g);
   processLoans(g); assert.equal(g.cash, -900); assert.equal(g.ships[0].cargo.grain, 50); assert.equal(g.loanLock, undefined);
 });
@@ -56,4 +57,46 @@ test("message in ES and EN; save round trip keeps the lock", () => {
   const m = { kind: "loanSeized", city: "cadiz", amt: 300, units: 12 };
   assert.match(messageText(m, "es", String), /embargó 12 unidades/); assert.match(messageText(m, "en", String), /seized 12 units/);
   const g = mk(); g.loanLock = { cadiz: 99 }; assert.deepEqual(JSON.parse(JSON.stringify({ ...g, world: undefined })).loanLock, { cadiz: 99 });
+});
+test("money identity: cash after = cash before + proceeds - debt, for partial and total cover, no surplus lost or doubled", () => {
+  for (const [cash, silk, grain] of [[0, 10, 0], [0, 12, 30], [0, 3, 3], [500, 10, 0], [999, 5, 60], [-200, 10, 0], [0, 0, 0]]) {
+    const g = mk(); takeLoan(g, "cadiz", 1000, 5000); g.cash = cash; g.ships[0].cargo = { silk, grain }; g.warehouses = {};
+    const val = () => (g.ships[0].cargo.silk ?? 0) * base(g, "silk") * SEIZE_RATE + (g.ships[0].cargo.grain ?? 0) * base(g, "grain") * SEIZE_RATE;
+    const v0 = val(), c0 = g.cash; due(g); processLoans(g);
+    const proceeds = v0 - val(), debtPaid = 1000;
+    assert.ok(Math.abs(g.cash - (c0 + proceeds - debtPaid)) < 0.02, `cash ${cash} silk ${silk} grain ${grain}: ${g.cash} vs ${c0 + proceeds - debtPaid}`);
+    assert.equal(loansOwed(g), 0);
+  }
+  const g = mk(); takeLoan(g, "cadiz", 1000, 5000); g.cash = 0; g.ships[0].cargo = { silk: 10 }; g.warehouses = {}; due(g);
+  const f = foreclose(g, g.loans[0]); assert.equal(f.surplus, 1100 - 1000); assert.equal(g.loans[0].left, 0); assert.equal(g.cash, 100);
+  processLoans(g); assert.equal(g.cash, 100, "the caller takes nothing more and credits nothing again");
+});
+test("a default with nothing to seize still shuts the lender (proceeds 0)", () => {
+  const g = mk(); takeLoan(g, "cadiz", 1000, 5000); g.cash = 0; g.ships[0].cargo = {}; g.warehouses = {}; due(g); const d = g.day;
+  processLoans(g); assert.equal(g.cash, -1000); assert.equal(g.loanLock.cadiz, d + LOCK_DAYS); assert.equal(loanRoom(g, 20000, "cadiz"), 0);
+  assert.ok(!g.inbox?.some((m) => m.kind === "loanSeized"), "no seizure message when nothing was seized");
+});
+test("the last interest of a defaulted loan is charged on what is left after the seizure (intended)", () => {
+  const rate = (g) => g.loans[0].rate ?? LOAN_RATE;
+  for (const [cash, expectLeft] of [[0, 0], [999, null]]) {
+    const g = mk(); takeLoan(g, "cadiz", 1000, 5000); g.cash = cash; g.ships[0].cargo = { silk: 10 }; g.warehouses = {}; due(g);
+    const r = rate(g), w0 = g.weekLoanInterest ?? 0, loan = g.loans[0], f = foreclose(structuredClone ? { ...g, loans: g.loans.map((l) => ({ ...l })), ships: g.ships.map((s) => ({ ...s, cargo: { ...s.cargo } })), warehouses: {}, loanLock: {} } : g, { ...loan });
+    const leftAfter = Math.max(0, 1000 - f.proceeds);
+    processLoans(g);
+    assert.ok(Math.abs((g.weekLoanInterest ?? 0) - w0 - leftAfter * r) < 0.01, `cash ${cash}: interest ${g.weekLoanInterest} vs ${leftAfter * r}`);
+    if (expectLeft === 0) assert.equal(g.weekLoanInterest ?? 0, 0);
+  }
+});
+test("partial seizure keeps the cost basis of what is left (hold basis and trade log), so a later sale reports its true profit", () => {
+  const g = mk(); takeLoan(g, "cadiz", 1000, 5000); g.cash = 999; g.warehouses = {};
+  const s = g.ships[0]; s.cargo = { silk: 10 }; s.basis = { silk: 1000 }; g.basis = { silk: { qty: 10, cost: 1000 } };
+  due(g); processLoans(g);
+  assert.equal(s.cargo.silk, 9); assert.equal(s.basis.silk, Math.round(1000 * 9 / 10));
+  assert.equal(g.basis.silk.qty, 9); assert.ok(Math.abs(g.basis.silk.cost - 900) < 1e-9);
+  const profit = logSell(g, "silk", 9, 2000); assert.ok(Math.abs(profit - (2000 - 900)) < 1e-9, "profit " + profit);
+  const h = mk(); takeLoan(h, "cadiz", 1000, 5000); h.cash = 0; h.ships[0].cargo = {}; h.warehouses = { cadiz: { goods: { silk: 20 }, basis: { silk: 2000 } } };
+  due(h); processLoans(h); const left = h.warehouses.cadiz.goods.silk;
+  assert.equal(left, 20 - Math.ceil(1000 / (h.world.goods.silk.base * SEIZE_RATE))); assert.equal(h.warehouses.cadiz.basis.silk, Math.round(2000 * left / 20));
+  const all = mk(); takeLoan(all, "cadiz", 1000, 5000); all.cash = 0; all.ships[0].cargo = { silk: 3 }; all.ships[0].basis = { silk: 300 }; all.warehouses = {}; due(all); processLoans(all);
+  assert.ok(!("silk" in all.ships[0].cargo) && !("silk" in all.ships[0].basis), "fully seized: both keys go");
 });

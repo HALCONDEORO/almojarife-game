@@ -14,11 +14,12 @@ function holds(g, city) {
   return out;
 }
 /** Seize goods in the lender's port until the shortfall (loan left minus positive cash) is covered, most valuable first.
- *  Whole units only, so the proceeds can exceed the shortfall by less than one unit. Nothing is lost by that: loan.left
- *  drops by the whole proceeds and the caller then takes only the rest from cash, so the surplus stays in the debtor's cash.
- *  Locks the lender and returns { proceeds, units }. */
+ *  Whole units only, so the proceeds can exceed the shortfall. Money identity: cash after = cash before + proceeds - debt paid,
+ *  nothing is lost. The proceeds pay the loan first (loan.left drops by up to the whole debt); any part of the proceeds beyond
+ *  the debt is credited to g.cash here, once, so the caller must not credit it again. The caller then takes the remaining
+ *  loan.left (often 0) from cash. Locks the lender and returns { proceeds, units, surplus }. */
 export function foreclose(g, loan) {
-  let need = r2(loan.left - Math.max(g.cash, 0)), proceeds = 0, units = 0;
+  let need = r2(loan.left - Math.max(g.cash, 0)), proceeds = 0, units = 0, surplus = 0;
   if (need > 0) {
     const lots = [];
     for (const h of holds(g, loan.city)) for (const [good, q] of Object.entries(h.goods)) if (q > 0) lots.push({ h, good, q, unit: g.world.goods[good].base * SEIZE_RATE });
@@ -26,11 +27,18 @@ export function foreclose(g, loan) {
     for (const l of lots) {
       if (need <= 0) break;
       const n = Math.min(l.q, Math.ceil(need / l.unit)); if (!(n > 0)) continue;
-      l.h.goods[l.good] -= n; if (l.h.goods[l.good] <= 0) { delete l.h.goods[l.good]; if (l.h.hold.basis) delete l.h.hold.basis[l.good]; }
+      const had = l.h.goods[l.good], hb = l.h.hold.basis;
+      l.h.goods[l.good] = had - n;
+      if (hb?.[l.good] != null) hb[l.good] = Math.round(hb[l.good] * (had - n) / had); // what is left keeps only its own share of the cost paid
+      if (!l.h.goods[l.good]) { delete l.h.goods[l.good]; if (hb) delete hb[l.good]; }
+      const lb = g.basis?.[l.good]; // trade-log average cost: the seized units leave at their unit cost, so a later sale reports its true profit
+      if (lb && lb.qty > 0) { const used = Math.min(n, lb.qty), unit = lb.cost / lb.qty; lb.qty -= used; lb.cost = Math.max(0, lb.cost - used * unit); }
       const v = r2(n * l.unit); proceeds = r2(proceeds + v); need = r2(need - v); units += n;
     }
+    surplus = r2(Math.max(0, proceeds - loan.left)); // proceeds beyond the whole debt
     loan.left = r2(Math.max(0, loan.left - proceeds));
+    if (surplus > 0) g.cash = r2(g.cash + surplus);
   }
   (g.loanLock ??= {})[loan.city] = g.day + LOCK_DAYS;
-  return { proceeds, units };
+  return { proceeds, units, surplus };
 }
