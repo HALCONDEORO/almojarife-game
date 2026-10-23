@@ -25,7 +25,7 @@ import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
 import { rollContracts, expireContracts, contractOnSale } from "./contracts.mjs";
 import { defaultProfile } from "./profile.mjs";
-import { refreshIntel, knownMarket, buyRumor as buyRumorIntel } from "./intel.mjs";
+import { refreshIntel, knownMarket, buyRumor as buyRumorIntel, RUMOR_PRICE } from "./intel.mjs";
 import { arrivalNews } from "./news.mjs";
 import { arrivalPregon } from "./pregon.mjs";
 import { arrivalIdentity } from "./identity.mjs";
@@ -412,6 +412,7 @@ export { cargoUsed, SHIP_TYPES };
 export function buyRumor(g, city, at) {
   const r = buyRumorIntel(g, city, at);
   if (r.ok && discover(g, city)) say(g, "discovered", { city });
+  if (r.ok) say(g, "rumor", { city, at, price: RUMOR_PRICE });
   return r;
 }
 export { RUMOR_PRICE, isLive } from "./intel.mjs";
