@@ -544,7 +544,7 @@ function render() {
   P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
     const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
-    el.innerHTML=`<div class="box"><h2>${t.confirm}</h2><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div>`;
+    el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
     el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+(T[lang].types[s.type]??s.type)+" "+s.id;
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
