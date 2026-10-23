@@ -14,6 +14,7 @@ export const HORIZONS = [365, 1825, 3650, 10950, 18250, 36500]; // 1, 5, 10, 30,
 const days = Number(process.argv[2] ?? 36500);
 if (!Number.isSafeInteger(days) || days < 1) throw new Error("days must be a positive integer");
 const snaps = HORIZONS.filter((h) => h <= days);
+const FLAGS = JSON.parse(process.env.SIM_FLAGS ?? "{}"); // extra newGame options for every scenario, e.g. SIM_FLAGS='{"plague":true}' (added for the plague tuning wave; default: none)
 const world = loadWorld(), ids = world.cities.map((c) => c.id), goods = Object.keys(world.goods);
 
 const priceIndex = (g) => { let s = 0, n = 0; for (const c of ids) for (const good of goods) { s += price(world, g.market[c][good], good) / world.goods[good].base; n++; } return +(s / n).toFixed(4); };
@@ -25,7 +26,7 @@ const halts = (g) => (g.inbox ?? []).filter((m) => m.kind === "halt").length;
 const base = (g) => ({ priceIndex: priceIndex(g), npcCash: npcCash(g), npcWorth: npcWorth(g) });
 
 function scenarioA() {
-  const g = newGame(world, "cadiz", { freePlay: true });
+  const g = newGame(world, "cadiz", { freePlay: true, ...FLAGS });
   const s0 = base(g);
   const horizons = {};
   const st = {}, worthYears = []; // one NPC worth sample per game year over the last 10 years of the run
@@ -37,13 +38,13 @@ function scenarioA() {
 
 function scenarioB(seed = 0) {
   const home = "casablanca"; // best cloth margin near the start (+125/batch at day 0): the market picks the place
-  const g = newGame(world, home, { cash: 2500, freePlay: true, seed }); // 4,500 total: a trader who saved up for his first workshop
+  const g = newGame(world, home, { cash: 2500, freePlay: true, seed, ...FLAGS }); // 4,500 total: a trader who saved up for his first workshop
   const s0 = base(g);
   const bp = buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
   const build = startConstruction(g, home, home + ":1", "workshop");
   if (!build.ok) return { error: "build failed", reason: build.reason, plotPrice: bp.price };
   let stockpiled = 0; const BUFFER = 1200;
-  let minCash = g.cash, staffSum = 0, staffDays = 0, haltDays = 0, upgrades = 0, haltEvents = 0;
+  let minCash = g.cash, staffSum = 0, staffDays = 0, haltDays = 0, upgrades = 0, haltEvents = 0; let lostB = 0;
   const horizons = {};
   const st = {};
   const snapB = (d) => { const b = g.buildings?.[home]?.[home + ":1"] ?? {}; horizons[d] = { ...base(g), cash: Math.round(g.cash), netWorth: Math.round(netWorth(g)), level: b.level, produced: b.produced ?? 0, wagesPaid: paidBuildings(g), haltEvents, haltDays, halted: !!b.halted, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1 }; };
@@ -51,6 +52,7 @@ function scenarioB(seed = 0) {
     const wasHalted = !!g.buildings?.[home]?.[home + ":1"]?.halted;
     advanceDay(g);
     const b = g.buildings?.[home]?.[home + ":1"];
+    if (!b && !lostB) lostB = d;
     if (!wasHalted && b?.halted) haltEvents++;
     if (b?.state === "active") { staffSum += staffingRatio(g, home); staffDays++; if (b.halted) haltDays++; }
     if (d % 7 === 0 && b?.state === "active" && !b.halted && b.level < 3) {
@@ -73,15 +75,15 @@ function scenarioB(seed = 0) {
     campaignAt365(g, st);
     if (snaps.includes(d)) snapB(d);
   }
-  const b = g.buildings[home][home + ":1"];
-  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b.level, produced: b.produced ?? 0,
+  const b = g.buildings[home]?.[home + ":1"]; // a bankrupt bot loses the workshop to the free-play seizure: a valid outcome to report, not a sim crash
+  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b?.level ?? null, produced: b?.produced ?? 0, bankruptcies: g.bankruptcies ?? 0, workshopLostDay: lostB || null,
     upkeepWagesPaid: paidBuildings(g), haltEvents, haltDays, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1,
     cashMin: Math.round(minCash), cashEnd: Math.round(g.cash), netWorthEnd: Math.round(netWorth(g)),
     priceIndex: [s0.priceIndex, priceIndex(g)], npcCash: [s0.npcCash, npcCash(g)], jobsEnd: jobsNeeded(g, home), campaignEnd: st.firstOver ?? null, horizons };
 }
 
 function scenarioC(seed = 0) {
-  const g = newGame(world, "cadiz", { cash: -800, seed }); // starts with 1,200: plot + build, almost nothing left
+  const g = newGame(world, "cadiz", { cash: -800, seed, ...FLAGS }); // starts with 1,200: plot + build, almost nothing left
   const s0 = base(g);
   const bp = buyPlot(g, "cadiz", { id: "cadiz:1", type: "saltworks", w: 3, d: 3 });
   const build = startConstruction(g, "cadiz", "cadiz:1", "saltworks");
@@ -107,7 +109,7 @@ function scenarioC(seed = 0) {
 const campaignAt365 = (g, st) => { if (g.day === 365 && !st.firstOver) st.firstOver = { day: 365, result: g.cash - loansOwed(g) >= GOAL_CASH ? "win" : "lose", reason: null }; };
 
 function scenarioD() {
-  const g = newGame(world, "cadiz", { freePlay: true }); // idle free-play trader: the debt-spiral stress test
+  const g = newGame(world, "cadiz", { freePlay: true, ...FLAGS }); // idle free-play trader: the debt-spiral stress test
   let minCash = g.cash;
   for (let d = 1; d <= days; d++) { advanceDay(g); minCash = Math.min(minCash, g.cash); }
   return { dayEnd: g.day, over: g.over, bankruptcies: g.bankruptcies ?? 0, cashMin: Math.round(minCash), cashEnd: Math.round(g.cash) };
