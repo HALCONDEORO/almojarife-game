@@ -52,7 +52,7 @@ test("walls: hospital and capilla need the one expansion; pozo does not; expansi
   assert.ok(r.ok && g.cash === before - WALL_COST, "money identity on the expansion");
   assert.equal(expandWalls(g, "cadiz").reason, "already expanded");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").ok, "hospital allowed after the expansion");
-  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true }); // no plague flag: no wall gate
+  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, walls: false }); // no wall system at all (plague off, walls pinned off): no gate
   (g2.rep ??= {}).cadiz = 100; g2.cash = 1e6; buyOffice(g2, "cadiz"); buyPlot(g2, "cadiz", { id: "cadiz:1", type: "house", w: 10, d: 10 });
   assert.ok(quoteConstruction(g2, "cadiz", "cadiz:1", "hospital").ok, "without the plague flag the wall gate does not exist");
 });

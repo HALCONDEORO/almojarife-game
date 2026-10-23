@@ -45,6 +45,7 @@ import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
+import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, WALL_POP } from "./walls.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -99,6 +100,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if(houses)g.regionalRivals=true;
   if (opts.citylife === true) g.citylife = initCitylife(world); // city-life flag, OFF by default: no key at all in an off game (saves stay identical)
   if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
+  if (opts.walls !== false && opts.walls !== 1) g.walls = initWalls(); // walls flag, ON by default: only false or 1 turns it off (an off game keeps no key, saves stay identical)
   if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
@@ -151,6 +153,7 @@ function dayTick(g) {
     accrueDay(g, s);
   }
   accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  accrueWalls(g); // active walls add their daily upkeep to the weekly book (flag off: nothing)
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
@@ -213,7 +216,7 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
-    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
+    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id) + WALL_POP * wallsKeptLevel(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
     growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
@@ -236,6 +239,7 @@ export function advanceTick(g) {
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
+  tickWalls(g); // wall works finish on their exact tick (flag off: nothing)
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {
