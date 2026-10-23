@@ -11,6 +11,8 @@ test("goodIcon escapes the id inside the aria-label attribute", () => {
 });
 
 test("every known good renders its own designed icon, not the fallback", () => {
-  const fallback = goodIcon("no-such-good-xyz");
-  for (const id of ICON_IDS) assert.notEqual(goodIcon(id), fallback, `${id} has a designed icon`);
+  const body = (out) => out.replace(/aria-label="[^"]*"/, "");
+  const fallback = body(goodIcon("no-such-good-xyz"));
+  assert.ok(fallback.includes("<circle"), "the fallback itself is the grey circle");
+  for (const id of ICON_IDS) assert.notEqual(body(goodIcon(id)), fallback, `${id} has a designed icon`);
 });
