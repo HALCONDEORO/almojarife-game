@@ -75,7 +75,7 @@ export function envStops(sk) {
 const hex = ([r, g, b]) => (r << 16) | (g << 8) | b;
 
 /** Camera set-up from the art guide: FOV 35, at (0,22,42) looking at (0,4,-9); zoom 0.7..1.3, yaw within +-20 degrees. */
-export const CAMERA = { fov: 35, fovPortrait: 50, pos: [0, 22, 42], look: [0, 4, -9], zoom: [0.7, 1.3], yawMax: (20 * Math.PI) / 180 };
+export const CAMERA = { fov: 42, fovPortrait: 50, pos: [0, 22, 42], look: [0, 9, -9], zoom: [0.7, 1.3], yawMax: (20 * Math.PI) / 180 };
 export function cameraPose(zoom = 1, yaw = 0) {
   const z = Math.max(CAMERA.zoom[0], Math.min(CAMERA.zoom[1], zoom)), y = Math.max(-CAMERA.yawMax, Math.min(CAMERA.yawMax, yaw)), [px, py, pz] = CAMERA.pos, [lx, ly, lz] = CAMERA.look;
   const dx = px - lx, dy = py - ly, dz = pz - lz, c = Math.cos(y), s = Math.sin(y);
