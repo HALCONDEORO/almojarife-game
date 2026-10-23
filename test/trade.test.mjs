@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { makeMarket } from "../src/sim/market.mjs";
+import { makeMarket, price } from "../src/sim/market.mjs";
 import { makeShip, sail, sailTick, buy, sell, cargoUsed, SHIP_TYPES } from "../src/sim/trade.mjs";
 const world = loadWorld();
 const [A, B] = [world.cities[0].id, world.cities[1].id];
@@ -106,4 +106,22 @@ test("preview explains why a buy is capped", () => {
   const good = world.cities[0].makes[0];
   assert.equal(previewBuy(world, m, s, 5, good, 50).limit, "cash");
   assert.equal(previewBuy(world, m, s, 1e9, good, 1e5).limit === "cash", false);
+});
+
+test("an empty port sells nothing, changes nothing, and the price stays inside its clamp", () => {
+  // Edge case (issue #27): a port with zero stock must never sell what it does not have,
+  // and the price curve must survive the extremes (no division by zero, no negative price).
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const good = world.cities[0].makes[0];
+  const base = world.goods[good].base;
+  const e = m[A][good];
+  e.stock = 0;
+  assert.equal(price(world, e, good), Math.round(base * 3), "zero stock: no division by zero, price pinned at the 3x ceiling");
+  const before = JSON.stringify([m, s]);
+  const r = buy(world, m, s, 1e9, good, 100);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, "nothing to buy");
+  assert.equal(JSON.stringify([m, s]), before, "the failed buy creates no cargo, no basis and no stock");
+  e.stock = 1e9;
+  assert.equal(price(world, e, good), Math.round(base * 0.4), "a glut pins the price at the 0.4x floor, never lower");
 });
