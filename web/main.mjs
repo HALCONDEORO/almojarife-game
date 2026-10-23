@@ -147,10 +147,20 @@ function drawShips() {
     h += `<g data-mx="${pt.x}" data-my="${pt.y}" ${mine ? `data-ship="${g.ships.indexOf(sh)}" style="cursor:pointer" pointer-events="all"` : ""}>${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
   }
   layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
-  layer.querySelectorAll("[data-ship]").forEach((el) => el.onclick = () => {
-    const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
-    if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
-    if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+  layer.querySelectorAll("[data-ship]").forEach((el) => {
+    el.onclick = () => {
+      const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
+      if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
+      if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+    };
+    // A docked own ship covers its port's dot; forward right-clicks to that port's own
+    // handler (looked up live, so whatever the port does on right-click applies here too).
+    el.oncontextmenu = (ev) => {
+      const sh = g.ships[+el.dataset.ship];
+      if (!sh || sh.voyage) return;
+      const ce = mapEl.querySelector(`g.city[data-c="${sh.at}"]`);
+      if (ce && ce.oncontextmenu) ce.oncontextmenu(ev);
+    };
   });
 }
 function stepTicks(n) {
