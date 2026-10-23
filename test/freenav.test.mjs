@@ -137,3 +137,13 @@ test('port snap radius is PORT_SNAP_KM (12) measured from the snapped lane point
  const far=planTrip(w,ship,c.lat,c.lon-0.16); // snapped lane point ~12.7 km from the port
  assert.equal(far.ok,true);assert.equal(far.toPort,false);assert.ok(isFreeId(far.to));
 });
+
+test("wiring: newGame leaves no freeNav key when OFF, sets it only with the opt", () => {
+  const off = newGame(w); assert.ok(!("freeNav" in off), "OFF games carry no freeNav key");
+  const on = newGame(w, "cadiz", { freeNav: true }); assert.equal(on.freeNav, true);
+});
+test("wiring: serialized OFF games carry no freeNav key; ON games keep it", async () => {
+  const { serialize } = await import("../src/game/gamesave.mjs");
+  const off = JSON.stringify(serialize(newGame(w), "Co", 0)); assert.ok(!off.includes('"freeNav"'), "OFF save has no freeNav key");
+  const on = JSON.stringify(serialize(newGame(w, "cadiz", { freeNav: true }), "Co", 0)); assert.ok(on.includes('"freeNav":true'));
+});
