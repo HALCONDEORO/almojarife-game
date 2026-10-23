@@ -69,9 +69,13 @@ test("molino adds exactly its grain buffer to the staple reading", () => {
   const g = game({ citylife: true });
   own(g, "cadiz");
   const b = buildActive(g, "cadiz", "cadiz:1", "molino");
+  g.market.cadiz.grain.stock = g.market.cadiz.grain.target; // full grain: the buffer counts in full
   b.halted = true; const off = stapleCoverage(g, "cadiz");
   b.halted = false; const on = stapleCoverage(g, "cadiz");
-  assert.ok(Math.abs(on - off - 0.15 / 4) < 1e-9, `level 1 adds 0.15/4: ${off} -> ${on}`);
+  assert.ok(Math.abs(on - off - 0.15 / 4) < 1e-9, `level 1 with full grain adds 0.15/4: ${off} -> ${on}`);
+  g.market.cadiz.grain.stock = 0; // no grain, nothing to mill
+  const starved = stapleCoverage(g, "cadiz");
+  assert.ok(Math.abs(starved - (off - 1.0 / 4)) < 1e-9, `level 1 with zero grain adds nothing: ${off} -> ${starved}`);
 });
 
 test("molino lifts the hunger cap when its buffer crosses the line", () => {
@@ -84,13 +88,18 @@ test("molino lifts the hunger cap when its buffer crosses the line", () => {
     do advanceDay(g); while (g.buildings.cadiz["cadiz:1"].state !== "active");
   }
   assert.equal(g.buildings.cadiz["cadiz:1"].level, 3);
-  // protein and oil at 70% coverage, no grain at all; the rest of the poor basket fully stocked
-  for (const good of ["fish", "meat", "olive_oil"]) { g.market.cadiz[good].stock = 70; g.market.cadiz[good].target = 100; }
-  g.market.cadiz.grain.stock = 0;
+  // every staple hovering at 55% coverage: under the hunger line without the mill
+  for (const good of ["grain", "fish", "meat", "olive_oil"]) g.market.cadiz[good].stock = Math.round(g.market.cadiz[good].target * 0.55);
   for (const [good, e] of Object.entries(g.market.cadiz)) if (!["fish", "meat", "olive_oil", "grain"].includes(good)) e.stock = e.target;
   b.halted = true; const capped = moodTarget(g, "cadiz", "poor");
   b.halted = false; const lifted = moodTarget(g, "cadiz", "poor");
   assert.ok(capped <= 35, "without the mill the hunger cap holds: " + capped);
+  // and a mill with no grain at all grinds nothing: the buffer scales with the raw coverage
+  g.market.cadiz.grain.stock = 0;
+  g.market.cadiz.fish.stock = 0; g.market.cadiz.meat.stock = 0; g.market.cadiz.olive_oil.stock = 0;
+  const starved = moodTarget(g, "cadiz", "poor");
+  assert.ok(starved <= 35, "no grain, no bread: the mill lifts nothing on empty stocks: " + starved);
+  for (const good of ["grain", "fish", "meat", "olive_oil"]) g.market.cadiz[good].stock = Math.round(g.market.cadiz[good].target * 0.55);
   assert.ok(lifted > capped, `level 3 buffer (3 x 0.15 on grain) crosses the line: ${capped} -> ${lifted}`);
 });
 
@@ -103,7 +112,12 @@ test("carniceria steadies meat and fish and cheers the poor; halted it does noth
   for (const good of ["grain", "olive_oil"]) g.market.cadiz[good].stock = g.market.cadiz[good].target;
   const halted = (b.halted = true, moodTarget(g, "cadiz", "poor"));
   const active = (b.halted = false, moodTarget(g, "cadiz", "poor"));
-  assert.ok(active >= halted + 2, `carniceria lifts the poor: ${halted} -> ${active}`);
+  assert.ok(halted <= 35 && active <= 35, `a hungry city stays capped, the butcher's cheer never masks hunger: ${halted} -> ${active}`);
+  // fed city: the same butcher lifts the poor by its level
+  for (const e of Object.values(g.market.cadiz)) e.stock = e.target;
+  const haltedFed = (b.halted = true, moodTarget(g, "cadiz", "poor"));
+  const activeFed = (b.halted = false, moodTarget(g, "cadiz", "poor"));
+  assert.ok(activeFed >= haltedFed + 2, `carniceria lifts the poor when the city is fed: ${haltedFed} -> ${activeFed}`);
 });
 
 test("corral lifts rich and middle moods by its level, poor not at all", () => {

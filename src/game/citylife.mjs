@@ -61,16 +61,15 @@ export function classCoverage(row, cls) {
   return den ? num / den : 1;
 }
 /** Coverage a civic adds to one staple's reading: the molino serves grain, the carniceria serves meat and fish. */
-const civicBuffer = (g, cityId, good) => good === "grain" ? MOLINO_GRAIN_BUFFER * workingLevels(g, cityId, "molino")
-  : good === "meat" || good === "fish" ? CARNICERIA_PROTEIN_BUFFER * workingLevels(g, cityId, "carniceria") : 0;
+const civicBuffer = (g, cityId, good, raw) => (good === "grain" ? MOLINO_GRAIN_BUFFER * workingLevels(g, cityId, "molino")
+  : good === "meat" || good === "fish" ? CARNICERIA_PROTEIN_BUFFER * workingLevels(g, cityId, "carniceria") : 0) * Math.min(1, raw); // a mill cannot grind grain the market does not have: the buffer scales with the raw coverage (23/10 integration review, measured balance alert)
 /** Staple coverage as the city feels it: civic capacity counts on top of the market rows. */
-export const stapleCoverage = (g, cityId) => STAPLES.reduce((a, good) => a + Math.min(1.5, coverageOf(g.market?.[cityId], good) + civicBuffer(g, cityId, good)), 0) / STAPLES.length
+export const stapleCoverage = (g, cityId) => STAPLES.reduce((a, good) => { const raw = coverageOf(g.market?.[cityId], good); return a + Math.min(1.5, raw + civicBuffer(g, cityId, good, raw)); }, 0) / STAPLES.length
   + POSITO_BUFFER * workingLevels(g, cityId, "posito"); // the posito's municipal stores fill the gap on top
 
 /** Today's mood reading for one class before memory is applied (0-100). */
 export function moodTarget(g, cityId, cls) {
   let target = Math.round(80 * Math.min(1.25, classCoverage(g.market?.[cityId], cls)));
-  if (stapleCoverage(g, cityId) < HUNGER_LINE) target = Math.min(target, HUNGER_CAP);
   const hardTimes = activeShocks(g, cityId).length > 0;
   if (hardTimes) target = Math.max(0, target - SHOCK_PENALTY);
   if (plagueActive(g, cityId)) target = Math.max(0, target - PLAGUE_MOOD); // a plague sits on spirits while it lasts
@@ -80,6 +79,11 @@ export function moodTarget(g, cityId, cls) {
     if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * workingLevels(g, cityId, "alhondiga") + CORRAL_MIDDLE_MOOD * workingLevels(g, cityId, "corral"));
     if (cls === "rich") target = Math.min(100, target + CORRAL_RICH_MOOD * workingLevels(g, cityId, "corral"));
   }
+  // Hunger caps the FINAL reading, after civic spirits: a playhouse or a meat market must never mask an unfed city
+  // (design decision in the 23/10 integration review after the measured balance alert; the mill-butcher buffers
+  // still lift the coverage reading over the hunger line BEFORE this check - their designed crisis utility: a city
+  // they actually feed is not capped at all).
+  if (stapleCoverage(g, cityId) < HUNGER_LINE) target = Math.min(target, HUNGER_CAP);
   return target;
 }
 
