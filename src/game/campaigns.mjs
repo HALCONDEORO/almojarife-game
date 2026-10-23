@@ -12,10 +12,10 @@ export const MISSIONS = Object.freeze([
     failed: { es: 'El día 60 llegó sin venta en Sevilla. El concejo pierde interés en tu nombre; la casa sigue, pero el nombramiento se aleja.', en: 'Day 60 arrived with no sale in Seville. The council loses interest in your name; the house goes on, but the appointment drifts away.' },
     steps: Object.freeze([
       Object.freeze({ kind: 'buy', good: 'salt', qty: 40, label: { es: 'Compra {qty} de sal', en: 'Buy {qty} salt' } }),
-      Object.freeze({ kind: 'sail', label: { es: 'Zarpa con la carga', en: 'Set sail with the cargo' } }),
+      Object.freeze({ kind: 'sail', label: { es: 'Zarpa con la carga: elige destino en el mapa y clic derecho → «Zarpar»', en: 'Set sail with the cargo: pick a destination on the map, then right-click → "Sail"' } }),
       Object.freeze({ kind: 'arrive', city: 'sevilla', label: { es: 'Llega a Sevilla', en: 'Reach Seville' } }),
       Object.freeze({ kind: 'sell', good: 'salt', qty: 40, city: 'sevilla', label: { es: 'Vende {qty} de sal en Sevilla', en: 'Sell {qty} salt in Seville' } }),
-      Object.freeze({ kind: 'readReport', label: { es: 'Lee tu informe semanal', en: 'Read your weekly report' } }),
+      Object.freeze({ kind: 'readReport', label: { es: 'Lee tu informe semanal en Informes (el primero llega el día 7)', en: 'Read your weekly report under Reports (the first one arrives on day 7)' } }),
     ]),
     reward: Object.freeze({ coins: 300, respect: { sevilla: 5 } }) }),
   Object.freeze({ id: 'm2-nombre', chain: 'main', requires: ['m1-oficio'], optional: false, deadline: null,
