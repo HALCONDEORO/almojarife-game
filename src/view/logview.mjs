@@ -4,7 +4,7 @@ export function logText(entry,t,lang,cityName=x=>x){
  if(own!=null)return `${t.day} ${entry.day}: ${own}`;
  const template=t.log?.[entry.key];
  if(typeof template!=='string')return `${t.day} ${entry.day}: ${lang==='es'?'La casa mercantil ha recibido noticias.':'Your trading house has received news.'}`;
- return template.replace(/\{(\w+)\}/g,(_,k)=>k==='city'?cityName(entry.city):k==='good'?(t.goods[entry.good]??entry.good):(entry[k]??''));
+ return template.replace(/\{(\w+)\}/g,(_,k)=>k==='city'||k==='at'?cityName(entry[k]):k==='good'?(t.goods[entry.good]??entry.good):(entry[k]??''));
 }
 export function logHtml(entries,t,lang,cityName){
  const esc=s=>String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

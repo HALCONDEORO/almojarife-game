@@ -37,6 +37,18 @@ test("rumour error stays within 25% and is repeatable for the same game state", 
   assert.deepEqual(a.intel[o].cells, b.intel[o].cells);
   for (const [gd, e] of Object.entries(a.intel[o].cells)) { const real = a.market[o][gd].stock; assert.ok(Math.abs(e.stock - real) <= Math.ceil(real * 0.25) + 1); }
 });
+test("a bought rumour writes a log line with port, place and price; a refused one writes nothing", () => {
+  const { g, s } = fresh();
+  const other = world.cities.find((c) => c.id !== s.at).id;
+  assert.equal(buyRumor(g, other, s.at).ok, true);
+  const rum = g.log.find((e) => e.key === "rumor");
+  assert.ok(rum, "rumor log entry");
+  assert.equal(rum.city, other); assert.equal(rum.at, s.at); assert.equal(rum.price, RUMOR_PRICE);
+  g.cash = RUMOR_PRICE - 1;
+  const third = world.cities.find((c) => c.id !== s.at && c.id !== other).id;
+  assert.equal(buyRumor(g, third, s.at).ok, false);
+  assert.equal(g.log.filter((e) => e.key === "rumor").length, 1);
+});
 test("a port where a ship is docked or a warehouse stands is live and exact", () => {
   const { g, s } = fresh();
   assert.equal(isLive(g, s.at), true);
