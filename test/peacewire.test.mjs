@@ -55,4 +55,4 @@ test("g.peaceSeen survives save and load, so a reload cannot repeat a peace note
   const { g: back } = deserialize(serialize(g, "X"), world);
   assert.deepEqual(back.peaceSeen, { "castile|tlemcen": true }); assert.equal(back.peace, true);
 });
-test("the host switch is off by default", () => assert.equal(PIRACY_DAILY_ENABLED, false));
+test("the host switch defaults ON (owner order 23/10); g.marque/g.peace still gate the mechanics per save", () => assert.equal(PIRACY_DAILY_ENABLED, true));
