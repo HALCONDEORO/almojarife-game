@@ -663,7 +663,7 @@ function renderShipWin() {
 // Captain dismissal confirm dialog (shared by the tavern card and the ship window).
 function askDismissCaptain() {
   const s = ship(), c = captainOf(s); if (!c) return; const el = $("title"), tc = CT[lang], was = playing; playing = false; el.hidden = false;
-  el.innerHTML = `<div class="box"><h2 id="cap-heading"></h2><p>${tc.dismissInfo}</p><button id="cap-confirm">${tc.dismissConfirm}</button><button id="cap-cancel">${tc.cancel}</button><p id="cap-msg"></p></div>`;
+  el.innerHTML = `<div class="box capdlg"><div class="capdlg-handle"><h2 id="cap-heading"></h2></div><div class="capdlg-body"><p>${tc.dismissInfo}</p><button id="cap-confirm">${tc.dismissConfirm}</button><button id="cap-cancel">${tc.cancel}</button><p id="cap-msg"></p></div></div>`;
   $("cap-heading").textContent = tc.dismissConfirm + ": " + c.name;
   $("cap-cancel").onclick = () => { el.hidden = true; playing = was; render(); };
   $("cap-confirm").onclick = () => { if (s.captain?.id !== c.id) { $("cap-msg").textContent = tc.failed; return; } const r = dismissCaptain(g, s); if (!r.ok) { $("cap-msg").textContent = tc.failed; return; } el.hidden = true; playing = was; autosave(); render(); };
