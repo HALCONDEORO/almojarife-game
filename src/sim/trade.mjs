@@ -37,12 +37,14 @@ export function sail(world, ship, to, opts = {}) {
 /** One tick at sea; arrives exactly when ticksLeft reaches 0. Returns true on arrival. */
 export function sailTick(ship) {
   if (!ship.voyage) return false;
-  if (--ship.voyage.ticksLeft <= 0) { ship.at = ship.voyage.to; ship.voyage = null; return true; }
+  if (ship.voyage.anchored) return false; // free navigation: waiting at a point of the sea
+  if (--ship.voyage.ticksLeft <= 0) { if (ship.voyage.free) { ship.voyage.ticksLeft = 0; ship.voyage.anchored = true; return false; } ship.at = ship.voyage.to; ship.voyage = null; return true; }
   return false;
 }
 /** One day at sea: hull wear. Movement is per tick in sailTick. `force` charges a ship that just arrived (its voyage is already cleared). */
 export function tickShip(ship, force = false) {
   if (!ship.voyage && !force) return;
+  if (ship.voyage?.anchored) return; // at anchor: no sea wear
   ship.hull = Math.max(10, (ship.hull ?? 100) - 0.5); // sea wear
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the
