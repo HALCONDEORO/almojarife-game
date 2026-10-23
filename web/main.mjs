@@ -48,6 +48,7 @@ import { affordRatio } from "../src/sim/market.mjs";
 import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
 import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
+import { shipDescriptor } from "../src/view/shipvisual.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
@@ -407,7 +408,7 @@ function render() {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
     const nd = world.nodes[s.at];
-    h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).length, day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
+    h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
     const bp = bestPorts(g, s).slice(0, 3);
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;

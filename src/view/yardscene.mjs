@@ -1,6 +1,7 @@
 // Illustrated shipyard: slipway scene with hulls in construction, and a small silhouette per ship class.
 // Pure functions returning SVG strings; no DOM. Original art, drawn from simple shapes (CC BY 4.0 with the rest of the art).
 import { SHIP_TYPES } from "../sim/trade.mjs";
+import { HULL_SIDE } from "./shipvisual.mjs";
 
 /** Build progress 0..1 of an order on a given day (the order only stores its ready day). */
 export function orderProgress(order, day) {
@@ -9,7 +10,7 @@ export function orderProgress(order, day) {
   return Math.min(1, Math.max(0, 1 - left / bd));
 }
 
-const HULL = { barca: [28, 8, 1], cog: [44, 12, 1], caravel: [54, 12, 2], nao: [66, 16, 3] }; // length, height, masts
+const HULL = HULL_SIDE; // side-view class dimensions, shared with the port scene
 
 /** Ship silhouette for a class card. Size follows the class. */
 export function shipIconSvg(type, w = 90, h = 50) {
@@ -37,12 +38,16 @@ export function yardSceneSvg({ orders = [], day = 0, tod = 0.4, emptyLabel = "" 
   const slot = W / n;
   shown.forEach((o, i) => {
     const p = orderProgress(o, day), cx = slot * i + slot / 2, base = H - 50;
-    const L = 70 + 90 * p, Ht = 20 + 34 * p;
+    const [clen, cht, cmasts] = HULL[o.type] ?? HULL.barca, k = 2.6; // class hull at scene scale
+    const L = (20 + clen * k) * (0.35 + 0.65 * p), Ht = (8 + cht * k) * (0.35 + 0.65 * p);
     for (const dx of [-80, -55, -30, 0, 30, 55, 80]) s += `<path d="M${cx + dx} ${base + 8} V${base - 40 - 20 * p}" stroke="#8a6a3a" stroke-width="2"/>`;
     s += `<path d="M${cx - 85} ${base} L${cx + 85} ${base + 8} M${cx - 85} ${base + 8} L${cx + 85} ${base + 8}" stroke="#4a3414" stroke-width="3"/>`;
     s += `<path d="M${cx - L / 2} ${base - Ht * 0.3} L${cx + L / 2} ${base - Ht * 0.5} L${cx + L / 2 - 8} ${base} L${cx - L / 2 + 6} ${base} Z" fill="#7a5a2a" stroke="#3a2a1a" stroke-width="1.5"/>`;
-    for (let r = 1; r < Math.floor(p * 6); r++) s += `<path d="M${cx - L / 2 + 6} ${base - r * 4} H${cx + L / 2 - 8}" stroke="#4a3414" stroke-width="1"/>`;
-    if (p > 0.45) s += `<path d="M${cx} ${base - Ht} V${base - Ht - 40 * p}" stroke="#3a2a1a" stroke-width="2"/>`;
+    if (p >= 1 / 3) for (let r = 1; r < Math.floor(p * 6); r++) s += `<path d="M${cx - L / 2 + 6} ${base - r * 4} H${cx + L / 2 - 8}" stroke="#4a3414" stroke-width="1"/>`; // planking phase
+    if (p >= 2 / 3) for (let m = 0; m < cmasts; m++) { // rigging phase: the class's masts go up
+      const mx = cx + (cmasts === 1 ? 0 : (m / (cmasts - 1) - 0.5) * L * 0.5);
+      s += `<path d="M${mx} ${base - Ht} V${base - Ht - 40 * p}" stroke="#3a2a1a" stroke-width="2"/>`;
+    }
     s += `<rect x="${cx - 40}" y="${base - 60}" width="80" height="5" fill="#d8c79a" stroke="#3a2a1a"/><rect x="${cx - 40}" y="${base - 60}" width="${80 * p}" height="5" fill="#5a8a3a"/>`;
   });
   s += `<path d="M${W - 40} ${H - 50} V30 H${W - 110} M${W - 40} 60 L${W - 110} 30" stroke="#4a3414" stroke-width="4" fill="none"/><path d="M${W - 105} 30 V70" stroke="#4a3414" stroke-width="1.5"/><rect x="${W - 112}" y="70" width="14" height="10" fill="#8a6a3a" stroke="#3a2a1a"/>`;

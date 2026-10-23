@@ -22,3 +22,17 @@ test("yard scene is valid-looking SVG with one cradle per order, max 4, and hand
   const many = yardSceneSvg({ orders: [o("cog"), o("nao"), o("barca"), o("cog"), o("nao")], day: 5 });
   assert.equal((many.match(/fill="#5a8a3a"/g) || []).length, 4);
 });
+
+test("the hull under construction follows the class and the build phases", () => {
+  const early = { type: "nao", readyDay: 100 }, late = { type: "nao", readyDay: 12 }, day = 10;
+  const e = yardSceneSvg({ orders: [early], day }), l = yardSceneSvg({ orders: [late], day });
+  assert.ok(l.length > e.length, "late-phase hull draws masts and planking");
+  const barca = yardSceneSvg({ orders: [{ type: "barca", readyDay: 12 }], day });
+  assert.notEqual(l, barca, "class changes the slipway hull");
+});
+
+test("yard scene output is well-formed markup", () => {
+  const svg = yardSceneSvg({ orders: [{ at: "cadiz", type: "cog", readyDay: 30, total: 14 }], day: 20, tod: 0.5, emptyLabel: "x" });
+  for (const m of svg.matchAll(/<[^<>]*>/g))
+    assert.ok(/^<(\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>$/.test(m[0]), `well-formed tag, got: ${m[0].slice(0, 90)}`);
+});
