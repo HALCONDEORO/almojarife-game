@@ -36,6 +36,11 @@ const POSITO_BUFFER = 0.1;    // staple coverage each active posito level adds t
 const POSITO_EMIGRATION_BRAKE = 0.5; // share of hunger emigration a posito absorbs (it feeds the city in a crisis)
 const HOSPITAL_MOOD = 4;      // per active level, poor class only; doubles in hard times
 const ALHONDIGA_MOOD = 3;     // per active level, middle class only (an orderly grain trade)
+const MOLINO_GRAIN_BUFFER = 0.15;  // per active level, added to the grain coverage reading (a mill turns grain into bread)
+const CARNICERIA_PROTEIN_BUFFER = 0.1; // per active level, added to the meat and fish coverage readings
+const CARNICERIA_POOR_MOOD = 2;    // per active level, poor class only (cheap cuts and offal feed the modest tables)
+const CORRAL_RICH_MOOD = 4;        // per active level, rich class only (the playhouse is their diversion)
+const CORRAL_MIDDLE_MOOD = 2;      // per active level, middle class only
 
 /** Effective inhabitants of a city: base population + hands from houses + drift from city life. */
 export function citylifeExtra(g, cityId) { return g.citylife?.cities?.[cityId]?.extra ?? 0; }
@@ -55,9 +60,12 @@ export function classCoverage(row, cls) {
   for (const good of BASKETS[cls]) { const w = PER_1000[good][cls]; num += w * coverageOf(row, good); den += w; }
   return den ? num / den : 1;
 }
-/** Staple coverage as the city feels it: the posito's municipal stores count on top. */
-const stapleCoverage = (g, cityId) => STAPLES.reduce((a, good) => a + coverageOf(g.market?.[cityId], good), 0) / STAPLES.length
-  + POSITO_BUFFER * workingLevels(g, cityId, "posito");
+/** Coverage a civic adds to one staple's reading: the molino serves grain, the carniceria serves meat and fish. */
+const civicBuffer = (g, cityId, good) => good === "grain" ? MOLINO_GRAIN_BUFFER * workingLevels(g, cityId, "molino")
+  : good === "meat" || good === "fish" ? CARNICERIA_PROTEIN_BUFFER * workingLevels(g, cityId, "carniceria") : 0;
+/** Staple coverage as the city feels it: civic capacity counts on top of the market rows. */
+export const stapleCoverage = (g, cityId) => STAPLES.reduce((a, good) => a + Math.min(1.5, coverageOf(g.market?.[cityId], good) + civicBuffer(g, cityId, good)), 0) / STAPLES.length
+  + POSITO_BUFFER * workingLevels(g, cityId, "posito"); // the posito's municipal stores fill the gap on top
 
 /** Today's mood reading for one class before memory is applied (0-100). */
 export function moodTarget(g, cityId, cls) {
@@ -68,8 +76,9 @@ export function moodTarget(g, cityId, cls) {
   if (plagueActive(g, cityId)) target = Math.max(0, target - PLAGUE_MOOD); // a plague sits on spirits while it lasts
   target = Math.max(0, target - calamityMoodHit(g, cityId)); // and so do famine, fire and foul sanitation
   if (g.citylife) { // civic buildings lift spirits; they never exist in a flag-off game
-    if (cls === "poor") target = Math.min(100, target + HOSPITAL_MOOD * workingLevels(g, cityId, "hospital") * (hardTimes ? 2 : 1));
-    if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * workingLevels(g, cityId, "alhondiga"));
+    if (cls === "poor") target = Math.min(100, target + HOSPITAL_MOOD * workingLevels(g, cityId, "hospital") * (hardTimes ? 2 : 1) + CARNICERIA_POOR_MOOD * workingLevels(g, cityId, "carniceria"));
+    if (cls === "middle") target = Math.min(100, target + ALHONDIGA_MOOD * workingLevels(g, cityId, "alhondiga") + CORRAL_MIDDLE_MOOD * workingLevels(g, cityId, "corral"));
+    if (cls === "rich") target = Math.min(100, target + CORRAL_RICH_MOOD * workingLevels(g, cityId, "corral"));
   }
   return target;
 }
