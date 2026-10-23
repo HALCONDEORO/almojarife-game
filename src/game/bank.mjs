@@ -1,4 +1,5 @@
 import { loanCapFor } from "./rank.mjs";
+import { foreclose, lenderLocked } from "./foreclosure.mjs";
 import { termsFor, recordDefault, recordPaid, accrueLoanInterest } from "./payrep.mjs";
 // The moneylender (bank). Pure game logic: no DOM. Any port has one; you borrow while a ship of yours is docked there.
 // Loans cost LOAN_RATE of what is left, every weekly settlement (cheaper than the 2% overdraft, so asking is better than falling short).
@@ -17,7 +18,7 @@ export function loanRoom(g, netWorth, city) {
   // Based on net worth, which borrowing does not change (cash goes up, debt goes up), so you cannot lend yourself more by borrowing.
   const total = Math.min(loanCapFor(g, LOAN_MAX), Math.floor(Math.max(netWorth, 0) * 0.5 / LOAN_STEP) * LOAN_STEP);
   const t = city ? termsFor(g, city) : null; // payment reputation (flag credit): the lender of this port offers more or less
-  if (t?.refuse) return 0;
+  if (t?.refuse || lenderLocked(g, city)) return 0; // after an unpaid loan (flag foreclosure) this lender is shut for a while
   return Math.max(0, (t && t.room < 1 ? Math.floor(total * t.room / LOAN_STEP) * LOAN_STEP : total) - owed); // good standing never lifts the room past the neutral cap (rank cap and half of net worth): it only buys a cheaper rate
 }
 const docked = (g, city) => g.ships.some((s) => s.at === city && !s.voyage);
@@ -48,7 +49,7 @@ export function repayLoan(g, id, amount, post = () => {}) {
 export function processLoans(g, post = () => {}) {
   let taken = 0;
   for (const l of [...loansOf(g)]) {
-    if (l.due <= g.day) { if (g.cash < l.left) recordDefault(g, l.city); g.weekLoanInterest = (g.weekLoanInterest ?? 0) + l.left * (l.rate ?? LOAN_RATE); /* keep the last interest of a loan that is closed before settlement */ taken += l.left; g.cash = r2(g.cash - l.left); g.loans.splice(g.loans.indexOf(l), 1); post(g, "loanLate", { amt: l.left }); }
+    if (l.due <= g.day) { if (g.cash < l.left) { recordDefault(g, l.city); if (g.foreclosure === true) { const f = foreclose(g, l); if (f.proceeds > 0) post(g, "loanSeized", { city: l.city, amt: Math.round(f.proceeds), units: f.units }); } } g.weekLoanInterest = (g.weekLoanInterest ?? 0) + l.left * (l.rate ?? LOAN_RATE); /* keep the last interest of a loan that is closed before settlement */ taken += l.left; g.cash = r2(g.cash - l.left); g.loans.splice(g.loans.indexOf(l), 1); post(g, "loanLate", { amt: l.left }); }
     else if (l.due - g.day <= 7 && !l.warned) { l.warned = true; post(g, "loanDue", { amt: l.left, dueDay: l.due }); }
   }
   return r2(taken);
