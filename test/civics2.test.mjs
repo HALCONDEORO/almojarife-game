@@ -148,3 +148,29 @@ test("the new civics survive a save/load with their effects", () => {
   for (const e of Object.values(b.market.sevilla)) e.stock = e.target;
   assert.equal(moodTarget(b, "sevilla", "rich"), richA, "same lift after the round trip");
 });
+
+test("combo carniceria+molino L3: hunger frontier sits between raw .47 and .48 (measured)", () => {
+  const g = game({ citylife: true });
+  own(g, "sevilla", 1); own(g, "sevilla", 2);
+  for (const [plot, type] of [["sevilla:1", "carniceria"], ["sevilla:2", "molino"]]) {
+    const b = buildActive(g, "sevilla", plot, type);
+    for (let lvl = 2; lvl <= 3; lvl++) { const r = startConstruction(g, "sevilla", plot, type); assert.ok(r.ok); do advanceDay(g); while (g.buildings.sevilla[plot].state !== "active"); }
+  }
+  const starve = (frac) => { for (const good of ["grain", "fish", "meat", "olive_oil"]) { const e = g.market.sevilla[good]; e.stock = Math.round(e.target * frac); } for (const [good, e] of Object.entries(g.market.sevilla)) if (!["grain", "fish", "meat", "olive_oil"].includes(good)) e.stock = e.target; };
+  starve(0.47);
+  assert.ok(moodTarget(g, "sevilla", "poor") <= 35, "raw .47: hunger cap holds even with both civic buffers");
+  starve(0.48);
+  assert.ok(moodTarget(g, "sevilla", "poor") > 35, "raw .48: the combined buffers cross the line (measured 52)");
+});
+
+test("corral gate reads BASE population: walls and citylife growth never unlock it", () => {
+  const g = game({ citylife: true });
+  own(g, "malaga", 1); own(g, "melilla", 1);
+  assert.ok(g.world.nodes.malaga.pop >= 15000, "fixture: malaga starts at the gate");
+  g.world.nodes.malaga.pop = 14999;
+  assert.equal(quoteConstruction(g, "malaga", "malaga:1", "corral").reason, "town too small", "base 14999 refuses");
+  g.world.nodes.malaga.pop = 15000;
+  assert.ok(quoteConstruction(g, "malaga", "malaga:1", "corral").ok, "base 15000 exactly unlocks");
+  g.citylife.cities["melilla"] = { animo: { poor: 60, middle: 60, rich: 60 }, extra: 20000 }; // effective 21500, base 1500
+  assert.equal(quoteConstruction(g, "melilla", "melilla:1", "corral").reason, "town too small", "a small town with growth bonus is still a small town: the playhouse needs a real audience");
+});
