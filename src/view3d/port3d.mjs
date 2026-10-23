@@ -45,7 +45,7 @@ export function portLayout(id, pop = 8000) {
   // Typed buildings by district: the artisan quarter sits on the quay rows, the chapel stands on the top row. Bigger towns keep more of them.
   for (const [type, row, min] of [["inn", 0, 8], ["smithy", 1, 12], ["chapel", 3, 16]]) { const h = free.length >= min ? free.find((x) => x.row === row && x.type === "house") : null; if (h) h.type = type; }
   const tower = { x: 12, z: -45, h: 18 };
-  // cypresses on the hillside flanks: one per three houses, never touching a house or the tower
+  // cypresses on the hillside flanks: one per two houses, never touching a house or the tower
   const trees = [];
   for (let i = 0, tn = Math.max(4, Math.round(n / 2)); i < tn && trees.length < tn; i++) {
     let placed = false;
@@ -54,7 +54,7 @@ export function portLayout(id, pop = 8000) {
       if (Math.abs(x - tower.x) < 4 && Math.abs(z - tower.z) < 4) continue;
       if (free.some((h) => Math.abs(x - h.x) < h.w / 2 + 1.2 && Math.abs(z - h.z) < h.d / 2 + 1.2)) continue;
       if (trees.some((o) => Math.abs(x - o.x) < 2.4 && Math.abs(z - o.z) < 2.4)) continue;
-      trees.push({ x, z, y: slopeY(z), h: 3 + rnd() * 2 }); placed = true;
+      trees.push({ x, z, y: slopeY(z), h: 3 + rnd() * 2, w: 1.6, d: 1.6 }); placed = true; // a footprint, so plot clearing works on trees too
     }
   }
   return { houses: free, trees, tower, quayZ: QUAY_EDGE_Z };

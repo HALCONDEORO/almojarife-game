@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { portLayout, buildPortScene, litAt, LIT_TOD } from "../src/view3d/port3d.mjs";
+import { portLayout, buildPortScene, litAt, LIT_TOD, housesClearOf } from "../src/view3d/port3d.mjs";
 import { makeBellTower } from "../src/view3d/buildings/tower.mjs";
 
 const THREE = await import("../web/vendor/three.module.min.js");
@@ -13,6 +13,7 @@ test("the hillside grows cypresses, deterministically, clear of houses and the t
     assert.ok(L.trees.length >= 4, `${pop}: ${L.trees.length} trees`);
     for (const t of L.trees) {
       assert.ok(t.z <= -20 && t.z >= -43 && Math.abs(t.x) <= 33 && t.h >= 3 && t.h < 5);
+      assert.ok(Number.isFinite(t.w) && Number.isFinite(t.d), "a tree carries a footprint so plots can clear it");
       for (const h of L.houses) assert.ok(!(Math.abs(t.x - h.x) < h.w / 2 + 1.2 && Math.abs(t.z - h.z) < h.d / 2 + 1.2), "tree inside a house");
       assert.ok(!(Math.abs(t.x - L.tower.x) < 4 && Math.abs(t.z - L.tower.z) < 4), "tree inside the tower");
     }
@@ -47,4 +48,14 @@ test("town windows light up only late in the day, deterministically", () => {
   assert.equal(lit(0.5), 0);
   assert.ok(lit(0.72) >= 4, "a share of windows glows at dusk");
   assert.equal(lit(0.72), lit(0.72));
+});
+
+test("player plots push cypresses out of the 3D scene", () => {
+  const L0 = portLayout("cadiz", 12000);
+  const t = L0.trees[0], rect = { x: t.x, z: t.z, w: 1.6, d: 1.6 }; // tight rect on one tree; neighbours sit >= 2.4 away
+  const kept = housesClearOf(L0.trees, [rect]);
+  assert.equal(kept.length, L0.trees.length - 1);
+  assert.ok(!kept.includes(t));
+  const treesInScene = (plots3d) => count(buildPortScene(THREE, { id: "cadiz", pop: 12000, ships: 0, plots3d }).scene, (o) => o.name === "tree");
+  assert.equal(treesInScene([{ rect }]), treesInScene([]) - 1, "the plot clears its tree in the rendered scene");
 });
