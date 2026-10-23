@@ -41,3 +41,12 @@ test("content scale picks the limiting dimension", () => {
   assert.equal(contentScale({ width: 1240, height: 352 }, [0, 0, 800, 829]), 352 / 829);
   assert.equal(contentScale({ width: 400, height: 900 }, [0, 0, 800, 829]), 0.5);
 });
+
+import { portHitRadius } from "../src/view/camera.mjs";
+test("port hit radius: capped at 14, halved in dense clusters, never below 9", () => {
+  assert.equal(portHitRadius(Infinity), 14);
+  assert.equal(portHitRadius(40), 14);
+  assert.equal(portHitRadius(22.6), 11.3); // Ceuta/Tetuan: clicks stay unambiguous
+  assert.equal(portHitRadius(10), 9);
+  assert.equal(portHitRadius(0), 9);
+});
