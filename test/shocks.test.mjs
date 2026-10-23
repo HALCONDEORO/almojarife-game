@@ -89,7 +89,7 @@ test('economy gate: a campaign year with shocks on keeps prices off the clamps a
   advanceDay(g);
   if(g.day%30===0)for(const c of g.world.cities)for(const[good,e]of Object.entries(g.market[c.id])){
    assert.ok(Number.isFinite(e.stock)&&e.stock>=0,`${c.id}/${good} stock ${e.stock}`);
-   const b=world.goods[good].base,p=(e.target/Math.max(1,e.stock))**0.6;samples++;if(p>=3||p<=0.4)pinned++;
+   const p=(e.target/Math.max(1,e.stock))**0.6;samples++;if(p>=3||p<=0.4)pinned++;
   }
  }
  assert.ok(pinned/samples<0.3,`pinned ${(100*pinned/samples).toFixed(1)}% of samples`);

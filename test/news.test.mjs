@@ -22,7 +22,7 @@ test('dear news fires with a rounded figure and never writes into intel',()=>{
  const about=Math.round(n.price/5)*5;
  const m=(g.inbox??[]).find((x)=>x.kind==='news');
  assert.ok(m,'posted to the inbox');
- assert.ok(/está car(o|a|os|as)\b/.test(m.txt.es)&&m.txt.es.includes(String(about)),'ES text quotes the rounded price');
+ assert.ok(/está(n)? car(o|a|os|as)\b/.test(m.txt.es)&&m.txt.es.includes(String(about)),'ES text quotes the rounded price');
  assert.ok(m.txt.en.includes('is dear'),'EN text too');
  assert.equal(g.intel.sevilla.day,0,'news leaves intel untouched (rumours and presence stay the way to know a market)');
 });

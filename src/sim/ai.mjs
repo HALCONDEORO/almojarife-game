@@ -19,6 +19,7 @@ function bestPlan(world, market, ship, cash, planningMarket = market, canVisit =
     if (!r) continue;
     const days = Math.max(1, Math.ceil(r.km / spec.kmPerDay));
     for (const good of Object.keys(world.goods)) {
+      if (world.goods[good]?.npcTrade === false) continue; // goods reserved for the player trade (see optional_goods.mjs)
       const here = market[ship.at][good], there = remote[good];
       if (!here || !there) continue; // old or partial reports need not contain every good
       if (here.stock <= 0) continue;

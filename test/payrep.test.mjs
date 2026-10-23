@@ -9,7 +9,8 @@ import { messageText } from "../src/view/ledgerview.mjs";
 import { LOAN_MAX, LOAN_STEP } from "../src/game/bank.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 const world = loadWorld();
-const mk = (credit) => { const g = newGame(world, "cadiz", { freePlay: true, credit }); g.ships[0].at = "cadiz"; g.ships[0].voyage = null; return g; };
+// isolation: this suite measures credit reputation alone (foreclosure has its own suites)
+const mk = (credit) => { const g = newGame(world, "cadiz", { freePlay: true, credit, foreclosure: false }); g.ships[0].at = "cadiz"; g.ships[0].voyage = null; return g; };
 test("flag OFF: payment reputation never changes anything, even after a default", () => {
   const g = mk(false), nw = netWorth(g);
   const room = loanRoom(g, nw, "cadiz");
