@@ -221,6 +221,21 @@
    ]
   },
   {
+   "id": "lagos",
+   "name": "Lagos",
+   "lat": 37.1,
+   "lon": -8.67,
+   "pop": 6000,
+   "makes": [
+    "fish",
+    "salt"
+   ],
+   "needs": [
+    "grain",
+    "timber"
+   ]
+  },
+  {
    "id": "faro",
    "name": "Faro",
    "lat": 37.02,
@@ -776,6 +791,10 @@
    "lat": 43.7,
    "lon": -2.0
   },
+  "w_lagos_off": {
+   "lat": 36.85,
+   "lon": -8.78
+  },
   "w_faro_off": {
    "lat": 36.8,
    "lon": -7.9
@@ -1041,6 +1060,18 @@
   [
    "w_ss_off",
    "w_bilbao_off"
+  ],
+  [
+   "lagos",
+   "w_lagos_off"
+  ],
+  [
+   "w_lagos_off",
+   "w_faro_off"
+  ],
+  [
+   "w_lagos_off",
+   "w_stvincent"
   ],
   [
    "faro",

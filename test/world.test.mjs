@@ -6,7 +6,7 @@ import { makeMarket, price, tickMarket } from "../src/sim/market.mjs";
 const land = loadLand();
 const world = loadWorld();
 test("9 ports, all on or next to the coast (river ports within 120 km)", () => {
-  assert.equal(world.cities.length, 33);
+  assert.equal(world.cities.length, 34);
   { const n = Object.keys(world.goods).length; assert.ok(n >= 12 && n <= 20, `goods: ${n}`); } // catalogue cap is 20 (docs/design/production-chains-study.md)
   for (const c of world.cities) {
     let near = false;

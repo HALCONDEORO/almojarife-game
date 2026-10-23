@@ -22,7 +22,7 @@ test('remote warehouse and foreign ship sales/transfers fail without mutation',(
  buyCaravel(g,g.ships[0].at);buyWarehouse(g,g.ships[0].at);const foreign=makeShip(900,'cog',g.ships[0].at);foreign.cargo={salt:2};
  for(const action of [()=>sellShip(g,foreign),()=>storeGoods(g,foreign,'salt',1),()=>takeGoods(g,foreign,'salt',1)]){before=JSON.stringify(g);assert.equal(action().ok,false);assert.equal(JSON.stringify(g),before);}
 });
-test('all 33 ports/goods: quote monotonic/bounded, preview equals actual trade, roundtrip loses cash',()=>{
+test('all 34 ports/goods: quote monotonic/bounded, preview equals actual trade, roundtrip loses cash',()=>{
  let deals=0;
  for(const c of world.cities)for(const good of Object.keys(world.goods)){
   const market=makeMarket(world),s=makeShip(1,'cog',c.id),e=market[c.id][good],base=world.goods[good].base;
