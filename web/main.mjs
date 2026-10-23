@@ -21,7 +21,7 @@ import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
 import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
 import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
-import { newCamera, zoomAt, panBy, viewBox, markerScale } from "../src/view/camera.mjs";
+import { newCamera, zoomAt, panBy, viewBox, markerScale, contentFraction, contentScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
@@ -91,7 +91,10 @@ function scaleMarkers() {
   mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
   mapEl.querySelectorAll("#static line").forEach((el) => el.setAttribute("stroke-width", 1.5 * k));
 }
-const frac = (e) => { const r = mapEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+// Cursor fractions of the VIEWED MAP CONTENT, not the raw viewport: with preserveAspectRatio
+// meet the map is letterboxed inside a wider/shorter pane, and anchoring zoom to the viewport
+// fractions drags the map away from the cursor.
+const frac = (e) => contentFraction(mapEl.getBoundingClientRect(), viewBox(cam), e.clientX, e.clientY);
 mapEl.style.touchAction = "none";
 mapEl.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(cam, e.deltaY < 0 ? 1.25 : 0.8, ...frac(e)); applyCam(); }, { passive: false });
 mapEl.addEventListener("dblclick", () => { cam.zoom = 1; cam.x = cam.y = 0; applyCam(); });
@@ -103,11 +106,11 @@ mapEl.addEventListener("pointermove", (e) => {
   if (ptrs.size === 2) {
     ptrs.set(e.pointerId, [e.clientX, e.clientY]);
     const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
-    if (pinch) { zoomAt(cam, d / pinch, ((a[0] + b[0]) / 2 - r.left) / r.width, ((a[1] + b[1]) / 2 - r.top) / r.height); applyCam(); }
+    if (pinch) { zoomAt(cam, d / pinch, ...contentFraction(r, viewBox(cam), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2)); applyCam(); }
     pinch = d; moved = 99; return;
   }
   const dx = e.clientX - prev[0], dy = e.clientY - prev[1]; moved += Math.abs(dx) + Math.abs(dy);
-  if (moved > 6) { panBy(cam, dx / r.width, dy / r.height); applyCam(); ptrs.set(e.pointerId, [e.clientX, e.clientY]); }
+  if (moved > 6) { const vb = viewBox(cam), s = contentScale(r, vb); panBy(cam, dx / (vb[2] * s), dy / (vb[3] * s)); applyCam(); ptrs.set(e.pointerId, [e.clientX, e.clientY]); }
 });
 const endPtr = (e) => { ptrs.delete(e.pointerId); pinch = 0; };
 mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercancel", endPtr);
@@ -144,10 +147,20 @@ function drawShips() {
     h += `<g data-mx="${pt.x}" data-my="${pt.y}" ${mine ? `data-ship="${g.ships.indexOf(sh)}" style="cursor:pointer" pointer-events="all"` : ""}>${shipSvg(sh.type, { mine, heading: ang })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}</g>`;
   }
   layer.innerHTML = `<g class="wakes" pointer-events="none">${wakes}</g>` + h; scaleMarkers();
-  layer.querySelectorAll("[data-ship]").forEach((el) => el.onclick = () => {
-    const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
-    if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
-    if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+  layer.querySelectorAll("[data-ship]").forEach((el) => {
+    el.onclick = () => {
+      const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
+      if (a.kind === "city") { sel = a.ship; open3d(g.ships[a.ship]); return; }
+      if (a.kind === "card") { sel = a.ship; if (!shipWin) shipWin = { tab: "cargo" }; render(); }
+    };
+    // A docked own ship covers its port's dot; forward right-clicks to that port's own
+    // handler (looked up live, so whatever the port does on right-click applies here too).
+    el.oncontextmenu = (ev) => {
+      const sh = g.ships[+el.dataset.ship];
+      if (!sh || sh.voyage) return;
+      const ce = mapEl.querySelector(`g.city[data-c="${sh.at}"]`);
+      if (ce && ce.oncontextmenu) ce.oncontextmenu(ev);
+    };
   });
 }
 function stepTicks(n) {

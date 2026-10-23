@@ -27,3 +27,14 @@ export function panBy(c, dfx, dfy) {
 // Marker scale: how big ports and ships are drawn so they stay readable at any zoom
 // (almost constant on screen, slightly larger when zoomed in).
 export const markerScale = (zoom) => 1 / Math.pow(zoom, 0.85);
+// Scale of an svg viewport `rect` showing `vb` ([x,y,w,h]) under preserveAspectRatio="xMidYMid meet".
+export const contentScale = (rect, vb) => Math.min(rect.width / vb[2], rect.height / vb[3]);
+// Fractions (0..1) of the VIEWED CONTENT under client point (clientX, clientY), accounting for
+// meet letterboxing: the content may be centered with margins inside a wider/shorter viewport.
+// Points over the margins clamp to the nearest content edge.
+export function contentFraction(rect, vb, clientX, clientY) {
+  const s = contentScale(rect, vb);
+  const ox = (rect.width - vb[2] * s) / 2, oy = (rect.height - vb[3] * s) / 2;
+  const fx = (clientX - rect.left - ox) / (vb[2] * s), fy = (clientY - rect.top - oy) / (vb[3] * s);
+  return [Math.min(1, Math.max(0, fx)), Math.min(1, Math.max(0, fy))];
+}
