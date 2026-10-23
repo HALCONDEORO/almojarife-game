@@ -10,7 +10,7 @@ const world=loadWorld();
 function fight(resultWanted){
  const choice=resultWanted==='escaped'?'flee':'fight';
  for(let i=1;i<200;i++){
-  const g=newGame(world);g.eventsOn=true;g.seed=0;
+  const g=newGame(world,'cadiz',{pirateFight:false});g.eventsOn=true;g.seed=0; // OFF contract: this harness asserts the classic seeded prizeFor path (the ON battle prize is covered in battle.test.mjs)
   const s=g.ships[0];doSail(g,s,'barcelona');
   g.pending={event:'sea-pirates',ship:s.id,day:g.day,hour:0,id:`t:${i}`,escapeChance:50};
   const e=resolvePirates(g,choice);

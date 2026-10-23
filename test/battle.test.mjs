@@ -77,8 +77,8 @@ test('pirate fight: reproducible, pure, shape of applyEncounter, real pirate shi
  assert.ok(armedWon>won+60,'weapons make the player win more: '+won+' vs '+armedWon);assert.ok(won>5,'an unarmed ship can still win sometimes');
 });
 import {newGame as newGameFlag} from '../src/game/game.mjs';import {loadWorld as loadWorldFlag} from '../src/sim/world.mjs';
-test('pirate fight flag is off by default and saved as a boolean',()=>{
- assert.equal(newGameFlag(loadWorldFlag()).pirateFight,false);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:true}).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:1}).pirateFight,false);
+test('pirate fight flag is on by default (owner directive 2026-10-23) and saved as a boolean',()=>{
+ assert.equal(newGameFlag(loadWorldFlag()).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:true}).pirateFight,true);assert.equal(newGameFlag(loadWorldFlag(),undefined,{pirateFight:1}).pirateFight,false);
 });
 import {MAX_CANNONS as MAXC} from '../src/game/crew.mjs';
 import {resolvePirates as resolveP,prizeFor as prizeForP} from '../src/game/encounterdaily.mjs';

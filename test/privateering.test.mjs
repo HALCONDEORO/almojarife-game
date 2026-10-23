@@ -46,8 +46,9 @@ test("a sunk trader starts again from home; save and reload keep the home", () =
   const { g } = setup(); const h = deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g;
   assert.equal(h.ai[0].home, "lisboa");
 });
-test("the marque flag is opt-in and survives a save", () => {
-  assert.equal(newGame(world).marque, false);
+test("the marque flag defaults on (owner directive 2026-10-23) and survives a save", () => {
+  assert.equal(newGame(world).marque, true); // default ON per the owner's directive; the OFF path is still available explicitly
+  assert.equal(newGame(world, "cadiz", { marque: false }).marque, false);
   const g = newGame(world, "cadiz", { marque: true }); assert.equal(g.marque, true);
   assert.equal(deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g.marque, true);
 });

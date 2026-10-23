@@ -18,7 +18,8 @@ test('disabled/port/pending/free game safety and legacy pending still resolvable
  g.eventsOn=true;g.pending={event:'storm',ship:s.id,day:0};doSail(g,s,'barcelona');const snap=JSON.stringify(g);assert.equal(automaticEncounter(g,s),null);assert.equal(JSON.stringify(g),snap);
 });
 test('tick hook creates no forced choice for pirate/storm and missing old fields safe',()=>{
- const g=newGame(world),s=g.ships[0];g.eventsOn=true;g.world={...world,events:world.events.filter(e=>['pirates','storm'].includes(e.id))};doSail(g,s,'barcelona');
+ const g=newGame(world),s=g.ships[0];g.eventsOn=true;g.world.events=g.world.events.filter(e=>['pirates','storm'].includes(e.id)); // filter in place: replacing g.world would drop the optional-goods entries the market now references
+ doSail(g,s,'barcelona');
  for(let i=0;i<10&&s.voyage;i++){advanceDay(g);assert.ok(!g.pending||g.pending.event==='sea-pirates');}
  assert.ok(g.encounterTicks);assert.equal(encountersHtml({},'en'),'');
 });

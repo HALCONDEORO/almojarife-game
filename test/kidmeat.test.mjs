@@ -7,16 +7,19 @@ import {PRODUCERS,buyPlot,workshopTick} from '../src/game/buildings.mjs';
 import {PER_1000,OPTIONAL_PER_1000,classCounts,demandBy} from '../src/sim/classes.mjs';
 const world=loadWorld();
 const snap=(g)=>{const {kidMeat,legumes,...rest}=g;return JSON.stringify({...rest,world:undefined});};
-test('flag OFF is the default: no kid meat anywhere in the world or the markets',()=>{
+test('flag OFF: no kid meat anywhere in the world or the markets (default is ON per owner directive 2026-10-23; OFF stays available explicitly)',()=>{
  assert.equal('kid_meat' in world.goods,false);assert.equal('kid_meat' in PER_1000,false);
- const g=newGame(world,'cadiz',{freePlay:true});assert.equal(g.kidMeat,false);
+ const g=newGame(world,'cadiz',{freePlay:true,kidMeat:false,legumes:false,pottery:false});assert.equal(g.kidMeat,false); // isolated: the other optional goods default ON now and would wrap the world
  assert.deepEqual(Object.keys(g.market.sevilla).sort(),Object.keys(world.goods).sort());
  assert.equal(g.world,world);
 });
-test('flag OFF parity: absent, false and 1 (not exactly true) play the same 120 days, byte for byte',()=>{
+test('flag ON is the default (owner directive 2026-10-23)',()=>{
+ const g=newGame(world,'cadiz',{freePlay:true});assert.equal(g.kidMeat,true);assert.ok(g.market.sevilla.kid_meat);assert.notEqual(g.world,world);
+});
+test('flag OFF parity: false and 1 (not exactly true) play the same 120 days, byte for byte; absent plays exactly like true (both ON)',()=>{
  const run=(opts)=>{const g=newGame(world,'cadiz',{freePlay:true,seed:5,...opts});for(let d=0;d<120;d++)advanceDay(g);return snap(g);};
- const a=run({}),b=run({kidMeat:false}),c=run({kidMeat:1});
- assert.equal(a,b);assert.equal(a,c);
+ const a=run({kidMeat:false}),b=run({kidMeat:1}),onA=run({}),onB=run({kidMeat:true});
+ assert.equal(a,b);assert.equal(onA,onB);
 });
 test('withKidMeat leaves the loaded world untouched and adds only the sourced data',()=>{
  const before=JSON.stringify(world);const w=withKidMeat(world);
@@ -41,7 +44,7 @@ test('flag ON: luxury demand, ranch by-product, market rows, save round trip',()
  assert.equal(back.kidMeat,true);assert.ok(back.world.goods.kid_meat);assert.ok(back.market.sevilla.kid_meat);
 });
 test('flag OFF: the ranch by-product finds no market row and does nothing',()=>{
- const g=newGame(world,'sevilla',{cash:100000,freePlay:true});g.cash=100000;
+ const g=newGame(world,'sevilla',{cash:100000,freePlay:true,kidMeat:false});g.cash=100000; // explicit OFF: the flag defaults ON now
  assert.ok(buyPlot(g,'sevilla',{id:'sevilla:1',type:'workshop',w:4,d:4}).ok);
  g.buildings.sevilla['sevilla:1']={type:'ranch',level:3,state:'active',plotType:'workshop'};
  for(let d=0;d<=10;d++){g.tick=d*240+1;workshopTick(g,'sevilla');}

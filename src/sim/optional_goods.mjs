@@ -21,7 +21,7 @@ export function withKidMeat(world) {
 export const POTTERY = Object.freeze({ good: "pottery", base: 40, makers: Object.freeze(["valencia", "sevilla"]), consumers: Object.freeze(["lisboa", "cadiz", "palma", "malaga", "argel", "oran", "barcelona", "bilbao", "tanger", "cartagena", "alicante"]) });
 export function withPottery(world) {
   const w = structuredClone(world);
-  w.goods[POTTERY.good] = { base: POTTERY.base };
+  w.goods[POTTERY.good] = { base: POTTERY.base, npcTrade: false }; // NPC traders skip pottery: measured 23/10 — its short maker-consumer hops dragged stale-info silk/pepper buys into forced resales at a loss (probe6: -165k extra NPC cash sunk in silk/pepper holds at 1y; A-scenario worth 102k vs 461k at 10y). The unserved demand is the player's kiln niche.
   for (const c of w.cities) {
     if (POTTERY.makers.includes(c.id) && !c.makes.includes(POTTERY.good)) c.makes.push(POTTERY.good);
     if (POTTERY.consumers.includes(c.id) && !c.needs.includes(POTTERY.good)) c.needs.push(POTTERY.good);
