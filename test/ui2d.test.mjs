@@ -12,3 +12,6 @@ test('hall preserves every displayed value and escapes optional city lines',()=>
 });
 import {readFileSync} from 'node:fs';
 test('hall presentation appends rather than erases pending events and ship controls',()=>{const source=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');assert.match(source,/if\(ui2dEnabled\(location.search\)\)h \+= hall2dHtml/);assert.doesNotMatch(source,/if\(ui2dEnabled\(location.search\)\)h = hall2dHtml/);});
+
+import {reports2dHtml} from '../src/view/ui2d.mjs';
+test('reports presentation retains weekly, chronicle, voyage and encounter content',()=>{const h=reports2dHtml('<h2>Reports</h2><p>Next payment: 55</p><div class="card">week 4: 123</div>','<h3>Chronicle</h3>year 1480','<h3>Voyages</h3>profit -42','encounter #7','en');for(const text of ['Next payment: 55','week 4: 123','year 1480','profit -42','encounter #7','ui2d-weekly','ui2d-encounters'])assert.ok(h.includes(text));assert.doesNotMatch(h,/<h2>/);assert.match(reports2dHtml('','','','','es'),/Aún no hay registros/);});
