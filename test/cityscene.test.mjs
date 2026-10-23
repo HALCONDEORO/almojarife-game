@@ -30,6 +30,23 @@ test("output is a well-formed svg string", () => {
   assert.equal(s.split("<svg").length, 2);
 });
 
+
+// Strict tag mini-parser: every tag must be <name attr="value" ...> with no stray
+// text inside. Catches malformed markup that substring asserts swallow (e.g. an
+// attribute missing its closing quote).
+function tags(svg) {
+  const out = [];
+  for (const m of svg.matchAll(/<[^<>]*>/g)) {
+    const tm = m[0].match(/^<(\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>$/);
+    assert.ok(tm, `well-formed tag, got: ${m[0].slice(0, 90)}`);
+    const attrs = {};
+    for (const a of tm[3].matchAll(/([\w:-]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
+    out.push({ name: tm[2], attrs });
+  }
+  return out;
+}
+const num = (v) => Number.isFinite(Number(v));
+
 test("docked ships follow the real ship descriptors: class, damage, armament and gear", () => {
   const mk = (over) => shipDescriptor({ id: 1, type: "cog", hull: 100, weapons: {}, gunCond: 100, gear: 0, crew: 8, ...over });
   const one = (d) => citySceneSvg({ id: "cadiz", pop: 12000, ships: [d] });
@@ -44,4 +61,17 @@ test("docked ships follow the real ship descriptors: class, damage, armament and
 test("docked list still accepts a plain count and caps at three", () => {
   const s = citySceneSvg({ id: "cadiz", pop: 12000, ships: 9 });
   assert.equal((s.match(/translate\(\d+ 150\)/g) || []).length, 3);
+});
+
+test("ship state markers are well-formed SVG with correct parsed attributes", () => {
+  const d = shipDescriptor({ id: 1, type: "nao", hull: 20, weapons: { cannon: 2 }, gunCond: 40, gear: 2, crew: 30 });
+  const rects = tags(citySceneSvg({ id: "cadiz", pop: 12000, ships: [d] })).filter((t) => t.name === "rect");
+  for (const r of rects) for (const a of ["x", "y", "width", "height"]) if (a in r.attrs) assert.ok(num(r.attrs[a]), `numeric ${a} in <rect>`);
+  const patches = rects.filter((r) => r.attrs.fill === "#3a2a1a" && r.attrs.opacity === ".8" && Number(r.attrs.width) === 9);
+  assert.equal(patches.length, 2, "worn + battered hull: two plank patches");
+  const gunports = rects.filter((r) => r.attrs.fill === "#1a0d06" && Number(r.attrs.height) === 2.4);
+  assert.equal(gunports.length, 2, "one gunport tick per mounted cannon");
+  assert.ok(gunports.every((r) => Number(r.attrs.width) === 2), "worn pieces are short dashes");
+  const crates = rects.filter((r) => r.attrs.fill === "#8a6a3a" && Number(r.attrs.y) === -6);
+  assert.equal(crates.length, 2, "one deck crate per gear level");
 });

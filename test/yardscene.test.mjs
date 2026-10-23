@@ -30,3 +30,9 @@ test("the hull under construction follows the class and the build phases", () =>
   const barca = yardSceneSvg({ orders: [{ type: "barca", readyDay: 12 }], day });
   assert.notEqual(l, barca, "class changes the slipway hull");
 });
+
+test("yard scene output is well-formed markup", () => {
+  const svg = yardSceneSvg({ orders: [{ at: "cadiz", type: "cog", readyDay: 30, total: 14 }], day: 20, tod: 0.5, emptyLabel: "x" });
+  for (const m of svg.matchAll(/<[^<>]*>/g))
+    assert.ok(/^<(\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>$/.test(m[0]), `well-formed tag, got: ${m[0].slice(0, 90)}`);
+});
