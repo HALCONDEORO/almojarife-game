@@ -8,7 +8,7 @@ import { seeded } from "../view/cityscene.mjs";
 import { wallsLevel } from "./walls.mjs";
 
 // Own tuning constants (inference, not documented figures).
-export const PLAGUE_BASE_CHANCE = 0.02;   // per city and week
+export const PLAGUE_BASE_CHANCE = 0.01;   // per city and week; measured: 0.02 let an unlucky seed bankrupt a healthy builder inside two years (no mitigations), 0.01 keeps the risk without that tail
 export const PLAGUE_BASE_DAYS = 28;       // how long a plague sits on a city
 export const PLAGUE_MIN_DAYS = 7;
 export const PLAGUE_DEMAND = 0.75;        // effective population for demand while it lasts
