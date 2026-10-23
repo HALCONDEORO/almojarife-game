@@ -4,13 +4,15 @@
 
 <h1 align="center">El Almojarife</h1>
 <p align="center"><em>An open-source sea-trading game on the Iberian and Mediterranean coast, 15th-16th century.</em><br>
-<a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your browser</b></a></p>
+<a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your desktop browser</b></a></p>
 
 <p align="center"><img src="docs/img/map.png" alt="The sea chart with ports, routes and ships" width="780"></p>
 
 You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
 
 **Status: early alpha.** It is playable and free, but rough. The honest list of what is still missing for the alpha is below.
+
+**Platform: desktop only.** El Almojarife is a desktop game: it is played in a Windows, Mac or Linux browser with keyboard and mouse. It is not designed for or tested on phones or tablets.
 
 ## Why you might like it
 
@@ -25,7 +27,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 - **Ranks and respect.** Climb ranks by net worth (they unlock bigger loans and better ships), and earn respect port by port to open offices.
 - **A 3D port (prototype).** A three.js harbour built from your game state: docked ships, warehouse, time of day. Desktop first.
 - **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file. Until launch the save format can change without migration: test saves from earlier builds are not preserved.
-- **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your browser.
+- **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your desktop browser.
 - **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
 
 ## Screenshots
