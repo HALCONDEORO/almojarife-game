@@ -262,10 +262,9 @@ function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const day = g.day, voyagesBefore = g.ships.map(s => !!s.voyage), routesBefore = g.ships.map(s => s.route);
   fn();
-  if (automaticTime && g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]))) {
-    manualPause = false; pauseNote = null;
-    if ($("v3d")) planningResume = true; else playing = true;
-  }
+  const newOrder = g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]));
+  if (newOrder) pauseNote = null; // a fresh departure or route order always retires the arrival note
+  if (newOrder && automaticTime) { manualPause = false; if ($("v3d")) planningResume = true; else playing = true; } // automatic time resumes on a new order; manual pause stays manual
   if (g.day !== day) { progress = 0; tickAcc = 0; } // wait buttons advance whole days
   autosave(); render();
 }
