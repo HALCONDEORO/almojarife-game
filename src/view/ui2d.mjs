@@ -8,7 +8,7 @@ const categories={
 };
 export function messageCategory(kind){
  if(['arrival','order','routeLeg','routeStuck'].includes(kind))return ['port','⚓'];
- if(['loan','loanPaid','loanDue','loanLate','debt','bankrupt'].includes(kind))return ['bank','◎'];
+ if(['loan','loanPaid','loanDue','loanLate','loanSeized','debt','bankrupt'].includes(kind))return ['bank','◎'];
  if(['contractAccept','contractDone','contractFailed','respect'].includes(kind))return ['council','⚜'];
  if(kind==='report')return ['report','▤'];
  return ['house','✉'];
