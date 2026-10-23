@@ -182,6 +182,7 @@ export function accrueBuildings(g) {
     (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + cost;
     committed += cost;
   }
+  return committed; // shared with accrueWalls: one daily budget across both consumers
 }
 /** Restart a halted building once there is cash to pay its upkeep and people again. */
 export function restartBuilding(g, cityId, plotId) {
