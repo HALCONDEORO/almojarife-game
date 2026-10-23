@@ -256,6 +256,7 @@ let company = "";
 let inTitle = true; // boot lands on the title screen over a throwaway background game
 function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
 function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
+function getBackup() { try { return localStorage.getItem(BACKUP_KEY); } catch { return null; } }
 function exportSave(raw = localStorage.getItem(SAVE_KEY), day = loadSaved()?.g?.day) { if (!raw) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); a.download = saveFileName(day); a.click(); URL.revokeObjectURL(a.href); }
 const cityIds = world.cities.map((c) => c.id), cityIdSet = new Set(cityIds);
 const routeDrafts = {}; // advanced-route editor drafts, per ship id
@@ -933,19 +934,19 @@ function showTitle() {
   el.innerHTML = `<div class="box"><h1>El Almojarife</h1><p>${t.tagline}</p>` +
     `<label>${t.company}<br><input id="co-in" maxlength="30" value="${t.defCo}"></label><br>` +
     `<button id="t-start">${t.start}</button> <button id="t-cont" ${saved ? "" : "disabled"} title="${saved ? "" : t.noSave}">${t.cont}</button> ` +
-    `<button id="t-exp" ${saved ? "" : "disabled"}>${t.exportS}</button> <button id="t-imp">${t.importS}</button> <button id="t-rest" ${localStorage.getItem(BACKUP_KEY) ? "" : "disabled"} title="${t.restInfo}">${t.restB}</button> <button id="t-lang">${lang === "es" ? "EN" : "ES"}</button>` +
+    `<button id="t-exp" ${saved ? "" : "disabled"}>${t.exportS}</button> <button id="t-imp">${t.importS}</button> <button id="t-rest" ${getBackup() ? "" : "disabled"} title="${t.restInfo}">${t.restB}</button> <button id="t-lang">${lang === "es" ? "EN" : "ES"}</button>` +
     `<input type="file" id="t-file" accept="application/json,.json" hidden><div id="t-msg"></div></div>`;
   el.hidden = false;
   $("t-start").onclick = () => showCreate($("co-in").value);
   $("t-cont").onclick = () => { if (!saved) return; g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
-    const b = localStorage.getItem(BACKUP_KEY); if (!b) return;
+    const b = getBackup(); if (!b) return;
     try { unpackGame(JSON.parse(b), world); } catch { $("t-msg").textContent = t.badSave; return; }
     if (!confirm(t.restConfirm)) return;
     const cur = localStorage.getItem(SAVE_KEY);
-    if (cur) try { localStorage.setItem(BACKUP_KEY, cur); } catch { $("t-msg").textContent = t.errB; return; }
-    try { localStorage.setItem(SAVE_KEY, b); } catch { $("t-msg").textContent = t.errB; return; }
-    if (!cur) localStorage.removeItem(BACKUP_KEY); // nothing to swap back to
+    try { localStorage.setItem(SAVE_KEY, b); } catch { $("t-msg").textContent = t.errB; return; } // atomic: on failure nothing moved, the backup is still there
+    if (cur) try { localStorage.setItem(BACKUP_KEY, cur); } catch {} // losing the swap-back never loses the restored save
+    else localStorage.removeItem(BACKUP_KEY); // nothing to swap back to
     showTitle(); $("t-msg").textContent = t.restDone;
   };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
