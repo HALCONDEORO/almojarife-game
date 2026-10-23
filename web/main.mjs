@@ -137,6 +137,7 @@ const toggleClock = () => { playing = !playing; manualPause = !playing; planning
 const tickDurationMs = () => dayDurationMs(automaticTime) / TICKS_PER_DAY;
 const hoursOf = (ticks) => Math.max(1, Math.round(ticks / TICKS_PER_HOUR)); // whole hours, for estimates and ETAs
 const etaText = (tick) => { const p = tickParts(tick); return t.eta.replace("{d}", p.day).replace("{h}", String(p.hour).padStart(2, "0")); };
+const etaPlain = (tick) => { const p = tickParts(tick); return `${lang === "es" ? "día" : "day"} ${p.day}, ${String(p.hour).padStart(2, "0")}:00`; };
 const trails = {}; // view only: recent screen positions per ship, for the wake
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
@@ -230,7 +231,7 @@ function act(fn) {
 }
 
 function render() {
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaText(g.tick+s.voyage.ticksLeft)});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
   $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
@@ -266,7 +267,7 @@ function render() {
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");
-    if (!tools) { tools = document.createElement("div"); tools.id = "historical-map-tools"; $("map").before(tools); }
+    if (!tools) { tools = document.createElement("div"); tools.id = "historical-map-tools"; $("mapleft").append(tools); }
     const wasOpen = tools.querySelector("details")?.open ?? false;
     tools.innerHTML = mapModeControls({enabled:true,mode:mapMode,lang});
     tools.querySelector("details").open = wasOpen;
@@ -296,7 +297,7 @@ function render() {
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
-    if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("map").after(key); }
+    if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("mapleft").append(key); }
     key.innerHTML=historical.legend;
   }
   m += historical.svg;

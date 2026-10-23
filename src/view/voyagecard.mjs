@@ -5,9 +5,10 @@ export function voyageSummary(s){
  const v=s.voyage,total=Math.max(1,v.totalTicks??v.ticksLeft??1),left=Math.max(0,v.ticksLeft??0),progress=Math.max(0,Math.min(1,1-left/total));
  return{atPort:false,from:v.from,to:v.to,progress,remainingKm:Math.max(0,(v.km??0)*(1-progress)),ticksLeft:left};
 }
-export function voyageCardHtml(s,{lang='es',cityName=id=>id,eta=()=>''}={}){
+export function voyageCardHtml(s,{lang='es',cityName=id=>id,eta=()=>'',cargo=null}={}){
  const en=lang==='en',r=voyageSummary(s);
  if(r.atPort)return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${en?'At port':'En puerto'}: ${esc(cityName(r.port))}`;
- if(s.voyage.anchored)return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}<br><span>${en?'Holding position':'Al pairo'}</span>`; // anchored at a free point: no arrival to promise
- return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}<br><span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}<br><label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${Math.round(r.progress*100)}">${Math.round(r.progress*100)}%</progress> ${Math.round(r.progress*100)}%</label>`;
+ const cargoLine=cargo?` · ${en?'Cargo':'Carga'} ${cargo.used}/${cargo.cap}`:'';
+ if(s.voyage.anchored)return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}${cargoLine}<br><span>${en?'Holding position':'Al pairo'}</span>`; // anchored at a free point: no arrival to promise
+ return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}${cargoLine}<br><span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}<br><label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${Math.round(r.progress*100)}">${Math.round(r.progress*100)}%</progress> ${Math.round(r.progress*100)}%</label>`;
 }
