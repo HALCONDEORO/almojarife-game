@@ -178,20 +178,23 @@ function drawShips() {
         // docked (covering its port's dot) -> that port's own handler; at sea -> pass the click
         // through to whatever is underneath (another port's menu, open sea, freeNav, ...).
         el.oncontextmenu = (ev) => {
-          ev.preventDefault(); // the game handles every right-click on a ship marker; never let the native menu stack over the game menu
           const s2 = g.ships[+el.dataset.ship];
           if (s2 && !s2.voyage) {
             const ce = mapEl.querySelector(`g.city[data-c="${s2.at}"]`);
             if (ce && ce.oncontextmenu) { ce.oncontextmenu(ev); return; }
           }
-          // Pass-through: hide ALL ship markers for one hit test. Hiding only this
-          // marker and restoring before dispatch let an overlapping owned ship
-          // (normal convoy) re-find the first one and recurse until stack overflow.
+          // At sea: if the icon covers a port, that port's own handler takes the
+          // click exactly as if the port itself were right-clicked (direct call,
+          // no synthetic event). Open sea keeps the pre-fix behavior untouched.
+          // ALL markers are hidden for one hit test: hiding only this one and
+          // restoring before dispatch let an overlapping owned ship (convoy)
+          // re-find the first and recurse until stack overflow.
           const hidden = [];
           for (const m of shipEls.values()) if (m.style.pointerEvents !== "none") { m.style.pointerEvents = "none"; hidden.push(m); }
           const under = document.elementFromPoint(ev.clientX, ev.clientY);
           for (const m of hidden) m.style.pointerEvents = "";
-          if (under && ![...shipEls.values()].some((m) => m === under || m.contains(under))) under.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: ev.clientX, clientY: ev.clientY, button: 2 }));
+          const ce = under && (under.closest?.("g.city") || null);
+          if (ce && ce.oncontextmenu) ce.oncontextmenu(ev);
         };
       }
       shipEls.set(id, el);
