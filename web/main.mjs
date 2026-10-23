@@ -137,6 +137,7 @@ const toggleClock = () => { playing = !playing; manualPause = !playing; planning
 const tickDurationMs = () => dayDurationMs(automaticTime) / TICKS_PER_DAY;
 const hoursOf = (ticks) => Math.max(1, Math.round(ticks / TICKS_PER_HOUR)); // whole hours, for estimates and ETAs
 const etaText = (tick) => { const p = tickParts(tick); return t.eta.replace("{d}", p.day).replace("{h}", String(p.hour).padStart(2, "0")); };
+const etaPlain = (tick) => { const p = tickParts(tick); return `${lang === "es" ? "día" : "day"} ${p.day}, ${String(p.hour).padStart(2, "0")}:00`; };
 const trails = {}; // view only: recent screen positions per ship, for the wake
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
@@ -230,7 +231,7 @@ function act(fn) {
 }
 
 function render() {
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaText(g.tick+s.voyage.ticksLeft)});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
   $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
