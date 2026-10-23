@@ -2,7 +2,7 @@
 // Policies must state their unit and provenance; historical calibration is data,
 // never inferred from a price curve or a household inventory stock.
 import { CLASSES, PER_1000 } from './classes.mjs';
-export const NEED_GROUP = Object.freeze({grain:'food',fish:'food',meat:'food',salt:'food',olive_oil:'food',beer:'drink',wine:'drink',sugar:'luxury',pepper:'luxury',silk:'luxury',cloth:'clothing',leather:'clothing',soap:'household',timber:'materials',bricks:'materials',iron:'materials',ironware:'materials',wool:'materials',esparto:'materials'});
+export const NEED_GROUP = Object.freeze({grain:'food',fish:'food',meat:'food',salt:'food',olive_oil:'food',beer:'drink',wine:'drink',sugar:'luxury',pepper:'luxury',saffron:'luxury',silk:'luxury',cloth:'clothing',leather:'clothing',soap:'household',timber:'materials',bricks:'materials',iron:'materials',ironware:'materials',wool:'materials',esparto:'materials'});
 /** Transitional rates only. Unit: game market units/person/day, NOT kg or rations.
  * Existing PER_1000 basket is preserved as raw rate data. Callers own any explicit
  * city multiplier. Food/history calibration will replace individual rows later. */

@@ -36,6 +36,7 @@ export const PER_1000 = {
   wine:       { poor: 0.15, middle: 0.6, rich: 1.4 },
   sugar:      { poor: 0.05, middle: 0.3, rich: 1.5 },
   pepper:     { poor: 0, middle: 0.25, rich: 2.0 },
+  saffron:    { poor: 0, middle: 0.15, rich: 1.5 },
   silk:       { poor: 0, middle: 0.1, rich: 2.5 },
 };
 /** Goods that exist only in games started with their flag (src/sim/optional_goods.mjs). Same units as PER_1000; absent from PER_1000 so the flag-OFF game never sees them. */
