@@ -8,3 +8,4 @@
 - `DECISIONS.md`: decisions log with date, who decided and where it lives.
 - `PROCESS.md`: rules, models used, PR log, where things are, next step.
 - `design/`: era and goods, glossary, i18n, missions, licences, content stance.
+- `port-sources.md`: one historical source per port, with a note on why it matters around 1500.
