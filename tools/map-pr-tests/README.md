@@ -19,6 +19,7 @@ Each script takes the worktree path as its first argument (or `MAPTEST_WT`):
     python3 tools/map-pr-tests/map321-test.py /tmp/<wt>
     python3 tools/map-pr-tests/pr323-labels-test.py /tmp/<wt>
     python3 tools/map-pr-tests/pr324-labels-test.py /tmp/<wt>
+    python3 tools/map-pr-tests/pr327-freenav-test.py /tmp/<wt>
 
 - `MAPTEST_SAVE=/path/to/save.json` overrides the save fixture.
 - `MAPTEST_SHOTS=/path/to/dir` keeps the debug screenshots there (otherwise they are written to a temp dir and deleted on exit, like the Chrome profile).
@@ -28,5 +29,6 @@ Each script takes the worktree path as its first argument (or `MAPTEST_WT`):
 - `map321-test.py` — letterboxed wheel-zoom anchored under cursor, pan tracking, no-bands degenerate case, docked-ship right-click port menu (flag OFF). Motion asserted numerically.
 - `pr323-labels-test.py` — port label/marker hit-collision audit with real rendered text, label & dot clicks in dense clusters, Faro/Huelva and Tetuan/Melilla edges, right-click menu, drag-from-label pans without selecting.
 - `pr324-labels-test.py` — same audits across zooms 1/1.56/2.44/3.81/5.96/8 (wheel steps), live font-size formula check, anchored zooms for off-viewport ports.
+- `pr327-freenav-test.py` — freeNav activation regression through the real new-game form (no fixture save, no hand-forced state): the checkbox defaults OFF and survives form redraws both ways; OFF keeps the classic port menu and ignores open-sea right clicks; ON orders ports and open water directly with no menu (empty point must be map content, not an overlay); both flag states persist across quit+continue.
 
 All print PASS/FAIL lines and exit non-zero on failure; JS exceptions are collected and asserted empty. Exit also cleans up the http server, Chrome and temp dirs.
