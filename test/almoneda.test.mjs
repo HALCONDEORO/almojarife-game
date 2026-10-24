@@ -142,3 +142,41 @@ describe("bidAuction", () => {
     assert.equal(typeof g2.townSales, "object");
   });
 });
+
+describe("the table at the day boundary", () => {
+  it("placeBid stands the player's maximum and almonedaDay brings the hammer down", async () => {
+    const { advanceDay } = await import("../src/game/game.mjs");
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz") - 1; // tomorrow is the almoneda in Cadiz... (day count in g.day; tick advances it)
+    // put the game clock at the end of the day before the auction so one advanceDay lands on it
+    g.day = auctionOffset("cadiz");
+    const { placeBid, almonedaDay } = await import("../src/game/almoneda.mjs");
+    const bad = placeBid(g, "cadiz", 5000);
+    assert.equal(bad.ok, true); // today IS the auction day
+    assert.equal(g.townBids["cadiz"], 5000);
+    const cash0 = g.cash;
+    almonedaDay(g);
+    assert.equal(g.townBids?.["cadiz"], undefined); // consumed
+    // with a 5000 max against a saltworks table the player either won (cash moved) or lost to a higher neighbour
+    const sold = (g.townSales?.["cadiz"]?.ids?.length ?? 0) + (g.townSales?.["cadiz"]?.gone?.length ?? 0);
+    assert.ok(sold >= 1 || g.cash === cash0);
+  });
+  it("flag off: placeBid refuses and almonedaDay is a no-op", async () => {
+    const { placeBid, almonedaDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz");
+    g.day = auctionOffset("cadiz");
+    assert.equal(placeBid(g, "cadiz", 5000).reason, "off");
+    almonedaDay(g);
+    assert.equal(g.townSales, undefined);
+  });
+  it("a port with no bid sells to the highest neighbour on its day", async () => {
+    const { almonedaDay, lotOfDay, biddersOf } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npcAboveReserve = biddersOf(g, "cadiz", lot).some((b) => b.max >= lot.reserve);
+    almonedaDay(g); // player silent
+    if (npcAboveReserve) assert.ok((g.townSales?.["cadiz"]?.gone?.length ?? 0) === 1);
+    else assert.equal(g.townSales?.["cadiz"]?.gone?.length ?? 0, 0); // withdrawn: nobody met the reserve
+  });
+});

@@ -101,3 +101,26 @@ export function bidAuction(g, cityId, playerMax) {
   if (!r.ok) return r;
   return { ok: true, outcome: "won", price, lot };
 }
+
+/** The player's standing maximum for today's table in a port. He sets it while the lot is on
+ *  the block (that same day); the hammer falls at the day boundary. Refuses off day, bad bids
+ *  and tables that are already over. */
+export function placeBid(g, cityId, playerMax) {
+  if (g.townIndustry !== true) return { ok: false, reason: "off" };
+  if (!isAuctionDay(cityId, g.day) || !lotOfDay(g, cityId)) return { ok: false, reason: "no auction today" };
+  if (!Number.isSafeInteger(playerMax) || playerMax < 0) return { ok: false, reason: "bad bid" };
+  ((g.townBids ??= Object.create(null))[cityId]) = playerMax;
+  return { ok: true };
+}
+/** Day-boundary hook (game.mjs dayTick): every port whose almoneda meets today brings its lot
+ *  down. The player bids through placeBid during the day; absent a bid he sits the table out.
+ *  No-op with the flag off or on any other day. */
+export function almonedaDay(g) {
+  if (g.townIndustry !== true) return;
+  for (const c of g.world.cities) {
+    if (!isAuctionDay(c.id, g.day)) continue;
+    const max = g.townBids?.[c.id] ?? 0;
+    if (g.townBids) delete g.townBids[c.id];
+    bidAuction(g, c.id, max);
+  }
+}

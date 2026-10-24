@@ -39,6 +39,7 @@ import { growthTick, growthMul } from "./growth.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
+import { almonedaDay } from "./almoneda.mjs"; // the weekly town auction (flag-gated inside)
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
@@ -164,6 +165,7 @@ function dayTick(g) {
   if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
+  almonedaDay(g); // the town auction brings its lot down on its day (flag off: nothing)
   processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
