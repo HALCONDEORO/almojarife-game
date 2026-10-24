@@ -200,6 +200,7 @@ function drawIndustry(){
  for(const s of [...indSpots].sort((a,b)=>placement(a).depth-placement(b).depth)){
   const rep=REP_ART[s.type],key=rep?rep[0]:(images[s.type+':'+s.level]?s.type+':'+s.level:s.type+':1');
   groundContact(s);sprite(s,images[key],s.gone?.5:1,rep?rep[1]:'');
+  if(zoom<.7)continue; // labels only at inspection zoom: at fit zoom the works read as town texture, not clutter
   const g=spriteGeometry(s),lx=canvas.width/2+(g.left+g.width/2+dx)*zoom,ly=35+(g.top+dy)*zoom+(visTop[key]||0)*g.height*zoom;
   ctx.save();ctx.font=`${Math.max(8,12*zoom)}px Georgia`;ctx.textAlign='center';
   ctx.lineWidth=2.5;ctx.strokeStyle='#1b2a33cc';ctx.strokeText(s.label,lx,ly);

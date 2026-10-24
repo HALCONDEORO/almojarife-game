@@ -41,8 +41,9 @@ function* candidates(e, i, bounds, edge) {
       // South beach: the sand band south of the city, clear of the quay corner.
       yield { x: minX + 6 + rx * Math.max(1, maxX - minX - 14 - w), y: maxY + 1.6 + ry * 2.6, w, d };
     } else if (QUAYSIDE.has(e.type)) {
-      // Just inland of the quay apron (the apron is the edge-2..edge strip).
-      yield { x: edge - 6.5 + rx * 4.2, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
+      // Just inland of the quay apron (the apron is the edge-2..edge strip);
+      // the box (up to 3 wide) must clear it, so the band sits at edge-8.5..edge-5.7.
+      yield { x: edge - 8.5 + rx * 2.8, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
     } else if (OUTSKIRTS.has(e.type)) {
       // Country ring north of the walls, where fields and hills are drawn.
       yield { x: minX - 6 + rx * Math.max(1, maxX - minX + 6 - w), y: minY - 20 + ry * 16, w, d };
