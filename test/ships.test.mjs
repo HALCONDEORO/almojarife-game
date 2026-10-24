@@ -32,6 +32,8 @@ test("four ship types have distinct silhouettes and growing sail plans", () => {
     sails[t] = paths.length;
   }
   assert.equal(hulls.size, 4);
+  const rects = (t) => (shipSvg(t, {}).match(/<rect/g) || []).length;
+  assert.equal(rects("nao"), 0); // gunports are the only rects
   assert.ok(sails.barca < sails.caravel && sails.caravel < sails.nao, JSON.stringify(sails));
 });
 test("armament draws one gunport pair per mounted piece, capped at the mount cap", () => {
@@ -45,7 +47,7 @@ test("worn armament (gunCond < 50) renders half-width gunport marks as a shape c
   assert.equal((good.match(/width="1.8"/g) || []).length, 4);
   assert.doesNotMatch(worn, /width="1.8"/);
 });
-test("hull wear adds plank patches then a battered stern; the intact ship is byte-identical to before", () => {
+test("hull wear adds plank patches then a battered stern; the intact ship has a pinned canonical markup", () => {
   assert.equal(shipSvg("cog", {}), shipSvg("cog", { hull: 100 }));
   const b1 = shipSvg("cog", { hull: 50 }), b2 = shipSvg("cog", { hull: 20 });
   assert.notEqual(b1, shipSvg("cog", { hull: 100 }));
@@ -53,8 +55,8 @@ test("hull wear adds plank patches then a battered stern; the intact ship is byt
   assert.equal((b2.match(/#6b5136/g) || []).length, 2); // two patches
   assert.match(b2, /M-11 0 L-8.4 -2.2 L-8.4 2.2 Z/); // battered stern wedge (cog)
   assert.doesNotMatch(b1, /L-8.4 -2.2/);
-  assert.equal( // the classic markup for an intact cog, mine, rotated: unchanged byte for byte
+  assert.equal( // canonical markup of an intact cog, mine, rotated: pinned byte for byte
     shipSvg("cog", { mine: true, heading: 45 }),
-    '<g class="ship" transform="rotate(45) scale(1.7)"><path d="M-11 0 C-10 -4.5 -2 -5.5 5 -4 L12 0 L5 4 C-2 5.5 -10 4.5 -11 0 Z" fill="#7a2a1c" stroke="#2a1d10" stroke-width=".9"/><path d="M-1 -7 L-1 7 L2 5 L2 -5 Z" fill="#f6ecd2" stroke="#2a1d10" stroke-width=".6"/></g>');
+    '<g class="ship" transform="rotate(45) scale(1.7)"><path d="M-11 0 C-10.5 -3.4 -6 -5.4 0 -5.2 C5 -5 9 -3 12.5 0 C9 3 5 5 0 5.2 C-6 5.4 -10.5 3.4 -11 0 Z" fill="#7a2a1c" stroke="#2a1d10" stroke-width=".9" stroke-linejoin="round"/><path d="M-9.4 0 L10 0" stroke="#3a2a1a" stroke-width=".35" opacity=".6" fill="none"/><path d="M-11 0 C-10.5 -3.4 -6 -5.4 0 -5.2 C5 -5 9 -3 12.5 0 C9 3 5 5 0 5.2 C-6 5.4 -10.5 3.4 -11 0 Z" transform="scale(.86)" fill="none" stroke="#8a6a44" stroke-width=".5"/><path d="M-10.4 -2.6 L-6.4 -3.4 L-6.4 3.4 L-10.4 2.6 Z" fill="#8a6a44" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/><path d="M-1 -7 C5.16 -5.25 5.16 5.25 -1 7 Z" fill="#f6ecd2" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/><line x1="-1.2" y1="-7.6" x2="-0.8" y2="7.6" stroke="#3a2a1a" stroke-width=".5" stroke-linecap="round"/><line x1="-1" y1="-3.5" x2="1.64" y2="-3.5" stroke="#3a2a1a" stroke-width=".18" opacity=".55"/><line x1="-1" y1="0" x2="2.52" y2="0" stroke="#3a2a1a" stroke-width=".18" opacity=".55"/><line x1="-1" y1="3.5" x2="1.64" y2="3.5" stroke="#3a2a1a" stroke-width=".18" opacity=".55"/><circle cx="0.21" cy="0" r=".7" fill="#3a2a1a" stroke="#2a1d10" stroke-width=".2"/><line x1="-8.6" y1="0" x2="-8.6" y2="-2.6" stroke="#2a1d10" stroke-width=".35"/><path d="M-8.6 -2.6 L-10.7 -2.2 L-8.6 -1.5 Z" fill="#7a2a1c"/></g>');
 });
 

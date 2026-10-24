@@ -8,33 +8,50 @@ export function headingDeg(a, b) {
 }
 // One distinguishable silhouette per type: size, beam and sail plan carry the difference (data: SHIP_TYPES in src/sim/trade.mjs).
 const HULL = {
-  barca: "M-8 0 C-7 -3 -2 -3.6 3 -2.6 L8 0 L3 2.6 C-2 3.6 -7 3 -8 0 Z",
-  cog: "M-11 0 C-10 -4.5 -2 -5.5 5 -4 L12 0 L5 4 C-2 5.5 -10 4.5 -11 0 Z",
-  caravel: "M-12 0 C-11 -3.5 -2 -4.5 6 -3 L14 0 L6 3 C-2 4.5 -11 3.5 -12 0 Z",
-  nao: "M-14 0 C-13 -5.5 -3 -6.5 6 -5 L14 0 L6 5 C-3 6.5 -13 5.5 -14 0 Z",
+  barca: "M-8 0 C-7.6 -2.4 -3 -3.6 2 -3 C5 -2.6 6.8 -1.4 8.5 0 C6.8 1.4 5 2.6 2 3 C-3 3.6 -7.6 2.4 -8 0 Z",
+  cog: "M-11 0 C-10.5 -3.4 -6 -5.4 0 -5.2 C5 -5 9 -3 12.5 0 C9 3 5 5 0 5.2 C-6 5.4 -10.5 3.4 -11 0 Z",
+  caravel: "M-12 0 C-11.5 -2.8 -6 -4.4 0 -4.2 C6 -4 10 -2.2 14.5 0 C10 2.2 6 4 0 4.2 C-6 4.4 -11.5 2.8 -12 0 Z",
+  nao: "M-14 0 C-13.5 -4.2 -7 -6.4 0 -6.2 C7 -6 11 -3.4 15 0 C11 3.4 7 6 0 6.2 C-7 6.4 -13.5 4.2 -14 0 Z",
 };
-const CASTLE = { nao: "M-13.6 -2.2 L-9.5 -3.6 L-8.6 0 L-9.5 3.6 L-13.6 2.2 Z" }; // raised sterncastle, mid-wood tone
+// Castle blocks (cog: stern castle; nao: stern + fore castles), in the mid-wood deck tone.
+const CASTLE = {
+  cog: ["M-10.4 -2.6 L-6.4 -3.4 L-6.4 3.4 L-10.4 2.6 Z"],
+  nao: ["M-13.6 -2.4 L-8.6 -4 L-8 0 L-8.6 4 L-13.6 2.4 Z", "M8.8 -3.2 L12.2 -1.4 L12.2 1.4 L8.8 3.2 Z"],
+};
+// Sails seen from above: [x of the yard, half span, belly depth, skew of the far yard end (lateen), reef seams].
 const SAIL = {
-  barca: ["M-1 -4.5 L-1 4.5 L1.6 3 L1.6 -3 Z"],
-  cog: ["M-1 -7 L-1 7 L2 5 L2 -5 Z"],
-  caravel: ["M-6 -6 L-6 6 L-3 4.5 L-3 -4.5 Z", "M2 -5 L2 5 L5 3.5 L5 -3.5 Z"],
-  nao: ["M-8 -6.5 L-8 6.5 L-5.5 5.5 L-5.5 -5.5 Z", "M-2.5 -7.5 L-2.5 7.5 L0.5 6 L0.5 -6 Z", "M4 -5 L4 5 L6.5 4 L6.5 -4 Z"],
+  barca: [[-1, 4.5, 1.4, 1.2]],
+  cog: [[-1, 7, 2.2, 0]],
+  caravel: [[-6, 6, 1.4, 1.2], [2, 5, 1.3, 1]],
+  nao: [[-8, 5.8, 1.2, 1.6], [-2.5, 7.5, 2, 0], [4, 5, 1.6, 0]],
 };
+const sailPath = ([x, hw, d, sk]) => `M${x} ${-hw} C${r1(x + 2.8 * d)} ${r1(-hw * 0.75)} ${r1(x + sk + 2.8 * d)} ${r1(hw * 0.75)} ${x + sk} ${hw} Z`; // flat at the yard, belly towards the bow
+const sailBits = ([x, hw, d, sk], f) => { // yard line, seam lines and mast top for one sail
+  let h = `<line x1="${x - 0.2}" y1="${-hw - 0.6}" x2="${x + sk + 0.2}" y2="${hw + 0.6}" stroke="#3a2a1a" stroke-width=".5" stroke-linecap="round"/>`;
+  for (const k of [-0.5, 0, 0.5]) h += `<line x1="${r1(x + sk * (k + 1) / 2)}" y1="${r1(k * hw)}" x2="${r1(x + sk * (k + 1) / 2 + d * 2 * (1 - k * k) * 0.8)}" y2="${r1(k * hw)}" stroke="#3a2a1a" stroke-width=".18" opacity=".55"/>`;
+  return h + `<circle cx="${r1(x + d * 0.55)}" cy="0" r=".7" fill="#3a2a1a" stroke="#2a1d10" stroke-width=".2"/>`;
+};
+const r1 = (n) => Math.round(n * 100) / 100;
 const RAIL_Y = { barca: 2.4, cog: 4.0, caravel: 3.0, nao: 4.6 }; // gunport distance from the centreline
 const GUN_SPAN = { barca: 8, cog: 14, caravel: 16, nao: 20 }; // hull stretch the gunports occupy
 const VIS_MAX_GUNS = { barca: 1, cog: 3, caravel: 4, nao: 8 }; // fallback cap; the caller passes the canonical MAX_CANNONS
 const PATCH1 = "M-5.5 -2.4 h3.4 v3.2 h-3.4 Z"; // plank patch: hull damage (shape cue, filled wood tone)
 const PATCH2 = "M2 -0.5 h3.4 v3.2 h-3.4 Z";
+const BOW_X = { barca: 8.5, cog: 12.5, caravel: 14.5, nao: 15 };
 const STERN_X = { barca: -8, cog: -11, caravel: -12, nao: -14 }; // hull stern tip per type
 /** SVG markup for one ship, bow pointing along +x. `mine` colours it red, rivals grey.
  *  weapons/gun/hull come from the ship record (weaponCount / gunCond / hull); defaults draw the intact ship. */
 export function shipSvg(type, { mine = false, heading = 0, weapons = 0, maxGuns, gun = 100, hull = 100 } = {}) {
   const hullP = HULL[type] ?? HULL.cog, fill = mine ? "#7a2a1c" : "#55493a", sailFill = mine ? "#f6ecd2" : "#d8cfba";
-  const sails = SAIL[type] ?? SAIL.cog;
+  const key = HULL[type] ? type : "cog", sails = SAIL[key];
   const band = hull < 30 ? 2 : hull < 70 ? 1 : 0; // 0 intact, 1 one plank patch, 2 two patches + battered stern
-  let h = `<path d="${hullP}" fill="${fill}" stroke="#2a1d10" stroke-width=".9"/>`;
-  if (CASTLE[type]) h += `<path d="${CASTLE[type]}" fill="#6b5136" stroke="#2a1d10" stroke-width=".6"/>`;
-  h += sails.map((p) => `<path d="${p}" fill="${sailFill}" stroke="#2a1d10" stroke-width=".6"/>`).join("");
+  const sx0 = STERN_X[key];
+  let h = `<path d="${hullP}" fill="${fill}" stroke="#2a1d10" stroke-width=".9" stroke-linejoin="round"/>`;
+  h += `<path d="M${sx0 + 1.6} 0 L${BOW_X[key] - 2.5} 0" stroke="#3a2a1a" stroke-width=".35" opacity=".6" fill="none"/>`; // deck centreline
+  h += `<path d="${hullP}" transform="scale(.86)" fill="none" stroke="#8a6a44" stroke-width=".5"/>`; // inner rail
+  for (const c of CASTLE[key] ?? []) h += `<path d="${c}" fill="#8a6a44" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/>`;
+  h += sails.map((sl) => `<path d="${sailPath(sl)}" fill="${sailFill}" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/>${sailBits(sl)}`).join("");
+  h += `<line x1="${sx0 + 2.4}" y1="0" x2="${sx0 + 2.4}" y2="-2.6" stroke="#2a1d10" stroke-width=".35"/><path d="M${sx0 + 2.4} -2.6 L${sx0 + 0.3} -2.2 L${sx0 + 2.4} -1.5 Z" fill="${mine ? "#7a2a1c" : "#3a2a1a"}"/>`; // tiny stern flag
   const cap = Math.max(0, Math.floor(maxGuns ?? VIS_MAX_GUNS[type] ?? 3)), n = Math.max(0, Math.min(Math.floor(weapons) || 0, cap));
   if (n > 0) { // gunports along both rails, one pair per mounted piece; worn pieces (gunCond < 50) render as half-width marks
     const ry = RAIL_Y[type] ?? 4.0, span = GUN_SPAN[type] ?? 14, worn = gun < 50;
