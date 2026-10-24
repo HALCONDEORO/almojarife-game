@@ -106,7 +106,9 @@ test("OFF parity vs base code: golden market and cash figures of the pre-module 
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.deepEqual(
     { day: g.day, cash: g.cash, cadiz_grain: g.market.cadiz.grain.stock, cadiz_wine: g.market.cadiz.wine.stock, sevilla_grain: g.market.sevilla.grain.stock, sevilla_pop: g.market.sevilla.grain.pop, lisboa_beer: g.market.lisboa.beer.stock },
-    { day: 60, cash: 1888, cadiz_grain: 100, cadiz_wine: 121, sevilla_grain: 297, sevilla_pop: 40000, lisboa_beer: 269 });
+    { day: 60, cash: 1888, cadiz_grain: 100, cadiz_wine: 124, sevilla_grain: 297, sevilla_pop: 40000, lisboa_beer: 269 });
+  // golden moved 121 -> 124 in cadiz_wine when saffron became NPC-tradeable (owner call 2026-10-24, the saffron-npc-trade PR):
+  // verified main (saffron player-only) still reproduces 121 exactly and ONLY this cell moves.
 });
 
 test("flag OFF: civic types cannot be built even by a direct startConstruction call", () => {
