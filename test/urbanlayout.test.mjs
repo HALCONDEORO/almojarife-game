@@ -30,3 +30,7 @@ test('fifty ports keep separate footprints and streets outside parcel interiors'
   }
  }
 });
+import {loadWorld} from '../src/sim/world.mjs';
+test('all actual world cities load, including Bilbao with only five canonical parcels',async()=>{
+ for(const c of loadWorld().cities){const old=await cityPlots(c.id,c.pop),v=urbanLayout(old,c.pop);assert.equal(v.plots.length,old.plots.length);assert.equal(validateOccupancy([...v.plots,...v.residential]).collisions.length,0);}
+});

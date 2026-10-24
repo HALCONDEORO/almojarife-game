@@ -26,7 +26,7 @@ export function urbanLayout(canonical,pop) {
   for(let r=0;r<=rows;r++)road(1,3+r*pitch,3+cols*pitch,3+r*pitch);
   road(plaza.x+5,3+rows*pitch,plaza.x+5,cy+17);
   road(1,cy+5,width-1,cy+5);
-  for(const p of [plots[1],plots[5]])road(3+cols*pitch,p.y+p.d+1,width-1,p.y+p.d+1);
+  for(const p of [plots[1],plots[5]].filter(Boolean))road(3+cols*pitch,p.y+p.d+1,width-1,p.y+p.d+1);
   road(width-1,1,width-1,maxY);
   road(plaza.x+5,cy-1,plaza.x+5,cy+16);
   // Fixed, bounded residential quarter south of civic square; counts, density and levels follow population.
