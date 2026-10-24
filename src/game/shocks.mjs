@@ -29,9 +29,9 @@ export const activeShocks = (g, city) => (g.shocks ?? []).filter((s) => s.untilD
 export const portClosed = (g, city) => activeShocks(g, city).some((s) => s.type === "port_closed");
 
 const REGION_NAMES = { es: { atlantico: "el Atlántico", estrecho: "el Estrecho", mediterraneo: "el Mediterráneo" }, en: { atlantico: "the Atlantic", estrecho: "the Strait", mediterraneo: "the Mediterranean" } };
-const GOOD_NAMES = { es: { grain: "el grano", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", pottery: "la cerámica", legumes: "las legumbres", kid_meat: "el cabrito", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", saffron: "el azafrán", beer: "la cerveza", soap: "el jabón" } };
+const GOOD_NAMES = { es: { grain: "el grano", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", pottery: "la cerámica", legumes: "las legumbres", kid_meat: "el cabrito", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", ironware: "los herrajes", bricks: "los ladrillos", cloth: "el paño", silk: "la seda", pepper: "la pimienta", saffron: "el azafrán", beer: "la cerveza", soap: "el jabón" } };
 /** "de" + the name, contracted: del grano, de la lana. */
-const DE_GOOD = Object.fromEntries(Object.entries(GOOD_NAMES.es).map(([k, v]) => [k, v.replace(/^el /, "del ").replace(/^la /, "de la ")]));
+const DE_GOOD = Object.fromEntries(Object.entries(GOOD_NAMES.es).map(([k, v]) => [k, v.replace(/^el /, "del ").replace(/^la /, "de la ").replace(/^los /, "de los ").replace(/^las /, "de las ")]));
 /** Plain text of a shock (start or end), ES/EN. */
 export function shockText(sh, lang, end = false) {
   const es = lang === "es", reg = REGION_NAMES[lang]?.[sh.region] ?? sh.region, good = (es ? GOOD_NAMES.es[sh.good] : null) ?? sh.good;
