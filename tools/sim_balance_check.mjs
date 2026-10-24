@@ -74,7 +74,7 @@ check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], with
 // Evaluate the named 365-day horizon, never the final cash of a longer simulation.
 const npcCashYear1 = A.horizons?.[365]?.npcCash;
 const npcGrowthA = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
-check("A: NPC cash growth x0.2-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.2, 30), "0.2-30"); // floor moved 0.5 -> 0.2 on 24/10: plague ON (owner order 24/10 12:08) suppresses year-1 NPC cash growth to a measured 0.43 on this head; low = 0.5 x measured, same spirit as the worth bands
+check("A: NPC cash growth x0.215-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.215, 30), "0.215-30"); // floor moved 0.5 -> 0.215 on 24/10: plague ON (owner order 24/10 12:08) suppresses year-1 NPC cash growth to a measured 0.4298 on this head (seed 0); low = 0.5 x measured = 0.2149, rounded up so the gate is never looser than the documented rule, same spirit as the worth bands
 
 const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bot ?? {};
 // NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.

@@ -14,7 +14,7 @@ function check({year1 = 2000, final = 200000, start = 1000, omitYear = false} = 
     const path = join(dir, 'report.json'); writeFileSync(path, JSON.stringify(report));
     const r = spawnSync(process.execPath, ['tools/sim_balance_check.mjs', path], {encoding: 'utf8', env: {...process.env, BALANCE_SEEDS: 'none'}}); // synthetic report: the horizon list must match days, no extra seeds
     assert.equal(r.error, undefined);
-    return r.stdout.split('\n').find((line) => line.includes('NPC cash growth x0.2-x30 over 365d')); // label follows the plague-ON floor (24/10: measured 0.43 on the plague-on head, low = 0.5 x measured)
+    return r.stdout.split('\n').find((line) => line.includes('NPC cash growth x0.215-x30 over 365d')); // label follows the plague-ON floor (24/10: measured 0.4298 on the plague-on head, low = 0.5 x measured rounded up)
   } finally { rmSync(dir, {recursive: true, force: true}); }
 }
 
@@ -33,9 +33,9 @@ test('missing year-one measurement is not replaced with the final snapshot', () 
   assert.ok(line.startsWith('FAIL'), line);
   assert.ok(line.includes('actual: NaN,'), line);
 });
-test('unchanged 0.2-30 limits reject a real collapse or excess', () => { // floor pinned at 0.2 since the plague-ON recalibration (24/10)
-  assert.ok(check({year1: 199}).startsWith('FAIL'));
-  assert.ok(check({year1: 200}).startsWith('PASS'));
+test('unchanged 0.215-30 limits reject a real collapse or excess', () => { // floor pinned at 0.215 since the plague-ON recalibration (24/10)
+  assert.ok(check({year1: 214}).startsWith('FAIL'));
+  assert.ok(check({year1: 215}).startsWith('PASS'));
   assert.ok(check({year1: 30000}).startsWith('PASS'));
   assert.ok(check({year1: 30001}).startsWith('FAIL'));
 });
