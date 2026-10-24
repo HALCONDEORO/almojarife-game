@@ -450,7 +450,7 @@ function render() {
       if(market2d) {
         const known = world.cities.filter(c => c.id !== s.at && isDiscovered(g,c.id) && g.intel?.[c.id]);
         h+=`<div class="ui2d-market-intro"><h3>${t.tabMarket} · ${cityName(s.at)}</h3><p>${t.cash}: <b>${fmt(g.cash)}</b> · ${t.hold}: <b>${cargoUsed(s)}/${shipCapacity(s)}</b> · ${lang==='es'?'Libres':'Free'}: <b>${Math.max(0,shipCapacity(s)-cargoUsed(s))}</b></p></div>`;
-        h+=`<div class="market-tools"><label>${lang==='es'?'Buscar bien':'Find good'} <input data-market-search type="search" value="${marketSearch.replaceAll("&","&amp;").replaceAll("\"","&quot;").replaceAll("<","&lt;")}"></label><label><input data-market-cargo type="checkbox" ${marketCargoOnly?'checked':''}> ${lang==='es'?'Solo mi carga':'My cargo only'}</label><label>${lang==='es'?'Comparar precio con':'Compare price with'} <select data-market-compare><option value="">${lang==='es'?'Elegir puerto conocido':'Choose known port'}</option>${known.map(c=>`<option value="${c.id}" ${marketCompare===c.id?'selected':''}>${cityName(c.id)}</option>`).join('')}</select></label></div>`;
+        h+=`<div class="market-tools"><label>${lang==='es'?'Buscar bien':'Find good'} <input data-market-search type="search" ></label><label><input data-market-cargo type="checkbox" ${marketCargoOnly?'checked':''}> ${lang==='es'?'Solo mi carga':'My cargo only'}</label><label>${lang==='es'?'Comparar precio con':'Compare price with'} <select data-market-compare><option value="">${lang==='es'?'Elegir puerto conocido':'Choose known port'}</option>${known.map(c=>`<option value="${c.id}" ${marketCompare===c.id?'selected':''}>${cityName(c.id)}</option>`).join('')}</select></label></div>`;
         if(marketCompare)h+=`<p class="market-compare-note">${lang==='es'?'Referencia conocida por unidad, no precio garantizado al llegar. No incluye tasa ni impacto de cantidad.':'Known unit-price reference, not a guaranteed arrival price. Excludes fees and quantity impact.'}</p>`;
       }
       h += `<table${market2d?' class="ui2d-market"':""}><thead><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th>${t.qtyLbl}</th></tr></thead>`;
@@ -641,9 +641,10 @@ function render() {
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  if(P.querySelector('[data-market-search]'))P.querySelector('[data-market-search]').value=marketSearch;
   P.querySelector('[data-market-search]')?.addEventListener('input',e=>{const start=e.target.selectionStart;marketSearch=e.target.value;render();const n=P.querySelector('[data-market-search]');n?.focus();n?.setSelectionRange(start,start);});
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
-  P.querySelector('[data-market-compare]')?.addEventListener('change',e=>{marketCompare=e.target.value;render();});
+  P.querySelector('[data-market-compare]')?.addEventListener('change',e=>{marketCompare=world.cities.find(c=>c.id===e.target.value&&c.id!==s.at&&isDiscovered(g,c.id)&&g.intel?.[c.id])?.id??"";render();});
   P.querySelectorAll('[data-quantity]').forEach(e=>{
     e.oninput=()=>{
       const gd=e.dataset.quantity,q=qtys[gd]=marketQuantity(e.value),row=e.closest('tbody');
