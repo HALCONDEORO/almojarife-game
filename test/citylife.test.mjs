@@ -67,6 +67,27 @@ test("growth: without houses there is no room for newcomers", () => {
   assert.ok(citylifeExtra(g, "cadiz") <= 0, "no houses, no growth: " + citylifeExtra(g, "cadiz"));
 });
 
+test("drift: chronic dearth stagnates a city but does not empty it (measured 24/10: emigration under chronic hunger deflated the whole economy)", () => {
+  const g = game({ citylife: true });
+  for (const good of ["grain", "fish", "meat", "olive_oil"]) g.market.cadiz[good].stock = Math.round(g.market.cadiz[good].target * 0.5); // scarce, above the acute line
+  for (let i = 0; i < 12 * 7; i++) { g.day++; citylifeDay(g); }
+  assert.ok(meanMood(g, "cadiz") < 55, "the city is unhappy under the hunger cap: " + meanMood(g, "cadiz"));
+  assert.equal(citylifeExtra(g, "cadiz"), 0, "twelve weeks of chronic dearth: nobody leaves (and no houses, no growth)");
+});
+
+test("drift: an acute famine empties a city, and a working posito slows the leaving", () => {
+  const starved = () => { const g = game({ citylife: true }); for (const good of ["grain", "fish", "meat", "olive_oil"]) g.market.cadiz[good].stock = 0; return g; };
+  const bare = starved();
+  for (let i = 0; i < 12 * 7; i++) { bare.day++; citylifeDay(bare); }
+  const bareLoss = -citylifeExtra(bare, "cadiz");
+  assert.ok(bareLoss > 0, "an acute famine drives people out: " + bareLoss);
+  const fed = starved();
+  fed.buildings = { cadiz: { "cadiz:3": { type: "posito", level: 3, state: "active" } } };
+  for (let i = 0; i < 12 * 7; i++) { fed.day++; citylifeDay(fed); }
+  const fedLoss = -citylifeExtra(fed, "cadiz");
+  assert.ok(fedLoss > 0 && fedLoss < bareLoss, "a level-3 posito slows the leaving: " + fedLoss + " < " + bareLoss);
+});
+
 test("civic effects: hospital lifts only the poor (more in hard times), alhondiga the middle, posito steadies staples", () => {
   const g = game({ citylife: true });
   g.buildings = { cadiz: { "cadiz:1": { type: "hospital", level: 1, state: "active" }, "cadiz:2": { type: "alhondiga", level: 1, state: "active" }, "cadiz:3": { type: "posito", level: 1, state: "active" } } };
