@@ -191,6 +191,7 @@ describe("hammer timing (regression: the lot on the block all day must be the lo
     g.tick = (aday + 1) * TICKS_PER_DAY - 1; // last tick of the auction day
     const lot = lotOfDay(g, "cadiz");
     assert.ok(lot, "lot on the block during its day");
+    g.cash = 2000000; // a purse that covers the promise (placeBid refuses maxima above it)
     assert.equal(placeBid(g, "cadiz", 999999).ok, true);
     const cash0 = g.cash;
     advanceTick(g); // the day turns: the hammer must fall NOW with this bid
@@ -198,5 +199,43 @@ describe("hammer timing (regression: the lot on the block all day must be the lo
     assert.equal(g.townBids?.["cadiz"], undefined); // consumed, not stale
     assert.ok(g.cash < cash0 || (g.townSales?.["cadiz"]?.gone ?? []).includes(lot.est.id)); // won (paid) or a neighbour took it
     assert.notEqual(lotOfDay(g, "cadiz")?.est.id, lot.est.id); // the sold works does not come back on the block
+  });
+});
+
+describe("solvency at the table", () => {
+  it("placeBid refuses a max above the purse", async () => {
+    const { placeBid } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    g.cash = 1000;
+    assert.equal(placeBid(g, "cadiz", 1001).reason, "no cash");
+    assert.equal(g.townBids?.["cadiz"], undefined);
+    assert.equal(placeBid(g, "cadiz", 1000).ok, true);
+  });
+  it("an insolvent top bid leaves the table and the lot falls to the next bidder", async () => {
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npcTop = Math.max(...biddersOf(g, "cadiz", lot).map((b) => b.max), 0);
+    g.cash = 1; // his max promised the world, his purse holds a coin
+    const r = bidAuction(g, "cadiz", 999999);
+    if (npcTop >= lot.reserve) {
+      assert.equal(r.outcome, "lost"); // a solvent neighbour takes it
+      assert.equal(g.cash, 1); // the player pays nothing
+      assert.ok(!g.buildings?.["cadiz"]?.[lot.est.id]);
+    } else {
+      assert.equal(r.outcome, "withdrawn");
+    }
+    assert.ok(g.cash >= 0);
+  });
+  it("two tables the same day never leave the purse negative", async () => {
+    const { almonedaDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    const day = [0, 1, 2, 3, 4, 5, 6].find((d) => world.cities.filter((c) => isAuctionDay(c.id, d)).length > 1);
+    if (day === undefined) return; // no shared offset in this world: nothing to test
+    g.day = day;
+    for (const c of world.cities.filter((c) => isAuctionDay(c.id, day))) { g.cash = Math.min(g.cash, 2000); ((g.townBids ??= Object.create(null))[c.id]) = 999999; }
+    almonedaDay(g);
+    assert.ok(g.cash >= 0); // every win was settled, every promise the purse could not keep was voided
   });
 });
