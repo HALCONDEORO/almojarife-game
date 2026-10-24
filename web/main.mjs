@@ -531,6 +531,7 @@ function render() {
       if (cityLines.length) h += `<p><i>` + cityLines.map((l) => l.txt?.[lang] ?? l.txt?.es).filter(Boolean).join("<br>") + `</i></p>`;
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmt(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisa > 0 ? "+" : "") + hv.sisa).replace("{p}", (hv.portazgo > 0 ? "+" : "") + hv.portazgo)}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
+      }
       if (g.townIndustry === true) { // the weekly town auction (flag on only)
         const lot = lotOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p><p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b>${lot ? " · " + t.almDay : ""}</p>`;
@@ -538,7 +539,6 @@ function render() {
           const nb = biddersOf(g, s.at, lot), mine = g.townBids?.[s.at];
           h += `<div class="card"><b>${t.almLot.replace("{x}", (t.bldTypes[lot.est.type] ?? t.indTypes[lot.est.type] ?? lot.est.type) + " · " + t.indLevel.replace("{l}", lot.est.level)).replace("{g}", goodIcon(lot.est.good, 16) + (t.goods[lot.est.good] ?? lot.est.good))}</b><br>${t.almSeller}: <i>${lot.est.owner.kind === "council" ? t.indCouncil : lot.est.owner.name}</i> · ${t.almReserve.replace("{p}", fmt(lot.reserve))}<br>${nb.length ? t.almBidders + " " + nb.map((b) => b.who).join(", ") : t.almNoBidders}${mine != null ? `<br><b>${t.almBidPlaced.replace("{p}", fmt(mine))}</b>` : ""}<br><input id="alm-bid" type="number" min="0" step="1" style="width:8em"> <button data-almbid="1">${t.almBid}</button>${almNote ? ` <small style="color:#a11">${almNote}</small>` : ""}</div>`;
         } else h += `<p><i>${t.almNone}</i></p>`;
-      }
       }
     } else if (tab === "buildings") {
       ensurePlots(s.at);

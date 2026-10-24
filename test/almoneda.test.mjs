@@ -180,3 +180,23 @@ describe("the table at the day boundary", () => {
     else assert.equal(g.townSales?.["cadiz"]?.gone?.length ?? 0, 0); // withdrawn: nobody met the reserve
   });
 });
+
+describe("hammer timing (regression: the lot on the block all day must be the lot that falls at its end)", () => {
+  it("a bid placed during the auction day is judged at that day's boundary, not left stale", async () => {
+    const { advanceTick, TICKS_PER_DAY } = await import("../src/game/game.mjs");
+    const { placeBid, lotOfDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: true });
+    const aday = auctionOffset("cadiz");
+    g.day = aday;
+    g.tick = (aday + 1) * TICKS_PER_DAY - 1; // last tick of the auction day
+    const lot = lotOfDay(g, "cadiz");
+    assert.ok(lot, "lot on the block during its day");
+    assert.equal(placeBid(g, "cadiz", 999999).ok, true);
+    const cash0 = g.cash;
+    advanceTick(g); // the day turns: the hammer must fall NOW with this bid
+    assert.equal(g.day, aday + 1);
+    assert.equal(g.townBids?.["cadiz"], undefined); // consumed, not stale
+    assert.ok(g.cash < cash0 || (g.townSales?.["cadiz"]?.gone ?? []).includes(lot.est.id)); // won (paid) or a neighbour took it
+    assert.notEqual(lotOfDay(g, "cadiz")?.est.id, lot.est.id); // the sold works does not come back on the block
+  });
+});
