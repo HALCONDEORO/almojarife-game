@@ -1,0 +1,8 @@
+# Historical localStorage identifiers, not credentials. Each finding reviewed at its exact commit.
+937a5401f3136b1511342fac5ef82011427ded45:test/savefile.test.mjs:generic-api-key:15
+937a5401f3136b1511342fac5ef82011427ded45:test/savefile.test.mjs:generic-api-key:20
+7ac83bbe02f4ab15279af6834bf407066eaae6a4:test/savefile.test.mjs:generic-api-key:20
+11e662919f2bf2ebb86ae04de634af4ad7e31105:test/savefile.test.mjs:generic-api-key:15
+b5d473870ba3e845144ed284b71269b12ebfdcd8:web/main.mjs:generic-api-key:119
+9c0898e76ca994b840dd059279b878882525ca96:web/main.mjs:generic-api-key:94
+fcf28590db9d24adcefe35a7c75e35c40456dce6:web/main.mjs:generic-api-key:94
