@@ -7,7 +7,7 @@ import {encounterOutcome,applyEncounter} from '../src/game/encounters.mjs';
 const w=loadWorld();
 const hired=()=>{const g=newGame(w),s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);return {g,s};};
 test('flag off: no experience, nothing saved on the captain',()=>{
- const {g,s}=hired();const before=JSON.stringify(s.captain);
+ const {g,s}=hired();g.captainXp=false;const before=JSON.stringify(s.captain);
  assert.equal(gainXp(g,s,'navigation',99),null);assert.equal(JSON.stringify(s.captain),before);
 });
 test('flag on: levels rise at the thresholds, never above 3, never down',()=>{
@@ -43,7 +43,7 @@ test('captain experience, levels and the flag survive saving and loading',()=>{
  gainXp(back,back.ships[0],'weather',1);assert.equal(back.ships[0].captain.xp.weather,s.captain.xp.weather+1);
 });
 test('an old save without experience loads unchanged with the flag off',()=>{
- const {g,s}=hired();const back=deserialize(serialize(g,'T'),w).g;
+ const {g,s}=hired();delete g.captainXp;const back=deserialize(serialize(g,'T'),w).g; // delete the key to emulate a pre-flag save
  assert.deepEqual(back.ships[0].captain,s.captain);assert.ok(!back.captainXp);assert.equal(back.ships[0].captain.xp,undefined);
 });
 test('corrupt xp containers from old or tampered saves are normalized, never crash',()=>{
@@ -56,8 +56,8 @@ test('corrupt xp containers from old or tampered saves are normalized, never cra
  }
 });
 test('flag off: a full voyage and a storm leave the captain and the save byte-identical',()=>{
- const g=newGame(w,'cadiz',{seed:7});const s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);
- assert.ok(!g.captainXp); // default: OFF
+ const g=newGame(w,'cadiz',{seed:7,captainXp:false});const s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);
+ assert.ok(!g.captainXp); // forced OFF (the default is ON since 24/10 12:08)
  const capBefore=JSON.stringify(s.captain);
  s.voyage={from:s.at,to:'lisboa',ticksLeft:100,totalTicks:100};
  applyEncounter(g,s,encounterOutcome(s,'storm',0.9));
