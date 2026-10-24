@@ -32,7 +32,7 @@ function segDist(x, y, s) {
 }
 
 /** Deterministic candidate boxes for one establishment, in preference order. */
-function* candidates(e, i, bounds, edge) {
+function* candidates(e, i, bounds, edge, paths) {
   const { minX, minY, maxX, maxY } = bounds;
   const w = foot(e), d = w * 0.85;
   for (let k = 0; k < 90; k++) {
@@ -43,7 +43,16 @@ function* candidates(e, i, bounds, edge) {
     } else if (QUAYSIDE.has(e.type)) {
       // Just inland of the quay apron (the apron is the edge-2..edge strip);
       // the box (up to 3 wide) must clear it, so the band sits at edge-8.5..edge-5.7.
-      yield { x: edge - 8.5 + rx * 2.8, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
+      // Slot centers go BETWEEN the east-west streets that run down to the water:
+      // a shed between two street ends reads as quayside, one across a street reads as blocked.
+      const ends = paths
+        .filter((s) => Math.abs(s.beg.y - s.end.y) < Math.abs(s.beg.x - s.end.x) && Math.max(s.beg.x, s.end.x) > edge - 14)
+        .map((s) => s.beg.y).sort((a, b) => a - b);
+      const slots = [];
+      let prev = minY + 3;
+      for (const ey of [...ends, maxY - 3]) { if (ey - prev > d + 2.4) slots.push((prev + ey - d) / 2); prev = ey; }
+      if (slots.length) yield { x: edge - 8.5 + rx * 2.8, y: slots[k % slots.length] + (hash01(i * 131 + k, 31) - 0.5) * 1.2, w, d };
+      else yield { x: edge - 8.5 + rx * 2.8, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
     } else if (OUTSKIRTS.has(e.type)) {
       // Country ring north of the walls, where fields and hills are drawn.
       yield { x: minX - 6 + rx * Math.max(1, maxX - minX + 6 - w), y: minY - 20 + ry * 16, w, d };
@@ -75,7 +84,7 @@ export function industrySpots(bounds, layout, establishments) {
     const e = establishments[i];
     const rural = OUTSKIRTS.has(e.type) || SALT_COAST.has(e.type); // bands outside the fabric
     let spot = null;
-    for (const r of candidates(e, i, bounds, edge)) {
+    for (const r of candidates(e, i, bounds, edge, paths)) {
       if (taken.some((p) => hit(r, p, 0.8))) continue;
       if (rural || r._fb) { spot = r; break; } // country/beach bands and the fallback ring clear the city by construction
       // Urban and quayside boxes sit in the fabric: full collision checks.
