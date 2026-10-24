@@ -74,14 +74,14 @@ check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], with
 // Evaluate the named 365-day horizon, never the final cash of a longer simulation.
 const npcCashYear1 = A.horizons?.[365]?.npcCash;
 const npcGrowthA = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
-check("A: NPC cash growth x0.5-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.5, 30), "0.5-30");
+check("A: NPC cash growth x0.2-x30 over 365d", +npcGrowthA.toFixed(2), within(npcGrowthA, 0.2, 30), "0.2-30"); // floor moved 0.5 -> 0.2 on 24/10: plague ON (owner order 24/10 12:08) suppresses year-1 NPC cash growth to a measured 0.43 on this head; low = 0.5 x measured, same spirit as the worth bands
 
 const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bot ?? {};
 // NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.
 // The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,
 // so each band is set from the measured values within +-2 years of the horizon: low = 0.5 x the minimum, high = 4 x the maximum.
 // It catches a collapse or a runaway, not a drift. Recalibrate when the measured window moves.
-const NPC_WORTH_BAND = { 365: [28338, 442228], 1825: [17223, 865304], 3650: [23632, 614136], 10950: [104828, 1733476], 18250: [174348, 1857832], 36500: [166098, 2914812] }; // recalibrated 24/10 on the pottery-npc-trade head: NPCs trading pottery like players (owner decision 24/10 11:01, superseding 23/10 probe6) moves the measured windows; re-measured with tools/sim_npc_worth_bands.mjs 100 1 2 3 (deterministic: seeds give identical runs), same documented rule (low = 0.5 x min, high = 4 x max of the +-2y window, windows clamped at year 1)
+const NPC_WORTH_BAND = { 365: [32933, 357228], 1825: [44653, 7535872], 3650: [337285, 3684384], 10950: [235868, 3089356], 18250: [383760, 6487060], 36500: [1075376, 9276272] }; // recalibrated 24/10 on the plague-ON head (owner order 24/10 12:08: every flag ships ON): plague rolls make NPC trajectories seed-dependent, so the bands are measured on scenario A's exact configuration (seed 0) with tools/sim_npc_worth_bands.mjs 100 0, same documented rule (low = 0.5 x min, high = 4 x max of the +-2y window, windows clamped at year 1); supersedes the pottery-head bands, which assumed identical runs across seeds
 
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
 for (const h of H) {

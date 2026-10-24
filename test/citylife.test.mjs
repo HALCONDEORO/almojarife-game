@@ -102,7 +102,7 @@ test("OFF parity: 200 days with the module loaded but the flag off match a plain
 // any state, effect or rounding into a flag-off game, one of them moves.
 test("OFF parity vs base code: golden market and cash figures of the pre-module build", () => {
   // the golden figures were recorded with every optional module off; pin them off explicitly now that content flags default ON (owner directive 2026-10-23)
-  const g = game({ kidMeat: false, credit: false, foreclosure: false, legumes: false, pottery: false, pirateFight: false, marque: false });
+  const g = game({ kidMeat: false, credit: false, foreclosure: false, legumes: false, pottery: false, pirateFight: false, marque: false, plague: false });
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.deepEqual(
     { day: g.day, cash: g.cash, cadiz_grain: g.market.cadiz.grain.stock, cadiz_wine: g.market.cadiz.wine.stock, sevilla_grain: g.market.sevilla.grain.stock, sevilla_pop: g.market.sevilla.grain.pop, lisboa_beer: g.market.lisboa.beer.stock },
