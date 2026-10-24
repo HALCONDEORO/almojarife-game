@@ -111,6 +111,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
   if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
   if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
+  if (opts.townIndustry === true) g.townIndustry = true; // town-industry flag, OFF by default: no key in an off game (docs/design/town-industry-and-auctions.md)
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
   refreshIntel(g);

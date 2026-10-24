@@ -146,3 +146,69 @@ export function industrySummary(world, cityId) {
 export function townIndustryJobs(world, cityId) {
   return townIndustry(world, cityId).reduce((a, e) => a + e.jobs, 0);
 }
+
+// ---------------------------------------------------------------------------
+// Piece 2: ownership transfer. Buying an establishment MOVES its share of the
+// city's abstract production to the buyer: the market's townShare drops by the
+// establishment's share and the works become a normal building of the buyer at
+// the same level - production is never duplicated, and its hands leave the
+// town's 90% share (townJobsFreed in buildings.mjs). Off unless the game was
+// started with the town-industry flag (g.townIndustry === true), so saves and
+// flag-off games are byte-identical.
+
+import { hasOffice, townJobsFreed } from "./buildings.mjs"; // eslint-disable-line no-unused-vars -- re-exported for callers
+import { creditCaja } from "./council.mjs";
+import { post } from "./ledger.mjs";
+export { townJobsFreed };
+
+const r6 = (x) => Math.round(x * 1e6) / 1e6;
+
+/** The establishment one sale talks about, or null. `estId` is the roster id (`city:good:n`). */
+export function establishmentOf(world, estId) {
+  if (typeof estId !== "string") return null;
+  const city = estId.split(":")[0];
+  return townIndustry(world, city).find((e) => e.id === estId) ?? null;
+}
+
+/** What a sale has already moved in one city: { jobs, ids }. */
+export const salesOf = (g, cityId) => g.townSales?.[cityId] ?? { jobs: 0, ids: [] };
+
+/**
+ * Sell one town establishment to the player at an agreed price (the auction piece decides
+ * prices; this primitive only moves ownership). Rules:
+ * - the game needs the town-industry flag, the buyer an office in the port, and cash;
+ * - only buildable types move: tanneries and trading houses stay with the town for now
+ *   (they are representation-only and would crash upkeep/production tables);
+ * - a council-owned sale pays the town chest (creditCaja); a neighbour's price is his own
+ *   business and leaves the game (NPC purses are not simulated);
+ * - the building lands in g.buildings active at its level, marked fromTown, and from then on
+ *   lives by the player's rules: upkeep, wages, staffing, margin checks and halting.
+ */
+export function buyEstablishment(g, cityId, estId, price) {
+  if (g.townIndustry !== true) return { ok: false, reason: "off" };
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
+  const est = establishmentOf(g.world, estId);
+  if (!est || est.city !== cityId) return { ok: false, reason: "unknown establishment" };
+  if (est.kind !== "building") return { ok: false, reason: "not for sale" };
+  if (salesOf(g, cityId).ids.includes(estId)) return { ok: false, reason: "already sold" };
+  if (!Number.isSafeInteger(price) || price < 1) return { ok: false, reason: "bad price" };
+  if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
+  if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
+  const e = g.market[cityId]?.[est.good];
+  if (!e?.makes) return { ok: false, reason: "unknown establishment" }; // paranoia: roster and market agree
+
+  g.cash -= price;
+  if (est.owner.kind === "council") creditCaja(g, cityId, price);
+  const maps = (g.buildings ??= Object.create(null));
+  (maps[cityId] ??= Object.create(null))[estId] = { type: est.type, level: est.level, state: "active", plotType: est.type, paidPlot: 0, fromTown: estId, produced: 0 };
+  e.townShare = r6((e.townShare ?? 1) - est.share);
+  const sales = ((g.townSales ??= Object.create(null))[cityId] ??= { jobs: 0, ids: [] });
+  sales.jobs += est.jobs;
+  sales.ids.push(estId);
+  post(g, "info", { city: cityId, txt: {
+    es: `Compras ${est.type} (nivel ${est.level}) en ${cityId} por ${price} monedas: sus manos y su parte de la producción del puerto pasan a tu casa.`,
+    en: `You buy a ${est.type} (level ${est.level}) in ${cityId} for ${price} coins: its hands and its share of the port's production move to your house.`,
+  } });
+  return { ok: true, price, est };
+}

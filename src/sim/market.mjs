@@ -66,7 +66,7 @@ export function tickMarket(market, day, world, options = {}) {
 export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABLED} = {}) {
   const actual={},desired={};
   for (const [good, e] of Object.entries(city)) {
-    if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * seasonMul(good, day))); // warehouses are finite
+    if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * (e.townShare ?? 1) * seasonMul(good, day))); // warehouses are finite; townShare: share of the town's industry still in town hands (docs/design/town-industry-and-auctions.md piece 2), absent = 1
     e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
     const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
     const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1

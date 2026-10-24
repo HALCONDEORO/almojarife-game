@@ -232,9 +232,14 @@ export const TOWN_JOBS_SHARE = 0.9;
 export const WAGE_PER_WORKER = 1;
 /** Total workers the port's active buildings want. */
 export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
+/** Hands that left the town's own economy when their establishment was sold to the player
+ *  (docs/design/town-industry-and-auctions.md piece 2): they now work the buyer's building, so the
+ *  town's 90% share shrinks by exactly their count. 0 unless the town-industry flag is on. */
+export const townJobsFreed = (g, cityId) => (g?.townIndustry === true ? g.townSales?.[cityId]?.jobs ?? 0 : 0);
 /** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
-// The extra term is the city-life population drift (src/game/citylife.mjs state contract): 0 in a flag-off game.
-export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) + (g.citylife?.cities?.[cityId]?.extra ?? 0) - Math.round(pop * TOWN_JOBS_SHARE)); };
+// The extra terms are the city-life population drift and the hands that came with bought establishments
+// (state contracts of citylife.mjs and townindustry.mjs): both 0 in a flag-off game.
+export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) + (g.citylife?.cities?.[cityId]?.extra ?? 0) + townJobsFreed(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
 /** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
 export const staffingRatio = (g, cityId) => { const need = jobsNeeded(g, cityId); return need < 1 ? 1 : Math.min(1, freeLabor(g, cityId) / need); };
 

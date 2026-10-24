@@ -1,6 +1,6 @@
 # Town industry, ownership and auctions (24 Oct 2026)
 
-Status: piece 1 implemented with this PR (the read-only roster). Own design and own numbers
+Status: pieces 1 (roster) and 2 (ownership transfer) implemented. Own design and own numbers
 throughout; nothing taken from any other game. Desktop only.
 
 Owner direction (24 Oct 2026, WhatsApp): the city's industry should exist in the world
@@ -47,14 +47,20 @@ does, sized against it:
   Sevilla 2,160 of 36,000): the visible industry is the named tip of the town economy, not a
   second workforce.
 
-## Piece 2 (next): shares become real ownership
+## Piece 2 (this PR's second branch): shares become real ownership
 
-When an establishment is sold (auction, piece 3), its share of the good's abstract production
-moves to the buyer - it becomes a normal building in `g.buildings` at its level, and the
-city's abstract rate drops by that establishment's share. Production is moved, never
-duplicated. The same rule moves its hands: they leave the town's 90% and join the buyer's
-payroll, so `freeLabor` and `staffingRatio` keep meaning the same thing. A sold establishment
-then lives by the player's rules: upkeep, wages, margin checks and halting.
+`buyEstablishment` (src/game/townindustry.mjs) moves one establishment to the buyer at an
+agreed price: its share of the good's abstract production leaves the market's regeneration
+(`tickMarketCity` multiplies the town's production by the entry's `townShare`, absent = 1,
+so untouched rows and old saves are unchanged), the works land in `g.buildings` active at
+their level marked `fromTown`, and their hands leave the town's 90% jobs share
+(`townJobsFreed` in buildings.mjs: `freeLabor` rises by exactly the sold hands, so the
+staffing arithmetic keeps meaning the same thing). A sold establishment then lives by the
+player's rules: upkeep, wages, margin checks and halting. Municipal sales pay the town
+chest (`creditCaja`); a neighbour's price is his own business (NPC purses are not
+simulated). Representation-only types (tannery, trading house) are not for sale yet: they
+have no entry in the upkeep and production tables. The whole piece is gated on the
+town-industry flag (`g.townIndustry`, off by default): flag-off games are byte-identical.
 
 ## Piece 3: auctions (la almoneda)
 
