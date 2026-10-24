@@ -44,3 +44,14 @@ test("unknown type falls back to the cog drawing", () => {
 test("output is deterministic", () => {
   for (const t of TYPES) assert.equal(shipSideSvg(t, { hull: 40, weapons: 2 }), shipSideSvg(t, { hull: 40, weapons: 2 }));
 });
+
+test("sail wear and lean escalate with the hull bands: mended cloth, torn bundle, rig lean, then list", () => {
+  for (const t of TYPES) {
+    const a = shipSideSvg(t), b = shipSideSvg(t, { hull: 50 }), c = shipSideSvg(t, { hull: 20 });
+    assert.equal([a, b, c].map((x) => count(x, /#b7a273/g)).join(), t === "barca" || t === "cog" ? "0,1,1" : "0,1,2"); // one-masted classes have one sail to mend
+    assert.doesNotMatch(a, /rotate\(/);
+    assert.match(b, /rotate\(1\.2 /); assert.doesNotMatch(b, /rotate\(-2 /);
+    assert.match(c, /rotate\(3 /); assert.match(c, /rotate\(-2 /);
+    assert.equal(shipSideSvg(t, { hull: 69.9 }), b); // 50 and 69.9 share a band
+  }
+});

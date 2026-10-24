@@ -150,6 +150,13 @@ const etaText = (tick) => { const p = tickParts(tick); return t.eta.replace("{d}
 const etaPlain = (tick) => { const p = tickParts(tick); return `${lang === "es" ? "día" : "day"} ${p.day}, ${String(p.hour).padStart(2, "0")}:00`; };
 const trails = {}; // view only: recent screen positions per ship, for the wake
 const shipEls = new Map(); // keyed ship markers, preserved across frames: rebuilding them every rAF destroyed the pressed element before mouseup, so a real click on a ship icon never fired
+// A convoy at sea shares one position: spread its members on a tight ring (marker space, so it scales with the icons at every zoom), stable by ship id.
+const convoyOffset = (sh) => {
+  const cv = sh.voyage && convoyOf(g, sh), n = cv ? cv.ships.length : 0, i = n > 1 ? [...cv.ships].sort((a, b) => a - b).indexOf(sh.id) : -1;
+  if (i < 0) return "";
+  const a = (2 * Math.PI * i) / n - Math.PI / 2, rad = n === 2 ? 8 : 10;
+  return `translate(${(Math.cos(a) * rad).toFixed(1)} ${(Math.sin(a) * rad).toFixed(1)}) `;
+};
 function drawShips() {
   const layer = $("shipsLayer"); if (!layer) return;
   const all = [...g.ai.map((a) => ({ sh: a.ship, mine: false, id: "ai" + a.ship.id })), ...g.ships.map((sh, i) => ({ sh, mine: true, sel: i === sel, id: "p" + sh.id }))];
@@ -211,7 +218,7 @@ function drawShips() {
       layer.appendChild(el);
     }
     el.dataset.mx = pt.x; el.dataset.my = pt.y;
-    const rot = el.firstElementChild; if (rot) rot.setAttribute("transform", `rotate(${ang}) scale(1.7)`);
+    const rot = el.firstElementChild; if (rot) { const off = convoyOffset(sh); rot.setAttribute("transform", `${off}rotate(${ang}) scale(1.7)`); const lab = el.querySelector("text"); if (lab) lab.setAttribute("transform", off); }
   }
   for (const [id, el] of shipEls) if (!seen.has(id)) { el.remove(); shipEls.delete(id); }
   wakesEl.innerHTML = wakes; scaleMarkers();

@@ -3,9 +3,11 @@
 // Bow points right, sails are furled (the ship is docked). State cues mirror the map markers in ships.mjs.
 import { HULL_SIDE } from "./shipvisual.mjs";
 
-const INK = "#2a1d10", INK2 = "#3a2a1a", HULL = "#6b4a2a", WOOD = "#8a6a44", PATCH = "#6b5136", RED = "#7a2a1c", SAIL = "#f4ead0";
+const CLOTH = "#b7a273", INK = "#2a1d10", INK2 = "#3a2a1a", HULL = "#6b4a2a", WOOD = "#8a6a44", PATCH = "#6b5136", RED = "#7a2a1c", SAIL = "#f4ead0";
 const r = (n) => Math.round(n * 10) / 10;
 
+// Size ladder: hull lengths L = 56 / 88 / 108 / 132 follow HULL_SIDE (28 / 44 / 54 / 66 = 1 : 1.57 : 1.93 : 2.36); mast heights above the waterline
+// run 60 / 90 / 94 / 128 so the rig grows with the hull, and the top-down map art in ships.mjs uses the same ladder (CLASS_SCALE).
 // Per class (hull space: stern at x=0, waterline y=0, up is negative). `hull` is the closed outline; `sheer` is its top edge
 // as a quadratic [stern, control, bow] that wales, planks and gunports follow. W/H/oy: native canvas and waterline row.
 const SPEC = {
@@ -25,12 +27,12 @@ const SPEC = {
     stays: [[46, -88, 96, -40], [46, -88, 1, -40]], bowsprit: null, patchY: -16,
   },
   caravel: {
-    W: 134, H: 110, oy: 102, L: 108,
+    W: 134, H: 114, oy: 106, L: 108,
     hull: "M0 -22 Q4 -4 20 -1 L84 -1 Q100 -6 112 -20 Q58 -14 0 -22 Z", sheer: [[0, -22], [58, -14], [112, -20]],
     stripe: 2.6, wales: [11], planks: [15], port: { dy: 5, size: 4, cap: 4 },
     castles: ["M0 -22 L-1 -31 L25 -31 L28 -18 Z"],
-    masts: [{ x: 44, top: -88, lat: [66, -24, 10, -88] }, { x: 84, top: -78, lat: [104, -22, 58, -76] }], flag: [44, -88],
-    stays: [[44, -86, 112, -20], [44, -86, 0, -30], [84, -76, 112, -20], [44, -86, 84, -76]], bowsprit: [108, -20, 124, -28], patchY: -12,
+    masts: [{ x: 44, top: -94, lat: [66, -24, 10, -94] }, { x: 84, top: -82, lat: [104, -22, 58, -80] }], flag: [44, -94],
+    stays: [[44, -92, 112, -20], [44, -92, 0, -30], [84, -80, 112, -20], [44, -92, 84, -80]], bowsprit: [108, -20, 124, -28], patchY: -12,
   },
   nao: {
     W: 170, H: 150, oy: 142, L: 132,
@@ -55,6 +57,7 @@ const furl = (x1, y1, x2, y2, sag = 0) => { // a furled sail: cream bundle lashe
   const d = `M${x1} ${y1} Q${r((x1 + x2) / 2)} ${r((y1 + y2) / 2 + sag)} ${x2} ${y2}`;
   let s = `<path d="${d}" stroke="${INK}" stroke-width="6" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${SAIL}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
   for (let i = 1; i < 6; i++) { const t = i / 6, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t + sag * 2 * t * (1 - t); s += line(r(x), r(y - 2.2), r(x), r(y + 2.2), 0.7, INK); }
+  s += `<path d="${d}" stroke="${INK}" stroke-width="1.4" fill="none" transform="translate(0 1.6)" opacity=".22" stroke-linecap="round"/>`; // shade under the bundle
   return s + `<path d="${d}" stroke="${INK2}" stroke-width="1.2" fill="none" transform="translate(0 -3)" stroke-linecap="round"/>`;
 };
 
@@ -67,6 +70,7 @@ export function shipSideSvg(type, { hull = 100, weapons = 0, maxGuns, gun = 100 
   const tx = r((vw - sp.W * fit) / 2), ty = r(vh - sp.H * fit);
   const sh = sp.sheer, L = sp.L, midY = quad(sh, 0.5)[1];
   let s = `<ellipse cx="${r(L / 2 + 2)}" cy="2" rx="${r(L * 0.56)}" ry="3.2" fill="${INK}" opacity=".22"/>`;
+  const shadowEnd = s.length;
   // rigging behind the hull: masts, stays, furled sails
   for (const m of sp.masts) {
     const base = m.base ?? quad(sh, (m.x - sh[0][0]) / (sh[2][0] - sh[0][0]))[1];
@@ -82,13 +86,18 @@ export function shipSideSvg(type, { hull = 100, weapons = 0, maxGuns, gun = 100 
   for (const [a, b, c, d] of sp.stays) s += line(a, b, c, d, 0.7);
   if (sp.bowsprit) s += line(...sp.bowsprit, 3, INK2);
   if (sp.posts) for (const p of sp.posts) s += line(...p, 3.6, INK2);
+  // sail wear (same bands as the hull patches): mended cloth under 70, a torn bundle under 30; the rig also leans, 1.2 deg then 3 deg
+  const hp = Number.isFinite(hull) ? hull : 100, band = hp < 30 ? 2 : hp < 70 ? 1 : 0;
+  const sailAt = sp.masts.map((m) => m.sq ? [(m.sq[0] + m.sq[1]) / 2, m.sq[2] + 2] : m.lat ? [(m.lat[0] + m.lat[2]) / 2, (m.lat[1] + m.lat[3]) / 2] : null).filter(Boolean);
+  sailAt.slice(0, band === 2 ? 2 : band).forEach(([cx, cy], i) => { s += `<path d="M${r(cx - 4)} ${r(cy - 3)} h8 v6 h-8 Z" fill="${CLOTH}" stroke="${INK}" stroke-width=".8"/>` + (i === 0 && band === 2 ? `<path d="M${r(cx + 5)} ${r(cy - 4)} l-3 3 l2 2 l-3 3 l5 1 Z" fill="${INK}" opacity=".8"/>` : ""); });
+  const rigEnd = s.length, lean = band === 2 ? 3 : band === 1 ? 1.2 : 0;
   // hull, wales, planking, accent stripe, rudder
   s += `<path d="M${r(sh[0][0] - 1)} ${r(sh[0][1] + 8)} L-5.5 ${r(sh[0][1] + 10)} L-5.5 3 L3 1 Z" fill="${INK2}" stroke="${INK}" stroke-width="1"/>`;
   s += `<path d="${sp.hull}" fill="${HULL}" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>`;
   for (const dy of sp.planks) s += `<path d="${along(sh, 0.05 + dy * 0.004, 0.93 - dy * 0.006, dy)}" stroke="${INK2}" stroke-width="0.6" opacity=".6" fill="none"/>`;
   s += `<path d="${along(sh, 0.03, 0.97, sp.stripe)}" stroke="${RED}" stroke-width="1.8" fill="none"/>`;
   for (const dy of sp.wales) s += `<path d="${along(sh, 0.04, 0.9, dy)}" stroke="${WOOD}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="${along(sh, 0.04, 0.9, dy + 1.5)}" stroke="${INK}" stroke-width="0.7" fill="none"/>`;
-  s += `<path d="${along(sh, 0, 1, 0)}" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+  s += `<path d="${along(sh, 0, 1, 0)}" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="${along(sh, 0.02, 0.98, 1.6)}" stroke="#d9b36a" stroke-width=".7" opacity=".6" fill="none"/>`; // sheer line with a gilt highlight
   // castles
   sp.castles.forEach((c, i) => {
     s += `<path d="${c}" fill="${WOOD}" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>`;
@@ -108,12 +117,15 @@ export function shipSideSvg(type, { hull = 100, weapons = 0, maxGuns, gun = 100 
     s += `<rect class="gunport" x="${r(x - z / 2)}" y="${r(midY + sp.port.dy + c - z / 2)}" width="${r(z)}" height="${r(z)}" fill="${INK}"/>`;
   }
   // damage: one plank patch under 70 hull, two plus a battered stern under 30
-  const hp = Number.isFinite(hull) ? hull : 100, pw = r(L * 0.11);
+  const pw = r(L * 0.11);
   if (hp < 70) s += `<path d="M${r(L * 0.38)} ${sp.patchY} h${pw} v7 h-${pw} Z" fill="${PATCH}" stroke="${INK}" stroke-width=".8"/>`;
   if (hp < 30) {
     s += `<path d="M${r(L * 0.66)} ${sp.patchY + 3} h${pw} v7 h-${pw} Z" fill="${PATCH}" stroke="${INK}" stroke-width=".8"/>`;
     s += `<path d="M${sh[0][0]} ${r(sh[0][1] + 1)} L${sh[0][0] + 13} ${r(sh[0][1] + 8)} L${sh[0][0] + 5} ${r(sh[0][1] + 23)} L${sh[0][0] + 1} ${r(sh[0][1] + 20)} Z" fill="${INK}"/>`;
   }
+  // rig leans, and at the worst band the whole ship lists a little about its waterline midpoint
+  s = s.slice(0, shadowEnd) + (lean ? `<g transform="rotate(${lean} ${r(L / 2)} 0)">${s.slice(shadowEnd, rigEnd)}</g>` : s.slice(shadowEnd, rigEnd)) + s.slice(rigEnd);
+  if (band === 2) s = s.slice(0, shadowEnd) + `<g transform="rotate(-2 ${r(L / 2)} 0)">${s.slice(shadowEnd)}</g>`;
   const label = String(type).replace(/[^\w -]/g, "");
   return `<svg xmlns="http://www.w3.org/2000/svg"${cls ? ` class="${String(cls).replace(/[^\w -]/g, "")}"` : ""} viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}" role="img" aria-label="${label}"><g transform="translate(${tx} ${ty}) scale(${r(fit * 1000) / 1000}) translate(12 ${sp.oy})">${s}</g></svg>`;
 }
