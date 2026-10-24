@@ -81,7 +81,7 @@ const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bo
 // The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,
 // so each band is set from the measured values within +-2 years of the horizon: low = 0.5 x the minimum, high = 4 x the maximum.
 // It catches a collapse or a runaway, not a drift. Recalibrate when the measured window moves.
-const NPC_WORTH_BAND = { 365: [50000, 720000], 1825: [35000, 1270000], 3650: [180000, 1950000], 10950: [12000, 930000], 18250: [75000, 1610000], 36500: [45000, 590000] };
+const NPC_WORTH_BAND = { 365: [28338, 442228], 1825: [17223, 865304], 3650: [23632, 614136], 10950: [104828, 1733476], 18250: [174348, 1857832], 36500: [166098, 2914812] }; // recalibrated 24/10 on the pottery-npc-trade head: NPCs trading pottery like players (owner decision 24/10 11:01, superseding 23/10 probe6) moves the measured windows; re-measured with tools/sim_npc_worth_bands.mjs 100 1 2 3 (deterministic: seeds give identical runs), same documented rule (low = 0.5 x min, high = 4 x max of the +-2y window, windows clamped at year 1)
 
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
 for (const h of H) {
