@@ -66,6 +66,36 @@ export function quoteRecipe(world, market, city, recipe, batches = 1) {
   }
   return { ok: true, recipe, city, batches, inputs, lineCosts: units, cost, outputs: Object.fromEntries(Object.entries(OUTPUTS[recipe]??{}).map(([g,n])=>[g,n*batches])) };
 }
+export const IMPORT_MUL = 1.5; // missing materials can be imported at this premium over (base + fee)
+/** Like quoteUnits, but the stock the port lacks is imported at IMPORT_MUL instead of failing.
+ *  Returns the local part (consumed from the market) and the imported part (paid, never consumed). No mutation. */
+export function quoteUnitsImport(world, market, city, inputs) {
+  const stock = market[city];
+  if (!stock) return { ok: false, reason: 'unknown city' };
+  let cost = 0; const lineCosts = {}, local = {}, imported = {};
+  for (const [good, qty] of Object.entries(inputs)) {
+    if (!world.goods[good] || !Number.isSafeInteger(qty) || qty < 0) return { ok: false, reason: 'bad inputs' };
+    const e = stock[good];
+    if (!e || !Number.isSafeInteger(e.stock)) return { ok: false, reason: 'missing materials', good, required: qty, available: 0 };
+    const take = Math.min(e.stock, qty), abroad = qty - take;
+    const sim = { ...e }; let line = 0;
+    for (let i = 0; i < take; i++) { line += Math.ceil(price(world, sim, good) * (1 + FEE)); sim.stock--; }
+    if (abroad > 0) { line += abroad * Math.ceil(world.goods[good].base * (1 + FEE) * IMPORT_MUL); imported[good] = abroad; }
+    if (take > 0) local[good] = take;
+    lineCosts[good] = line; cost += line;
+  }
+  return { ok: true, city, inputs: { ...inputs }, local, imported, lineCosts, cost };
+}
+/** Requote with import and consume the LOCAL units or none; imported units never touch the market. */
+export function consumeUnitsImport(world, market, city, inputs, cash) {
+  if (!Number.isFinite(cash) || cash < 0) return { ok: false, reason: 'bad cash' };
+  const q = quoteUnitsImport(world, market, city, inputs);
+  if (!q.ok) return q;
+  if (cash < q.cost) return { ok: false, reason: 'no cash', cost: q.cost };
+  for (const [good, qty] of Object.entries(q.local)) market[city][good].stock -= qty;
+  return q;
+}
+
 /** Requote immediately and consume all inputs or none. Caller pays from returned cost only on success. */
 export function consumeRecipe(world, market, city, recipe, cash, batches=1) {
   if (!Number.isFinite(cash) || cash < 0) return { ok:false, reason:'bad cash' };
