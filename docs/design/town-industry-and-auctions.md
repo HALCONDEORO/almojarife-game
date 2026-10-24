@@ -95,3 +95,32 @@ One general mechanism, several lot sources, everyone under the same rules:
 
 No production changes, no new buildings for the player, no UI, no auction logic. Saves are
 untouched: the module is pure derivation and nothing calls it from the tick yet.
+
+## Integration findings from the first full-suite run (24 Oct 2026, evening)
+
+Turning the flag ON by default (owner's order, same as citylife) ran the engine inside every
+legacy test and surfaced three integration faults. How each was fixed, and why:
+
+1. **Save fidelity.** `townSales`, `townBids` and the transfer's `buildings` maps were created
+   with `Object.create(null)`; the JSON round-trip returns plain objects, so a saved game never
+   deep-equalled the live one. The repo rule already existed (walls.mjs: persisted state is a
+   plain object, never `Object.create(null)`); the stack now follows it everywhere it writes
+   state. A round-trip test after a sale plus a standing bid pins it.
+2. **Notice reach.** Every port's weekly hammer posted to the player's inbox (~20 ports/week
+   against MAX_INBOX 60), evicting older notices - the season notices died unseen. The fix is a
+   reach rule, not a bigger box: you hear the hammer where the town is on your chart
+   (`isDiscovered`) or where you sat at the table yourself (any bid of yours, including the one
+   your purse cannot keep). A far port you have never charted stays silent. Engine state is
+   untouched: sales still record, only the gossip is gated.
+3. **The concejo's chest.** Municipal proceeds credit the chest per the owner's design, so the
+   old idle-year band (chest ≤ 3×target, written when taxes were the only income) failed on
+   legitimate one-off sales. Widening the band would have hidden real leaks, so the invariant
+   was rebuilt to tell the three money kinds apart: auction income is tracked apart
+   (`hallAlmoneda`, per city), and the gate asserts `0 ≤ caja ≤ 3×target + hallAlmoneda` - never
+   bankrupt, and never above taxes-plus-verified-sales. Conservation is proven per sale (chest
+   and ledger move exactly the hammer price; a sold works never comes up again) and finiteness
+   by exhaustion (each municipal works sells once at ≤1.15× its valuation; once the last one is
+   gone the income line stops dead, tested over two idle years plus a quarter). The concejo may
+   spend or relieve the windfall - money is fungible - so the tax part alone is not banded.
+   Note: auction rosters live in the GAME world (optional goods included); bounds computed from
+   the raw data file undercount and fail honestly, as Valencia's pottery showed.

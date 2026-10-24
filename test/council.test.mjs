@@ -10,6 +10,8 @@ import { chargeToll, tollFor } from "../src/game/tolls.mjs";
 import { feeMul } from "../game/../src/game/reputation.mjs";
 import { ensureRep } from "../src/game/rank.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
+import { townIndustry } from "../src/game/townindustry.mjs";
+import { establishmentValue } from "../src/game/almoneda.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const fresh = () => newGame(world, "cadiz", { cash: 30000 });
@@ -102,7 +104,14 @@ test("an idle year keeps every chest and tax step inside its band", () => {
     const st = taxSteps(g, c.id);
     assert.ok(Math.abs(st.sisa) <= STEP_MAX && Math.abs(st.portazgo) <= STEP_MAX, `${c.id} out of band: ${JSON.stringify(st)}`);
     const caja = cajaOf(g, c.id), target = cajaTarget(world, c.id);
-    assert.ok(caja >= 0 && caja <= 3 * target, `${c.id} chest out of control: ${caja} vs target ${target}`);
+    const almoneda = g.hallAlmoneda?.[c.id] ?? 0; // municipal auction proceeds are legitimate one-off income, tracked apart from taxes (almoneda.mjs)
+    // Invariant: the chest never goes bankrupt, and it can only exceed the old tax band by verified auction
+    // income - the concejo may spend or relieve the windfall (money is fungible), so the tax part alone can
+    // dip, but nothing may appear beyond taxes-plus-sales. Conservation per sale is proven in almoneda.test.
+    assert.ok(caja >= 0 && caja <= 3 * target + almoneda, `${c.id} chest out of control: ${caja} vs target ${target} + auction income ${almoneda}`);
+    // The game world carries the optional goods: that is the roster the almoneda sells.
+    const municipalValue = townIndustry(g.world, c.id).filter((e) => e.owner.kind === "council" && e.kind === "building" && establishmentValue(g.world, e) > 0).reduce((a, e) => a + establishmentValue(g.world, e), 0);
+    assert.ok(almoneda <= Math.ceil(municipalValue * 1.15), `${c.id} auction income ${almoneda} beyond the value of its municipal works ${municipalValue}`); // finite: each municipal work sells once, at most the top bidder's factor
   }
 });
 

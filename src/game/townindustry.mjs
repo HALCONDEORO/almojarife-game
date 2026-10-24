@@ -200,10 +200,10 @@ export function buyEstablishment(g, cityId, estId, price) {
 
   g.cash -= price;
   if (est.owner.kind === "council") creditCaja(g, cityId, price);
-  const maps = (g.buildings ??= Object.create(null));
-  (maps[cityId] ??= Object.create(null))[estId] = { type: est.type, level: est.level, state: "active", plotType: est.type, paidPlot: 0, fromTown: estId, produced: 0 };
+  const maps = (g.buildings ??= {}); // plain objects: the JSON save round-trip returns plain objects (walls.mjs convention)
+  (maps[cityId] ??= {})[estId] = { type: est.type, level: est.level, state: "active", plotType: est.type, paidPlot: 0, fromTown: estId, produced: 0 };
   e.townShare = r6((e.townShare ?? 1) - est.share);
-  const sales = ((g.townSales ??= Object.create(null))[cityId] ??= { jobs: 0, ids: [] });
+  const sales = ((g.townSales ??= {})[cityId] ??= { jobs: 0, ids: [] });
   sales.jobs += est.jobs;
   sales.ids.push(estId);
   post(g, "info", { city: cityId, txt: {

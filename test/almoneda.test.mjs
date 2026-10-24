@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { newGame } from "../src/game/game.mjs";
+import { newGame, advanceDay } from "../src/game/game.mjs";
+import { isDiscovered } from "../src/game/fog.mjs";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -237,5 +238,82 @@ describe("solvency at the table", () => {
     for (const c of world.cities.filter((c) => isAuctionDay(c.id, day))) { g.cash = Math.min(g.cash, 2000); ((g.townBids ??= Object.create(null))[c.id]) = 999999; }
     almonedaDay(g);
     assert.ok(g.cash >= 0); // every win was settled, every promise the purse could not keep was voided
+  });
+});
+
+describe("notice reach", () => {
+  it("an undiscovered far port's hammer stays silent when the player sits out", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    const far = world.cities.find((c) => !isDiscovered(g, c.id));
+    g.day = auctionOffset(far.id);
+    assert.ok(lotOfDay(g, far.id), "the far port has a lot today");
+    const before = (g.inbox ?? []).length;
+    const r = bidAuction(g, far.id, 0);
+    assert.equal(r.outcome, "lost"); // a neighbour takes it
+    assert.equal((g.inbox ?? []).length, before); // but no gossip crosses a chart he does not have
+  });
+  it("a known town's hammer is heard, and his own table answers even off the chart", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    assert.ok(isDiscovered(g, "cadiz")); // home port is on the chart
+    g.day = auctionOffset("cadiz");
+    const before = (g.inbox ?? []).length;
+    const r = bidAuction(g, "cadiz", 0);
+    if (r.outcome === "lost") assert.ok((g.inbox ?? []).length > before); // dockside talk in a port he knows
+    const g2 = newGame(world, "cadiz", { cash: 5, freePlay: true, townIndustry: true });
+    const far = world.cities.find((c) => !isDiscovered(g2, c.id));
+    g2.day = auctionOffset(far.id);
+    const before2 = (g2.inbox ?? []).length;
+    const r2 = bidAuction(g2, far.id, 999999); // his max tops the table but his purse cannot settle
+    assert.equal(r2.outcome, "lost"); // the bid leaves the table and the runner-up takes the lot...
+    assert.ok((g2.inbox ?? []).length > before2); // ...and he is told, his own business even in a port he does not know
+  });
+});
+
+describe("municipal proceeds", () => {
+  it("are conserved (chest and ledger move exactly the hammer price) and counted apart", () => {
+    for (const city of world.cities) {
+      const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+      let done = false;
+      for (let k = 0; k < 20 && !done; k++) {
+        g.day = auctionOffset(city.id) + k * AUCTION_EVERY;
+        const lot = lotOfDay(g, city.id);
+        if (!lot) continue;
+        if (lot.est.owner.kind !== "council") { bidAuction(g, city.id, 1); continue; }
+        const caja0 = cajaCash(g, city.id), alm0 = g.hallAlmoneda?.[city.id] ?? 0;
+        const r = bidAuction(g, city.id, 1);
+        assert.equal(r.outcome, "lost");
+        assert.equal(cajaCash(g, city.id), caja0 + r.price); // exactly the hammer price, no more, no less
+        assert.equal(g.hallAlmoneda[city.id], alm0 + r.price); // tracked apart from taxes
+        const id = lot.est.id;
+        for (let w = 1; w <= 30; w++) { g.day = auctionOffset(city.id) + (k + w) * AUCTION_EVERY; assert.notEqual(lotOfDay(g, city.id)?.est.id, id); } // never sold twice
+        done = true;
+      }
+      if (done) return;
+    }
+    assert.fail("no municipal lot found in any port within 20 tables");
+  });
+  it("stop when the last municipal works is gone: finite, bounded by municipal value", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    const municipal = townIndustry(g.world, "cadiz").filter((e) => e.owner.kind === "council" && e.kind === "building" && BUILDING_TYPES[e.type]); // the game world, optional goods included: the roster the almoneda sells
+    assert.ok(municipal.length > 0);
+    const soldSet = () => new Set([...(g.townSales?.cadiz?.ids ?? []), ...(g.townSales?.cadiz?.gone ?? [])]);
+    for (let d = 0; d < 730 && !g.over && !municipal.every((e) => soldSet().has(e.id)); d++) advanceDay(g);
+    assert.ok(municipal.every((e) => soldSet().has(e.id)), "the weekly table sells every municipal works inside two idle years");
+    const income = g.hallAlmoneda?.cadiz ?? 0;
+    const maxIncome = Math.ceil(municipal.reduce((a, e) => a + establishmentValue(g.world, e), 0) * 1.15);
+    assert.ok(income > 0 && income <= maxIncome, `cadiz auction income ${income} within municipal value ${maxIncome}`);
+    for (let d = 0; d < 90 && !g.over; d++) advanceDay(g);
+    assert.equal(g.hallAlmoneda?.cadiz ?? 0, income); // nothing municipal left to sell: the line stops dead
+  });
+});
+
+describe("save fidelity", () => {
+  it("state after a sale and a standing bid survives the save round-trip unchanged", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    bidAuction(g, "cadiz", 0); // a sale happens: townSales and possibly hallAlmoneda persist
+    const raw = JSON.stringify(serialize(g, "Casa Prueba"));
+    const { g: g2 } = deserialize(JSON.parse(raw), world);
+    assert.deepEqual(g2, g); // plain objects, no null-prototype drift (walls.mjs convention)
   });
 });

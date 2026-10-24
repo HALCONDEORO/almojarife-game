@@ -16,6 +16,7 @@ import { townIndustry, buyEstablishment, salesOf } from "./townindustry.mjs";
 import { creditCaja } from "./council.mjs";
 import { townCouncil } from "./townhall.mjs";
 import { post } from "./ledger.mjs";
+import { isDiscovered } from "./fog.mjs";
 
 export const AUCTION_EVERY = 7; // one almoneda per city and week, staggered like the concejo meetings
 /** The city's weekly auction day offset inside the AUCTION_EVERY cycle. Deterministic per city. */
@@ -88,10 +89,10 @@ export function bidAuction(g, cityId, playerMax) {
     if (top.max < lot.reserve) return { ok: true, outcome: "withdrawn", lot }; // nobody meets the reserve: the town keeps it
     const price = Math.min(top.max, Math.max(lot.reserve, (second?.max ?? lot.reserve - 1) + 1));
     if (top.who !== "player") {
-      const sales = ((g.townSales ??= Object.create(null))[cityId] ??= { jobs: 0, ids: [], gone: [] });
+      const sales = ((g.townSales ??= {})[cityId] ??= { jobs: 0, ids: [], gone: [] }); // plain object: the JSON save round-trip returns plain objects (walls.mjs convention)
       (sales.gone ??= []).push(lot.est.id);
-      if (lot.est.owner.kind === "council") creditCaja(g, cityId, price);
-      post(g, "info", { city: cityId, txt: {
+      if (lot.est.owner.kind === "council") { creditCaja(g, cityId, price); (g.hallAlmoneda ??= {})[cityId] = (g.hallAlmoneda[cityId] ?? 0) + price; } // municipal proceeds to the concejo's chest, counted apart so the tax band stays a tax band
+      if (isDiscovered(g, cityId) || playerMax > 0) post(g, "info", { city: cityId, txt: { // you hear the hammer where you know the town or sat at the table; a far port you have never charted stays silent
         es: `Almoneda en ${cityId}: ${top.who} se lleva ${lot.est.type} (nivel ${lot.est.level}) por ${price} monedas.`,
         en: `Auction in ${cityId}: ${top.who} takes the ${lot.est.type} (level ${lot.est.level}) for ${price} coins.`,
       } });
@@ -118,7 +119,7 @@ export function placeBid(g, cityId, playerMax) {
   if (!isAuctionDay(cityId, g.day) || !lotOfDay(g, cityId)) return { ok: false, reason: "no auction today" };
   if (!Number.isSafeInteger(playerMax) || playerMax < 0) return { ok: false, reason: "bad bid" };
   if (playerMax > g.cash) return { ok: false, reason: "no cash", cost: playerMax }; // you cannot promise coins you do not have
-  ((g.townBids ??= Object.create(null))[cityId]) = playerMax;
+  ((g.townBids ??= {})[cityId]) = playerMax; // plain object: save round-trip fidelity
   return { ok: true };
 }
 /** Day-boundary hook (game.mjs dayTick): every port whose almoneda meets today brings its lot
