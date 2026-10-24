@@ -658,8 +658,7 @@
    "base": 200
   },
   "saffron": {
-   "base": 210,
-   "npcTrade": false
+   "base": 210
   },
   "esparto": {
    "base": 30
