@@ -1,0 +1,58 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { harbourLayout, harbourShipBerths } from "../src/view/city2d.mjs";
+
+const bounds = { minX: 0, minY: 0, maxX: 40, maxY: 60 };
+
+test("no ships, no berths; unknown input stays empty", () => {
+  assert.deepEqual(harbourShipBerths(bounds, []), []);
+  assert.deepEqual(harbourShipBerths(bounds, null), []);
+});
+
+test("each docked ship gets its own berth at a pier, sized by class", () => {
+  const ships = [{ id: "a", type: "nao" }, { id: "b", type: "barca" }, { id: "c", type: "cog" }];
+  const berths = harbourShipBerths(bounds, ships);
+  assert.equal(berths.length, 3);
+  assert.ok(berths[0].w > berths[2].w && berths[2].w > berths[1].w, "nao > cog > barca");
+  const { piers } = harbourLayout(bounds);
+  berths.forEach((b, i) => {
+    const pier = piers[i % piers.length];
+    assert.ok(b.x >= pier.x + pier.w, "berth sits at the water end of its pier");
+    assert.ok(Math.abs(b.y + b.d / 2 - (pier.y + pier.d / 2)) < 1e-9, "berth centered on its pier");
+  });
+  const spots = new Set(berths.map((b) => `${b.x.toFixed(2)},${b.y.toFixed(2)}`));
+  assert.equal(spots.size, berths.length, "no two ships overlap exactly");
+});
+
+test("more ships than piers raft outward without overlapping", () => {
+  const ships = Array.from({ length: 5 }, (_, i) => ({ id: "s" + i, type: "cog" }));
+  const berths = harbourShipBerths(bounds, ships);
+  const spots = new Set(berths.map((b) => `${b.x.toFixed(2)},${b.y.toFixed(2)}`));
+  assert.equal(spots.size, 5);
+});
+
+test("rafted berths never overlap, whatever the class mix", () => {
+  const mixes = [
+    [{ id: "a", type: "nao" }, { id: "b", type: "cog" }, { id: "c", type: "cog" }, { id: "d", type: "barca" }],
+    Array.from({ length: 7 }, (_, i) => ({ id: "s" + i, type: ["nao", "barca", "caravel", "cog"][i % 4] })),
+  ];
+  for (const ships of mixes) {
+    for (const bb of [bounds, { minX: 0, minY: 0, maxX: 40, maxY: 20 }]) { // short harbour: piers closer than a nao
+    const berths = harbourShipBerths(bb, ships);
+    const { piers } = harbourLayout(bb);
+    berths.forEach((b) => piers.forEach((p) => {
+      const own = b.x < p.x + p.w && b.x + b.w > p.x && b.y < p.y + p.d && b.y + b.d > p.y;
+      assert.ok(!own || b.x >= p.x + p.w, "berth must not sit on top of a pier");
+    }));
+    for (let i = 0; i < berths.length; i++) for (let j = i + 1; j < berths.length; j++) {
+      const a = berths[i], b = berths[j];
+      assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.d <= b.y || b.y + b.d <= a.y, `berths ${i} and ${j} overlap`);
+    }
+    }
+  }
+});
+
+test("berths are deterministic", () => {
+  const ships = [{ id: "a", type: "nao" }, { id: "b", type: "barca" }];
+  assert.deepEqual(harbourShipBerths(bounds, ships), harbourShipBerths(bounds, ships));
+});
