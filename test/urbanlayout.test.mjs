@@ -14,8 +14,9 @@ test('urban districts preserve every canonical parcel and never mutate simulatio
  }
 });
 test('hundreds of people per drawing, rising density, bounded residential groups',()=>{
- assert.deepEqual([3000,15000,60000].map(p=>housingScale(p).groups),[10,30,67]);
- assert.deepEqual([3000,15000,60000].map(p=>housingScale(p).peoplePerGroup),[300,500,896]);
+ assert.deepEqual([3000,15000,60000].map(p=>housingScale(p).groups),[10,28,67]);
+ assert.deepEqual([3000,15000,60000].map(p=>housingScale(p).peoplePerGroup),[300,536,896]);
+ for(let p=1000;p<100000;p+=250)assert.ok(housingScale(p+250).groups>=housingScale(p).groups);
  assert.equal(housingScale(1000000).groups,72);assert.equal(housingScale(0).groups,0);
  assert.throws(()=>housingScale(NaN));assert.throws(()=>housingScale(-1));
 });

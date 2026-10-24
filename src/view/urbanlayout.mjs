@@ -2,7 +2,7 @@
 // A house sprite denotes a residential group, NOT one literal household.
 export function housingScale(pop) {
   if(!Number.isFinite(pop)||pop<0)throw Error('invalid population');
-  const groups=pop===0?0:Math.min(72,Math.max(1,Math.ceil(pop/(pop<10000?300:pop<25000?500:900))));
+  const groups=pop===0?0:Math.min(72,Math.max(1,Math.ceil(10*Math.pow(pop/3000,0.63))));
   return {groups,peoplePerGroup:groups?Math.round(pop/groups):0,level:pop>=25000?3:pop>=10000?2:1};
 }
 export function urbanLayout(canonical,pop) {
@@ -26,7 +26,8 @@ export function urbanLayout(canonical,pop) {
   for(let r=0;r<=rows;r++)road(1,3+r*pitch,3+cols*pitch,3+r*pitch);
   road(plaza.x+5,3+rows*pitch,plaza.x+5,cy+17);
   road(1,cy+5,width-1,cy+5);
-  for(const p of [plots[1],plots[5]])road(3+cols*pitch,p.y+p.d+1,width-1,p.y+p.d+1);road(width-1,1,width-1,maxY);
+  for(const p of [plots[1],plots[5]])road(3+cols*pitch,p.y+p.d+1,width-1,p.y+p.d+1);
+  road(width-1,1,width-1,maxY);
   road(plaza.x+5,cy-1,plaza.x+5,cy+16);
   // Fixed, bounded residential quarter south of civic square; counts, density and levels follow population.
   const existing=plots.filter(p=>p.type==='house').length;
