@@ -1,3 +1,5 @@
+import { marketQuantity, destinationQuote } from '../src/view/marketdesk.mjs';
+import { shipCapacity } from '../src/sim/trade.mjs';
 import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml, reports2dHtml } from "../src/view/ui2d.mjs";
 import { logHtml } from "../src/view/logview.mjs";
 import { warehouseHeader2d, bankHeader2d, store2dWrap, store2dWindowClass } from "../src/view/ui2d_store.mjs";
@@ -247,6 +249,7 @@ function spark(a, col) {
   return `<svg class="spark" width="${w}" height="${h + 2}" viewBox="0 -1 ${w} ${h + 2}"><polyline fill="none" stroke="${col === "inherit" ? "#654" : col}" stroke-width="1.2" points="${pts}"/></svg> `;
 }
 let fleetFilter="all",fleetSearch="";
+let marketSearch = "", marketCargoOnly = false, marketCompare = "";
 let tab = "market"; const qtys = {}; let rumorNote = null; // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
 let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
@@ -409,9 +412,9 @@ function render() {
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   if (inCity || pe) {
-  h += g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
-  h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}<br>`;
-  h += assignedCaptainHtml(s,lang);
+  h += `<div class="port-ship-summary">` + g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
+  h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${shipCapacity(s)}<br>`;
+  h += assignedCaptainHtml(s,lang) + `</div>`;
   if (!s.voyage && !g.over) {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
@@ -444,14 +447,21 @@ function render() {
     const ui2dMark = h.length; // start of the tab content (ui2d wraps it below)
     if (tab === "market") {
       const market2d=ui2dEnabled(location.search);
-      if(market2d)h+=`<div class="ui2d-market-intro"><h3>${t.tabMarket} · ${cityName(s.at)}</h3><p>${t.cash}: <b>${fmt(g.cash)}</b> · ${t.hold}: <b>${cargoUsed(s)}/${SHIP_TYPES[s.type].capacity}</b></p></div>`;
-      h += `<table${market2d?' class="ui2d-market"':""}><thead><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th></th></tr></thead>`;
+      if(market2d) {
+        const known = world.cities.filter(c => c.id !== s.at && isDiscovered(g,c.id) && g.intel?.[c.id]);
+        h+=`<div class="ui2d-market-intro"><h3>${t.tabMarket} · ${cityName(s.at)}</h3><p>${t.cash}: <b>${fmt(g.cash)}</b> · ${t.hold}: <b>${cargoUsed(s)}/${shipCapacity(s)}</b> · ${lang==='es'?'Libres':'Free'}: <b>${Math.max(0,shipCapacity(s)-cargoUsed(s))}</b></p></div>`;
+        h+=`<div class="market-tools"><label>${lang==='es'?'Buscar bien':'Find good'} <input data-market-search type="search" value="${marketSearch.replaceAll("&","&amp;").replaceAll("\"","&quot;").replaceAll("<","&lt;")}"></label><label><input data-market-cargo type="checkbox" ${marketCargoOnly?'checked':''}> ${lang==='es'?'Solo mi carga':'My cargo only'}</label><label>${lang==='es'?'Comparar precio con':'Compare price with'} <select data-market-compare><option value="">${lang==='es'?'Elegir puerto conocido':'Choose known port'}</option>${known.map(c=>`<option value="${c.id}" ${marketCompare===c.id?'selected':''}>${cityName(c.id)}</option>`).join('')}</select></label></div>`;
+        if(marketCompare)h+=`<p class="market-compare-note">${lang==='es'?'Referencia conocida por unidad, no precio garantizado al llegar. No incluye tasa ni impacto de cantidad.':'Known unit-price reference, not a guaranteed arrival price. Excludes fees and quantity impact.'}</p>`;
+      }
+      h += `<table${market2d?' class="ui2d-market"':""}><thead><tr><th>${t.good}</th><th>${t.price}</th><th>${t.stock}</th><th>${t.hold}</th><th>${t.qtyLbl}</th></tr></thead>`;
       for (const gd of Object.keys(g.world.goods)) {
+        if(market2d && ((marketCargoOnly && !(s.cargo[gd]>0)) || !t.goods[gd].toLocaleLowerCase(lang).includes(marketSearch.toLocaleLowerCase(lang)))) continue;
+        const cmp = market2d && marketCompare ? destinationQuote(g, marketCompare, gd) : null;
         const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, q = Math.max(1, Math.min(qtys[gd] ?? 10, 999)), pb = previewBuy(g.world, g.market, s, g.cash, gd, q, FEE * feeMul(g, s.at)), ps = previewSell(g.world, g.market, s, gd, q, FEE * feeMul(g, s.at));
         const p = quote(g, s.at, gd), base = g.world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
-        h += `<tbody><tr><td>${goodIcon(gd)}${t.goods[gd]}</td><td data-label="${t.price}" style="color:${col}" title="${tag === "" ? "" : tag === "▼" ? t.cheap : t.dear}">${spark(priceHistory(g, s.at, gd), col)}${tag} ${p}${(() => { const tp = trendPct(g, s.at, gd); return tp === null || tp === 0 ? "" : ` <small class="tr" title="${t.trend7}">${tp > 0 ? "+" : ""}${tp}%</small>`; })()}</td><td data-label="${t.stock}">${g.market[s.at][gd].stock} ${(() => { const lv = stockLevel(g.market[s.at][gd]); const cl = { scarce: "#b3261e", short: "#b26a00", normal: "#6b6355", plenty: "#1e7a34" }[lv]; return `<small style="color:${cl}" title="${t.lvlInfo[lv]}">${t.lvl[lv]}</small>`; })()}</td><td data-label="${t.hold}">${have}${stored ? ` <small title="${t.warehouse}">+${stored}</small>` : ""}</td>` +
-          `<td class="qty" data-label="${t.qtyLbl}"><button data-q="${gd}:-1" aria-label="-1">−</button><b>${q}</b><button data-q="${gd}:1" aria-label="+1">+</button><button data-q="${gd}:10">10</button><button data-q="${gd}:max">Max</button></td></tr>` +
-          `<tr class="deal"><td colspan="5"><button data-b="${gd}:${q}" ${pb.qty ? "" : "disabled"}>${t.buy} ${q}</button> <button data-s="${gd}:${q}" ${ps.qty ? "" : "disabled"}>${t.sell} ${q}</button> <button data-s="${gd}:all" ${have ? "" : "disabled"}>${t.sell} ${t.sellAll}</button> <br><small>${pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmt(pb.cost)).replace("{a}", pb.avg).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : ""}${ps.qty ? " | " + t.dealSell.replace("{q}", ps.qty).replace("{c}", fmt(ps.revenue)).replace("{a}", ps.avg).replace("{n}", ps.next) + (ps.hasBasis ? ` (${Math.abs(ps.profit)} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : ""}</small></td></tr></tbody>`;
+        h += `<tbody><tr><td>${goodIcon(gd)}${t.goods[gd]}${cmp?`<small class="market-destination">${cityName(marketCompare)}: ${cmp.price} · ${cmp.age===0?t.ageNow:t.ageDays.replace("{n}",cmp.age)}${cmp.exact?"":", "+t.rumorTag}</small>`:""}</td><td data-label="${t.price}" style="color:${col}" title="${tag === "" ? "" : tag === "▼" ? t.cheap : t.dear}">${spark(priceHistory(g, s.at, gd), col)}${tag} ${p}${(() => { const tp = trendPct(g, s.at, gd); return tp === null || tp === 0 ? "" : ` <small class="tr" title="${t.trend7}">${tp > 0 ? "+" : ""}${tp}%</small>`; })()}</td><td data-label="${t.stock}">${g.market[s.at][gd].stock} ${(() => { const lv = stockLevel(g.market[s.at][gd]); const cl = { scarce: "#b3261e", short: "#b26a00", normal: "#6b6355", plenty: "#1e7a34" }[lv]; return `<small style="color:${cl}" title="${t.lvlInfo[lv]}">${t.lvl[lv]}</small>`; })()}</td><td data-label="${t.hold}">${have}${stored ? ` <small title="${t.warehouse}">+${stored}</small>` : ""}</td>` +
+          `<td class="qty" data-label="${t.qtyLbl}"><button data-q="${gd}:-1" aria-label="-1">−</button><input class="market-quantity" type="number" inputmode="numeric" min="1" max="999" step="1" data-quantity="${gd}" aria-label="${t.qtyLbl}: ${t.goods[gd]}" value="${q}"><button data-q="${gd}:1" aria-label="+1">+</button><button data-q="${gd}:10">10</button><button data-q="${gd}:max">Max</button></td></tr>` +
+          `<tr class="deal"><td colspan="5"><button data-b="${gd}:${q}" ${pb.qty ? "" : "disabled"}>${t.buy} ${pb.qty||q}</button> <button data-s="${gd}:${q}" ${ps.qty ? "" : "disabled"}>${t.sell} ${ps.qty||q}</button> <button data-s="${gd}:all" ${have ? "" : "disabled"}>${t.sell} ${t.sellAll}</button> <br><small>${pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmt(pb.cost)).replace("{a}", pb.avg).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : ""}${ps.qty ? " | " + t.dealSell.replace("{q}", ps.qty).replace("{c}", fmt(ps.revenue)).replace("{a}", ps.avg).replace("{n}", ps.next) + (ps.hasBasis ? ` (${Math.abs(ps.profit)} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : ""}</small></td></tr></tbody>`;
       }
       h += `</table>`;
       { const here = alertsOf(g, s.at), elsewhere = alertsOf(g).length - here.length, line = (a) => `${goodIcon(a.good) || ""}${t.goods[a.good] ?? a.good} ${a.dir === "below" ? t.alBelow : t.alAbove} ${fmt(a.price)}`;
@@ -631,9 +641,13 @@ function render() {
   const P = $("panel");
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  P.querySelector('[data-market-search]')?.addEventListener('input',e=>{const start=e.target.selectionStart;marketSearch=e.target.value;render();const n=P.querySelector('[data-market-search]');n?.focus();n?.setSelectionRange(start,start);});
+  P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
+  P.querySelector('[data-market-compare]')?.addEventListener('change',e=>{marketCompare=e.target.value;render();});
+  P.querySelectorAll('[data-quantity]').forEach(e=>e.onchange=()=>{qtys[e.dataset.quantity]=marketQuantity(e.value);render();});
   P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
     const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;
-    qtys[gd] = v === "max" ? Math.max(1, previewBuy(g.world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : Math.max(1, cur + +v);
+    qtys[gd] = v === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : marketQuantity(cur + +v);
     render();
   });
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); act(() => doBuy(g, s, gd, +q)); });
