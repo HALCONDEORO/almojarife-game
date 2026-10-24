@@ -1,6 +1,7 @@
 import {urbanLayout} from '../../src/view/urbanlayout.mjs';
 import {cityPlots} from '../../src/view3d/cityplots.mjs';
 import {project,placement,resolveVisual,assetKey,mainland,harbourLayout,harbourShipBerths,spriteGeometry,obscuresSelection} from '../../src/view/city2d.mjs';
+import {GROUND_TYPES,groundZoneAt,fieldPatches,scrubPatches,hash01} from '../../src/view/ground.mjs';
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 const wallsLvl=(v)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<=3?n:0}; // numeric wall level 0-3 (WALL_MAX_LEVEL); anything else is 0, never truthy garbage
 let walls=wallsLvl(q.get('walls')),bld={},labels={},tick=0,ships=[];function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
@@ -23,6 +24,58 @@ function groundContact(p){
  ctx.save();ctx.translate(center.x,center.y);ctx.scale(1,h/w);const g=ctx.createRadialGradient(0,0,w*.12,0,0,w);g.addColorStop(0,'#514d324f');g.addColorStop(.6,'#65583b2e');g.addColorStop(1,'#65583b00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,w,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 
+// Ground types and texture layers come from src/view/ground.mjs (pure module, tested in test/ground.test.mjs).
+let grainCache=null;
+const groundCtx=()=>({bounds,plaza:layout.plaza,paths:layout.paths});
+function grainTable(){
+ if(grainCache)return grainCache;
+ const t=[],x0=bounds.minX-70,y0=bounds.minY-70,w=bounds.maxX-bounds.minX+70,h=bounds.maxY-bounds.minY+70,g=groundCtx();
+ for(let i=0;i<4200;i++){const x=x0+hash01(i,1)*w,y=y0+hash01(i,2)*h;t.push({x,y,zone:groundZoneAt(x,y,g),i})}
+ return grainCache=t;
+}
+const grainColors=zone=>GROUND_TYPES[zone].layers.filter(l=>l.kind==='grain').flatMap(l=>l.colors);
+function drawLandmass(){
+ const pts=mainland(bounds).map(([x,y])=>xy(x,y));
+ ctx.beginPath();ctx.moveTo((pts[0].x+pts[pts.length-1].x)/2,(pts[0].y+pts[pts.length-1].y)/2);pts.forEach((p,i)=>{const n=pts[(i+1)%pts.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();
+ ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ ctx.fillStyle=GROUND_TYPES.pradera.base;ctx.fill(); // the whole landmass starts as grassland
+ ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();
+ ctx.save();ctx.clip();
+ const G=GROUND_TYPES,{minX,minY,maxX,maxY}=bounds;
+ // Sand band along the curved south coast; the straight working quay keeps its stone.
+ const coast=mainland(bounds).slice(6,-1),band=[[minX-70,maxY+1],[maxX+3,maxY+1],[maxX+3,maxY+5],...coast,[minX-70,maxY+18]].map(([x,y])=>xy(x,y));
+ ctx.beginPath();band.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=G.arena.base;ctx.fill();
+ // Scrubland blobs over the grass, shared with the zone classifier.
+ for(const s of scrubPatches(bounds)){const p=xy(s.x,s.y);ctx.globalAlpha=.5;ctx.fillStyle=G.matorral.base;ctx.beginPath();ctx.ellipse(p.x,p.y,s.rx*14*zoom,s.ry*7*zoom,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ // Packed city earth, slightly padded so it tucks under walls and the quay apron.
+ const pad=[[minX-1.5,minY-1.5],[maxX+3,minY-1.5],[maxX+3,maxY+1.5],[minX-1.5,maxY+1.5]].map(([x,y])=>xy(x,y));
+ ctx.beginPath();pad.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=G.tierra.base;ctx.fill();
+ // One deterministic grain pass, coloured by the ground type under each speckle.
+ for(const s of grainTable()){
+  const cols=grainColors(s.zone);if(!cols.length)continue;const p=xy(s.x,s.y);
+  ctx.globalAlpha=.18;ctx.fillStyle=cols[Math.floor(hash01(s.i,3)*cols.length)];
+  ctx.beginPath();ctx.ellipse(p.x,p.y,(1+hash01(s.i,4)*3.5)*zoom,(1+hash01(s.i,5)*2.5)*zoom,0,0,Math.PI*2);ctx.fill();
+  const tuft=GROUND_TYPES[s.zone].layers.find(l=>l.kind==='tufts');
+  if(tuft&&hash01(s.i,6)<tuft.chance){ctx.globalAlpha=tuft.alpha;ctx.strokeStyle=tuft.colors[s.i%tuft.colors.length];ctx.lineWidth=1*zoom;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-1.6*zoom,p.y-4*zoom);ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.4*zoom,p.y-4.6*zoom);ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+2*zoom,p.y-3.6*zoom);ctx.stroke()}
+  const rip=GROUND_TYPES[s.zone].layers.find(l=>l.kind==='ripples');
+  if(rip&&hash01(s.i,7)<rip.chance){ctx.globalAlpha=rip.alpha;ctx.strokeStyle=rip.colors[0];ctx.lineWidth=1*zoom;ctx.beginPath();ctx.arc(p.x,p.y,3.2*zoom,.25,Math.PI-.25);ctx.stroke()}
+ }
+ ctx.globalAlpha=1;ctx.restore();
+}
+function drawStreets(){
+ const G=GROUND_TYPES.camino,wear=G.layers.find(l=>l.kind==='wear');
+ ctx.lineCap='round';ctx.strokeStyle=G.base;ctx.lineWidth=10*zoom;
+ for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ if(wear){ctx.globalAlpha=wear.alpha;ctx.strokeStyle=wear.colors[0];ctx.lineWidth=wear.width*zoom;for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1}
+}
+function drawPlaza(){
+ const sq=layout.plaza,G=GROUND_TYPES.empedrado,joints=G.layers.find(l=>l.kind==='joints');
+ polygon(sq);ctx.fillStyle=G.base;ctx.fill();
+ if(joints){ctx.save();polygon(sq);ctx.clip();ctx.globalAlpha=joints.alpha;ctx.strokeStyle=joints.colors[0];ctx.lineWidth=joints.width*zoom;
+  for(let x=sq.x+joints.step;x<sq.x+sq.w;x+=joints.step){const a=xy(x,sq.y),b=xy(x,sq.y+sq.d);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  for(let y=sq.y+joints.step;y<sq.y+sq.d;y+=joints.step){const a=xy(sq.x,y),b=xy(sq.x+sq.w,y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  ctx.globalAlpha=1;ctx.restore()}
+}
 function drawWalls(){
  if(!walls)return;
  // The expansion exists only when the real simulation owns it. Rear walls occupy empty perimeter margins.
@@ -134,20 +187,18 @@ function placeLabels(){
  }
 }
 function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
- const c=mainland(bounds).map(([x,y])=>xy(x,y));ctx.beginPath();ctx.moveTo((c[0].x+c[c.length-1].x)/2,(c[0].y+c[c.length-1].y)/2);c.forEach((p,i)=>{const n=c[(i+1)%c.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.fillStyle='#b8a67a';ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();ctx.save();ctx.clip();
- // Fine deterministic earth grain rather than repeating rectangular sprite tiles.
- for(let i=0;i<4200;i++){const rx=((i*73.13)%997)/997,ry=((i*197.77)%991)/991,p=xy(bounds.minX-70+rx*(bounds.maxX-bounds.minX+70),bounds.minY-70+ry*(bounds.maxY-bounds.minY+70));ctx.globalAlpha=.18;ctx.fillStyle=i%4?'#e0d1a8':'#64794f';ctx.beginPath();ctx.ellipse(p.x,p.y,(2+i%5)*zoom,(1+i%3)*zoom,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.restore();
+ drawLandmass();
  // Roads continue inland beyond the owned plot district, entirely decorative.
  for(const p of layout.paths.filter(p=>p.beg.x===p.end.x).slice(0,3)){const a=xy(p.beg.x,bounds.minY),b=xy(p.beg.x,bounds.minY-80);ctx.strokeStyle='#cebc92';ctx.lineWidth=7*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
  // Low hills, fields and distant roofs remain outside the canonical district.
  for(let i=0;i<9;i++){const p=xy(bounds.minX-18-i*4,bounds.minY-26+i*3),r=(85+i%3*27)*zoom,g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);g.addColorStop(0,i%2?'#78875b33':'#d8c89366');g.addColorStop(1,'#a7ab7800');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(p.x,p.y,r*2,r,0,0,Math.PI*2);ctx.fill()}
- const fieldColors=['#9ca16b','#b4a573','#b9ac7a','#939a69'];
- for(let i=0;i<9;i++){const x=bounds.minX-7-(i%3)*10,y=bounds.minY-5-Math.floor(i/3)*12,w=8,d=9,ps=[[x,y],[x+w,y],[x+w,y+d],[x,y+d]].map(([x,y])=>xy(x,y));ctx.beginPath();ps.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fieldColors[i%4];ctx.globalAlpha=.65;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#d4c49a';ctx.lineWidth=2*zoom;ctx.stroke();for(let j=1;j<8;j++){const a=xy(x+j,y),b=xy(x+j,y+d);ctx.strokeStyle='#626e4733';ctx.lineWidth=1*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}
+ const fields=fieldPatches(bounds),furrow=GROUND_TYPES.campo.layers.find(l=>l.kind==='furrows'),tones=GROUND_TYPES.campo.tones;
+ for(let i=0;i<fields.length;i++){const{x,y,w,d}=fields[i],ps=[[x,y],[x+w,y],[x+w,y+d],[x,y+d]].map(([x,y])=>xy(x,y));ctx.beginPath();ps.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=tones[i%tones.length];ctx.globalAlpha=.65;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#d4c49a';ctx.lineWidth=2*zoom;ctx.stroke();for(let j=1;j<8;j++){const a=xy(x+j,y),b=xy(x+j,y+d);ctx.globalAlpha=furrow.alpha;ctx.strokeStyle=furrow.colors[0];ctx.lineWidth=furrow.width*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1}
  for(let i=0;i<38;i++){const x=bounds.minX-7-((i*7.43)%33),y=bounds.minY-5-((i*13.7)%41);sprite({x,y,w:1.6+i%3*.4,d:1.6+i%3*.4},images.arboles,.74)}
 
  drawWalls();
- const square=layout.plaza;polygon(square);ctx.fillStyle='#d7c7a2';ctx.fill();
- ctx.strokeStyle='#e4d3ad';ctx.lineWidth=10*zoom;ctx.lineCap='round';for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ drawStreets();
+ drawPlaza();
  drawHarbour(t);
  for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const p of [...layout.plots,...layout.residential].sort((a,b)=>placement(a).depth-placement(b).depth)){
  const owned=bld[p.id],service=['market','shipyard','tavern','bank','office','warehouse'].includes(p.type)&&+p.id.split(':')[1]<6;

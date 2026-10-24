@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- City view: distinct ground types painted in deterministic texture layers from a shared module (src/view/ground.mjs): packed earth inside the walls, cobbled main square with paving joints, dirt roads with a worn centre, grassland with tufts, scrubland patches, ploughed fields with furrows and a sand band along the south coast. Purely visual; no simulation or save data changes.
 - Platform: the game is explicitly desktop-only (Windows, Mac and Linux browsers, keyboard and mouse); phones and tablets are out of scope.
 - Pause menu: the shortcut list (Esc, Space to pause, wheel zoom, drag to pan) now shows inside the menu, in both languages.
 - Staggered markets: each port ticks its economy once per day at its own slot inside the day (Patrician 3 style), instead of one midnight pulse. Formulas and daily quantities are bit-identical per port; price history is written at the port's tick.
