@@ -907,7 +907,6 @@ $("new").onclick = () => showMenu();
     fsb.onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else de.requestFullscreen().catch(() => {}); };
   }
 }
-const logLine = (l) => l.key === "event" ? `${t.day} ${l.day}: ${l.txt?.[lang] ?? ""}` : t.log[l.key].replace(/\{(\w+)\}/g, (_, k) => k === "city" ? cityName(l.city) : k === "good" ? t.goods[l.good] : l[k]);
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
   if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
@@ -921,7 +920,6 @@ function showLedger(kind) {
       if(e.key==="Tab"){const buttons=[...el.querySelectorAll("button:not(:disabled),a[href]")],first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
     };
     el.querySelectorAll('[data-report-target]').forEach(button=>button.onclick=()=>el.querySelector(`#${button.dataset.reportTarget}`)?.scrollIntoView({block:'start'}));
-
     if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); draw(); };
     el.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { const id=e.dataset.msg; markRead(g, Number(id)); draw(); if(styled)el.querySelector(`[data-msg="${id}"]`)?.focus(); }); };
   draw();
