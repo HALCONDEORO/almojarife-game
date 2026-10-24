@@ -9,8 +9,9 @@ export const levelFor = (xp) => { let l = 0; for (let i = 1; i < XP_AT.length; i
 export function gainXp(g, ship, skill, n = 1) {
   if (g?.captainXp !== true || !SKILLS.includes(skill) || !Number.isFinite(n) || n <= 0) return null;
   const c = ship?.captain; if (!c || typeof c.id !== "string") return null;
-  const cur = lvl(c[skill]), xp = (Number.isFinite(c.xp?.[skill]) ? c.xp[skill] : XP_AT[cur]) + n;
-  (c.xp ??= {})[skill] = Math.min(xp, 9999);
+  if (typeof c.xp !== "object" || c.xp === null || Array.isArray(c.xp)) c.xp = {}; // a loaded save can carry a corrupt container (7, "bad", []): normalize instead of throwing mid-arrival or losing the book on save
+  const cur = lvl(c[skill]), xp = (Number.isFinite(c.xp[skill]) ? c.xp[skill] : XP_AT[cur]) + n;
+  c.xp[skill] = Math.min(xp, 9999);
   const next = Math.max(cur, levelFor(xp));
   if (next === cur) return null;
   c[skill] = next;

@@ -2,6 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';import {newGame} from '../src/game/game.mjs';
 import {captainRoster,hireCaptain,captainOf,captainPrice} from '../src/game/captains.mjs';
 import {gainXp,levelFor,XP_AT,encounterXp} from '../src/game/captainxp.mjs';
+import {advanceDay,doSail} from '../src/game/game.mjs';
 import {encounterOutcome,applyEncounter} from '../src/game/encounters.mjs';
 const w=loadWorld();
 const hired=()=>{const g=newGame(w),s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);return {g,s};};
@@ -32,4 +33,37 @@ test('encounters give experience only with the flag on',()=>{
   applyEncounter(g,s,out);assert.equal(s.captain.xp?.weather,flag?(s.captain.weather>=0?s.captain.xp.weather:0):undefined);
   assert.equal(!!s.captain.xp,flag);
  }
+});
+import {serialize,deserialize} from '../src/game/gamesave.mjs';
+test('captain experience, levels and the flag survive saving and loading',()=>{
+ const {g,s}=hired();g.captainXp=true;gainXp(g,s,'weather',7);gainXp(g,s,'navigation',3);
+ const back=deserialize(serialize(g,'T'),w).g;
+ assert.deepEqual(back.ships[0].captain,s.captain);
+ assert.equal(back.captainXp,true);
+ gainXp(back,back.ships[0],'weather',1);assert.equal(back.ships[0].captain.xp.weather,s.captain.xp.weather+1);
+});
+test('an old save without experience loads unchanged with the flag off',()=>{
+ const {g,s}=hired();const back=deserialize(serialize(g,'T'),w).g;
+ assert.deepEqual(back.ships[0].captain,s.captain);assert.ok(!back.captainXp);assert.equal(back.ships[0].captain.xp,undefined);
+});
+test('corrupt xp containers from old or tampered saves are normalized, never crash',()=>{
+ const {g,s}=hired();g.captainXp=true;
+ for(const bad of [7,'bad',[]]){
+  s.captain.xp=bad;
+  assert.doesNotThrow(()=>gainXp(g,s,'weather',1),JSON.stringify(bad));
+  assert.ok(s.captain.xp&&typeof s.captain.xp==='object'&&!Array.isArray(s.captain.xp),'normalized to a plain object');
+  assert.equal(JSON.parse(JSON.stringify(s.captain)).xp.weather,s.captain.xp.weather,'the book survives JSON');
+ }
+});
+test('flag off: a full voyage and a storm leave the captain and the save byte-identical',()=>{
+ const g=newGame(w,'cadiz',{seed:7});const s=g.ships[0];hireCaptain(g,s,captainRoster(g,s.at)[0].id);
+ assert.ok(!g.captainXp); // default: OFF
+ const capBefore=JSON.stringify(s.captain);
+ s.voyage={from:s.at,to:'lisboa',ticksLeft:100,totalTicks:100};
+ applyEncounter(g,s,encounterOutcome(s,'storm',0.9));
+ assert.equal(JSON.stringify(s.captain),capBefore,'the encounter hook adds nothing with the flag off');
+ delete s.voyage;doSail(g,s,'lisboa');let days=0;while(s.voyage&&days++<30)advanceDay(g);
+ assert.ok(!s.voyage,'the ship arrived');
+ assert.equal(JSON.stringify(s.captain),capBefore,'the arrival hook adds nothing with the flag off');
+ assert.ok(!JSON.stringify(serialize(g,'fixed')).includes('"xp"'),'nothing xp-shaped is saved');
 });
