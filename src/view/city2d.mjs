@@ -49,7 +49,8 @@ export function harbourShipBerths(bounds, ships = []) {
   const SIZE = { barca: 5.5, cog: 7, caravel: 8, nao: 9 }; // follows HULL_SIDE proportions at canvas scale
   return (Array.isArray(ships) ? ships : []).map((s, i) => {
     const size = SIZE[s?.type] ?? 7, pier = piers[i % piers.length], k = Math.floor(i / piers.length);
-    return { id: s?.id ?? i, type: s?.type ?? "cog", x: pier.x + pier.w + 1.5 + k * (size + 3), y: pier.y + pier.d / 2 - size / 2, w: size, d: size };
+    const stride = Math.max(...Object.values(SIZE)) + 3; // fixed stride: rafted ships never overlap whatever the class mix
+    return { id: s?.id ?? i, type: s?.type ?? "cog", x: pier.x + pier.w + 1.5 + k * stride, y: pier.y + pier.d / 2 - size / 2, w: size, d: size };
   });
 }
 

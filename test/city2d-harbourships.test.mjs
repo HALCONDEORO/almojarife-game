@@ -31,6 +31,20 @@ test("more ships than piers raft outward without overlapping", () => {
   assert.equal(spots.size, 5);
 });
 
+test("rafted berths never overlap, whatever the class mix", () => {
+  const mixes = [
+    [{ id: "a", type: "nao" }, { id: "b", type: "cog" }, { id: "c", type: "cog" }, { id: "d", type: "barca" }],
+    Array.from({ length: 7 }, (_, i) => ({ id: "s" + i, type: ["nao", "barca", "caravel", "cog"][i % 4] })),
+  ];
+  for (const ships of mixes) {
+    const berths = harbourShipBerths(bounds, ships);
+    for (let i = 0; i < berths.length; i++) for (let j = i + 1; j < berths.length; j++) {
+      const a = berths[i], b = berths[j];
+      assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.d <= b.y || b.y + b.d <= a.y, `berths ${i} and ${j} overlap`);
+    }
+  }
+});
+
 test("berths are deterministic", () => {
   const ships = [{ id: "a", type: "nao" }, { id: "b", type: "barca" }];
   assert.deepEqual(harbourShipBerths(bounds, ships), harbourShipBerths(bounds, ships));
