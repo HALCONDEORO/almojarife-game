@@ -1,6 +1,6 @@
 # Town industry, ownership and auctions (24 Oct 2026)
 
-Status: pieces 1 (roster) and 2 (ownership transfer) implemented. Own design and own numbers
+Status: pieces 1 (roster), 2 (ownership transfer) and 3 (almoneda auction engine) implemented. Own design and own numbers
 throughout; nothing taken from any other game. Desktop only.
 
 Owner direction (24 Oct 2026, WhatsApp): the city's industry should exist in the world
