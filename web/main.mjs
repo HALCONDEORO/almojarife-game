@@ -422,7 +422,7 @@ function render() {
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
     const wh = warehouseOf(g, s.at);
-    h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["hall", t.tabHall], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore], ...(lonjaEnabled(location.search) ? [["lonja", t.tabLonja]] : [])].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;    const bldCard = () => { // armed buy/build/upgrade action: quote card with confirm/cancel
+    if (!inCity) h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["hall", t.tabHall], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore], ...(lonjaEnabled(location.search) ? [["lonja", t.tabLonja]] : [])].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;    const bldCard = () => { // armed buy/build/upgrade action: quote card with confirm/cancel
       if (!bldAction) return "";
       const layA = plotsCache[s.at];
       let card = "", canPay = false;
@@ -644,7 +644,21 @@ function render() {
   P.querySelector('[data-market-search]')?.addEventListener('input',e=>{const start=e.target.selectionStart;marketSearch=e.target.value;render();const n=P.querySelector('[data-market-search]');n?.focus();n?.setSelectionRange(start,start);});
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
   P.querySelector('[data-market-compare]')?.addEventListener('change',e=>{marketCompare=e.target.value;render();});
-  P.querySelectorAll('[data-quantity]').forEach(e=>e.onchange=()=>{qtys[e.dataset.quantity]=marketQuantity(e.value);render();});
+  P.querySelectorAll('[data-quantity]').forEach(e=>{
+    e.oninput=()=>{
+      const gd=e.dataset.quantity,q=qtys[gd]=marketQuantity(e.value),row=e.closest('tbody');
+      const pb=previewBuy(g.world,g.market,s,g.cash,gd,q,FEE*feeMul(g,s.at));
+      const ps=previewSell(g.world,g.market,s,gd,q,FEE*feeMul(g,s.at));
+      const buy=row.querySelector('[data-b]'),sell=row.querySelector('[data-s]');
+      buy.dataset.b=gd+':'+q;buy.disabled=!pb.qty;buy.textContent=t.buy+' '+(pb.qty||q);
+      sell.dataset.s=gd+':'+q;sell.disabled=!ps.qty;sell.textContent=t.sell+' '+(ps.qty||q);
+      let info='';
+      if(pb.qty)info=t.dealBuy.replace('{q}',pb.qty).replace('{c}',fmt(pb.cost)).replace('{a}',pb.avg).replace('{n}',pb.next)+(pb.limit?' - '+t[pb.limit==='cash'?'capCash':pb.limit==='stock'?'capStock':'capRoom']:'');
+      if(ps.qty)info+=(info?' | ':'')+t.dealSell.replace('{q}',ps.qty).replace('{c}',fmt(ps.revenue)).replace('{a}',ps.avg).replace('{n}',ps.next)+(ps.hasBasis?' ('+Math.abs(ps.profit)+' '+(ps.profit>=0?t.profit:t.loss)+')':'');
+      row.querySelector('.deal small').textContent=info;
+    };
+    e.onchange=()=>{e.value=marketQuantity(e.value);};
+  });
   P.querySelectorAll("[data-q]").forEach((e) => e.onclick = () => {
     const [gd, v] = e.dataset.q.split(":"), cur = qtys[gd] ?? 10;
     qtys[gd] = v === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, FEE * feeMul(g, s.at)).qty) : v === "10" ? 10 : marketQuantity(cur + +v);
