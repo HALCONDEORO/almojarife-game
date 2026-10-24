@@ -19,6 +19,7 @@ import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
+import { gainXp } from "./captainxp.mjs";
 import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
@@ -192,6 +193,7 @@ function arrive(g, s) {
   wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
   arrivalJustice(g, s); // flag off or no data: nothing
+  gainXp(g, s, "navigation"); // flag off: nothing
   arrivalNews(g, s.at); // dockside talk: price news from passing ships
   arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
   arrivalIdentity(g, s.at); // first docking: the port shows its character (flag off: nothing)
