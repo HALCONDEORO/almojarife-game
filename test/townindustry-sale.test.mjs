@@ -16,7 +16,7 @@ const FLAG = { cash: 100000, freePlay: true, townIndustry: true };
 const firstBuilding = (cityId, kind = "building") => townIndustry(world, cityId).find((e) => e.kind === kind);
 
 test("flag off: sales are refused and nothing moves", () => {
-  const g = newGame(world, "cadiz", { cash: 100000, freePlay: true });
+  const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: false });
   const est = firstBuilding("cadiz");
   const cash = g.cash, share = g.market.cadiz[est.good].townShare;
   assert.equal(buyEstablishment(g, "cadiz", est.id, 100).reason, "off");
@@ -68,11 +68,13 @@ test("municipal sales pay the town chest; a neighbour's sale does not", () => {
   const g = newGame(world, "cadiz", FLAG);
   const municipal = townIndustry(world, "cadiz").find((e) => e.kind === "building" && e.owner.kind === "council");
   const neighbour = townIndustry(world, "cadiz").find((e) => e.kind === "building" && e.owner.kind === "townsfolk");
-  const caja0 = cajaOf(g, "cadiz");
+  const caja0 = cajaOf(g, "cadiz"), alm0 = g.hallAlmoneda?.cadiz ?? 0;
   assert.equal(buyEstablishment(g, "cadiz", municipal.id, 700).ok, true);
   assert.equal(cajaOf(g, "cadiz"), caja0 + 700);
+  assert.equal(g.hallAlmoneda.cadiz, alm0 + 700); // municipal income counted apart on the direct channel too
   assert.equal(buyEstablishment(g, "cadiz", neighbour.id, 700).ok, true);
   assert.equal(cajaOf(g, "cadiz"), caja0 + 700); // the neighbour takes his coins home
+  assert.equal(g.hallAlmoneda.cadiz, alm0 + 700); // and the ledger does not invent municipal income
 });
 
 test("refusals: representation-only types, strangers, no office, no cash, bad prices", () => {

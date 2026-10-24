@@ -39,6 +39,7 @@ import { growthTick, growthMul } from "./growth.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
+import { almonedaDay } from "./almoneda.mjs"; // the weekly town auction (flag-gated inside)
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
@@ -111,7 +112,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
   if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
   if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
-  if (opts.townIndustry === true) g.townIndustry = true; // town-industry flag, OFF by default: no key in an off game (docs/design/town-industry-and-auctions.md)
+  if (opts.townIndustry !== false && opts.townIndustry !== 1) g.townIndustry = true; // town-industry flag, ON by default (same owner order as citylife: every flag ships ON); false/1 keeps an off game with no key, saves stay identical (docs/design/town-industry-and-auctions.md)
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
   refreshIntel(g);
@@ -148,6 +149,7 @@ export function resolveBankruptcy(g) {
 export const DAILY_HOOKS = [];
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
+  almonedaDay(g); // the hammer falls at the END of the auction day, before the calendar turns: the player bids while the lot is on the block (flag off: nothing)
   g.day++;
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
