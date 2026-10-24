@@ -54,7 +54,7 @@ describe("lot of the day", () => {
     assert.equal(lotOfDay(g, "cadiz"), null);
   });
   it("is null with the flag off", () => {
-    const g = newGame(world, "cadiz"); // no flag
+    const g = newGame(world, "cadiz", { townIndustry: false }); // flag explicitly off
     g.day = auctionOffset("cadiz");
     assert.equal(lotOfDay(g, "cadiz"), null);
   });
@@ -82,7 +82,7 @@ describe("bidAuction", () => {
     return g;
   };
   it("flag off refuses", () => {
-    const g = newGame(world, "cadiz");
+    const g = newGame(world, "cadiz", { townIndustry: false });
     g.day = auctionOffset("cadiz");
     assert.equal(bidAuction(g, "cadiz", 99999).reason, "off");
   });
@@ -163,7 +163,7 @@ describe("the table at the day boundary", () => {
   });
   it("flag off: placeBid refuses and almonedaDay is a no-op", async () => {
     const { placeBid, almonedaDay } = await import("../src/game/almoneda.mjs");
-    const g = newGame(world, "cadiz");
+    const g = newGame(world, "cadiz", { townIndustry: false });
     g.day = auctionOffset("cadiz");
     assert.equal(placeBid(g, "cadiz", 5000).reason, "off");
     almonedaDay(g);

@@ -16,7 +16,7 @@ const FLAG = { cash: 100000, freePlay: true, townIndustry: true };
 const firstBuilding = (cityId, kind = "building") => townIndustry(world, cityId).find((e) => e.kind === kind);
 
 test("flag off: sales are refused and nothing moves", () => {
-  const g = newGame(world, "cadiz", { cash: 100000, freePlay: true });
+  const g = newGame(world, "cadiz", { cash: 100000, freePlay: true, townIndustry: false });
   const est = firstBuilding("cadiz");
   const cash = g.cash, share = g.market.cadiz[est.good].townShare;
   assert.equal(buyEstablishment(g, "cadiz", est.id, 100).reason, "off");
