@@ -32,13 +32,13 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Screenshots
 
-_Captured from the playable build (main @ 78687e6, 23 Oct 2026); refresh when the UI changes so they never show unmerged work._
+_Captured from the playable build (main @ cda975a, 24 Oct 2026); refresh when the UI changes so they never show unmerged work._
 
 | The 3D port | Trade in the market |
 |---|---|
 | ![3D port view with the city toolbar](docs/img/port3d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
-| **The sea chart** | **Build ships at the slipway** |
-| ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard slipway scene](docs/img/shipyard.png) |
+| **The sea chart** | **Build ships at the shipyard** |
+| ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard tab with the ship classes and their orders](docs/img/shipyard.png) |
 | **Tavern: captains and news** | **Bank: loans and interest** |
 | ![Tavern tab](docs/img/tavern.png) | ![Bank tab](docs/img/bank.png) |
 | **Warehouse and steward** | **Create your house** |

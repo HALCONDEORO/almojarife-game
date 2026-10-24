@@ -31,7 +31,6 @@ import { DIFFICULTY_IDS } from "../src/game/difficulty.mjs";
 import { defaultProfile, cleanProfile, startBonus, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { previewBuy, previewSell, FEE } from "../src/sim/trade.mjs";
 import { stockLevel } from "../src/game/stocklevel.mjs";
-import { citySceneSvg } from "../src/view/cityscene.mjs";
 import { BACKUP_KEY, TMP_KEY, finishPendingRotation, restoreRotate, saveFileName } from "./savefile.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml, RESPECT_NAMES } from "../src/view/rankview.mjs";
@@ -47,7 +46,7 @@ import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
 import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
-import { yardSceneSvg, shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
+import { shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { shipDescriptor } from "../src/view/shipvisual.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
@@ -302,6 +301,15 @@ function syncMissionEcho() {
   }
   const hm = $("handle-mission"); if (hm) { hm.textContent = line ?? ""; hm.title = line ?? ""; hm.hidden = !line; }
 }
+// State for the 2D city iframe: walls, buildings, labels and the player's real docked ships.
+// The iframe asks for a resend when it finishes booting, so a state post that raced its load is not lost.
+function postCity2dState() {
+  const frame = document.getElementById("v3d")?.querySelector("iframe");
+  if (!frame || !city2dEnabled(location.search)) return;
+  const s = g.ships[sel];
+  frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor) }, location.origin);
+}
+addEventListener("message", (e) => { if (e.origin === location.origin && e.data?.kind === "city2d-ready" && document.getElementById("v3d") && e.data.city === g.ships[sel]?.at) postCity2dState(); });
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
@@ -397,7 +405,7 @@ function render() {
   // event. In the city view it carries the port services inside the city window.
   let h = "";
   const pe = pendingEvent(g), inCity = !!document.getElementById("v3d");
-  if(inCity&&city2dEnabled(location.search))$("v3d").querySelector("iframe").contentWindow.postMessage({kind:"city2d-state",walls:wallsLevel(g,s.at),city:s.at,buildings:g.buildings?.[s.at]??{},tick:g.tick,labels:Object.fromEntries(buildingsRows(g,s.at).map(r=>[r.plotId,buildingLabel(t,r)]))},location.origin);
+  if (inCity) postCity2dState();
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   if (inCity || pe) {
@@ -407,8 +415,6 @@ function render() {
   if (!s.voyage && !g.over) {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
     h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmt(Math.round(hv))}</div>`;
-    const nd = world.nodes[s.at];
-    h += `<div class="scenebox">${citySceneSvg({ id: s.at, pop: nd.pop ?? 8000, warehouse: !!warehouseOf(g, s.at), shipyard: true, ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), day: g.day, tod: 0.35 + progress * 0.4 })}</div>`;
     const bp = bestPorts(g, s).slice(0, 3);
     if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmt(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmt(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
     if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
@@ -581,7 +587,7 @@ function render() {
           [1, 5].map((n) => `<button data-hire="${n}" ${s.voyage || c >= L.max || g.cash < n * HIRE_FEE ? "disabled" : ""}>${t.crewHire.replace("{n}", n).replace("{p}", fmt(n * HIRE_FEE))}</button>`).join(" ") + " " +
           [1, 5].map((n) => `<button data-dismiss="${n}" ${s.voyage || c <= 0 ? "disabled" : ""}>${t.crewDismiss.replace("{n}", n)}</button>`).join(" ") + `</div>`; }
     } else if (tab === "yard") {
-      h += `<p>${t.yardInfo}</p><div class="scenebox">${yardSceneSvg({ orders: (g.orders ?? []).filter((o) => o.at === s.at), day: g.day, tod: 0.35 + progress * 0.4, emptyLabel: t.yardEmpty })}</div>`;
+      h += `<p>${t.yardInfo}</p>`;
       h += `<div class="yardcards">` + Object.entries(SHIP_TYPES).map(([k, v]) => `<div class="card yc">${shipIconSvg(k)}<b>${t.types[k]}</b><small>${t.yc.replace("{c}", v.capacity).replace("{d}", v.buildDays).replace("{u}", v.upkeepPerDay)}</small><button data-order="${k}" ${g.cash < v.price ? "disabled" : ""}>${t.orderShort.replace("{p}", fmt(v.price))}</button></div>`).join("") + `</div>`;
       h += `<div><button data-repair="1" ${repairPrice(g, s) <= 0 || g.cash < repairPrice(g, s) ? "disabled" : ""}>${t.repair.replace("{h}", Math.round(s.hull ?? 100)).replace("{p}", fmt(repairPrice(g, s)))}</button> <button data-gunrepair="1" ${gunRepairCost(s) <= 0 || s.voyage || g.cash < gunRepairCost(s) ? "disabled" : ""}>${cannonsOf(s) ? t.gunRepair.replace("{c}", Math.round(gunCond(s))).replace("{p}", fmt(gunRepairCost(s))) : t.gunNone}</button> </div><div><small>${t.weaponInfo.replace("{n}", weaponCount(s)).replace("{m}", maxCannons(s))}${weaponCount(s) ? " · " + Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : ""}</small><br>${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join(" ")} <button data-sellship="1" ${g.ships.length <= 1 || cargoUsed(s) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(s)))}</button></div>`;
       { const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));

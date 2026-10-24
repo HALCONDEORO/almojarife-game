@@ -42,6 +42,17 @@ export function mainland(bounds){
 }
 
 /** Decorative waterfront stays outside every canonical plot, not a purchasable dock. */
+/** Berths for the player's real docked ships along the harbour piers (city2d modules).
+ * ships: [{id,type}] -> one berth per ship, deterministic, sized by class; extra ships raft outward. */
+export function harbourShipBerths(bounds, ships = []) {
+  const { span, piers } = harbourLayout(bounds);
+  const SIZE = { barca: 5.5, cog: 7, caravel: 8, nao: 9 }; // follows HULL_SIDE proportions at canvas scale
+  return (Array.isArray(ships) ? ships : []).map((s, i) => {
+    const size = SIZE[s?.type] ?? 7, pier = piers[i % piers.length], k = Math.floor(i / piers.length);
+    return { id: s?.id ?? i, type: s?.type ?? "cog", x: pier.x + pier.w + 1.5 + k * (size + 3), y: pier.y + pier.d / 2 - size / 2, w: size, d: size };
+  });
+}
+
 export function harbourLayout(bounds){
  const {minX,minY,maxX,maxY}=bounds;
  if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid harbour');
