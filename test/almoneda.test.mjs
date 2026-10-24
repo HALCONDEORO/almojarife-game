@@ -292,6 +292,27 @@ describe("municipal proceeds", () => {
     }
     assert.fail("no municipal lot found in any port within 20 tables");
   });
+  it("a player-won municipal lot moves cash, chest and ledger by exactly the hammer price, counted once", () => {
+    for (const city of world.cities) {
+      const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+      let done = false;
+      for (let k = 0; k < 20 && !done; k++) {
+        g.day = auctionOffset(city.id) + k * AUCTION_EVERY;
+        const lot = lotOfDay(g, city.id);
+        if (!lot) continue;
+        if (lot.est.owner.kind !== "council") { bidAuction(g, city.id, 1); continue; }
+        const caja0 = cajaCash(g, city.id), alm0 = g.hallAlmoneda?.[city.id] ?? 0, cash0 = g.cash;
+        const r = bidAuction(g, city.id, 999999999); // his max tops every neighbour's
+        assert.equal(r.outcome, "won");
+        assert.equal(g.cash, cash0 - r.price); // his purse pays the hammer price
+        assert.equal(cajaCash(g, city.id), caja0 + r.price); // the chest gets exactly that price
+        assert.equal(g.hallAlmoneda[city.id], alm0 + r.price); // the ledger counts it once, player path included (auditor finding on 81ecba8)
+        done = true;
+      }
+      if (done) return;
+    }
+    assert.fail("no municipal lot found in any port within 20 tables");
+  });
   it("stop when the last municipal works is gone: finite, bounded by municipal value", () => {
     const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
     const municipal = townIndustry(g.world, "cadiz").filter((e) => e.owner.kind === "council" && e.kind === "building" && BUILDING_TYPES[e.type]); // the game world, optional goods included: the roster the almoneda sells

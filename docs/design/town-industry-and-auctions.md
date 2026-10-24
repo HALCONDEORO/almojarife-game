@@ -115,8 +115,8 @@ legacy test and surfaced three integration faults. How each was fixed, and why:
 3. **The concejo's chest.** Municipal proceeds credit the chest per the owner's design, so the
    old idle-year band (chest ≤ 3×target, written when taxes were the only income) failed on
    legitimate one-off sales. Widening the band would have hidden real leaks, so the invariant
-   was rebuilt to tell the three money kinds apart: auction income is tracked apart
-   (`hallAlmoneda`, per city), and the gate asserts `0 ≤ caja ≤ 3×target + hallAlmoneda` - never
+   was rebuilt to tell the three money kinds apart: municipal sale income is tracked apart
+   (`hallAlmoneda`, per city, on every channel: the NPC hammer, the player's hammer and direct sales), and the gate asserts `0 ≤ caja ≤ 3×target + hallAlmoneda` - never
    bankrupt, and never above taxes-plus-verified-sales. Conservation is proven per sale (chest
    and ledger move exactly the hammer price; a sold works never comes up again) and finiteness
    by exhaustion (each municipal works sells once at ≤1.15× its valuation; once the last one is

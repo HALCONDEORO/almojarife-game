@@ -199,7 +199,7 @@ export function buyEstablishment(g, cityId, estId, price) {
   if (!e?.makes) return { ok: false, reason: "unknown establishment" }; // paranoia: roster and market agree
 
   g.cash -= price;
-  if (est.owner.kind === "council") creditCaja(g, cityId, price);
+  if (est.owner.kind === "council") { creditCaja(g, cityId, price); (g.hallAlmoneda ??= {})[cityId] = (g.hallAlmoneda[cityId] ?? 0) + price; } // municipal sale income to the chest, counted apart whatever the channel (auction hammer or direct sale); the NPC hammer path keeps its own record, no double counting
   const maps = (g.buildings ??= {}); // plain objects: the JSON save round-trip returns plain objects (walls.mjs convention)
   (maps[cityId] ??= {})[estId] = { type: est.type, level: est.level, state: "active", plotType: est.type, paidPlot: 0, fromTown: estId, produced: 0 };
   e.townShare = r6((e.townShare ?? 1) - est.share);
