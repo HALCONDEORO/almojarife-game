@@ -37,10 +37,17 @@ test("rafted berths never overlap, whatever the class mix", () => {
     Array.from({ length: 7 }, (_, i) => ({ id: "s" + i, type: ["nao", "barca", "caravel", "cog"][i % 4] })),
   ];
   for (const ships of mixes) {
-    const berths = harbourShipBerths(bounds, ships);
+    for (const bb of [bounds, { minX: 0, minY: 0, maxX: 40, maxY: 20 }]) { // short harbour: piers closer than a nao
+    const berths = harbourShipBerths(bb, ships);
+    const { piers } = harbourLayout(bb);
+    berths.forEach((b) => piers.forEach((p) => {
+      const own = b.x < p.x + p.w && b.x + b.w > p.x && b.y < p.y + p.d && b.y + b.d > p.y;
+      assert.ok(!own || b.x >= p.x + p.w, "berth must not sit on top of a pier");
+    }));
     for (let i = 0; i < berths.length; i++) for (let j = i + 1; j < berths.length; j++) {
       const a = berths[i], b = berths[j];
       assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.d <= b.y || b.y + b.d <= a.y, `berths ${i} and ${j} overlap`);
+    }
     }
   }
 });

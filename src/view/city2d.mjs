@@ -47,10 +47,18 @@ export function mainland(bounds){
 export function harbourShipBerths(bounds, ships = []) {
   const { span, piers } = harbourLayout(bounds);
   const SIZE = { barca: 5.5, cog: 7, caravel: 8, nao: 9 }; // follows HULL_SIDE proportions at canvas scale
+  const stride = Math.max(...Object.values(SIZE)) + 3; // fixed raft stride
+  const overlaps = (a, b, m = 0.5) => a.x - m < b.x + b.w && a.x + a.w + m > b.x && a.y - m < b.y + b.d && a.y + a.d + m > b.y;
+  const placed = [];
   return (Array.isArray(ships) ? ships : []).map((s, i) => {
-    const size = SIZE[s?.type] ?? 7, pier = piers[i % piers.length], k = Math.floor(i / piers.length);
-    const stride = Math.max(...Object.values(SIZE)) + 3; // fixed stride: rafted ships never overlap whatever the class mix
-    return { id: s?.id ?? i, type: s?.type ?? "cog", x: pier.x + pier.w + 1.5 + k * stride, y: pier.y + pier.d / 2 - size / 2, w: size, d: size };
+    const size = SIZE[s?.type] ?? 7, pier = piers[i % piers.length];
+    let k = 0, b; // raft outward until the berth clears other ships and the neighbouring piers (short harbours included)
+    do {
+      b = { id: s?.id ?? i, type: s?.type ?? "cog", x: pier.x + pier.w + 1.5 + k * stride, y: pier.y + pier.d / 2 - size / 2, w: size, d: size };
+      k++;
+    } while (placed.some((p) => overlaps(b, p)) || piers.some((p) => p !== pier && overlaps(b, { x: p.x, y: p.y, w: p.w, d: p.d })));
+    placed.push(b);
+    return b;
   });
 }
 
