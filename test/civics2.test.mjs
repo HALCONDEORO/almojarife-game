@@ -28,7 +28,7 @@ const buildActive = (g, cityId, plotId, type) => {
 };
 
 test("flag OFF: the new civic types do not exist for the game", () => {
-  const g = game();
+  const g = game({ citylife: false }); // OFF pinned explicitly: the flag ships ON by default (24/10)
   own(g, "cadiz");
   for (const t of TYPES) {
     const q = quoteConstruction(g, "cadiz", "cadiz:1", t);
@@ -47,7 +47,7 @@ test("flag ON: types are offered, carry recipe, jobs and the civic tag", () => {
     assert.ok(offers.some((o) => o.type === t), t + " offered in cadiz");
   }
   // and a flag-off game hides exactly the civic list it hid before plus these
-  const off = game();
+  const off = game({ citylife: false }); // flag-off case pinned explicitly (default is ON since 24/10)
   for (const t of TYPES) assert.ok(!buildOffers(off, "cadiz", "cadiz:1").some((o) => o.type === t), t);
 });
 
