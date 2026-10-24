@@ -2,6 +2,7 @@ import {urbanLayout} from '../../src/view/urbanlayout.mjs';
 import {cityPlots} from '../../src/view3d/cityplots.mjs';
 import {project,placement,resolveVisual,assetKey,mainland,harbourLayout,harbourShipBerths,spriteGeometry,obscuresSelection} from '../../src/view/city2d.mjs';
 import {GROUND_TYPES,groundZoneAt,fieldPatches,scrubPatches,hash01} from '../../src/view/ground.mjs';
+import {industrySpots} from '../../src/view/industry2d.mjs'; // the town's real works on the plan (townIndustry flag)
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 const wallsLvl=(v)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<=3?n:0}; // numeric wall level 0-3 (WALL_MAX_LEVEL); anything else is 0, never truthy garbage
 let walls=wallsLvl(q.get('walls')),bld={},labels={},tick=0,ships=[];function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
@@ -12,7 +13,7 @@ const CHROME={es:{fit:'Encajar',zoomIn:'Acercar',zoomOut:'Alejar',plots:'Parcela
 const uiLangC=()=>localStorage.getItem('lang')||(navigator.language?.toLowerCase().startsWith('es')?'es':'en'); // same rule as main.mjs
 const chrome=()=>CHROME[uiLangC()==='en'?'en':'es'];
 const applyChrome=()=>{const c=chrome();document.title=c.title;const cv=document.querySelector('canvas');if(cv)cv.setAttribute('aria-label',c.plan);$('fit').setAttribute('aria-label',c.fit);$('plus').setAttribute('aria-label',c.zoomIn);$('minus').setAttribute('aria-label',c.zoomOut);$('grid').textContent=c.plots;$('build').textContent=c.preview;$('motion').setAttribute('aria-label',c.motion);$('construct').setAttribute('aria-label',c.construct);$('construct').title=c.construct;$('type').setAttribute('aria-label',c.typeAria);$('level').setAttribute('aria-label',c.levelAria);[...$('level').options].forEach((o,i)=>o.textContent=c.level+' '+(i+1));};
-let bounds,manifestBounds,layout,manifest,images={},visTop={},zoom=1,dx=0,dy=0,selected=null,hover=null,drag=null,moved=0,grid=false,preview=false,animate=!matchMedia('(prefers-reduced-motion: reduce)').matches,frame=0,last=0,dirty=true;
+let bounds,manifestBounds,layout,manifest,images={},visTop={},industry=[],indSpots=null,zoom=1,dx=0,dy=0,selected=null,hover=null,drag=null,moved=0,grid=false,preview=false,animate=!matchMedia('(prefers-reduced-motion: reduce)').matches,frame=0,last=0,dirty=true;
 const boot=async()=>{applyChrome();layout=urbanLayout(await cityPlots(city,pop),pop);bounds=layout.visualBounds;manifestBounds=[[bounds.minX,bounds.minY],[bounds.maxX,bounds.minY],[bounds.maxX,bounds.maxY],[bounds.minX,bounds.maxY]].map(([x,y])=>project(x,y));manifest=await(await fetch('manifest.json')).json();await Promise.all(Object.entries(manifest.assets).map(async([k,v])=>{const im=new Image;im.src=v.file;try{await im.decode();images[k]=im}catch{throw Error('Missing art '+v.file)}}));const vc=document.createElement('canvas');vc.width=vc.height=128;const vg=vc.getContext('2d',{willReadFrequently:true});for(const[k,im]of Object.entries(images)){vg.clearRect(0,0,128,128);vg.drawImage(im,0,0,128,128);const d=vg.getImageData(0,0,128,128).data;let r=0;while(r<128){let hit=false;for(let c=51;c<77;c++)if(d[(r*128+c)*4+3]>10){hit=true;break}if(hit)break;r++}let b=127;while(b>r){let hit=false;for(let c=0;c<128;c++)if(d[(b*128+c)*4+3]>10){hit=true;break}if(hit)break;b--}visTop[k]=(r+(b-r)*0.30)/128}for(const n of ['cobble','muelle','barco','arboles']){const im=new Image;im.src='assets/'+n+'.webp';await im.decode();images[n]=im}for(const t of['barca','cog','caravel','nao']){const im=new Image;im.src='assets/ships/'+t+'.svg';try{await im.decode();images['ship:'+t]=im}catch{}}for(const k of Object.keys(names)){if(['market','shipyard','tavern','bank','office'].includes(k))continue;const o=document.createElement('option');o.value=k;o.textContent=dispNames()[k];$('type').append(o)};const note=document.createElement('div');note.className='housing-scale';note.style.cssText='position:fixed;bottom:8px;left:8px;background:#f6e9cce8;color:#493c25;padding:6px 9px;font:12px Georgia;pointer-events:none';note.textContent=uiLangC()==='en'?`Residential groups: ${layout.housing.groups} · ≈ ${layout.housing.peoplePerGroup} people per house drawing (visual scale)`:`Conjuntos residenciales: ${layout.housing.groups} · ≈ ${layout.housing.peoplePerGroup} habitantes por casa dibujada (escala visual)`;document.body.append(note);fit();buildLabels();requestAnimationFrame(loop);window.__ready=true;try{parent.postMessage({kind:"city2d-ready",city},location.origin)}catch{}};
 const xy=(x,y)=>{const p=project(x,y);return{x:canvas.width/2+(p.x+dx)*zoom,y:35+(p.y+dy)*zoom}};
 function polygon(p){ctx.beginPath();placement(p).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
@@ -187,6 +188,24 @@ function placeLabels(){
   }
  }
 }
+// The town's real industry roster, drawn where each trade belongs: extractive works in the
+// country ring, salt pans on the south beach, dockside trades by the quay, processors in the
+// fabric. Placement is pure and tested (src/view/industry2d.mjs); the label carries type,
+// owner and real state so a reused sprite can never pass for a different factory. Player-owned
+// works glow gold; works sold at auction fade.
+const REP_ART={tannery:['soapworks:1','sepia(.4) brightness(.9)'],trading_post:['office:1','brightness(.94) hue-rotate(-12deg)']};
+function drawIndustry(){
+ if(!industry.length||!layout)return;
+ indSpots??=industrySpots(bounds,layout,industry);
+ for(const s of [...indSpots].sort((a,b)=>placement(a).depth-placement(b).depth)){
+  const rep=REP_ART[s.type],key=rep?rep[0]:(images[s.type+':'+s.level]?s.type+':'+s.level:s.type+':1');
+  groundContact(s);sprite(s,images[key],s.gone?.5:1,rep?rep[1]:'');
+  const g=spriteGeometry(s),lx=canvas.width/2+(g.left+g.width/2+dx)*zoom,ly=35+(g.top+dy)*zoom+(visTop[key]||0)*g.height*zoom;
+  ctx.save();ctx.font=`${Math.max(8,12*zoom)}px Georgia`;ctx.textAlign='center';
+  ctx.lineWidth=2.5;ctx.strokeStyle='#1b2a33cc';ctx.strokeText(s.label,lx,ly);
+  ctx.fillStyle=s.own?'#ffe9b0':s.gone?'#c9c2ae':'#f6e9c8';ctx.fillText(s.label,lx,ly);ctx.restore();
+ }
+}
 function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
  drawLandmass();
  // Roads continue inland beyond the owned plot district, entirely decorative.
@@ -213,6 +232,7 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  if(animate&&v.state==='active'&&['ironworks','brickworks','pottery','brewery','soapworks'].includes(b.type)){for(let i=0;i<3;i++){const phase=(t*.18+i*.33)%1;ctx.globalAlpha=(1-phase)*.15;ctx.fillStyle='#e3dfce';ctx.beginPath();ctx.ellipse(at.x+Math.sin(phase*4)*6*zoom,at.y-(70+phase*45)*zoom,5*zoom+phase*7*zoom,4*zoom+phase*7*zoom,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
  if(animate&&v.state==='construction'){const off=Math.sin(t*2+p.x)*3*zoom;ctx.fillStyle='#b7a27c';ctx.fillRect(at.x-7*zoom+off,at.y-9*zoom,5*zoom,4*zoom)}
  }
+ drawIndustry();
  // Tiny water shimmer outside land, never over the city.
  if(animate){ctx.strokeStyle='#b6dbd44d';ctx.lineWidth=1;for(let i=0;i<18;i++){const x=(i*91+t*5)%innerWidth,y=innerHeight-20-(i%3)*9;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+20,y);ctx.stroke()}}
  if(selected){
@@ -228,5 +248,5 @@ function loop(ms){if((animate||dirty)&&ms-last>=33){last=ms;frame++;draw(animate
 function pick(e){const r=canvas.getBoundingClientRect();for(const p of [...layout.plots].reverse()){polygon(p);if(ctx.isPointInPath(e.clientX-r.left,e.clientY-r.top))return p}return null}
 canvas.onpointerdown=e=>{dirty=true;drag={x:e.clientX,y:e.clientY};moved=0;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{dirty=true;if(drag){const x=e.clientX-drag.x,y=e.clientY-drag.y;moved+=Math.abs(x)+Math.abs(y);dx+=x/zoom;dy+=y/zoom;drag={x:e.clientX,y:e.clientY}}else hover=pick(e)};canvas.onpointerup=e=>{dirty=true;drag=null;if(moved>6)return;selected=pick(e);if(!selected)return;hover=selected;draw(0);if(preview)return;const service=+selected.id.split(':')[1]<6&&!bld[selected.id];parent.postMessage({kind:service?'building':'plot',id:service?selected.type:selected.id},location.origin)};canvas.onpointercancel=()=>drag=null;canvas.addEventListener('wheel',e=>{dirty=true;e.preventDefault();const z0=zoom,z1=Math.max(.1,Math.min(4,z0*(e.deltaY<0?1.1:.9)));if(z1===z0)return;const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;dx+=(sx-canvas.width/2)*(1/z1-1/z0);dy+=(sy-35)*(1/z1-1/z0);zoom=z1},{passive:false}); // one registration; the world point under the cursor stays fixed
 document.querySelector('nav').addEventListener('click',()=>dirty=true);document.querySelector('nav').addEventListener('change',()=>dirty=true);$('fit').onclick=fit;$('plus').onclick=()=>zoom=Math.min(4,zoom*1.3);$('minus').onclick=()=>zoom=Math.max(.1,zoom/1.3);$('construct').onclick=()=>{const on=$('construct').getAttribute('aria-pressed')!=='true';$('construct').setAttribute('aria-pressed',on);$('bm').hidden=!on;if(!on){grid=preview=false;$('grid').setAttribute('aria-pressed',false);$('build').setAttribute('aria-pressed',false);$('type').hidden=$('level').hidden=true}};$('grid').onclick=()=>{grid=!grid;$('grid').setAttribute('aria-pressed',grid)};$('build').onclick=()=>{preview=!preview;grid=preview;$('build').setAttribute('aria-pressed',preview);$('grid').setAttribute('aria-pressed',grid);$('type').hidden=!preview;$('level').hidden=!preview};$('motion').setAttribute('aria-pressed',animate);$('motion').onclick=()=>{animate=!animate;$('motion').setAttribute('aria-pressed',animate)};addEventListener('resize',fit);
-addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.kind!=='city2d-state'||e.data.city!==city)return;dirty=true;walls=wallsLvl(e.data.walls);bld=e.data.buildings||{};labels=e.data.labels||{};tick=e.data.tick||0;ships=Array.isArray(e.data.ships)?e.data.ships:[];buildLabels()});
+addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.kind!=='city2d-state'||e.data.city!==city)return;dirty=true;walls=wallsLvl(e.data.walls);bld=e.data.buildings||{};labels=e.data.labels||{};tick=e.data.tick||0;ships=Array.isArray(e.data.ships)?e.data.ships:[];industry=Array.isArray(e.data.industry)?e.data.industry:[];indSpots=null;buildLabels()});
 boot().catch(e=>{console.error(e);window.__error=String(e); $('error').hidden=false;$('error').textContent=chrome().loadError});
