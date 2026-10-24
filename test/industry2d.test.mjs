@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { industrySpots } from "../src/view/industry2d.mjs";
+import { industrySpots, industryClusters } from "../src/view/industry2d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
 import { urbanLayout } from "../src/view/urbanlayout.mjs";
 import { townIndustry } from "../src/game/townindustry.mjs";
@@ -27,9 +27,11 @@ for (const [cityId, pop] of [["huelva", 8000], ["sevilla", 45000], ["valencia", 
     const bounds = layout.visualBounds;
     const roster = townIndustry(world, cityId);
     assert.ok(roster.length > 0, `${cityId} roster must not be empty`);
-    const spots = industrySpots(bounds, layout, roster);
-    assert.equal(spots.length, roster.length, "one spot per establishment, in roster order");
-    assert.deepEqual(spots.map((s) => s.id), roster.map((e) => e.id));
+    const clusters = industryClusters(roster);
+    assert.ok(clusters.length <= roster.length, "clusters never exceed the roster");
+    assert.equal(clusters.reduce((a, c) => a + c.count, 0), roster.length, "cluster counts sum to the roster: no works dropped");
+    const spots = industrySpots(bounds, layout, clusters);
+    assert.equal(spots.length, clusters.length, "one spot per cluster");
     for (const s of spots) {
       assert.ok(Number.isFinite(s.x) && Number.isFinite(s.y) && s.w > 0 && s.d > 0, `finite box for ${s.id}`);
     }
@@ -44,7 +46,7 @@ for (const [cityId, pop] of [["huelva", 8000], ["sevilla", 45000], ["valencia", 
     const bounds = layout.visualBounds;
     const edge = harbourLayout(bounds).edge;
     const roster = townIndustry(world, cityId);
-    const spots = industrySpots(bounds, layout, roster);
+    const spots = industrySpots(bounds, layout, industryClusters(roster));
     const solid = [...layout.plots, ...layout.residential];
     for (const s of spots) {
       if (RURAL.has(s.type)) continue;
@@ -61,7 +63,7 @@ for (const [cityId, pop] of [["huelva", 8000], ["sevilla", 45000], ["valencia", 
   test(`industrySpots ${cityId}: deterministic`, async () => {
     const layout = urbanLayout(await cityPlots(cityId, pop), pop);
     const roster = townIndustry(world, cityId);
-    assert.deepEqual(industrySpots(layout.visualBounds, layout, roster), industrySpots(layout.visualBounds, layout, roster));
+    assert.deepEqual(industrySpots(layout.visualBounds, layout, industryClusters(roster)), industrySpots(layout.visualBounds, layout, industryClusters(roster)));
   });
 }
 

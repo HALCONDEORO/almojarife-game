@@ -2,14 +2,14 @@ import {urbanLayout} from '../../src/view/urbanlayout.mjs';
 import {cityPlots} from '../../src/view3d/cityplots.mjs';
 import {project,placement,resolveVisual,assetKey,mainland,harbourLayout,harbourShipBerths,spriteGeometry,obscuresSelection} from '../../src/view/city2d.mjs';
 import {GROUND_TYPES,groundZoneAt,fieldPatches,scrubPatches,hash01} from '../../src/view/ground.mjs';
-import {industrySpots} from '../../src/view/industry2d.mjs'; // the town's real works on the plan (townIndustry flag)
+import {industrySpots,industryClusters} from '../../src/view/industry2d.mjs'; // the town's real works on the plan (townIndustry flag)
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),city=q.get('city')||'huelva',pop=Number(q.get('pop')||8000),canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
 const wallsLvl=(v)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<=3?n:0}; // numeric wall level 0-3 (WALL_MAX_LEVEL); anything else is 0, never truthy garbage
 let walls=wallsLvl(q.get('walls')),bld={},labels={},tick=0,ships=[];function parse(s,fallback){try{return JSON.parse(s)||fallback}catch{return fallback}}bld=parse(q.get('bld'),{});labels=parse(q.get('labels'),{});tick=Number(q.get('tick')||0);
 const qnames=parse(q.get('names'),{}),qtnames=parse(q.get('tnames'),{}),qbnames=parse(q.get('bnames'),{});
 const names={house:'Casa',warehouse:'Almacén',workshop:'Taller',farm:'Granja',pasture:'Dehesa',sawmill:'Aserradero',mine:'Mina',oil_mill:'Almazara',vineyard:'Viñedo',saltworks:'Salina',brewery:'Cervecería',soapworks:'Jabonería',pottery:'Alfarería',brickworks:'Ladrillera',esparto_field:'Espartizal',ranch:'Ganadería',armory:'Armería',dock:'Muelle',fishery:'Pesquería',ironworks:'Fragua',posito:'Pósito',hospital:'Hospital',alhondiga:'Alhóndiga',caminos:'Caminos',pozo:'Pozo',capilla:'Capilla',market:'Mercado',shipyard:'Astillero',tavern:'Taberna',bank:'Banco',office:'Oficina',carniceria:'Carnicería',molino:'Molino',corral:'Corral de comedias'};
 const dispNames=()=>({...names,...qbnames,...qtnames,...qnames}); // localized: bnames covers every buildable type, names/tnames the service and town buildings; the ES map is the last fallback
-const CHROME={es:{fit:'Encajar',zoomIn:'Acercar',zoomOut:'Alejar',plots:'Parcelas',preview:'Vista previa',construct:'Vista de construcción',motion:'Animaciones',level:'Nivel',plan:'Plano de la ciudad',typeAria:'Edificio de la vista previa',levelAria:'Nivel de la vista previa',plot:'Parcela',previewTip:'Vista previa sin compra',loadError:'No se pudo cargar la ciudad. Puedes seguir usando el panel de edificios o volver al mapa.',title:'El Almojarife · Ciudad mediterránea'},en:{fit:'Fit',zoomIn:'Zoom in',zoomOut:'Zoom out',plots:'Plots',preview:'Preview',construct:'Build view',motion:'Animations',level:'Level',plan:'City plan',typeAria:'Preview building',levelAria:'Preview level',plot:'Plot',previewTip:'Preview without buying',loadError:'The city could not be loaded. You can still use the buildings panel or go back to the map.',title:'El Almojarife · Mediterranean city'}};
+const CHROME={es:{fit:'Encajar',zoomIn:'Acercar',zoomOut:'Alejar',plots:'Parcelas',preview:'Vista previa',indVarious:'varios vecinos',construct:'Vista de construcción',motion:'Animaciones',level:'Nivel',plan:'Plano de la ciudad',typeAria:'Edificio de la vista previa',levelAria:'Nivel de la vista previa',plot:'Parcela',previewTip:'Vista previa sin compra',loadError:'No se pudo cargar la ciudad. Puedes seguir usando el panel de edificios o volver al mapa.',title:'El Almojarife · Ciudad mediterránea'},en:{fit:'Fit',zoomIn:'Zoom in',zoomOut:'Zoom out',plots:'Plots',preview:'Preview',indVarious:'several owners',construct:'Build view',motion:'Animations',level:'Level',plan:'City plan',typeAria:'Preview building',levelAria:'Preview level',plot:'Plot',previewTip:'Preview without buying',loadError:'The city could not be loaded. You can still use the buildings panel or go back to the map.',title:'El Almojarife · Mediterranean city'}};
 const uiLangC=()=>localStorage.getItem('lang')||(navigator.language?.toLowerCase().startsWith('es')?'es':'en'); // same rule as main.mjs
 const chrome=()=>CHROME[uiLangC()==='en'?'en':'es'];
 const applyChrome=()=>{const c=chrome();document.title=c.title;const cv=document.querySelector('canvas');if(cv)cv.setAttribute('aria-label',c.plan);$('fit').setAttribute('aria-label',c.fit);$('plus').setAttribute('aria-label',c.zoomIn);$('minus').setAttribute('aria-label',c.zoomOut);$('grid').textContent=c.plots;$('build').textContent=c.preview;$('motion').setAttribute('aria-label',c.motion);$('construct').setAttribute('aria-label',c.construct);$('construct').title=c.construct;$('type').setAttribute('aria-label',c.typeAria);$('level').setAttribute('aria-label',c.levelAria);[...$('level').options].forEach((o,i)=>o.textContent=c.level+' '+(i+1));};
@@ -196,7 +196,13 @@ function placeLabels(){
 const REP_ART={tannery:['soapworks:1','sepia(.4) brightness(.9)'],trading_post:['office:1','brightness(.94) hue-rotate(-12deg)']};
 function drawIndustry(){
  if(!industry.length||!layout)return;
- indSpots??=industrySpots(bounds,layout,industry);
+ // One drawing per type+owner group with an honest count (visual scale, like housing).
+ indSpots??=industrySpots(bounds,layout,industryClusters(industry)).map((s)=>{
+  const m=s.members,ownerSame=m.every(e=>e.ownerDesc===m[0].ownerDesc);
+  const label=s.count===1?m[0].label:`${s.typeName||s.type} ×${s.count} · ${ownerSame?m[0].ownerDesc:chrome().indVarious}`;
+  const own=s.ownerKind==='own',gone=s.ownerKind==='gone';
+  return {...s,label,own,gone};
+ });
  for(const s of [...indSpots].sort((a,b)=>placement(a).depth-placement(b).depth)){
   const rep=REP_ART[s.type],key=rep?rep[0]:(images[s.type+':'+s.level]?s.type+':'+s.level:s.type+':1');
   groundContact(s);sprite(s,images[key],s.gone?.5:1,rep?rep[1]:'');

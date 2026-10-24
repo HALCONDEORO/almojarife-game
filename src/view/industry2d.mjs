@@ -17,7 +17,7 @@ const SALT_COAST = new Set(["saltworks"]);
 const QUAYSIDE = new Set(["fishery", "trading_post", "dock"]);
 
 /** Footprint edge in world units; a little larger per level, like the art. */
-const foot = (e) => 2.1 + 0.3 * (e.level || 1);
+const foot = (e) => (2.1 + 0.3 * (e.level || 1)) * Math.min(1.6, 1 + 0.08 * ((e.count || 1) - 1)); // a cluster draws a little larger, like a bigger works
 
 /** Rects overlap, with padding. b uses {x,y,w,d}; a too. */
 const hit = (a, b, pad) =>
@@ -31,16 +31,45 @@ function segDist(x, y, s) {
   return Math.hypot(x - (s.beg.x + t * dx), y - (s.beg.y + t * dy));
 }
 
+
+/** Zone class of a type: where on the plan the trade belongs. */
+export function industryZone(type) {
+  if (SALT_COAST.has(type)) return "salt";
+  if (QUAYSIDE.has(type)) return "quay";
+  if (OUTSKIRTS.has(type)) return "outskirts";
+  return "urban";
+}
+
+/**
+ * Group a roster into drawable clusters. Big ports have far more works than the
+ * plan can show one by one (Sevilla > 100), so same-type works under the same
+ * kind of owner draw as ONE building with a count, exactly like the housing
+ * drawings stand for ~500 people. Owner kinds: own (player), gone (sold at
+ * auction), council, npc (townsfolk). No establishment is ever dropped:
+ * cluster counts sum to the roster length.
+ */
+export function industryClusters(establishments) {
+  const groups = new Map();
+  for (const e of establishments || []) {
+    const ownerKind = e.gone ? "gone" : e.own ? "own" : e.council ? "council" : "npc";
+    const key = industryZone(e.type) + "|" + e.type + "|" + ownerKind;
+    const g = groups.get(key);
+    if (g) { g.count++; g.members.push(e); g.level = Math.max(g.level, e.level || 1); }
+    else groups.set(key, { type: e.type, zone: industryZone(e.type), ownerKind, level: e.level || 1, count: 1, members: [e], typeName: e.typeName, ownerDesc: e.ownerDesc });
+  }
+  return [...groups.values()];
+}
+
 /** Deterministic candidate boxes for one establishment, in preference order. */
 function* candidates(e, i, bounds, edge, paths) {
   const { minX, minY, maxX, maxY } = bounds;
   const w = foot(e), d = w * 0.85;
   for (let k = 0; k < 90; k++) {
     const rx = hash01(i * 131 + k, 17), ry = hash01(i * 131 + k, 29);
-    if (SALT_COAST.has(e.type)) {
+    if (industryZone(e.type) === "salt") {
       // South beach: the sand band south of the city, clear of the quay corner.
       yield { x: minX + 6 + rx * Math.max(1, maxX - minX - 14 - w), y: maxY + 1.6 + ry * 2.6, w, d };
-    } else if (QUAYSIDE.has(e.type)) {
+    } else if (industryZone(e.type) === "quay") {
       // Just inland of the quay apron (the apron is the edge-2..edge strip);
       // the box (up to 3 wide) must clear it, so the band sits at edge-8.5..edge-5.7.
       // Slot centers go BETWEEN the east-west streets that run down to the water:
@@ -51,9 +80,14 @@ function* candidates(e, i, bounds, edge, paths) {
       const slots = [];
       let prev = minY + 3;
       for (const ey of [...ends, maxY - 3]) { if (ey - prev > d + 2.4) slots.push((prev + ey - d) / 2); prev = ey; }
-      if (slots.length) yield { x: edge - 8.5 + rx * 2.8, y: slots[k % slots.length] + (hash01(i * 131 + k, 31) - 0.5) * 1.2, w, d };
-      else yield { x: edge - 8.5 + rx * 2.8, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
-    } else if (OUTSKIRTS.has(e.type)) {
+      if (k % 2 === 0) {
+        if (slots.length) yield { x: edge - 8.5 + rx * 2.8, y: slots[k % slots.length] + (hash01(i * 131 + k, 31) - 0.5) * 1.2, w, d };
+        else yield { x: edge - 8.5 + rx * 2.8, y: minY + 4 + ry * Math.max(1, maxY - minY - 10 - d), w, d };
+      } else {
+        // The fishing quarter also belongs on the open beach by the water.
+        yield { x: minX + 2 + rx * Math.max(1, maxX - minX - 8 - w), y: maxY + 1.6 + ry * 2.6, w, d };
+      }
+    } else if (industryZone(e.type) === "outskirts") {
       // Country ring north of the walls, where fields and hills are drawn.
       yield { x: minX - 6 + rx * Math.max(1, maxX - minX + 6 - w), y: minY - 20 + ry * 16, w, d };
     } else {
@@ -82,11 +116,11 @@ export function industrySpots(bounds, layout, establishments) {
   const out = [];
   for (let i = 0; i < establishments.length; i++) {
     const e = establishments[i];
-    const rural = OUTSKIRTS.has(e.type) || SALT_COAST.has(e.type); // bands outside the fabric
+    const rural = industryZone(e.type) === "outskirts" || industryZone(e.type) === "salt"; // bands outside the fabric
     let spot = null;
     for (const r of candidates(e, i, bounds, edge, paths)) {
       if (taken.some((p) => hit(r, p, 0.8))) continue;
-      if (rural || r._fb) { spot = r; break; } // country/beach bands and the fallback ring clear the city by construction
+      if (rural || r._fb || r.y > maxY) { spot = r; break; } // country/beach bands and the fallback ring clear the city by construction
       // Urban and quayside boxes sit in the fabric: full collision checks.
       if (r.x < minX || r.x + r.w > maxX || r.y < minY || r.y + r.d > maxY) continue;
       if (r.x + r.w > edge - 2.2) continue; // keep clear of the quay apron and piers
