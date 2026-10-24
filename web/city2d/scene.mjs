@@ -16,6 +16,7 @@ const xy=(x,y)=>{const p=project(x,y);return{x:canvas.width/2+(p.x+dx)*zoom,y:35
 function polygon(p){ctx.beginPath();placement(p).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
 function fit(){dirty=true;if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const pts=manifestBounds,minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x)),minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));zoom=Math.min((innerWidth-30)/(maxX-minX+40),(innerHeight-180)/(maxY-minY+100));zoom=Math.max(.15,zoom);dx=-(minX+maxX)/2;dy=(innerHeight/2+25-35)/zoom-(minY+maxY)/2;draw(0)}
 function sprite(p,im,alpha=1,filter=''){if(!im)return;const g=spriteGeometry(p);ctx.save();ctx.globalAlpha=alpha;ctx.filter=filter;ctx.drawImage(im,canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom,g.width*zoom,g.height*zoom);ctx.restore()}
+function spriteM(p,im){if(!im)return;const g=spriteGeometry(p),lx=canvas.width/2+(g.left+dx)*zoom,ty=35+(g.top+dy)*zoom,w=g.width*zoom,h=g.height*zoom;ctx.save();ctx.filter='brightness(.84) contrast(1.08)';ctx.translate(lx+w/2,0);ctx.scale(-1,1);ctx.drawImage(im,-w/2,ty,w,h);ctx.restore()}
 function groundContact(p){
  const center=xy(p.x+p.w*.5,p.y+p.d*.5),w=placement(p).width*.44*zoom,h=(p.w+p.d)*3.4*zoom;
  ctx.save();ctx.translate(center.x,center.y);ctx.scale(1,h/w);const g=ctx.createRadialGradient(0,0,w*.12,0,0,w);g.addColorStop(0,'#514d324f');g.addColorStop(.6,'#65583b2e');g.addColorStop(1,'#65583b00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,w,0,Math.PI*2);ctx.fill();ctx.restore();
@@ -31,9 +32,13 @@ function drawWalls(){
  for(const [start,end]of edges){
   const len=Math.hypot(end[0]-start[0],end[1]-start[1]),n=Math.max(1,Math.round(len/1.7));
   const g=start[1]===end[1]?Math.min(Math.max(gx??((start[0]+end[0])/2),start[0]+3.4),end[0]-3.4):null;
+  // Base band: the pale curtain art vanishes against the ground at fit zoom, so a solid stone face keeps the wall legible at any zoom; the sprites add crenellations and towers on top.
+  const vert=start[0]===end[0],bh=30*zoom,segs=g===null?[[start,end]]:[[start,[g-3.3,start[1]]],[[g+3.3,start[1]],end]];
+  for(const [s0,s1]of segs){const a=vert?xy(s0[0]+1.3,s0[1]):xy(s0[0],s0[1]+1.3),b=vert?xy(s1[0]+1.3,s1[1]):xy(s1[0],s1[1]+1.3);if(Math.hypot(b.x-a.x,b.y-a.y)<2)continue;const gr=ctx.createLinearGradient(0,a.y-bh,0,a.y);gr.addColorStop(0,'#b3a078');gr.addColorStop(1,'#8d7c5b');ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-bh);ctx.lineTo(a.x,a.y-bh);ctx.closePath();ctx.fill();ctx.strokeStyle='#7a6a4c';ctx.lineWidth=2.2*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y-bh);ctx.lineTo(b.x,b.y-bh);ctx.stroke();}
   for(let i=0;i<=n;i++){const f=i/n,x=start[0]+(end[0]-start[0])*f,y=start[1]+(end[1]-start[1])*f;
    if(g!==null&&Math.abs(x-g)<3.3)continue; // the gate interrupts the rear wall
-   sprite({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl]);} // art overlap: the tower end of one tile meets the wall end of the next
+   if(vert)spriteM({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl]); // the art is painted for an X-running wall: mirror it so the curtain runs along the Y edge
+   else sprite({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl],1,'brightness(.84) contrast(1.08)');} // art overlap: the tower end of one tile meets the wall end of the next; the filter keeps the pale curtain readable against the ground at fit zoom
   if(g!==null)sprite({x:g-3,y:start[1]-3,w:6,d:6},images['gate:'+lvl]);
  }
 }
