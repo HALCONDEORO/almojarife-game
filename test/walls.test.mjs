@@ -73,7 +73,7 @@ test("legacy plague.walls=1 reads as level 1; new construction lands on level 2"
 });
 
 test("wallsAllow: flag-off pass-through and level-1 gate", () => {
-  const g0 = newGame(world, "cadiz", { freePlay: true, seed: 7, walls: false });
+  const g0 = newGame(world, "cadiz", { freePlay: true, seed: 7, walls: false, plague: false });
   assert.ok(wallsAllow(g0, "cadiz", "hospital"), "walls flag off (and no plague): the gate does not exist");
   const g = game(); rich(g); // default ON
   assert.equal(wallsAllow(g, "cadiz", "hospital"), false, "walls flag on, no walls built: hospital gated");

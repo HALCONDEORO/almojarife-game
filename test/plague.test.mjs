@@ -17,8 +17,8 @@ const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json"
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, plague: true, ...opts });
 const withBuildings = (g, cityId, defs) => { g.buildings ??= {}; g.buildings[cityId] = Object.fromEntries(defs.map(([type, level, halted], i) => [`${cityId}:${i + 1}`, { type, level, state: "active", ...(halted ? { halted: true } : {}) }])); };
 
-test("flag OFF: no state, no rolls, market untouched", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 7 });
+test("flag OFF (forced): no state, no rolls, market untouched", () => {
+  const g = newGame(world, "cadiz", { freePlay: true, seed: 7, plague: false }); // forced OFF (the default is ON since 24/10 12:08)
   assert.equal(g.plague, undefined);
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.equal(g.plague, undefined);
@@ -54,7 +54,7 @@ test("walls: hospital and capilla need the one expansion; pozo does not; expansi
   assert.ok(r.ok && g.cash === before - WALL_COST, "money identity on the expansion");
   assert.equal(expandWalls(g, "cadiz").reason, "already expanded");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").ok, "hospital allowed after the expansion");
-  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, walls: false }); // no wall system at all (plague off, walls pinned off): no gate
+  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, walls: false, plague: false }); // no wall system at all (plague pinned off, walls pinned off): no gate
   (g2.rep ??= {}).cadiz = 100; g2.cash = 1e6; buyOffice(g2, "cadiz"); buyPlot(g2, "cadiz", { id: "cadiz:1", type: "house", w: 10, d: 10 });
   assert.ok(quoteConstruction(g2, "cadiz", "cadiz:1", "hospital").ok, "without the plague flag the wall gate does not exist");
 });
