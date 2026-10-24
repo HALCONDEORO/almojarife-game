@@ -69,15 +69,15 @@ test("a kiln buys local timber, sells pottery and earns the margin; idle without
   assert.equal(g.market.sevilla.pottery.stock, p0); assert.equal(g.cash, c1);
 });
 
-test("NPC traders never deal pottery; other optional goods stay tradeable; the kiln niche is the player's (balance probe 23/10)", () => {
+test("pottery is NPC-tradeable like any good: bots may deal it (owner call 24/10, same rule as saffron #381)", () => {
   const g = newGame(world, "cadiz", { freePlay: true, seed: 1 }); // all optional goods ON by default
-  assert.equal(g.world.goods.pottery.npcTrade, false, "pottery marked player-trade only");
+  assert.notEqual(g.world.goods.pottery?.npcTrade, false, "pottery must not be player-only");
   assert.notEqual(g.world.goods.kidMeat?.npcTrade, false, "kid meat still NPC-tradeable");
   assert.notEqual(g.world.goods.legumes?.npcTrade, false, "legumes still NPC-tradeable");
   const traded = new Set();
   for (let d = 0; d < 200; d++) {
     advanceDay(g);
-    for (const t of g.ai) for (const good of Object.keys(t.ship.cargo ?? {})) { assert.notEqual(good, "pottery", `bot holds pottery on day ${g.day}`); traded.add(good); }
+    for (const t of g.ai) for (const good of Object.keys(t.ship.cargo ?? {})) traded.add(good);
   }
-  assert.ok(traded.size > 5, "bots keep trading the rest of the catalogue");
+  assert.ok(traded.size > 5, "bots keep trading the catalogue");
 });
