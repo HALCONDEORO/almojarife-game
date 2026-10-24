@@ -8,7 +8,7 @@ test('warehouse transfers preserve split cost books and correct sale profit',()=
  const g=newGame(world);g.cash=9000;const s=g.ships[0];buyWarehouse(g,s.at);const b=doBuy(g,s,'salt',10);const cost=b.cost;assert.ok(cost>0); // the exact price depends on the seeded warm-up, which changes whenever the world gains a good
  const worth=netWorth(g);storeGoods(g,s,'salt',10);assert.equal(s.basis.salt,undefined);assert.equal(g.warehouses[s.at].basis.salt,cost);assert.equal(netWorth(g),worth);
  takeGoods(g,s,'salt',5);const half=s.basis.salt;assert.equal(half+g.warehouses[s.at].basis.salt,cost);assert.ok(Math.abs(half-cost/2)<=0.5);
- const r=doSell(g,s,'salt',5);assert.equal(r.spent,half);assert.equal(r.profit,r.revenue-half);assert.equal(g.basis.salt.cost,half);
+ const r=doSell(g,s,'salt',5);assert.equal(r.spent,half);assert.equal(r.profit,r.revenue-half);assert.equal(g.basis.salt.cost,cost/2); // the global book keeps the exact proportional share (5 of 10 sold -> half the cost, fractional allowed); the ship/warehouse split above uses integer Math.round, so cost-half is only equal on even parities (the seeded warm-up shifts parity whenever NPC trading changes, e.g. pottery NPC trade 24/10)
  const reload=deserialize(serialize(g,'audit'),world).g;assert.equal(reload.warehouses[s.at].basis.salt,cost-half);
 });
 test('many rounded warehouse splits conserve exact integer basis across two ships',()=>{
