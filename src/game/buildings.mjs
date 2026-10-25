@@ -258,7 +258,8 @@ export function sellQuote(world, market, city, good, qty) {
  *  producer in the port runs at the same staffing ratio - a labour shortage slows the whole port, not
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
-  house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
+  house: 0, house_poor: 0, house_comfortable: 0, house_rich: 0, // houses need no workers
+  warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
   posito: 2, hospital: 6, alhondiga: 3, // city-life civic types (own tuning; only buildable with the flag on)
   caminos: 1, pozo: 1, capilla: 3,
