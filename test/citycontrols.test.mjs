@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+const html = readFileSync('web/index.html', 'utf8');
 const js = readFileSync('web/main.mjs', 'utf8');
 const css = readFileSync('web/index.html', 'utf8');
 const nav = js.match(/<nav class="city-controls"[^`]*?<\/nav>/)?.[0] ?? '';
@@ -94,7 +95,7 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
 
 test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
   assert.match(css, /\.city-window\{position:absolute;right:180px;top:84px/, 'window home below bar');
-  assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap")])'), 'drag clamp reads bar and mission chip');
+  assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")])'), 'drag clamp reads bar, chip and minimised flag');
   assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below them');
 });
 
@@ -130,10 +131,20 @@ test('mission stays visible while the tutorial runs: stacked, mission first (Mar
   assert.ok(!js.includes('tutorialLine(g, lang) ?? missionLine'), 'tutorial never replaces the mission in the hint');
 });
 
+test('map hint also minimises and restores the mission, and stacks it under sail (Marco 25/10)', () => {
+  assert.ok(js.includes('id="hint-mission-toggle"') || html.includes('id="hint-mission-toggle"'), 'map toggle exists');
+  assert.ok(js.includes('$("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin"'), 'map toggle wired');
+  assert.ok(js.includes('(s.voyage.anchored ? t.hintAnchored : t.hintSea) + (objLine && !objMin ?'), 'mission stacks onto the voyage hint');
+  assert.ok(js.includes('objMin && objLine ? "" : objLine ||'), 'minimised docked map collapses to the flag button');
+  assert.ok(js.includes('ht.hidden = !!g.over || !objLine'), 'toggle only with a live objective');
+  assert.ok(html.includes('<div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div>'), 'toggle is a sibling so setLiveText cannot wipe it');
+});
+
 test('mission stays visible with a window open and minimises to a restorable chip (Marco 25/10)', () => {
   assert.ok(!js.includes('cm.hidden = !line || open'), 'never hidden by the open window');
   assert.ok(js.includes('wrap.hidden = !line || minimized'), 'expanded chip hidden only when empty or minimised');
   assert.ok(js.includes('mx.hidden = !line || !minimized'), 'minimised chip mirrors it');
+  assert.ok(js.includes('const win = d.querySelector(".city-window"), chip = !wrap.hidden ? wrap : (!mx.hidden ? mx : null)'), 'window keeps clear of the minimised flag too');
   assert.ok(js.includes('localStorage.getItem("missionMin") === "1"'), 'persisted minimised state');
   assert.ok(js.includes('$("mission-min").onclick=()=>{localStorage.setItem("missionMin","1")'), 'minimise button');
   assert.ok(js.includes('$("mission-max").onclick=()=>{localStorage.setItem("missionMin","0")'), 'restore button');

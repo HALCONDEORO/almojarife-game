@@ -343,9 +343,9 @@ function syncMissionEcho() {
   }
   if (top) { wrap.style.top = top; mx.style.top = top; }
   // The open window keeps clear of the expanded chip (same rule as the corner bar clamp).
-  const win = d.querySelector(".city-window");
-  if (win && !win.hidden && !wrap.hidden) {
-    const cr = wrap.getBoundingClientRect(), wr = win.getBoundingClientRect();
+  const win = d.querySelector(".city-window"), chip = !wrap.hidden ? wrap : (!mx.hidden ? mx : null);
+  if (win && !win.hidden && chip) {
+    const cr = chip.getBoundingClientRect(), wr = win.getBoundingClientRect();
     if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) {
       const vt = d.getBoundingClientRect().top;
       win.style.left = win.offsetLeft + "px"; win.style.right = "auto";
@@ -402,8 +402,17 @@ function render() {
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
   syncCityControls();
   syncMissionEcho();
+  const objMin = localStorage.getItem("missionMin") === "1", objLine = g.over ? "" : hudObjectiveLines().join(" \u00b7 "); // Marco 25/10: the mission stays visible on the map too, even under sail, unless minimised
   setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmtM(netWorth(g))}` :
-    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (hudObjectiveLines().join(" \u00b7 ") || t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
+    s.voyage ? ((s.voyage.anchored ? t.hintAnchored : t.hintSea) + (objLine && !objMin ? " \u00b7 " + objLine : "")) :
+    (objMin && objLine ? "" : objLine || t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
+  const ht = $("hint-mission-toggle");
+  if (ht) {
+    ht.hidden = !!g.over || !objLine;
+    ht.textContent = objMin ? "\u2691" : "\u2212";
+    ht.title = objMin ? (lang === "es" ? "Mostrar misión" : "Show mission") : (lang === "es" ? "Minimizar misión" : "Minimise mission");
+    ht.setAttribute("aria-label", ht.title);
+  }
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");
@@ -1003,7 +1012,7 @@ function open3d(s0) {
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
   const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);
-  for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap")]){ // the bar and the mission chip never cover the title/close row (Marco 25/10)
+  for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")]){ // the bar and the mission chip (expanded or minimised flag) never cover the title/close row (Marco 25/10)
     if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight;
       if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,innerHeight-70-Math.min(win.offsetHeight,80)));}}
   win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
@@ -1091,6 +1100,7 @@ function showLedger(kind) {
 $("rep").onclick = () => showLedger("rep");
 $("msg").onclick = () => showLedger("msg");
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
+$("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", localStorage.getItem("missionMin") === "1" ? "0" : "1"); render(); };
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
   el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-exp">${t.exportS}</button> <span id="m-msg"></span></p>` +
