@@ -200,7 +200,7 @@ export const BO = {
   es: {
     days: "{d} días de obra", fee: "mano de obra {p}", imported: "con importación",
     ops: "mantenim. {u}/día", wages: "salarios {w}/día",
-    makes: "hasta {n}/día", uses: "gasta {n}/día", seasonal: "según temporada",
+    makes: "≈{n}/día de media", uses: "gasta ≈{n}/día de media", seasonal: "según temporada",
     armory: "vende armas y equipo",
     civic: { posito: "estabiliza el grano", hospital: "contra la peste", alhondiga: "mercado cubierto", caminos: "saneamiento", pozo: "agua limpia", capilla: "amparo en calamidades", carniceria: "carne y pescado estables", molino: "asegura el grano", corral: "alegra la ciudad" },
     groups: { own: "Casa y puerto", primary: "Materias primas", workshop: "Talleres y oficios", civic: "Edificios cívicos" },
@@ -208,7 +208,7 @@ export const BO = {
   en: {
     days: "{d} days to build", fee: "labor {p}", imported: "partly imported",
     ops: "upkeep {u}/day", wages: "wages {w}/day",
-    makes: "up to {n}/day", uses: "uses {n}/day", seasonal: "seasonal",
+    makes: "≈{n}/day on average", uses: "uses ≈{n}/day on average", seasonal: "seasonal",
     armory: "sells arms and gear",
     civic: { posito: "steadies the grain supply", hospital: "against the plague", alhondiga: "a covered market", caminos: "sanitation", pozo: "clean water", capilla: "shelter in calamity", carniceria: "steady meat and fish", molino: "secures the grain", corral: "lifts the city's spirits" },
     groups: { own: "Home and harbour", primary: "Raw materials", workshop: "Workshops and crafts", civic: "Civic buildings" },
@@ -261,6 +261,7 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
   const mats = Object.entries(RECIPES[spec.recipe] ?? {})
     .map(([good, qty]) => `<span class="bldoffer-mat" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${fmt(qty * level)}</span>`).join(" ");
   const jobs = (JOBS_PER_LEVEL[o.type] ?? 0) * level, wages = jobs * WAGE_PER_WORKER;
+  const importedN = Object.values(o.imported ?? {}).reduce((a, b) => a + b, 0); // same rule as the confirm card: imported quantities, not object truthiness ({} is truthy)
   const ops = [bo.ops.replace("{u}", fmt(o.upkeep ?? spec.upkeep * level))];
   if (wages) ops.push(bo.wages.replace("{w}", fmt(wages)));
   const def = PRODUCERS[o.type];
@@ -269,17 +270,17 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
     const rate = producerRate(o.type, level);
     if (def.primary) {
       for (const [good, per] of [[def.output, def.yield], ...Object.entries(def.byproducts ?? {})]) {
-        const out = bo.makes.replace("{n}", fmt(rate * per));
+        const out = bo.makes.replace("{n}", fmtM(rate * per)); // averages keep their decimals (fmtM): a rounded average would read as a false figure
         parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 16)}${escBw(out)}</span>`);
         textParts.push(`${t.goods?.[good] ?? good} ${out}`);
       }
       if (SEASON_PEAK[def.output] !== undefined) { parts.push(`<span class="bldoffer-note">${bo.seasonal}</span>`); textParts.push(bo.seasonal); }
     } else {
-      const out = bo.makes.replace("{n}", fmt(rate * (OUTPUTS[def.recipe]?.[def.output] ?? 0)));
+      const out = bo.makes.replace("{n}", fmtM(rate * (OUTPUTS[def.recipe]?.[def.output] ?? 0)));
       parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[def.output] ?? def.output)}">${gi(def.output, 16)}${escBw(out)}</span>`);
       textParts.push(`${t.goods?.[def.output] ?? def.output} ${out}`);
       for (const [good, qty] of Object.entries(RECIPES[def.recipe] ?? {})) {
-        const use = bo.uses.replace("{n}", fmt(rate * qty));
+        const use = bo.uses.replace("{n}", fmtM(rate * qty));
         parts.push(`<span class="bldoffer-in" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${escBw(use)}</span>`);
         textParts.push(`${t.goods?.[good] ?? good} ${use}`);
       }
@@ -293,7 +294,7 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
   return `<span class="bldoffer" title="${escBw(title)}">${fig}<b class="bldoffer-name">${escBw(name)}</b>`
     + `<span class="bldoffer-block"><span class="bldoffer-cost">${bwSvg(BWI.coin, 14)}<b>${fmtM(o.cost)}</b> · ${escBw(bo.days.replace("{d}", fmt(o.days)))}</span>`
     + `<span class="bldoffer-mats">${mats}</span>`
-    + `<span class="bldoffer-fee">${escBw(bo.fee.replace("{p}", fmtM(o.fee)))}${o.imported ? ` · <i>${bo.imported}</i>` : ""}</span></span>`
+    + `<span class="bldoffer-fee">${escBw(bo.fee.replace("{p}", fmtM(o.fee)))}${importedN > 0 ? ` · <i>${bo.imported}</i>` : ""}</span></span>`
     + `<span class="bldoffer-block bldoffer-ops">${ops.map((x) => escBw(x)).join(" · ")}</span>`
     + (parts.length ? `<span class="bldoffer-block bldoffer-prod">${parts.join(" ")}</span>` : "")
     + `</span>`;

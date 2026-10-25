@@ -263,8 +263,8 @@ test("bldOfferCard: a processor card shows drawing, investment, running costs an
   assert.match(html, /5 días de obra/);
   assert.match(html, /mano de obra 300/); // labor fee = spec fee x level
   assert.match(html, /mantenim\. 3\/día · salarios 8\/día/); // upkeep + JOBS_PER_LEVEL.workshop(8) x WAGE(1)
-  assert.match(html, /hasta 1\/día/); // base rate 0.5 batches/day x 2 cloth - "up to", never a promise
-  assert.match(html, /gasta 2\/día/);   // 0.5 batches/day x 4 wool
+  assert.match(html, /≈1\/día de media/); // average rate 0.5 batches/day x 2 cloth - labeled average, never a max (peak days make more)
+  assert.match(html, /gasta ≈2\/día de media/);   // 0.5 batches/day x 4 wool
   assert.ok(!html.includes("según temporada")); // processors are not seasonal
   assert.equal(bldOfferGroup("workshop"), "workshop");
   assert.ok(BO.es.groups.workshop && BO.en.groups.workshop);
@@ -278,7 +278,7 @@ test("bldOfferCard: a seasonal primary labels the season; house/warehouse/dock r
   const offers = buildOffers(g, "cadiz", PLOT.id);
   const farmOffer = { type: "farm", ok: true, level: 1, cost: 700, materials: 500, fee: 200, days: 4, upkeep: 2, affordable: true, imported: false }; // cadiz grows no grain; a fabricated ok row exercises the primary branch
   const farm = bldOfferCard(t, farmOffer, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
-  assert.match(farm, /hasta 2\/día/); // 0.5 batches/day x 4 grain
+  assert.match(farm, /≈2\/día de media/); // 0.5 batches/day x 4 grain
   assert.match(farm, /según temporada/); // grain is a seasonal good (SEASON_PEAK)
   assert.equal(bldOfferGroup("farm"), "primary");
   const house = bldOfferCard(t, offers.find((o) => o.ok && o.type === "house"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
@@ -293,11 +293,11 @@ test("bldOfferCard: a seasonal primary labels the season; house/warehouse/dock r
 test("bldOfferCard: English strings, escaping, and decimals stay with the caller's fmt", async () => {
   const { bldOfferCard, bldOfferGroup } = await import("../src/view/buildingsview.mjs");
   const t = { bldTypes: { ranch: 'Rancho "viejo"' }, goods: { meat: "carne", leather: "cuero", kid_meat: "cordero", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
-  const o = { type: "ranch", ok: true, level: 1, cost: 1234.5, materials: 1000.5, fee: 250, days: 4, upkeep: 2, affordable: true, imported: true };
+  const o = { type: "ranch", ok: true, level: 1, cost: 1234.5, materials: 1000.5, fee: 250, days: 4, upkeep: 2, affordable: true, imported: { timber: 3 } };
   const html = bldOfferCard(t, o, "en", (n) => String(n), (n) => String(n), () => "<svg/>");
-  assert.match(html, /up to 1\/day/); // 0.5 x 2 meat
-  assert.match(html, /up to 0\.5\/day/); // byproducts at the same base rate
-  assert.match(html, /partly imported/);
+  assert.match(html, /≈1\/day on average/); // 0.5 x 2 meat
+  assert.match(html, /≈0\.5\/day on average/); // byproducts at the same average rate
+  assert.match(html, /partly imported/); // imported quantities > 0
   assert.match(html, /upkeep 2\/day · wages 6\/day/);
   assert.match(html, /Rancho &quot;viejo&quot;/); // names escape
   assert.equal(bldOfferGroup("ranch"), "primary"); // meat is not in SEASON_PEAK: primary, not seasonal
@@ -306,4 +306,16 @@ test("bldOfferCard: English strings, escaping, and decimals stay with the caller
   const card = bldOfferCard({ bldTypes: { molino: "Molino" }, goods: {} }, civic, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
   assert.match(card, /asegura el grano/);
   assert.equal(bldOfferGroup("molino"), "civic");
+});
+
+test("bldOfferCard: an empty imported object shows no import tag (truthiness regression), positive quantities do", async () => {
+  const { bldOfferCard } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { workshop: "Taller" }, goods: { cloth: "paño", wool: "lana", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const base = { type: "workshop", ok: true, level: 1, cost: 900, materials: 600, fee: 300, days: 5, upkeep: 3, affordable: true };
+  const none = bldOfferCard(t, { ...base, imported: {} }, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.ok(!none.includes("con importación")); // {} is truthy but means no imported units
+  const undef = bldOfferCard(t, base, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.ok(!undef.includes("con importación"));
+  const some = bldOfferCard(t, { ...base, imported: { timber: 4, bricks: 0 } }, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(some, /con importación/); // 4 timber imported, 0 bricks: positive sum wins
 });
