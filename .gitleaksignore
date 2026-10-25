@@ -6,3 +6,6 @@
 b5d473870ba3e845144ed284b71269b12ebfdcd8:web/main.mjs:generic-api-key:119
 9c0898e76ca994b840dd059279b878882525ca96:web/main.mjs:generic-api-key:94
 fcf28590db9d24adcefe35a7c75e35c40456dce6:web/main.mjs:generic-api-key:94
+# Same reviewed localStorage identifiers re-surfaced by the merge diff of ca815b9 (PR #354)
+ca815b98b59d5972ffdb2707e886ba4d8995b673:test/savefile.test.mjs:generic-api-key:15
+ca815b98b59d5972ffdb2707e886ba4d8995b673:test/savefile.test.mjs:generic-api-key:20
