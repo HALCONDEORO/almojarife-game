@@ -1,6 +1,7 @@
 // Own gameplay recipes. Not historical construction quantities. Not enabled in the game yet.
 import { price } from './market.mjs';
 import { FEE, ceil2 } from './trade.mjs';
+import { recordMarketPurchase } from './procurement.mjs';
 export const RECIPES = Object.freeze({
   barca: Object.freeze({ timber: 10, iron: 3, cloth: 3, esparto: 3 }),
   cog: Object.freeze({ timber: 24, iron: 8, cloth: 10, esparto: 6 }),
@@ -96,7 +97,11 @@ export function consumeUnitsImport(world, market, city, inputs, cash) {
   const q = quoteUnitsImport(world, market, city, inputs);
   if (!q.ok) return q;
   if (cash < q.cost) return { ok: false, reason: 'no cash', cost: q.cost };
-  for (const [good, qty] of Object.entries(q.local)) market[city][good].stock -= qty;
+  for (const [good, qty] of Object.entries(q.local)) {
+    market[city][good].stock -= qty;
+    const importedPart = (q.imported[good] ?? 0) * ceil2(world.goods[good].base * (1 + FEE) * IMPORT_MUL); // the flat-rate share of the mixed line cost (same formula as quoteUnitsImport)
+    recordMarketPurchase(market[city], good, qty, q.lineCosts[good] - importedPart, market[city][good].stock + qty); // telemetry: the local part paid the port's purse; imported stock never touches it
+  }
   return q;
 }
 

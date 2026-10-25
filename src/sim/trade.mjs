@@ -4,6 +4,7 @@ import { route } from "./world.mjs";
 import { ticksForKm } from "./clock.mjs";
 import { price } from "./market.mjs";
 import { loadWeight } from "./armament.mjs";
+import { recordMarketPurchase, recordWholesaleSale } from "./procurement.mjs";
 
 export const SHIP_TYPES = {
   barca: { capacity: 25, kmPerDay: 100, upkeepPerDay: 1, price: 900, buildDays: 8 },
@@ -70,6 +71,7 @@ export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   ship.cargo[good] = (ship.cargo[good] ?? 0) + n;
   ship.basis = ship.basis ?? {};
   ship.basis[good] = (ship.basis[good] ?? 0) + cost; // what this cargo cost, for profit display
+  recordMarketPurchase(market[ship.at], good, n, cost, e.stock + n); // telemetry: the port's purse received the payment
   return { ok: true, qty: n, cost };
 }
 export function sell(world, market, ship, good, qty, fee = FEE) {
@@ -86,6 +88,7 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   ship.cargo[good] -= qty;
   if (ship.basis) ship.basis[good] = paid - spent;
   if (!ship.cargo[good]) { delete ship.cargo[good]; if (ship.basis) delete ship.basis[good]; }
+  recordWholesaleSale(market[ship.at], good, qty, revenue); // telemetry: the port's purse paid the seller
   return { ok: true, qty, revenue, profit: revenue - spent, spent };
 }
 /** What a buy of qty would do, without changing anything. Same rules as buy(). */
