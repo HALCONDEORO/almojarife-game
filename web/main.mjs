@@ -40,7 +40,7 @@ import { repOf, respectOf } from "../src/game/rank.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding, portLayout } from "../src/view3d/port3d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
-import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard, bldChipInner, bldOfferCard, bldOfferGroup, BO } from "../src/view/buildingsview.mjs";
+import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard, bldChipInner, bldOfferCard, bldOfferGroup, bldOfferArt, BO } from "../src/view/buildingsview.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
 import { quoteWalls, startWalls, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX_LEVEL, WALL_UPKEEP, WALL_BUILD_DAYS } from "../src/game/walls.mjs";
@@ -622,7 +622,7 @@ function render() {
           const offers = buildOffers(g, s.at, r.plotId).filter((o) => o.ok), bo2 = BO[lang] ?? BO.es; // only types this city's resources allow
           for (const grp of ["own", "primary", "workshop", "civic"]) {
             const list = offers.filter((o) => bldOfferGroup(o.type) === grp);
-            if (list.length) h += `<p class="bldoffer-group"><b>${bo2.groups[grp]}</b></p><div class="bldoffers">` + list.map((o) => `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon)}</button>`).join("") + `</div>`;
+            if (list.length) h += `<p class="bldoffer-group"><b>${bo2.groups[grp]}</b></p><div class="bldoffers">` + list.map((o) => `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon, bldOfferArt(r.plotId, o.type, o.level))}</button>`).join("") + `</div>`;
           }
         }
       }

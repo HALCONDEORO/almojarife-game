@@ -7,3 +7,12 @@ Each manifest entry records source atlas filename, crop rectangle and exported W
 The three social house styles are cosmetic only, selected deterministically from the existing plot ID. They do not establish social-class occupancy, population, rent or additional save fields. Levels use the same existing level number. Construction and halted states are existing simulation states, not new rules.
 
 The feature is OFF unless the game URL contains city2d=1. It is not a replacement release. Sources and caveats belong here, not in normal player UI.
+
+## Use in the build-offer cards (October 25, 2026)
+
+The level sprites are also drawn on the build-offer cards of the normal player UI (the grouped
+build menu on an owned empty plot), through the same assetKey/REP_ART mapping the city scene
+uses. This wider use follows Marco's explicit direction of October 25, 2026 to show the city's
+real building models on the cards. It records current usage scope only: it does not change the
+art-review status of the manifest entries above and it is not a license certification; the
+rights and style review described above still stands.
