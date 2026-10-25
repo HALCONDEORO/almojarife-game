@@ -319,3 +319,36 @@ test("bldOfferCard: an empty imported object shows no import tag (truthiness reg
   const some = bldOfferCard(t, { ...base, imported: { timber: 4, bricks: 0 } }, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
   assert.match(some, /con importación/); // 4 timber imported, 0 bricks: positive sum wins
 });
+
+test("bldOfferArt: the offer drawing is the same sprite the city draws (assetKey mapping)", async () => {
+  const { bldOfferArt } = await import("../src/view/buildingsview.mjs");
+  const { assetKey } = await import("../src/view/city2d.mjs");
+  assert.deepEqual(bldOfferArt("cadiz:19", "fishery", 1), { src: "city2d/assets/fishery-1.webp", filter: "" });
+  // house: plot-deterministic style, exactly the key the city scene would use for that plot
+  const expected = assetKey({ id: "cadiz:19", type: null }, { type: "house", level: 1, state: "active" }).replace(":", "-");
+  assert.match(expected, /^house_(poor|comfortable|rich)-1$/);
+  assert.equal(bldOfferArt("cadiz:19", "house", 1).src, `city2d/assets/${expected}.webp`);
+  // the scene's REP_ART stand-ins: a reused sprite never passes for a different factory
+  assert.deepEqual(bldOfferArt("cadiz:19", "tannery", 2), { src: "city2d/assets/soapworks-1.webp", filter: "sepia(.4) brightness(.9)" });
+  assert.deepEqual(bldOfferArt("cadiz:19", "trading_post", 1), { src: "city2d/assets/office-1.webp", filter: "brightness(.94) hue-rotate(-12deg)" });
+  // level clamps like the city art does (1..3)
+  assert.equal(bldOfferArt("cadiz:19", "brewery", 9).src, "city2d/assets/brewery-3.webp");
+  // every buildable type resolves to an existing asset file
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { BUILDING_TYPES } = await import("../src/game/buildings.mjs");
+  for (const type of Object.keys(BUILDING_TYPES)) {
+    const { src } = bldOfferArt("cadiz:19", type, 1);
+    assert.ok(existsSync(`web/${src}`), `${type} -> ${src}`);
+  }
+});
+
+test("bldOfferCard: with art it shows the isometric model; without art the flat drawing stays", async () => {
+  const { bldOfferCard, bldOfferArt } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { fishery: "Pesca" }, goods: { fish: "pescado", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const o = { type: "fishery", ok: true, level: 1, cost: 700, materials: 550, fee: 150, days: 3, upkeep: 1, affordable: true, imported: {} };
+  const withArt = bldOfferCard(t, o, "es", (n) => String(n), (n) => String(n), () => "", bldOfferArt("cadiz:19", "fishery", 1));
+  assert.match(withArt, /<img class="bldoffer-art" src="city2d\/assets\/fishery-1\.webp"/);
+  const flat = bldOfferCard(t, o, "es", (n) => String(n), (n) => String(n), () => "");
+  assert.match(flat, /<svg class="gi"/); // no art passed: original flat drawing
+  assert.ok(!flat.includes("bldoffer-art"));
+});

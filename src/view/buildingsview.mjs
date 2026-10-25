@@ -3,6 +3,7 @@
 import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe, RECIPES, OUTPUTS } from "../sim/recipes.mjs";
 import { SEASON_PEAK } from "../sim/market.mjs";
+import { assetKey } from "./city2d.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
 export const TYPE_KEYS = Object.keys(BUILDING_TYPES);
@@ -193,9 +194,9 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
  * hides in title/aria. Groups follow the classic Hansa build menu: own buildings, raw-material
  * producers, processors, civic. Pure: renders buildOffers() rows; all number formatting stays
  * with the caller's fmt/fmtM (immune to decimal cash), names/state reuse the caller's T table.
- * Own flat icons (BOI, CREDITS.md style - original work). The isometric webp art is NOT used
- * here: web/city2d/PROVENANCE.md marks its rights review as pending, so it stays out of the
- * normal player UI until that clears. */
+ * The card drawing is the same isometric model the city view draws for that building (Marco
+ * 25/10: use the city's real building models on the cards) via bldOfferArt(); the own flat
+ * icons (BOI, CREDITS.md style - original work) stay as the fallback when no art is passed. */
 export const BO = {
   es: {
     days: "{d} días de obra", fee: "mano de obra {p}", imported: "con importación",
@@ -214,6 +215,17 @@ export const BO = {
     groups: { own: "Home and harbour", primary: "Raw materials", workshop: "Workshops and crafts", civic: "Civic buildings" },
   },
 };
+/** Isometric art for a build offer: the same sprite the city view draws for that building
+ * (Marco 25/10). Same mapping as the scene - assetKey() picks the level art and the
+ * plot-deterministic house style, and the scene's REP_ART stand-ins keep a reused sprite from
+ * passing for a different factory. Returns the webp path under web/ plus the CSS filter the
+ * scene applies; the caller falls back to the flat SVG when it passes no art. */
+const OFFER_ART_REP = { tannery: ["soapworks:1", "sepia(.4) brightness(.9)"], trading_post: ["office:1", "brightness(.94) hue-rotate(-12deg)"] };
+export function bldOfferArt(plotId, type, level) {
+  const rep = OFFER_ART_REP[type];
+  const key = rep ? rep[0] : assetKey({ id: plotId, type: null }, { type, level: level ?? 1, state: "active" });
+  return { src: `city2d/assets/${key.replace(":", "-")}.webp`, filter: rep ? rep[1] : "" };
+}
 /** Menu family of a buildable type, for the grouped offer list (classic build-menu order). */
 export function bldOfferGroup(type) {
   const def = PRODUCERS[type];
@@ -250,14 +262,15 @@ const BOI = {
   molino: '<path d="M9 21l1-10h4l1 10z" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><path d="M12 11L5 4M12 11l7-7M12 11l-7 7M12 11l7 7" stroke="#a8733a" stroke-width="1.8"/><circle cx="12" cy="11" r="1.6" fill="#6e4a22"/>',
   corral: '<path d="M4 5h16v8a8 8 0 01-16 0z" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><circle cx="9" cy="10" r="1.2" fill="#2e3236"/><circle cx="15" cy="10" r="1.2" fill="#2e3236"/><path d="M8 14c2 2 6 2 8 0" fill="none" stroke="#2e3236" stroke-width="1.4"/><path d="M4 21h16" stroke="#8a7a5a" stroke-width="1.6"/>',
 };
-/** Card inner HTML for one ok buildOffers() row; the caller wraps it in the build button. */
-export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
+/** Card inner HTML for one ok buildOffers() row; the caller wraps it in the build button.
+ *  art: optional bldOfferArt() result - the city's isometric model replaces the flat drawing. */
+export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood, art) {
   const bo = BO[lang] ?? BO.es;
   const level = o.level ?? 1;
   const name = t.bldTypes[o.type] ?? o.type;
   const spec = BUILDING_TYPES[o.type];
   const gi = (good, size) => (iconForGood ? iconForGood(good, size) : "");
-  const fig = bwSvg(BOI[o.type] ?? BWI[o.type] ?? BWI.building, 44);
+  const fig = art?.src ? `<img class="bldoffer-art" src="${escBw(art.src)}" alt="" loading="lazy"${art.filter ? ` style="filter:${escBw(art.filter)}"` : ""}>` : bwSvg(BOI[o.type] ?? BWI[o.type] ?? BWI.building, 44);
   const mats = Object.entries(RECIPES[spec.recipe] ?? {})
     .map(([good, qty]) => `<span class="bldoffer-mat" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${fmt(qty * level)}</span>`).join(" ");
   const jobs = (JOBS_PER_LEVEL[o.type] ?? 0) * level, wages = jobs * WAGE_PER_WORKER;
