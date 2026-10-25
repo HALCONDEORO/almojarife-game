@@ -1,16 +1,49 @@
 name: Balance
-# Fast gate on pull requests (10 game years), only when economy or simulation files change.
-# Full 100-year run on every push to main, every night, and on demand. Same thresholds in both.
+# Fast gate on pull requests (10 game years) and full 100-year run on pushes to main:
+# both fire only when a change can move the simulation. Nightly and on-demand always run the full set.
+# Both filters are fail-closed: everything matches "**" except paths proven sim-irrelevant below.
 on:
   pull_request:
     paths:
-      - "src/**"
-      - "data/**"
-      - "tools/**"
-      - "package.json"
-      - ".github/workflows/balance.yml"
+      # Last matching pattern wins. Unknown/new paths stay covered (fail-closed).
+      - "**"
+      # Browser bundle: the sim (node tools/) never imports web/.
+      - "!web/**"
+      # UI views are presentation-only...
+      - "!src/view/**"
+      # ...except cityscene.mjs: src/game/* imports its seeded() hash (economy-relevant).
+      - "src/view/cityscene.mjs"
+      # Tests cannot change sim results; the CI test suite covers them on every push/PR.
+      - "!test/**"
+      # Docs and images never move the simulation.
+      - "!**/*.md"
+      - "!docs/**"
+      - "!**/*.png"
+      - "!**/*.jpg"
+      - "!**/*.jpeg"
+      - "!**/*.gif"
+      - "!**/*.svg"
   push:
     branches: [main]
+    paths:
+      # Last matching pattern wins. Unknown/new paths stay covered (fail-closed).
+      - "**"
+      # Browser bundle: the sim (node tools/) never imports web/.
+      - "!web/**"
+      # UI views are presentation-only...
+      - "!src/view/**"
+      # ...except cityscene.mjs: src/game/* imports its seeded() hash (economy-relevant).
+      - "src/view/cityscene.mjs"
+      # Tests cannot change sim results; the CI test suite covers them on every push/PR.
+      - "!test/**"
+      # Docs and images never move the simulation.
+      - "!**/*.md"
+      - "!docs/**"
+      - "!**/*.png"
+      - "!**/*.jpg"
+      - "!**/*.jpeg"
+      - "!**/*.gif"
+      - "!**/*.svg"
   schedule:
     - cron: "17 2 * * *" # nightly, 02:17 UTC
   workflow_dispatch:
