@@ -152,6 +152,6 @@ than a ship) because low-margin primaries would need punitive price tags.
 Sim evidence (`tools/sim_buildings_economy.mjs 365`, before/after): scenario A (no player) unchanged;
 scenario B (bot builds a workshop) still reaches level 2 in year one with full staffing and no halts -
 production starts later (290 -> 266 units) and cash trough improves (1097 -> 1163) because wages start
-later; scenario C (poor bot, saltworks) no longer passes the affordability gate (cost 705 -> 2443), so
-the bot keeps its cash (+64 instead of -1219): the gate now does its job, and the wage-halt mechanics
-themselves are unchanged and covered by the plague/city-life suites.
+later; scenario C (poor bot, saltworks) now starts with 3,000 so it still builds at the new price
+(2,443) and still exercises the wage-halt mechanics: first halt on day 36, ends halted at -1,119.
+Halt/hysteresis code untouched.
