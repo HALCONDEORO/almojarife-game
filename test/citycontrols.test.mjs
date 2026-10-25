@@ -91,3 +91,27 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
   }
   assert.ok(js.includes('cityPopEff: "Effective population: {p} citizens"'), 'en string');
 });
+
+test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
+  assert.match(css, /\.city-window\{position:absolute;right:180px;top:84px/, 'window home below bar');
+  assert.ok(js.includes('const bar=d.querySelector(".city-corner");'), 'drag clamp reads bar');
+  assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below bar');
+});
+
+test('class percentages use one decimal and stay truthful (67+27+7=101 catch)', () => {
+  const cv = readFileSync('src/view/cityview.mjs', 'utf8');
+  assert.ok(cv.includes('pct: Math.round(counts[cls] / pop * 1000) / 10'), '1-decimal pct');
+  assert.ok(js.includes('String(r.pct).replace(".", ",")'), 'es decimal comma');
+});
+
+test('city intro grounds basket vs live prices, no contradiction with the cards', () => {
+  assert.ok(js.includes('cada clase tiene su cesta'), 'es basket wording');
+  assert.ok(js.includes('each class has its own basket'), 'en basket wording');
+  assert.ok(js.includes('«sin dinero para…»'), 'es points at live priced-out list');
+});
+
+test('language toggle also re-labels corner toolbar and panel section', () => {
+  assert.ok(js.includes('set("section", lang === "es" ? "Ciudad" : "City")'), 'section live');
+  assert.ok(js.includes('data-cc="section"'), 'section bound');
+  assert.ok(js.includes('bar2.setAttribute("aria-label", lang === "es" ? "Controles de tiempo'), 'corner aria live');
+});
