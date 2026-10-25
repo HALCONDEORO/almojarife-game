@@ -75,3 +75,19 @@ test('language toggle re-translates the whole city chrome live (Boat #427 catch)
   assert.ok(js.includes('cb.textContent = `${t.close} (Esc)`'), 'close label live');
   assert.ok(js.includes('"Mover ventana con las flechas" : "Move window with arrow keys"'), 'handle aria live');
 });
+
+test('inhabitants detail: true state composition, no decorative figures (Marco 25/10 14:38)', () => {
+  // Class cards and counts use the same effective population the market demand uses.
+  assert.ok(js.includes('const popEff = (nd2.pop ?? 8000) + eff.popBonus + drift + wallPop'), 'popEff composition');
+  assert.ok(js.includes('cityRows(popEff,'), 'class rows from effective pop');
+  assert.ok(js.includes('citylifeExtra(g, s.at)'), 'city-life drift included');
+  assert.ok(js.includes('WALL_POP * wallsKeptLevel(g, s.at)'), 'walls pop included');
+  // Breakdown line always shows the composition; jobs line only with real jobs.
+  assert.ok(js.includes('cityPopEff.replace("{p}", fmt(popEff))'), 'eff pop line');
+  assert.ok(js.includes('if (eff.jobs > 0)'), 'jobs only when real');
+  assert.ok(js.includes('bldJobsLine.replace("{j}", fmt(eff.jobs))'), 'jobs line');
+  for (const k of ['cityPopEff', 'cityPopBase', 'cityPopHouses', 'cityPopWalls', 'cityPopDrift']) {
+    assert.ok(js.includes(`${k}: "`), k + ' es');
+  }
+  assert.ok(js.includes('cityPopEff: "Effective population: {p} citizens"'), 'en string');
+});
