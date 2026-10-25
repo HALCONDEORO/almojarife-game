@@ -94,14 +94,18 @@ export function buyOffice(g, cityId) {
   return { ok: true, cost: OFFICE_PRICE };
 }
 
-export function buyPlot(g, cityId, plot) {
+export function buyPlot(g, cityId, plot, opts = {}) {
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
   const price = plotPrice(g.world, cityId, plot);
   if (price === null || !PLOT_ID.test(plot.id)) return { ok: false, reason: "bad plot" };
   if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   if (buildingAt(g, cityId, plot.id)) return { ok: false, reason: "already owned" };
-  const permit = (g.almonedaPermits?.[cityId] ?? 0) > 0; // a municipal permit won at the almoneda pays this plot
+  // A municipal permit won at the almoneda pays this plot - but only when the caller asks for it
+  // explicitly: the paper is never spent silently on a plot the player did not mean to use it on.
+  const wantsPermit = opts?.permit === true;
+  const permit = wantsPermit && (g.almonedaPermits?.[cityId] ?? 0) > 0;
+  if (wantsPermit && !permit) return { ok: false, reason: "no permit" };
   if (!permit && g.cash < price) return { ok: false, reason: "no cash", cost: price };
   if (permit) g.almonedaPermits[cityId] -= 1; else g.cash -= price;
   const maps = (g.buildings ??= Object.create(null)); (maps[cityId] ??= Object.create(null))[plot.id] = { type: null, level: 0, state: "plot", plotType: plot.type, paidPlot: price };

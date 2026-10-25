@@ -286,6 +286,22 @@ describe("hammer price (second price + 1, reserve-clamped: a mutation here must 
     }
     assert.fail("no mixed establishment + generated table found in 12 weeks");
   });
+  it("a legacy numeric bid of 0 is carried too: zero means the establishment table sits out, not that the bid vanished", async () => {
+    const { placeBid, shipLotOfDay, houseLotOfDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    for (let k = 0; k < 12; k++) { // the 500 case above is the nonzero baseline; this one pins the falsy edge
+      g.day = auctionOffset("cadiz") + k * AUCTION_EVERY;
+      const est = lotOfDay(g, "cadiz");
+      const gen = shipLotOfDay(g, "cadiz") ?? houseLotOfDay(g, "cadiz");
+      if (!est || !gen) continue;
+      g.townBids = { cadiz: 0 }; // an old save where the player deliberately sat the establishment table out
+      assert.equal(placeBid(g, "cadiz", 700, gen.id).ok, true);
+      assert.equal(g.townBids.cadiz[est.id], 0); // carried as zero, not dropped and not mistaken for "no bid"
+      assert.equal(g.townBids.cadiz[gen.id], 700);
+      return;
+    }
+    assert.fail("no mixed establishment + generated table found in 12 weeks");
+  });
 });
 
 describe("notice reach", () => {
@@ -444,6 +460,20 @@ describe("piece 5: goods lots", () => {
     const w = warehouseCap(g, "cadiz"); // drift guard: almoneda.mjs mirrors WAREHOUSE_CAP from game.mjs
     assert.equal(w, 300);
   });
+  it("the canonical 300-unit limit is enforced at the overflow edge, not just without a warehouse", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = goodsDay(g, "cadiz");
+    const lot = goodsLotOfDay(g, "cadiz");
+    const q = lot.goods.qty;
+    g.warehouses = { cadiz: { goods: { salt: 300 - q + 1 }, basis: {} } }; // one unit over the edge
+    const r1 = bidAuction(g, "cadiz", 1e9, lot.id);
+    assert.notEqual(r1.outcome, "won"); // 300-q+1 + q = 301 > 300: the bid is void
+    assert.equal(g.warehouses.cadiz.goods.salt, 300 - q + 1);
+    g.warehouses.cadiz.goods.salt = 300 - q; // exactly enough room
+    const r2 = bidAuction(g, "cadiz", 1e9, lot.id);
+    assert.equal(r2.outcome, "won");
+    assert.equal(g.warehouses.cadiz.goods.salt, 300 - q + q); // settled into the warehouse
+  });
 });
 
 describe("piece 5: building permits", () => {
@@ -465,20 +495,28 @@ describe("piece 5: building permits", () => {
     assert.equal(g.almonedaPermits.cadiz, 1);
     const plot = { id: "cadiz:998", type: "workshop", w: 10, d: 10 };
     const cash0 = g.cash;
-    const b = buyPlot(g, "cadiz", plot); // home port always has an office
+    const b0 = buyPlot(g, "cadiz", plot); // no explicit choice: the cash path must NOT spend the paper
+    assert.equal(b0.ok, true);
+    assert.equal(b0.permit, undefined);
+    assert.equal(g.cash, cash0 - b0.price);
+    assert.equal(g.almonedaPermits.cadiz, 1); // still in the pocket: redemption is a choice, never silent
+    const b = buyPlot(g, "cadiz", { id: "cadiz:997", type: "workshop", w: 10, d: 10 }, { permit: true }); // home port always has an office
     assert.equal(b.ok, true);
     assert.equal(b.permit, true);
-    assert.equal(g.cash, cash0); // the paper paid, not the purse
+    assert.equal(g.cash, cash0 - b0.price); // the paper paid, not the purse
     assert.equal(g.almonedaPermits.cadiz, 0);
-    assert.equal(g.buildings.cadiz["cadiz:998"].paidPlot, b.price);
-    const b2 = buyPlot(g, "cadiz", { id: "cadiz:997", type: "workshop", w: 10, d: 10 });
+    assert.equal(g.buildings.cadiz["cadiz:997"].paidPlot, b.price);
+    const bx = buyPlot(g, "cadiz", { id: "cadiz:996", type: "workshop", w: 10, d: 10 }, { permit: true });
+    assert.equal(bx.ok, false);
+    assert.equal(bx.reason, "no permit"); // asked for a paper that is already spent
+    const b2 = buyPlot(g, "cadiz", { id: "cadiz:996", type: "workshop", w: 10, d: 10 });
     assert.equal(b2.ok, true);
-    assert.equal(b2.permit, undefined); // token spent: the second solar costs cash, old return shape
-    assert.equal(g.cash, cash0 - b2.price);
+    assert.equal(b2.permit, undefined); // token spent: the next solar costs cash, old return shape
+    assert.equal(g.cash, cash0 - b0.price - b2.price);
     const raw = JSON.stringify(serialize(g, "Casa Prueba"));
     const { g: g2 } = deserialize(JSON.parse(raw), world);
     assert.deepEqual(g2.almonedaPermits, g.almonedaPermits); // the token path stays plain-object save-safe
-    assert.deepEqual(g2.buildings.cadiz["cadiz:998"], { type: null, level: 0, state: "plot", plotType: "workshop", paidPlot: b.price });
+    assert.deepEqual(g2.buildings.cadiz["cadiz:997"], { type: null, level: 0, state: "plot", plotType: "workshop", paidPlot: b.price });
     assert.equal(g2.cash, g.cash);
   });
   it("a permit in a port without an office cannot be redeemed there yet", () => {

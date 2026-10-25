@@ -446,6 +446,7 @@ function render() {
       if (bldAction.kind === "towers") { const o = quoteTowers(g, s.at), tw3 = TW[lang] ?? TW.es; if (o.ok) { card = `<b>${tw3.title} · ${tw3.cardN.replace("{n}", o.count).replace("{m}", towersMax(g, s.at))}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.count * TOWER_UPKEEP)}</small>`; canPay = g.cash >= o.cost; } else { card = `<b>${tw3.title}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : (tw3.why[o.reason] ?? whyText(t, o.reason))}</small>`; } }
       if (bldAction.kind === "walls") { const o = quoteWalls(g, s.at); if (o.ok) { card = `<b>${t.wallTitle} · ${t.wallLevel.replace("{l}", o.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.level * WALL_UPKEEP)}</small>`; canPay = g.cash >= o.cost; } else { card = `<b>${t.wallTitle}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : whyText(t, o.reason)}</small>`; } }
       else if (bldAction.kind === "buy") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); if (o) { card = `<b>${t.bldBuy.replace("{p}", fmt(o.price))}</b> ${o.id} <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small>`; canPay = g.cash >= o.price; } }
+      else if (bldAction.kind === "buypermit") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); const pn = g.almonedaPermits?.[s.at] ?? 0; const pbc = { es: { usePermit: "Usar permiso de obra", permitCost: "El permiso paga el solar: 0 monedas (te quedaran {n}).", noPermit: "No te quedan permisos de obra en este puerto." }, en: { usePermit: "Use building permit", permitCost: "The permit pays for the plot: 0 coins ({n} left afterwards).", noPermit: "You have no building permits left in this port." } }[lang] ?? {}; if (o) { card = `<b>${pbc.usePermit}</b> ${o.id} <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><small>${pn ? pbc.permitCost.replace("{n}", pn - 1) : pbc.noPermit}</small>`; canPay = pn > 0; } }
       else if (bldAction.kind === "build") { const o = buildOffers(g, s.at, bldAction.plotId).find((x) => x.type === bldAction.type); if (o?.ok) { card = `<b>${t.bldTypes[bldAction.type]}</b> ${bldAction.plotId}<br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>` + impNote(t, o); canPay = o.affordable; } else if (o) { card = `<b>${t.bldTypes[bldAction.type]}</b> ${bldAction.plotId}<br><small style="color:#a11">${whyText(t, o.reason)}</small>`; } }
       else if (bldAction.kind === "upgrade") { const o = upgradeOffer(g, s.at, bldAction.plotId); if (o?.ok) { card = `<b>${t.bldTypes[o.type]}</b> ${bldAction.plotId}<br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>` + impNote(t, o); canPay = o.affordable; } }
       return card ? `<div class="card">${card}<br><button data-bldconf="1" ${canPay ? "" : "disabled"}>${t.bldConfirm}</button> <button data-bldcancel="1">${t.bldCancel}</button>${canPay ? "" : ` <small>${t.capCash}</small>`}${bldError ? ` <small style="color:#a11">${bldError}</small>` : ""}</div>` : "";
@@ -557,6 +558,11 @@ function render() {
         } else h += `<p><i>${t.almNone}</i></p>`;
       }
     } else if (tab === "buildings") {
+      const pb = { // almoneda building permits: local table (TW precedent) so the i18n sweep lines stay untouched
+        es: { usePermit: "Usar permiso de obra", permits: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar un solar de este puerto.", permitCost: "El permiso paga el solar: 0 monedas (te quedaran {n}).", noPermit: "No te quedan permisos de obra en este puerto." },
+        en: { usePermit: "Use building permit", permits: "Building permits from the town auction: {n}. Redeem one when buying a plot in this port.", permitCost: "The permit pays for the plot: 0 coins ({n} left afterwards).", noPermit: "You have no building permits left in this port." },
+      }[lang] ?? {};
+      const permits = g.almonedaPermits?.[s.at] ?? 0;
       ensurePlots(s.at);
       if (bldAction && !bldAction.plotId.startsWith(s.at + ":")) { bldAction = null; bldError = null; } // sailed away with an armed action
       const eff = cityEffects(g, s.at);
@@ -584,6 +590,7 @@ function render() {
       const own = buildingsRows(g, s.at);
       if (!hasOffice(g, s.at)) h += `<p><i>${t.bldNeedOffice}</i></p>`; // building is office-gated
       else {
+        if (permits > 0) h += `<p><i>${pb.permits.replace("{n}", permits)}</i></p>`;
         h += `<p><i>${$("v3d") ? t.bldHint : t.bldPick2d}</i></p>`;
         if (own.length) h += `<p>` + own.map((r) => `<button data-bldact="sel|${r.plotId}">${buildingLabel(t, r)}</button>`).join(" ") + `</p>`; // also the no-WebGL path to build/upgrade
         const lay = plotsCache[s.at];
@@ -592,7 +599,7 @@ function render() {
         else {
           const offers = plotOffers(world, g, s.at, lay);
           if ($("v3d")) { if (offers.length) h += `<p><i>${t.bldFree3d.replace("{n}", offers.length)}</i></p>`; }
-          else h += offers.length ? `<p><b>${t.bldFree}</b></p><div class="yardcards">` + offers.map((o) => `<div class="card"><b>${o.id}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></div>`).join("") + `</div>` : "";
+          else h += offers.length ? `<p><b>${t.bldFree}</b></p><div class="yardcards">` + offers.map((o) => `<div class="card"><b>${o.id}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button>${permits ? ` <button data-bldact="buypermit|${o.id}">${pb.usePermit}</button>` : ""}</div>`).join("") + `</div>` : "";
         }
       }
     } else if (tab === "plot") { // one building or plot, opened by clicking it in the 3D view
@@ -603,7 +610,7 @@ function render() {
         const pv = plotViewState(plotsCache, world, g, s.at, bldSelPlot), o = pv.kind === "offer" ? pv.offer : null;
         if (pv.kind === "loading") h += `<p><i>${t.bldLoading}</i></p>`;
         else if (pv.kind === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
-        else if (o && hasOffice(g, s.at)) { h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button></p>`; }
+        else if (o && hasOffice(g, s.at)) { h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {
@@ -749,6 +756,7 @@ function render() {
     let r = null;
     act(() => {
       if (a0.kind === "buy") { const p = (Array.isArray(plotsCache[s.at]) ? plotsCache[s.at] : []).find((x) => x.id === a0.plotId); r = p ? buyPlot(g, s.at, p) : { ok: false, reason: "bad plot" }; }
+      else if (a0.kind === "buypermit") { const p = (Array.isArray(plotsCache[s.at]) ? plotsCache[s.at] : []).find((x) => x.id === a0.plotId); r = p ? buyPlot(g, s.at, p, { permit: true }) : { ok: false, reason: "bad plot" }; }
       else if (a0.kind === "walls") r = startWalls(g, s.at);
       else if (a0.kind === "towers") r = startTowers(g, s.at);
       else r = startConstruction(g, s.at, a0.plotId, a0.type);
