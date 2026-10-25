@@ -2,6 +2,7 @@
 
 ## How I checked it
 - [ ] `npm test` passes
+- [ ] Checked in a desktop browser with keyboard and mouse (desktop-only game: Windows, Mac, Linux; phones and tablets are out of scope, no mobile/responsive work)
 - [ ] New texts are added in every language block (`es` and `en`)
 - [ ] Commits are signed off (`git commit -s`, DCO) and my work is under MIT (code, data) or CC BY 4.0 (art, docs)
 - [ ] No code, art, text, names or data copied from other games; every third-party asset has a row in CREDITS.md
