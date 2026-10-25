@@ -124,6 +124,12 @@ export const BW = {
   es: { rate: "{r} lotes/día", margin: "margen {m}/lote", produced: "{n} producidos", upkeep: "mantenimiento {u}/día", jobs: "{j} trabajadores", wages: "salarios {w}/día", pop: "+{n} habitantes", cap: "+{n} de depósito", toll: "-{n}% de peaje" },
   en: { rate: "{r} batches/day", margin: "margin {m}/batch", produced: "{n} produced", upkeep: "upkeep {u}/day", jobs: "{j} workers", wages: "wages {w}/day", pop: "+{n} citizens", cap: "+{n} storage", toll: "-{n}% toll" },
 };
+// Short visible captions under each stat cell: the card must explain itself without hover
+// (the old text line spelled every figure out); the full labels above stay in title/aria-label.
+export const BWL = {
+  es: { rate: "lotes/día", margin: "margen/lote", produced: "producidos", upkeep: "mantenim./día", jobs: "trabajadores", wages: "salarios/día", pop: "habitantes", cap: "depósito", toll: "peaje" },
+  en: { rate: "batches/day", margin: "margin/batch", produced: "produced", upkeep: "upkeep/day", jobs: "workers", wages: "wages/day", pop: "citizens", cap: "storage", toll: "toll" },
+};
 // Own flat icons (CREDITS.md style, 24x24): card icons for non-producer types and small
 // stat glyphs. Producers use their good's icon from web/icons.mjs (imported by callers).
 const BWI = {
@@ -140,25 +146,25 @@ const bwSvg = (paths, size) => `<svg class="gi" width="${size}" height="${size}"
 const escBw = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
-  const bw = BW[lang] ?? BW.es;
+  const bw = BW[lang] ?? BW.es, bwl = BWL[lang] ?? BWL.es;
   const def = r.type ? PRODUCERS[r.type] : null;
   const cardIcon = def ? (iconForGood ? iconForGood(def.output, 40) : "") : bwSvg(BWI[r.type] ?? BWI.building, 40);
   const state = r.state === "construction"
     ? `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`
     : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : (t.bldState[r.state] ?? r.state);
-  const cell = (glyph, label, val, bad = false) =>
-    `<span class="bwc-stat${bad ? " bwc-bad" : ""}" role="img" aria-label="${escBw(label)}" title="${escBw(label)}">${bwSvg(glyph, 16)}<b>${val}</b></span>`;
+  const cell = (glyph, label, val, short, bad = false) =>
+    `<span class="bwc-stat${bad ? " bwc-bad" : ""}" role="img" aria-label="${escBw(label)}" title="${escBw(label)}"><span class="bwc-val">${bwSvg(glyph, 16)}<b>${val}</b></span><span class="bwc-lab">${escBw(short)}</span></span>`;
   const cells = [];
   if (r.state === "active" && !r.halted) {
-    if (r.rate !== undefined) cells.push(cell(BWI.gauge, bw.rate.replace("{r}", r.rate), r.rate));
-    if (r.margin !== undefined) cells.push(cell(BWI.coin, bw.margin.replace("{m}", r.margin === null ? "—" : fmt(r.margin)), r.margin === null ? "—" : fmt(r.margin), r.margin !== null && r.margin < 0));
-    if (r.produced !== undefined) cells.push(cell(BWI.box, bw.produced.replace("{n}", fmt(r.produced)), fmt(r.produced)));
-    if (r.popBonus) cells.push(cell(BWI.house, bw.pop.replace("{n}", fmt(r.popBonus)), `+${fmt(r.popBonus)}`));
-    if (r.capBonus) cells.push(cell(BWI.warehouse, bw.cap.replace("{n}", fmt(r.capBonus)), `+${fmt(r.capBonus)}`));
-    if (r.tollCut) cells.push(cell(BWI.dock, bw.toll.replace("{n}", r.tollCut), `-${r.tollCut}%`));
-    if (r.upkeep) cells.push(cell(BWI.coin, bw.upkeep.replace("{u}", fmt(r.upkeep)), `${fmt(r.upkeep)}/d`));
-    if (r.jobs) cells.push(cell(BWI.worker, bw.jobs.replace("{j}", r.jobs), r.jobs));
-    if (r.wages) cells.push(cell(BWI.coin, bw.wages.replace("{w}", fmt(r.wages)), `${fmt(r.wages)}/d`));
+    if (r.rate !== undefined) cells.push(cell(BWI.gauge, bw.rate.replace("{r}", r.rate), r.rate, bwl.rate));
+    if (r.margin !== undefined) cells.push(cell(BWI.coin, bw.margin.replace("{m}", r.margin === null ? "—" : fmt(r.margin)), r.margin === null ? "—" : fmt(r.margin), bwl.margin, r.margin !== null && r.margin < 0));
+    if (r.produced !== undefined) cells.push(cell(BWI.box, bw.produced.replace("{n}", fmt(r.produced)), fmt(r.produced), bwl.produced));
+    if (r.popBonus) cells.push(cell(BWI.house, bw.pop.replace("{n}", fmt(r.popBonus)), `+${fmt(r.popBonus)}`, bwl.pop));
+    if (r.capBonus) cells.push(cell(BWI.warehouse, bw.cap.replace("{n}", fmt(r.capBonus)), `+${fmt(r.capBonus)}`, bwl.cap));
+    if (r.tollCut) cells.push(cell(BWI.dock, bw.toll.replace("{n}", r.tollCut), `-${r.tollCut}%`, bwl.toll));
+    if (r.upkeep) cells.push(cell(BWI.coin, bw.upkeep.replace("{u}", fmt(r.upkeep)), fmt(r.upkeep), bwl.upkeep));
+    if (r.jobs) cells.push(cell(BWI.worker, bw.jobs.replace("{j}", r.jobs), r.jobs, bwl.jobs));
+    if (r.wages) cells.push(cell(BWI.coin, bw.wages.replace("{w}", fmt(r.wages)), fmt(r.wages), bwl.wages));
   }
   return `<div class="bwcard"><div class="bwc-icon">${cardIcon}</div><div class="bwc-main"><div class="bwc-name"><b>${escBw(buildingLabel(t, r))}</b> <small>${escBw(r.plotId)}</small></div><div class="bwc-state">${escBw(state)}</div>${cells.length ? `<div class="bwc-stats">${cells.join("")}</div>` : ""}</div></div>`;
 }
