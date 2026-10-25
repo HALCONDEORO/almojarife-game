@@ -130,7 +130,7 @@ legacy test and surfaced three integration faults. How each was fixed, and why:
 The owner asked for auctions "of every kind: houses, ships, factories, permits, whatever you
 come up with" ("subastas de todo tipo casas barcos fábricas permisos lo que se te ocurra",
 24 Oct 2026). Factories were the establishment roster (pieces 1-3). This piece adds the first
-two generated lot kinds; permits, goods lots and embargoes are designed to follow on the same
+two generated lot kinds; piece 5 (below) adds goods lots and building permits on the same
 rails. Design decisions below are this piece's choices under that creative brief, not user
 defaults: each is argued from the existing systems and is tunable in one place
 (`src/game/almoneda.mjs`).
@@ -180,3 +180,42 @@ changes the old establishment behaviour, where an office-less win silently kept 
 table). Generated lots cry their result only at a table the player joined: a weekly ship plus
 a fortnightly house at the home port would roughly triple the baseline notice rate, and
 MAX_INBOX eviction is a real failure mode (see the integration findings above).
+
+## Piece 5: goods lots and building permits (25 Oct 2026)
+
+Two more generated lot kinds on the piece-4 rails. Same rules: seeded per auction day, per-lot
+bids, second-price hammer, fall-through when a winner cannot settle, chest tracking apart under
+`hallAlmonedaGen`, result notices only at a table the player joined. Design decisions are this
+piece's choices under the same owner brief, argued from existing systems and tunable in one
+place (`src/game/almoneda.mjs`).
+
+**Goods lot.** A seized or surplus lot of one good the port produces (`city.makes`), 10-60
+units (seeded), valued at `qty x live local price x GOODS_VALUE_MUL (0.9)`: an auction discount
+off today's market, so the hammer is sometimes a bargain and sometimes not, which is what an
+almoneda is for. Cadence `GOODS_EVERY = 6` cycles. Settlement delivers the units into the
+player's warehouse in that port under the canonical capacity rule (`whUsed + qty <=
+warehouseCap`, the same units-based rule `storeGoods` uses; there is no per-good weight table
+today - if one arrives, this check adopts `qty x weight`, one line). The hammer price is
+recorded as the goods' `basis` so the profit ledger stays honest. No warehouse or no room: the
+bid is void with a notice and the lot falls to the next bidder.
+
+**Building permit.** A municipal paper that pays the plot price of one solar in that port,
+redeemed at `buyPlot` (same office gate; the plot is still chosen and validated by the normal
+purchase path, so the engine never enumerates the view-owned city layout). Valued at the
+`plotPrice` formula with a canonical mid-size plot (area 100, standard type multiplier) on the
+port's population: the paper's assessed value, not one specific plot's. Cadence
+`PERMIT_EVERY = 5` cycles. A permit for a port without an office waits in
+`g.almonedaPermits[cityId]` until there is one. Cash-path `buyPlot` returns are unchanged;
+only a permit-paid purchase reports `permit: true`.
+
+**Chest bound.** The cadence cap in `test/council.test.mjs` gains both kinds:
+`cycles x (... + max goods / GOODS_EVERY + max permit / PERMIT_EVERY) x 1.15`, with
+`maxGoodsLotValue` at the 3x price clamp and `maxPermitLotValue` at the largest port's
+population. The invariant stays a hard, tested bound.
+
+**Deliberately not done.** Justice seizures (`justice.mjs` counts seized goods that today leave
+the game) and foreclosure stock are the natural future source of real confiscated lots, but
+recabling those flags into the almoneda is a cross-flag design decision of its own (piece 6),
+not smuggled in here. The barrel/bale cargo-weight idea (owner, 25 Oct) belongs to the market
+model; the goods lot follows whatever capacity rule is canonical when it lands.
+
