@@ -145,6 +145,20 @@ const BWI = {
 const bwSvg = (paths, size) => `<svg class="gi" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const escBw = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+/** Compact chip for the owned-buildings list in the Construir tab: icon, name and state
+ *  (halted/fire stand out in red via CSS; works show their percent). The full card stays one
+ *  click away in the plot panel. Returns the button's INNER html - the caller owns the
+ *  <button data-bldact="sel|..."> wrapper and its behavior. */
+export function bldChipInner(t, r, lang, iconForGood) {
+  const def = r.type ? PRODUCERS[r.type] : null;
+  const icon = def ? (iconForGood ? iconForGood(def.output, 20) : "") : bwSvg(BWI[r.type] ?? BWI.building, 20);
+  const state = r.state === "construction"
+    ? `${t.bldState.construction} ${Math.round(r.progress * 100)}%`
+    : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : (t.bldState[r.state] ?? r.state);
+  const bad = r.halted || r.fire;
+  return `<span class="bldchip${bad ? " bldchip-bad" : ""}">${icon}<span class="bldchip-name">${escBw(buildingLabel(t, r))}</span><span class="bldchip-state">${escBw(state)}</span></span>`;
+}
+
 export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
   const bw = BW[lang] ?? BW.es, bwl = BWL[lang] ?? BWL.es;
   const def = r.type ? PRODUCERS[r.type] : null;

@@ -28,3 +28,10 @@ body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:184px;widt
 .bwcard .bwc-stat .bwc-lab{font-size:10px;line-height:1.2;color:#7a6845;font-weight:400}
 .bwcard .bwc-stat svg{width:16px;height:16px}
 .bwcard .bwc-bad{color:#a11}
+/* P3 owned-building chips in the Construir tab: icon + name + state at a glance */
+.bldchips{display:flex;flex-wrap:wrap;gap:6px}
+.bldchip{display:inline-flex;align-items:center;gap:5px}
+.bldchip svg{width:20px;height:20px;flex:none}
+.bldchip-name{font-weight:700}
+.bldchip-state{font-size:11px;color:#d8c9a8}
+.bldchip-bad .bldchip-state{color:#ff9d8a;font-weight:700}
