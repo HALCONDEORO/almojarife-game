@@ -2,8 +2,8 @@
 // One general mechanism, several lot kinds per city and auction day: a town-industry
 // establishment (piece 1) that changes hands under piece-2 rules - production and hands
 // move with it, never duplicate - plus generated lots (piece 4): used ships and town
-// houses, each on its own seeded cadence. Permits and goods lots plug into the same
-// table later (own lot kinds with their own valuations). Lot ids follow the establishment
+// houses, each on its own seeded cadence - plus piece-5 lots: seized/surplus goods and
+// building permits, each with its own valuation and settlement. Lot ids follow the establishment
 // shape `city:kind:n` so a won house keys g.buildings exactly like a bought works.
 //
 // Everyone plays by the same rules: the player and the named neighbours bid a single
@@ -20,7 +20,8 @@ import { townCouncil } from "./townhall.mjs";
 import { post } from "./ledger.mjs";
 import { isDiscovered } from "./fog.mjs";
 import { makeShip, SHIP_TYPES } from "../sim/trade.mjs";
-import { hasOffice } from "./buildings.mjs";
+import { hasOffice, warehouseCapBonus } from "./buildings.mjs";
+import { price } from "../sim/market.mjs";
 
 export const AUCTION_EVERY = 7; // one almoneda per city and week, staggered like the concejo meetings
 /** The city's weekly auction day offset inside the AUCTION_EVERY cycle. Deterministic per city. */
@@ -108,15 +109,64 @@ export function houseLotOfDay(g, cityId) {
     name: { es: `casa de vecinos (nivel ${level})`, en: `town house (level ${level})` } };
 }
 
+// ---- Piece 5: goods lots and building permits (same owner direction: "permisos lo que se te ocurra").
+// A goods lot is seized or surplus stock the seller puts on the block, priced off the live local
+// quote with an auction discount; it settles into the winner's warehouse in this port. A building
+// permit is a municipal paper that pays the plot price of one solar here, redeemed at buyPlot.
+export const GOODS_EVERY = 6, PERMIT_EVERY = 5; // cycles: goods about every six weeks, a permit about every five
+export const goodsCycleOffset = (cityId) => Math.floor(seeded("almoneda-goods:" + cityId)() * GOODS_EVERY);
+export const permitCycleOffset = (cityId) => Math.floor(seeded("almoneda-permit:" + cityId)() * PERMIT_EVERY);
+
+/** Base warehouse capacity, mirroring WAREHOUSE_CAP in game.mjs (which imports this module, so it
+ *  cannot be imported back; test/almoneda.test.mjs pins the two equal so a drift fails the suite). */
+const WAREHOUSE_BASE_CAP = 300;
+export const GOODS_QTY_RANGE = [10, 60], GOODS_VALUE_MUL = 0.9; // own tuning, documented as such
+/** Spanish names for the goods table (engine-side, like the post() precedent); EN humanizes the id. */
+const GOODS_ES = { grain: "grano", fish: "pescado", meat: "carne", salt: "sal", olive_oil: "aceite de oliva", beer: "cerveza", wine: "vino", sugar: "az\u00facar", pepper: "pimienta", saffron: "azafr\u00e1n", silk: "seda", cloth: "tela", leather: "cuero", soap: "jab\u00f3n", timber: "madera", bricks: "ladrillos", iron: "hierro", ironware: "ferreter\u00eda", wool: "lana", esparto: "esparto", legumes: "legumbres", pottery: "cer\u00e1mica" };
+export function goodsLotOfDay(g, cityId) {
+  if (g.townIndustry !== true || !isAuctionDay(cityId, g.day)) return null;
+  const cycle = cycleOf(g.day);
+  if (cycle % GOODS_EVERY !== goodsCycleOffset(cityId)) return null;
+  const city = g.world.cities.find((c) => c.id === cityId);
+  const makes = (city?.makes ?? []).filter((good) => g.world.goods[good] && g.market?.[cityId]?.[good]);
+  if (!makes.length) return null;
+  const rnd = seeded(`goodslot:${cityId}:${g.day}`);
+  const good = makes[Math.floor(rnd() * makes.length)];
+  const qty = GOODS_QTY_RANGE[0] + Math.floor(rnd() * (GOODS_QTY_RANGE[1] - GOODS_QTY_RANGE[0] + 1));
+  const unit = price(g.world, g.market[cityId][good], good);
+  const value = Math.max(1, Math.round(qty * unit * GOODS_VALUE_MUL));
+  return { kind: "goods", id: `${cityId}:goods:${g.day}`, goods: { good, qty }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "goods"),
+    name: { es: `${qty} de ${GOODS_ES[good] ?? good}`, en: `${qty} of ${good.replaceAll("_", " ")}` } };
+}
+/** The most valuable goods lot that can ever come up (top qty at the 3x price clamp). */
+export const maxGoodsLotValue = (world) => Math.round(GOODS_QTY_RANGE[1] * 3 * Math.max(...Object.values(world.goods).map((x) => x.base)) * GOODS_VALUE_MUL);
+
+/** A permit is valued like a canonical mid-size plot: the plotPrice formula with area 100 and the
+ *  standard type multiplier, on this port's population. The actual solar the winner picks may be
+ *  smaller or larger; the auction price is the assessed value of the paper, not of one plot. */
+export const PERMIT_PLOT_AREA = 100;
+export const permitLotValue = (world, cityId) => Math.round(150 + (world.nodes?.[cityId]?.pop ?? 8000) * 0.02 + PERMIT_PLOT_AREA * 2);
+export const maxPermitLotValue = (world) => Math.round(150 + Math.max(...world.cities.map((c) => c.pop)) * 0.02 + PERMIT_PLOT_AREA * 2);
+export function permitLotOfDay(g, cityId) {
+  if (g.townIndustry !== true || !isAuctionDay(cityId, g.day)) return null;
+  const cycle = cycleOf(g.day);
+  if (cycle % PERMIT_EVERY !== permitCycleOffset(cityId)) return null;
+  const value = permitLotValue(g.world, cityId);
+  return { kind: "permit", id: `${cityId}:permit:${g.day}`, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "permit"),
+    name: { es: "permiso de obra municipal", en: "municipal building permit" } };
+}
+
 /** Every lot on the block today: the establishment table plus whatever generated kinds meet their cadence. */
 export function lotsOfDay(g, cityId) {
-  return [lotOfDay(g, cityId), shipLotOfDay(g, cityId), houseLotOfDay(g, cityId)].filter(Boolean);
+  return [lotOfDay(g, cityId), shipLotOfDay(g, cityId), houseLotOfDay(g, cityId), goodsLotOfDay(g, cityId), permitLotOfDay(g, cityId)].filter(Boolean);
 }
 export const sellerOf = (lot) => lot.seller ?? lot.est?.owner ?? { kind: "council" }; // the UI reads the seller the same way the engine does
 /** Short lot description for the hammer notices. */
 function lotDesc(lot, lang) {
   if (lot.kind === "ship") return lang === "en" ? `the ${lot.ship.type} (hull ${lot.ship.hull}%)` : `la ${lot.ship.type} (casco ${lot.ship.hull}%)`;
   if (lot.kind === "house") return lang === "en" ? `the house (level ${lot.house.level})` : `la casa (nivel ${lot.house.level})`;
+  if (lot.kind === "goods") return lang === "en" ? `the goods lot (${lot.name.en})` : `el lote de mercanc\u00edas (${lot.name.es})`;
+  if (lot.kind === "permit") return lang === "en" ? "the building permit" : "el permiso de obra";
   return lang === "en" ? `the ${lot.est.type} (level ${lot.est.level})` : `${lot.est.type} (nivel ${lot.est.level})`;
 }
 
@@ -170,6 +220,30 @@ function settle(g, cityId, lot, price) {
     } });
     return { ok: true };
   }
+  if (lot.kind === "goods") {
+    const w = g.warehouses?.[cityId];
+    const used = w ? Object.values(w.goods).reduce((a, b) => a + b, 0) : 0;
+    if (!w || used + lot.goods.qty > WAREHOUSE_BASE_CAP + warehouseCapBonus(g, cityId)) return { ok: false, reason: "no warehouse room" };
+    g.cash -= price;
+    w.goods[lot.goods.good] = (w.goods[lot.goods.good] ?? 0) + lot.goods.qty;
+    (w.basis ??= {})[lot.goods.good] = (w.basis[lot.goods.good] ?? 0) + price; // what these units cost, so the ledger's profit math stays honest
+    if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
+    post(g, "info", { city: cityId, txt: {
+      es: `Ganas la almoneda de ${cityId}: ${lot.name.es} por ${price} monedas. Ya esta en tu almacen de este puerto.`,
+      en: `You win the ${cityId} auction: ${lot.name.en} for ${price} coins. It is in your warehouse in this port.`,
+    } });
+    return { ok: true };
+  }
+  if (lot.kind === "permit") {
+    g.cash -= price;
+    (g.almonedaPermits ??= {})[cityId] = (g.almonedaPermits[cityId] ?? 0) + 1; // plain object: save round-trip fidelity
+    if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
+    post(g, "info", { city: cityId, txt: {
+      es: `Ganas la almoneda de ${cityId}: un permiso de obra por ${price} monedas. Paga el solar de tu proxima construccion en este puerto.`,
+      en: `You win the ${cityId} auction: a building permit for ${price} coins. It pays the plot of your next building in this port.`,
+    } });
+    return { ok: true };
+  }
   return { ok: false, reason: "unknown lot" };
 }
 
@@ -211,6 +285,9 @@ export function bidAuction(g, cityId, playerMax, lotId) {
     post(g, "info", { city: cityId, txt: r.reason === "office required" ? { // his max was a promise he cannot keep: the bid leaves the table and the next bidder comes up
       es: `Tu puja en la almoneda de ${cityId} queda sin efecto: necesitas una oficina comercial en este puerto.`,
       en: `Your bid at the ${cityId} auction is void: you need a trading office in this port.`,
+    } : r.reason === "no warehouse room" ? {
+      es: `Tu puja en la almoneda de ${cityId} queda sin efecto: no tienes un almacen con sitio en este puerto.`,
+      en: `Your bid at the ${cityId} auction is void: you have no warehouse room in this port.`,
     } : {
       es: `Tu puja en la almoneda de ${cityId} queda sin efecto: no tienes ${price} monedas.`,
       en: `Your bid at the ${cityId} auction is void: you do not have ${price} coins.`,

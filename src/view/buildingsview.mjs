@@ -83,7 +83,7 @@ export function parseBldAct(attr) {
   if (typeof attr !== "string") return null;
   const [kind, plotId, type] = attr.split("|");
   if (!plotId) return null;
-  if (kind === "buy" || kind === "restart") return { kind, plotId };
+  if (kind === "buy" || kind === "buypermit" || kind === "restart") return { kind, plotId }; // buypermit: the player chose to spend an almoneda building permit on this plot
   if ((kind === "build" || kind === "upgrade") && TYPE_KEYS.includes(type)) return { kind, plotId, type };
   return null;
 }
