@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Accessibility: the map hint and the city mission line (including the tutorial steps) are polite live regions, so screen readers announce them when they change. No visual change.
 - Town auction: the almoneda now sells more than establishments. Used ships (one every 4 weeks per port, hull 55-90%, below new-ship price) and town houses (one every 2 weeks, level 1-3, trading office required) come up on seeded per-port cadences, sold by the concejo or a named neighbour. Bids are placed per lot; a winning bid the player cannot settle is voided and the lot passes to the next bidder. Municipal proceeds from the player's wins are tracked apart (hallAlmonedaGen) so the council-chest invariant keeps its hard bound; a neighbour's win moves no chest money. Old saves keep their standing establishment bid.
 - First-voyage tutorial (easy difficulty): three hint steps teach one buy, one sale, then sailing; progress lives in `g.tut`, only when the game starts with the tutorial on, so other saves are unchanged. Strings in English and Spanish (src/game/tutorial.mjs).
 - City view: distinct ground types painted in deterministic texture layers from a shared module (src/view/ground.mjs): packed earth inside the walls, cobbled main square with paving joints, dirt roads with a worn centre, grassland with tufts, scrubland patches, ploughed fields with furrows and a sand band along the south coast. Purely visual; no simulation or save data changes.

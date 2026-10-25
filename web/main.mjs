@@ -67,6 +67,7 @@ import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
+import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
 import { tutorialLine } from "../src/game/tutorial.mjs"; // first-voyage tutorial hint (opt-in per game)
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -300,7 +301,7 @@ function syncMissionEcho() {
     open = !d.querySelector(".city-window")?.hidden;
   const cm = $("city-mission");
   if (cm) {
-    cm.textContent = line ?? ""; cm.hidden = !line || open;
+    setLiveText(cm, line ?? ""); cm.hidden = !line || open;
     // The 2D city has its own toolbar (nav) at the top of the iframe: dock the line 6px below
     // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
     let top = "";
@@ -359,8 +360,8 @@ function render() {
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
   const missionLine = activeMissionLine();
   syncMissionEcho();
-  $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
-    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (tutorialLine(g, lang) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
+  setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
+    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (tutorialLine(g, lang) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");
@@ -879,7 +880,7 @@ function open3d(s0) {
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" role="status" aria-live="polite" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
   syncMissionEcho();
   d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
     try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
