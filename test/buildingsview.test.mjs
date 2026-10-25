@@ -183,6 +183,10 @@ test("bldSummaryCard: an active producer shows rate, margin (red when negative),
   if (r.margin < 0) assert.ok(html.includes("bwc-bad"), "negative margin flagged red");
   assert.ok(html.includes(BW.es.upkeep.replace("{u}", String(r.upkeep))), "upkeep label");
   assert.ok(html.includes(BW.es.jobs.replace("{j}", r.jobs)), "jobs label");
+  const { BWL } = await import("../src/view/buildingsview.mjs");
+  assert.ok(html.includes('class="bwc-lab">' + BWL.es.margin + "<"), "visible margin caption");
+  assert.ok(html.includes('class="bwc-lab">' + BWL.es.upkeep + "<"), "visible upkeep caption");
+  assert.ok(html.includes('class="bwc-lab">' + BWL.es.jobs + "<"), "visible jobs caption");
   assert.ok(!html.includes("undefined") && !html.includes("NaN"), "no raw holes");
 });
 
@@ -218,5 +222,7 @@ test("bldSummaryCard: halted and house/warehouse/dock rows render their own stat
   const dock = bldSummaryCard(tEn, rows.find((x) => x.type === "dock"), "en", (n) => String(n));
   assert.ok(dock.includes("Dock"), "English name");
   assert.ok(dock.includes(BW.en.toll.replace("{n}", rows.find((x) => x.type === "dock").tollCut)), "dock toll cut, English label");
+  const { BWL: BWLE } = await import("../src/view/buildingsview.mjs");
+  assert.ok(dock.includes('class="bwc-lab">' + BWLE.en.toll + "<"), "visible English toll caption");
   assert.ok(!dock.includes("undefined") && !dock.includes("NaN"));
 });
