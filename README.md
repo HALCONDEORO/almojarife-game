@@ -16,7 +16,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Why you might like it
 
-- **A living market.** 33 ports, 23 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
+- **A living market.** 33 ports, 22 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
 - **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time. Ports you have not visited stay hidden until you buy a chart for them.
 - **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
 - **A full port.** Market, shipyard (pick a ship class on an illustrated slipway, build it, repair, sell), warehouse with a steward who keeps standing buy/sell orders, tavern (hire captains, buy news), bank (loans with weekly interest and a cap that grows with your rank), the town hall (council duties, respect, time-limited delivery contracts), and your buildings: buy city plots and raise anything from houses, workshops and warehouses to farms, mines, fisheries and workshops of a dozen trades, with upkeep and staffing.
