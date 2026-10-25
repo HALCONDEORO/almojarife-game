@@ -105,7 +105,7 @@ export function tickWalls(g) {
 
 /** Daily upkeep into the weekly book; broke walls stand but their bonus suspends, with the buildings' restart hysteresis. */
 export function accrueWalls(g, priorCommitted = 0) {
-  if (!g.walls) return; // flag OFF: nothing
+  if (!g.walls) return priorCommitted; // flag OFF: nothing
   let committed = priorCommitted; // buildings already reserved their upkeep against the same cash today
   for (const [cityId, w] of Object.entries(g.walls)) {
     if (w.state !== "active" || !w.level) continue;
@@ -124,4 +124,5 @@ export function accrueWalls(g, priorCommitted = 0) {
     (a.buildings ??= {})[`walls:${cityId}`] = (a.buildings[`walls:${cityId}`] ?? 0) + cost;
     committed += cost;
   }
+  return committed; // the towers' watch continues today's cash-budget chain
 }

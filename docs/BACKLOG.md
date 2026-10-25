@@ -24,7 +24,7 @@ All game rules and numbers are our own design. Other games inspire ideas only; s
 - next: city data file with buildings (market, shipyard, warehouse, church, town hall, tavern)
 - next: population growth and needs that change with food supply
 - later: guilds and trade privileges; town hall, building permits, city logic
-- later: city wall and sieges
+- walls done (levels, upkeep, unkept watch); towers: first drop done (fire watch, issue #363); later: sieges, towers vs pirates and events
 
 ## 4. Economy
 - next: per-city tariffs and market fees

@@ -6,6 +6,7 @@
 // (they reopen by themselves), famine raises food demand, a sanitation scare slackens trade.
 // Same rules for the player and the bots: the market and the buildings move for everyone.
 import { seeded } from "../view/cityscene.mjs";
+import { towersFireWatch } from "./towers.mjs"; // kept watchtowers spot fires early (own design, issue #363)
 
 // Own tuning constants (inference, not documented figures).
 export const CALAMITY = Object.freeze({
@@ -24,12 +25,14 @@ const levels = (g, cityId, table) => Object.keys(table).reduce((a, t) => a + wor
 /** Weekly chance of one calamity in one city, cut by its mitigating buildings. */
 export function calamityChance(g, cityId, kind) {
   const spec = CALAMITY[kind];
-  return spec.chance * Math.max(CHANCE_CAP, 1 - CHANCE_CUT * levels(g, cityId, spec.mitigation));
+  const watch = kind === "incendio" ? towersFireWatch(g, cityId) : 0; // a manned tower is a fire watch (0 with the towers flag off)
+  return spec.chance * Math.max(CHANCE_CAP, 1 - CHANCE_CUT * (levels(g, cityId, spec.mitigation) + watch));
 }
 /** How long one calamity sits on one city: mitigations shorten it, never below the floor. */
 export function calamityDays(g, cityId, kind) {
   const spec = CALAMITY[kind];
-  const cut = Object.entries(spec.mitigation).reduce((a, [t, w]) => a + w * workingLevels(g, cityId, t), 0);
+  const watch = kind === "incendio" ? towersFireWatch(g, cityId) : 0; // the watch also shortens the fire
+  const cut = Object.entries(spec.mitigation).reduce((a, [t, w]) => a + w * workingLevels(g, cityId, t), 0) + watch;
   return Math.max(spec.minDays, spec.days - cut);
 }
 
