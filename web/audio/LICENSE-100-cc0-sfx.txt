@@ -1,0 +1,10 @@
+Pack: "100 CC0 SFX"
+Author: rubberduck (https://opengameart.org/users/rubberduck)
+Source: https://opengameart.org/content/100-cc0-sfx
+License: CC0 1.0 Universal (public domain dedication)
+         https://creativecommons.org/publicdomain/zero/1.0/
+
+The pack ships no license file of its own; this note records the
+provenance and the license stated on its OpenGameArt page.
+Files used from this pack: arrive.ogg, sail.ogg, open.ogg, close.ogg,
+build.ogg, alert.ogg (renamed).
