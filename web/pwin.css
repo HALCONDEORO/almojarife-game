@@ -35,3 +35,20 @@ body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:184px;widt
 .bldchip-name{font-weight:700}
 .bldchip-state{font-size:11px;color:#d8c9a8}
 .bldchip-bad .bldchip-state{color:#ff9d8a;font-weight:700}
+/* P3 build-offer cards on an owned empty plot: drawing + investment + running costs + production, grouped menu */
+.bldoffer-group{margin:8px 0 2px;font-size:12px;color:#5a4a33}
+.bldoffers{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px;margin:2px 0 8px}
+.bldoffer-btn{padding:0;background:#fff8e6;border:2px solid #b98d4f;border-radius:8px;cursor:pointer;color:#493c25;text-align:center}
+.bldoffer-btn:hover:not(:disabled){border-color:#8a6a1f}
+.bldoffer-btn:disabled{opacity:.55;cursor:default}
+.bldoffer{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 6px;font-size:11px;line-height:1.3}
+.bldoffer .gi{margin-right:0;vertical-align:-2px}
+.bldoffer-name{font-size:13px}
+.bldoffer-block{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 6px;align-items:center}
+.bldoffer-cost{display:inline-flex;align-items:center;gap:3px}
+.bldoffer-mat{display:inline-flex;align-items:center;gap:1px}
+.bldoffer-fee{color:#7a6845;width:100%}
+.bldoffer-ops{color:#7a6845}
+.bldoffer-prod{color:#5a4a33}
+.bldoffer-out,.bldoffer-in{display:inline-flex;align-items:center;gap:2px}
+.bldoffer-note{font-style:italic;color:#7a6845}

@@ -1,7 +1,8 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
 import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
-import { quoteRecipe } from "../sim/recipes.mjs";
+import { quoteRecipe, RECIPES, OUTPUTS } from "../sim/recipes.mjs";
+import { SEASON_PEAK } from "../sim/market.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 
 export const TYPE_KEYS = Object.keys(BUILDING_TYPES);
@@ -181,4 +182,120 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
     if (r.wages) cells.push(cell(BWI.coin, bw.wages.replace("{w}", fmt(r.wages)), fmt(r.wages), bwl.wages));
   }
   return `<div class="bwcard"><div class="bwc-icon">${cardIcon}</div><div class="bwc-main"><div class="bwc-name"><b>${escBw(buildingLabel(t, r))}</b> <small>${escBw(r.plotId)}</small></div><div class="bwc-state">${escBw(state)}</div>${cells.length ? `<div class="bwc-stats">${cells.join("")}</div>` : ""}</div></div>`;
+}
+
+
+/* P3-style build-offer cards for an owned empty plot (Construir flow): one framed card per
+ * buildable type with its own drawing, the investment (price, materials with quantities, days,
+ * labor fee) in one block, the running costs (upkeep and wages per day) in another, and what it
+ * makes in a third - base rates labeled "up to" (a producer only runs when inputs, hands, cash
+ * and margin hold), seasonal goods called out. Everything is visible text; nothing load-bearing
+ * hides in title/aria. Groups follow the classic Hansa build menu: own buildings, raw-material
+ * producers, processors, civic. Pure: renders buildOffers() rows; all number formatting stays
+ * with the caller's fmt/fmtM (immune to decimal cash), names/state reuse the caller's T table.
+ * Own flat icons (BOI, CREDITS.md style - original work). The isometric webp art is NOT used
+ * here: web/city2d/PROVENANCE.md marks its rights review as pending, so it stays out of the
+ * normal player UI until that clears. */
+export const BO = {
+  es: {
+    days: "{d} días de obra", fee: "mano de obra {p}", imported: "con importación",
+    ops: "mantenim. {u}/día", wages: "salarios {w}/día",
+    makes: "≈{n}/día de media", uses: "gasta ≈{n}/día de media", seasonal: "según temporada",
+    armory: "vende armas y equipo",
+    civic: { posito: "estabiliza el grano", hospital: "contra la peste", alhondiga: "mercado cubierto", caminos: "saneamiento", pozo: "agua limpia", capilla: "amparo en calamidades", carniceria: "carne y pescado estables", molino: "asegura el grano", corral: "alegra la ciudad" },
+    groups: { own: "Casa y puerto", primary: "Materias primas", workshop: "Talleres y oficios", civic: "Edificios cívicos" },
+  },
+  en: {
+    days: "{d} days to build", fee: "labor {p}", imported: "partly imported",
+    ops: "upkeep {u}/day", wages: "wages {w}/day",
+    makes: "≈{n}/day on average", uses: "uses ≈{n}/day on average", seasonal: "seasonal",
+    armory: "sells arms and gear",
+    civic: { posito: "steadies the grain supply", hospital: "against the plague", alhondiga: "a covered market", caminos: "sanitation", pozo: "clean water", capilla: "shelter in calamity", carniceria: "steady meat and fish", molino: "secures the grain", corral: "lifts the city's spirits" },
+    groups: { own: "Home and harbour", primary: "Raw materials", workshop: "Workshops and crafts", civic: "Civic buildings" },
+  },
+};
+/** Menu family of a buildable type, for the grouped offer list (classic build-menu order). */
+export function bldOfferGroup(type) {
+  const def = PRODUCERS[type];
+  if (def) return def.primary ? "primary" : "workshop";
+  return CIVIC_BUILDINGS.includes(type) ? "civic" : "own";
+}
+// Own flat drawings for every buildable type (24x24, BWI palette). Each building gets its own
+// picture; the existing good icons stay for the goods themselves.
+const BOI = {
+  workshop: '<rect x="4" y="4" width="16" height="3" fill="#a8733a" stroke="#6e4a22" stroke-width="1"/><path d="M6 7v11M12 7v11M18 7v11" stroke="#b2403f" stroke-width="1.4"/><rect x="4" y="18" width="16" height="2.4" fill="#6e4a22"/>',
+  farm: '<path d="M4 10l8-6 8 6v10H4z" fill="#a8533a" stroke="#6e3423" stroke-width="1.2"/><rect x="9" y="13" width="6" height="7" fill="#6e4a22"/><path d="M9 13l6 7M15 13l-6 7" stroke="#a8733a" stroke-width="1"/>',
+  pasture: '<path d="M3 9h18M3 15h18" stroke="#8a6a3f" stroke-width="1.6"/><path d="M6 6v14M12 6v14M18 6v14" stroke="#8a6a3f" stroke-width="1.6"/>',
+  sawmill: '<circle cx="15" cy="9" r="5" fill="#b9c0c7" stroke="#6c737b" stroke-width="1.2"/><circle cx="15" cy="9" r="1.4" fill="#6c737b"/><rect x="2" y="15" width="16" height="5" rx="2.5" fill="#a8733a" stroke="#6e4a22" stroke-width="1"/>',
+  mine: '<path d="M6 4l9 7" stroke="#6e4a22" stroke-width="1.8"/><path d="M3 8c3-4 8-4 11-1" fill="none" stroke="#6c737b" stroke-width="1.8"/><path d="M4 20l4-6h8l4 6z" fill="#7a828a" stroke="#4a4f55" stroke-width="1.2"/>',
+  oil_mill: '<circle cx="12" cy="14" r="7" fill="#b9b09a" stroke="#6e4a22" stroke-width="1.2"/><circle cx="12" cy="14" r="2" fill="#6e4a22"/><path d="M12 2c1.5 2 2 3.5 0 5-2-1.5-1.5-3 0-5z" fill="#9aa83a"/>',
+  vineyard: '<path d="M5 4v16M19 4v16M4 8h16" stroke="#8a6a3f" stroke-width="1.5"/><g fill="#7a4a8a" stroke="#5a3f6a" stroke-width="0.8"><circle cx="10" cy="12" r="1.8"/><circle cx="14" cy="12" r="1.8"/><circle cx="12" cy="15" r="1.8"/></g><path d="M12 6v4" stroke="#3d7a2a" stroke-width="1.4"/>',
+  saltworks: '<rect x="3" y="12" width="18" height="8" fill="#cfe4ee" stroke="#8fa3ad" stroke-width="1.2"/><path d="M7 12l5-6 5 6z" fill="#fff" stroke="#8fa3ad" stroke-width="1.2"/>',
+  brewery: '<rect x="5" y="8" width="14" height="12" rx="2" fill="#b06a3e" stroke="#4d2813" stroke-width="1.2"/><path d="M5 8c0-2 3-3 7-3s7 1 7 3" fill="#f5ead0" stroke="#8a6a1f" stroke-width="1"/><path d="M8 12v4M12 12v4M16 12v4" stroke="#4d2813" stroke-width="1"/>',
+  soapworks: '<path d="M5 10h14v6a4 4 0 01-4 4h-6a4 4 0 01-4-4z" fill="#8a8f95" stroke="#4a4f55" stroke-width="1.2"/><circle cx="10" cy="5" r="2" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/><circle cx="15" cy="4" r="1.4" fill="#cfe4ee" stroke="#9db4c0" stroke-width="1"/>',
+  pottery: '<path d="M5 20V10a7 7 0 0114 0v10z" fill="#b5583a" stroke="#7d3a24" stroke-width="1.2"/><path d="M12 13c2 2 2 4 0 5-2-1-2-3 0-5z" fill="#e0a73a"/>',
+  brickworks: '<rect x="5" y="6" width="6" height="14" fill="#b5583a" stroke="#7d3a24" stroke-width="1.2"/><g fill="#b5583a" stroke="#7d3a24" stroke-width="1"><rect x="13" y="15" width="8" height="4"/><rect x="15" y="11" width="6" height="4"/></g>',
+  esparto_field: '<path d="M4 21c1-8 3-13 5-17M9 21c0-8 1-13 3-17M14 21c-1-8-1-12 0-17M19 21c-2-7-3-11-3-16" stroke="#a89a4f" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M3 21h18" stroke="#7c6f33" stroke-width="1.4"/>',
+  ranch: '<path d="M4 11l8-6 8 6v9H4z" fill="#a8733a" stroke="#6e4a22" stroke-width="1.2"/><path d="M8 6c-1-2-3-2-4-1M16 6c1-2 3-2 4-1" stroke="#d8cdb4" stroke-width="1.4" fill="none"/><rect x="10" y="14" width="4" height="6" fill="#6e4a22"/>',
+  armory: '<path d="M5 4l12 14M19 4L7 18" stroke="#b9c0c7" stroke-width="2"/><path d="M4 3l3 1-1 1zM20 3l-3 1 1 1z" fill="#b9c0c7"/><path d="M9 17l-2 3M15 17l2 3" stroke="#6e4a22" stroke-width="2"/>',
+  fishery: '<rect x="7" y="6" width="10" height="7" fill="#a8733a" stroke="#6e4a22" stroke-width="1.2"/><path d="M7 6l5-3 5 3" fill="#c08b4a" stroke="#6e4a22" stroke-width="1.2"/><path d="M8 13v6M16 13v6" stroke="#6e4a22" stroke-width="1.6"/><path d="M3 19h18" stroke="#3d7364" stroke-width="1.4"/>',
+  ironworks: '<path d="M3 8h18c-2 3-5 4-8 4v3h4v4H7v-4h4v-3c-3 0-6-1-8-4z" fill="#4a4f55" stroke="#2e3236" stroke-width="1.2"/>',
+  posito: '<rect x="5" y="7" width="14" height="8" fill="#c9a35e" stroke="#6e4a22" stroke-width="1.2"/><path d="M5 7l7-4 7 4" fill="#a8733a" stroke="#6e4a22" stroke-width="1.2"/><path d="M8 15v5M16 15v5" stroke="#6e4a22" stroke-width="1.6"/><path d="M9 10h6" stroke="#8a6a1f" stroke-width="1.4"/>',
+  hospital: '<rect x="4" y="8" width="16" height="12" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><path d="M4 8l8-5 8 5" fill="#c9a35e" stroke="#8a7a5a" stroke-width="1.2"/><path d="M12 11v6M9 14h6" stroke="#a11" stroke-width="2"/>',
+  alhondiga: '<path d="M3 9l2-4h14l2 4z" fill="#b2403f" stroke="#6e3423" stroke-width="1.2"/><path d="M7 5l-1 4M12 5v4M17 5l1 4" stroke="#f6e9cc" stroke-width="1.4"/><path d="M5 9v11h14V9" fill="none" stroke="#6e4a22" stroke-width="1.4"/><path d="M9 20v-5h6v5" fill="#6e4a22"/>',
+  caminos: '<path d="M7 21L10 3h4l3 18" fill="none" stroke="#8a7a5a" stroke-width="1.8"/><path d="M12 5v3M12 10.5v3M12 16v3" stroke="#b7aa8d" stroke-width="1.6"/>',
+  pozo: '<path d="M6 20v-8h12v8" fill="#b9b09a" stroke="#6e4a22" stroke-width="1.2"/><ellipse cx="12" cy="12" rx="6" ry="2" fill="#3d7364" stroke="#6e4a22" stroke-width="1.2"/><path d="M6 12V6M18 12V6M6 6h12" stroke="#6e4a22" stroke-width="1.4"/>',
+  capilla: '<path d="M6 21V10l6-5 6 5v11z" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><path d="M12 2v4M10.5 4h3" stroke="#8a6a1f" stroke-width="1.4"/><path d="M10 21v-4a2 2 0 014 0v4" fill="#6e4a22"/>',
+  carniceria: '<path d="M4 8l2-4h12l2 4z" fill="#c4574f" stroke="#7a2a26" stroke-width="1.2"/><path d="M4 8v12h16V8" fill="none" stroke="#6e4a22" stroke-width="1.4"/><path d="M12 8v3a2 2 0 104 0" fill="none" stroke="#4a4f55" stroke-width="1.4"/>',
+  molino: '<path d="M9 21l1-10h4l1 10z" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><path d="M12 11L5 4M12 11l7-7M12 11l-7 7M12 11l7 7" stroke="#a8733a" stroke-width="1.8"/><circle cx="12" cy="11" r="1.6" fill="#6e4a22"/>',
+  corral: '<path d="M4 5h16v8a8 8 0 01-16 0z" fill="#e8e2d0" stroke="#8a7a5a" stroke-width="1.2"/><circle cx="9" cy="10" r="1.2" fill="#2e3236"/><circle cx="15" cy="10" r="1.2" fill="#2e3236"/><path d="M8 14c2 2 6 2 8 0" fill="none" stroke="#2e3236" stroke-width="1.4"/><path d="M4 21h16" stroke="#8a7a5a" stroke-width="1.6"/>',
+};
+/** Card inner HTML for one ok buildOffers() row; the caller wraps it in the build button. */
+export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
+  const bo = BO[lang] ?? BO.es;
+  const level = o.level ?? 1;
+  const name = t.bldTypes[o.type] ?? o.type;
+  const spec = BUILDING_TYPES[o.type];
+  const gi = (good, size) => (iconForGood ? iconForGood(good, size) : "");
+  const fig = bwSvg(BOI[o.type] ?? BWI[o.type] ?? BWI.building, 44);
+  const mats = Object.entries(RECIPES[spec.recipe] ?? {})
+    .map(([good, qty]) => `<span class="bldoffer-mat" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${fmt(qty * level)}</span>`).join(" ");
+  const jobs = (JOBS_PER_LEVEL[o.type] ?? 0) * level, wages = jobs * WAGE_PER_WORKER;
+  const importedN = Object.values(o.imported ?? {}).reduce((a, b) => a + b, 0); // same rule as the confirm card: imported quantities, not object truthiness ({} is truthy)
+  const ops = [bo.ops.replace("{u}", fmt(o.upkeep ?? spec.upkeep * level))];
+  if (wages) ops.push(bo.wages.replace("{w}", fmt(wages)));
+  const def = PRODUCERS[o.type];
+  const parts = [], textParts = []; // html for the card, plain words for the title (no tag-stripping: CodeQL js/incomplete-multi-character-sanitization)
+  if (def) {
+    const rate = producerRate(o.type, level);
+    if (def.primary) {
+      for (const [good, per] of [[def.output, def.yield], ...Object.entries(def.byproducts ?? {})]) {
+        const out = bo.makes.replace("{n}", fmtM(rate * per)); // averages keep their decimals (fmtM): a rounded average would read as a false figure
+        parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 16)}${escBw(out)}</span>`);
+        textParts.push(`${t.goods?.[good] ?? good} ${out}`);
+      }
+      if (SEASON_PEAK[def.output] !== undefined) { parts.push(`<span class="bldoffer-note">${bo.seasonal}</span>`); textParts.push(bo.seasonal); }
+    } else {
+      const out = bo.makes.replace("{n}", fmtM(rate * (OUTPUTS[def.recipe]?.[def.output] ?? 0)));
+      parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[def.output] ?? def.output)}">${gi(def.output, 16)}${escBw(out)}</span>`);
+      textParts.push(`${t.goods?.[def.output] ?? def.output} ${out}`);
+      for (const [good, qty] of Object.entries(RECIPES[def.recipe] ?? {})) {
+        const use = bo.uses.replace("{n}", fmtM(rate * qty));
+        parts.push(`<span class="bldoffer-in" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${escBw(use)}</span>`);
+        textParts.push(`${t.goods?.[good] ?? good} ${use}`);
+      }
+    }
+  } else if (o.type === "house" && t.bldFxH) { const x = t.bldFxH.replace("{n}", fmt(HOUSE_POP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "warehouse" && t.bldFxS) { const x = t.bldFxS.replace("{n}", fmt(WAREHOUSE_CAP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "dock" && t.bldFxD) { const x = t.bldFxD.replace("{n}", Math.round(DOCK_TOLL_DISCOUNT[level] * 100)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "armory") { parts.push(bo.armory); textParts.push(bo.armory); }
+  else if (bo.civic[o.type]) { parts.push(bo.civic[o.type]); textParts.push(bo.civic[o.type]); }
+  const title = `${name}: ${fmtM(o.cost)} (${bo.days.replace("{d}", fmt(o.days))}, ${bo.fee.replace("{p}", fmtM(o.fee))}), ${ops.join(", ")}, ${textParts.join(", ")}`;
+  return `<span class="bldoffer" title="${escBw(title)}">${fig}<b class="bldoffer-name">${escBw(name)}</b>`
+    + `<span class="bldoffer-block"><span class="bldoffer-cost">${bwSvg(BWI.coin, 14)}<b>${fmtM(o.cost)}</b> · ${escBw(bo.days.replace("{d}", fmt(o.days)))}</span>`
+    + `<span class="bldoffer-mats">${mats}</span>`
+    + `<span class="bldoffer-fee">${escBw(bo.fee.replace("{p}", fmtM(o.fee)))}${importedN > 0 ? ` · <i>${bo.imported}</i>` : ""}</span></span>`
+    + `<span class="bldoffer-block bldoffer-ops">${ops.map((x) => escBw(x)).join(" · ")}</span>`
+    + (parts.length ? `<span class="bldoffer-block bldoffer-prod">${parts.join(" ")}</span>` : "")
+    + `</span>`;
 }

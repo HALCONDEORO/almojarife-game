@@ -40,7 +40,7 @@ import { repOf, respectOf } from "../src/game/rank.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding, portLayout } from "../src/view3d/port3d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
-import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard, bldChipInner } from "../src/view/buildingsview.mjs";
+import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard, bldChipInner, bldOfferCard, bldOfferGroup, BO } from "../src/view/buildingsview.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
 import { quoteWalls, startWalls, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX_LEVEL, WALL_UPKEEP, WALL_BUILD_DAYS } from "../src/game/walls.mjs";
@@ -618,7 +618,13 @@ function render() {
         h += bldCard();
         const up = r.state === "active" ? upgradeOffer(g, s.at, r.plotId) : null;
         if (up) h += up.ok ? `<p><button data-bldact="upgrade|${r.plotId}|${r.type}" ${up.affordable ? "" : "disabled"}>${t.bldUpgrade.replace("{l}", up.level).replace("{p}", fmt(up.cost))}</button></p>` : `<p><small>${up.reason === "max level" ? t.bldMax : whyText(t, up.reason)}</small></p>`;
-        if (r.state === "plot") h += `<p>` + buildOffers(g, s.at, r.plotId).filter((o) => o.ok).map((o) => `<button data-bldact="build|${r.plotId}|${o.type}">${t.bldTypes[o.type] ?? o.type}</button>`).join(" ") + `</p>`; // only types this city's resources allow
+        if (r.state === "plot") { // P3 build menu: one card per type - drawing, investment, running costs, production; grouped like the classic Hansa build menu
+          const offers = buildOffers(g, s.at, r.plotId).filter((o) => o.ok), bo2 = BO[lang] ?? BO.es; // only types this city's resources allow
+          for (const grp of ["own", "primary", "workshop", "civic"]) {
+            const list = offers.filter((o) => bldOfferGroup(o.type) === grp);
+            if (list.length) h += `<p class="bldoffer-group"><b>${bo2.groups[grp]}</b></p><div class="bldoffers">` + list.map((o) => `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon)}</button>`).join("") + `</div>`;
+          }
+        }
       }
     } else if (tab === "town") { // a typed town building clicked in the 3D view: read-only card, no services yet
       h += t.townTypes[townSel] ? `<h3>${t.townTypes[townSel]}</h3><p>${t.townDesc[townSel]}</p>` : `<p><i>${t.townNone}</i></p>`;
