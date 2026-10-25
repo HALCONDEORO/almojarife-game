@@ -231,7 +231,12 @@ export function placeBid(g, cityId, playerMax, lotId) {
   if (!Number.isSafeInteger(playerMax) || playerMax < 0) return { ok: false, reason: "bad bid" };
   if (playerMax > g.cash) return { ok: false, reason: "no cash", cost: playerMax }; // you cannot promise coins you do not have
   const cur = g.townBids?.[cityId];
-  (g.townBids ??= {})[cityId] = { ...(typeof cur === "object" && cur !== null ? cur : {}), [lot.id]: playerMax }; // plain object: save round-trip fidelity
+  const map = { ...(typeof cur === "object" && cur !== null ? cur : {}), [lot.id]: playerMax }; // plain object: save round-trip fidelity
+  if (typeof cur === "number" && lot.kind !== "establishment") { // a legacy bare number is the establishment table's bid: carry it, never drop it silently
+    const est = lots.find((l) => l.kind === "establishment");
+    if (est && map[est.id] === undefined) map[est.id] = cur;
+  }
+  (g.townBids ??= {})[cityId] = map;
   return { ok: true };
 }
 /** Day-boundary hook (game.mjs dayTick): every port whose almoneda meets today brings its lots down,

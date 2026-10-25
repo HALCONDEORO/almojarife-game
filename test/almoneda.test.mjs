@@ -241,6 +241,49 @@ describe("solvency at the table", () => {
   });
 });
 
+describe("hammer price (second price + 1, reserve-clamped: a mutation here must fail)", () => {
+  it("the winner pays exactly max(reserve, runner-up + 1), never his own max", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npc = biddersOf(g, "cadiz", lot); // only bids at or above the reserve make the list
+    const cash0 = g.cash;
+    const r = bidAuction(g, "cadiz", 999999999, lot.id);
+    assert.equal(r.outcome, "won");
+    assert.equal(r.price, npc.length ? Math.max(lot.reserve, Math.max(...npc.map((b) => b.max)) + 1) : lot.reserve);
+    assert.equal(g.cash, cash0 - r.price);
+    assert.ok(r.price < 999999999); // his promise is a ceiling, not the price
+  });
+  it("a tie at the top hammers at the tied max: the winner's own ceiling binds, never above it", () => {
+    // (An uncontested table cannot happen: the neighbour factor floor 0.70 always clears the 0.6
+    //  reserve, so the reserve-only branch is unreachable defence-in-depth; the reachable clamps are pinned here.)
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npcTop = Math.max(...biddersOf(g, "cadiz", lot).map((b) => b.max));
+    const r = bidAuction(g, "cadiz", npcTop, lot.id); // player matches the best neighbour
+    assert.equal(r.price, npcTop); // whoever takes it, the hammer is the tied max - not a coin above
+  });
+  it("a per-lot bid carries a legacy numeric bid for the establishment table instead of dropping it", async () => {
+    const { placeBid, shipLotOfDay, houseLotOfDay, almonedaDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    for (let k = 0; k < 12; k++) { // find a table with both an establishment and a generated lot
+      g.day = auctionOffset("cadiz") + k * AUCTION_EVERY;
+      const est = lotOfDay(g, "cadiz");
+      const gen = shipLotOfDay(g, "cadiz") ?? houseLotOfDay(g, "cadiz");
+      if (!est || !gen) continue;
+      g.townBids = { cadiz: 500 }; // an old save's bare number: the establishment table
+      assert.equal(placeBid(g, "cadiz", 700, gen.id).ok, true);
+      assert.equal(g.townBids.cadiz[est.id], 500); // carried, not wiped
+      assert.equal(g.townBids.cadiz[gen.id], 700);
+      almonedaDay(g); // both tables settle on their own bids, no crash, bids cleared
+      assert.equal(g.townBids.cadiz, undefined);
+      return;
+    }
+    assert.fail("no mixed establishment + generated table found in 12 weeks");
+  });
+});
+
 describe("notice reach", () => {
   it("an undiscovered far port's hammer stays silent when the player sits out", () => {
     const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
