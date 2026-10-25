@@ -2,9 +2,13 @@
 .pwin{background:#f4ead0;color:#302719;border:3px solid #6b4f2a;outline:1px solid #c9a35f;outline-offset:-5px;box-shadow:0 14px 44px #000a,inset 0 0 60px #d8c39a55;border-radius:2px}
 .pwin-handle{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;color:#f5e3b3;background:linear-gradient(#6d543a,#4a3722 55%,#3d2d1b);border-bottom:2px solid #c9a35f;cursor:move;touch-action:none;position:sticky;top:0;z-index:1}
 .pwin-title{font:22px Georgia,"Times New Roman",serif;letter-spacing:.5px;text-shadow:0 1px 0 #0009}
-.pwin-close{background:linear-gradient(#8a6a3f,#5e4526);color:#ffe9bb;border:1px solid #c9a35f;border-radius:3px;padding:4px 10px;font:13px Georgia,serif;cursor:pointer;min-height:32px}
+.pwin-close{background:linear-gradient(#8a6a3f,#5e4526);color:#ffe9bb;border:1px solid #c9a35f;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.pwin-close.pwin-close{width:30px;height:30px;min-width:30px;min-height:30px;padding:0;box-sizing:border-box}
+.pwin-close .x-ico{width:15px;height:15px;display:block;background:none;transition:transform .18s ease}
 .pwin-close:hover{filter:brightness(1.15)}
+.pwin-close:hover .x-ico{transform:rotate(90deg)}
 .pwin-close:focus-visible{outline:3px solid #ffd876;outline-offset:-2px}
+body.reduce-motion .pwin-close .x-ico{transition:none}
 .pwin-body{padding:12px}
 .needs-scroll{overflow-x:auto;max-width:100%}.needs-table{border-collapse:collapse;min-width:650px;width:100%;font-size:.88rem}.needs-table th,.needs-table td{padding:.4rem .5rem;border-bottom:1px solid #b7aa8d;text-align:right;vertical-align:top}.needs-table th:first-child,.needs-table td:last-child{text-align:left}.needs-ledger summary{cursor:pointer;font-weight:bold;margin:.7rem 0}.needs-ledger p{line-height:1.45}
 
