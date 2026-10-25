@@ -264,24 +264,32 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood) {
   const ops = [bo.ops.replace("{u}", fmt(o.upkeep ?? spec.upkeep * level))];
   if (wages) ops.push(bo.wages.replace("{w}", fmt(wages)));
   const def = PRODUCERS[o.type];
-  const parts = [];
+  const parts = [], textParts = []; // html for the card, plain words for the title (no tag-stripping: CodeQL js/incomplete-multi-character-sanitization)
   if (def) {
     const rate = producerRate(o.type, level);
     if (def.primary) {
-      for (const [good, per] of [[def.output, def.yield], ...Object.entries(def.byproducts ?? {})])
-        parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 16)}${escBw(bo.makes.replace("{n}", fmt(rate * per)))}</span>`);
-      if (SEASON_PEAK[def.output] !== undefined) parts.push(`<span class="bldoffer-note">${bo.seasonal}</span>`);
+      for (const [good, per] of [[def.output, def.yield], ...Object.entries(def.byproducts ?? {})]) {
+        const out = bo.makes.replace("{n}", fmt(rate * per));
+        parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 16)}${escBw(out)}</span>`);
+        textParts.push(`${t.goods?.[good] ?? good} ${out}`);
+      }
+      if (SEASON_PEAK[def.output] !== undefined) { parts.push(`<span class="bldoffer-note">${bo.seasonal}</span>`); textParts.push(bo.seasonal); }
     } else {
-      parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[def.output] ?? def.output)}">${gi(def.output, 16)}${escBw(bo.makes.replace("{n}", fmt(rate * (OUTPUTS[def.recipe]?.[def.output] ?? 0))))}</span>`);
-      for (const [good, qty] of Object.entries(RECIPES[def.recipe] ?? {}))
-        parts.push(`<span class="bldoffer-in" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${escBw(bo.uses.replace("{n}", fmt(rate * qty)))}</span>`);
+      const out = bo.makes.replace("{n}", fmt(rate * (OUTPUTS[def.recipe]?.[def.output] ?? 0)));
+      parts.push(`<span class="bldoffer-out" title="${escBw(t.goods?.[def.output] ?? def.output)}">${gi(def.output, 16)}${escBw(out)}</span>`);
+      textParts.push(`${t.goods?.[def.output] ?? def.output} ${out}`);
+      for (const [good, qty] of Object.entries(RECIPES[def.recipe] ?? {})) {
+        const use = bo.uses.replace("{n}", fmt(rate * qty));
+        parts.push(`<span class="bldoffer-in" title="${escBw(t.goods?.[good] ?? good)}">${gi(good, 14)}${escBw(use)}</span>`);
+        textParts.push(`${t.goods?.[good] ?? good} ${use}`);
+      }
     }
-  } else if (o.type === "house" && t.bldFxH) parts.push(escBw(t.bldFxH.replace("{n}", fmt(HOUSE_POP_PER_LEVEL * level))));
-  else if (o.type === "warehouse" && t.bldFxS) parts.push(escBw(t.bldFxS.replace("{n}", fmt(WAREHOUSE_CAP_PER_LEVEL * level))));
-  else if (o.type === "dock" && t.bldFxD) parts.push(escBw(t.bldFxD.replace("{n}", Math.round(DOCK_TOLL_DISCOUNT[level] * 100))));
-  else if (o.type === "armory") parts.push(bo.armory);
-  else if (bo.civic[o.type]) parts.push(bo.civic[o.type]);
-  const title = `${name}: ${fmtM(o.cost)} (${bo.days.replace("{d}", fmt(o.days))}, ${bo.fee.replace("{p}", fmtM(o.fee))}), ${ops.join(", ")}, ${parts.map((x) => x.replace(/<[^>]+>/g, "")).join(", ")}`;
+  } else if (o.type === "house" && t.bldFxH) { const x = t.bldFxH.replace("{n}", fmt(HOUSE_POP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "warehouse" && t.bldFxS) { const x = t.bldFxS.replace("{n}", fmt(WAREHOUSE_CAP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "dock" && t.bldFxD) { const x = t.bldFxD.replace("{n}", Math.round(DOCK_TOLL_DISCOUNT[level] * 100)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "armory") { parts.push(bo.armory); textParts.push(bo.armory); }
+  else if (bo.civic[o.type]) { parts.push(bo.civic[o.type]); textParts.push(bo.civic[o.type]); }
+  const title = `${name}: ${fmtM(o.cost)} (${bo.days.replace("{d}", fmt(o.days))}, ${bo.fee.replace("{p}", fmtM(o.fee))}), ${ops.join(", ")}, ${textParts.join(", ")}`;
   return `<span class="bldoffer" title="${escBw(title)}">${fig}<b class="bldoffer-name">${escBw(name)}</b>`
     + `<span class="bldoffer-block"><span class="bldoffer-cost">${bwSvg(BWI.coin, 14)}<b>${fmtM(o.cost)}</b> · ${escBw(bo.days.replace("{d}", fmt(o.days)))}</span>`
     + `<span class="bldoffer-mats">${mats}</span>`
