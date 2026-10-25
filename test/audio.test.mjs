@@ -29,3 +29,10 @@ test("Spanish sound labels are unique and never replaced by English entries", ()
   assert.match(es, /credKenney:\s*"Sonidos:/);
   assert.doesNotMatch(es, /stSound:\s*"Sound"|credKenney:\s*"Sound:/);
 });
+
+test("English sound labels are present exactly once", () => {
+ const en = main.slice(main.indexOf('  en: {'), main.indexOf('let lang ='));
+ assert.equal((en.match(/\bstSound\s*:/g)||[]).length,1);
+ assert.equal((en.match(/\bcredKenney\s*:/g)||[]).length,1);
+ assert.match(en,/stSound:\s*"Sound"/);
+});
