@@ -61,7 +61,7 @@ import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR } from "../src
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
-import { warehouseCap, setRoute, setRouteAdv, clearRoute, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceDay, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, priceHistory, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
+import { warehouseCap, setRoute, setRouteAdv, clearRoute, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceDay, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, trendPct, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
 import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs";
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
@@ -252,12 +252,6 @@ function frame(now) {
   }
   drawShips();
   requestAnimationFrame(frame);
-}
-function spark(a, col) {
-  if (a.length < 2) return "";
-  const lo = Math.min(...a), hi = Math.max(...a), w = 48, h = 14, span = Math.max(1, hi - lo);
-  const pts = a.map((v, i) => `${(i / (a.length - 1) * w).toFixed(1)},${(h - (v - lo) / span * h).toFixed(1)}`).join(" ");
-  return `<svg class="spark" width="${w}" height="${h + 2}" viewBox="0 -1 ${w} ${h + 2}"><polyline fill="none" stroke="${col === "inherit" ? "#654" : col}" stroke-width="1.2" points="${pts}"/></svg> `;
 }
 let fleetFilter="all",fleetSearch="";
 let marketSearch = "", marketCargoOnly = false, marketCompare = "", marketQty = 10;
@@ -476,7 +470,7 @@ function render() {
       for (const gd of Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang))) {
         if(market2d && ((marketCargoOnly && !(s.cargo[gd]>0)) || !t.goods[gd].toLocaleLowerCase(lang).includes(marketSearch.toLocaleLowerCase(lang)))) continue;
         const cmp = market2d && marketCompare ? destinationQuote(g, marketCompare, gd) : null;
-        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, bq = marketQty === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, mktFee).qty) : marketQty, sq = marketQty === "max" ? Math.max(1, have) : marketQty, pb = previewBuy(g.world, g.market, s, g.cash, gd, bq, mktFee), ps = previewSell(g.world, g.market, s, gd, sq, mktFee), bs = g.basis?.[gd], avg = bs && bs.qty > 0 && have > 0 ? Math.round(bs.cost / bs.qty) : null;
+        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, bq = marketQty === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, mktFee).qty) : marketQty, sq = marketQty === "max" ? Math.max(1, have) : marketQty, pb = previewBuy(g.world, g.market, s, g.cash, gd, bq, mktFee), ps = previewSell(g.world, g.market, s, gd, sq, mktFee), spb = s.basis?.[gd], avg = spb != null && spb > 0 && have > 0 ? Math.round(spb / have) : null;
         const p = quote(g, s.at, gd), base = g.world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit", tag = p < base * 0.9 ? "▼" : p > base * 1.2 ? "▲" : "";
         const buyTip = pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmt(pb.cost)).replace("{a}", pb.avg).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : "", sellTip = ps.qty ? t.dealSell.replace("{q}", ps.qty).replace("{c}", fmt(ps.revenue)).replace("{a}", ps.avg).replace("{n}", ps.next) + (ps.hasBasis ? ` (${Math.abs(ps.profit)} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : "";
         const lv = stockLevel(g.market[s.at][gd]), lvc = { scarce: "#b3261e", short: "#b26a00", normal: "#6b6355", plenty: "#1e7a34" }[lv], tp = trendPct(g, s.at, gd);
