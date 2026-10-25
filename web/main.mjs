@@ -302,7 +302,8 @@ function activeMissionLine() {
 // a strip in the panel handle while it is open. Same state, no progression change.
 function syncMissionEcho() {
   const d = $("v3d"); if (!d) return;
-  const line = activeMissionLine(), open = !d.querySelector(".city-window")?.hidden;
+  const tut = tutorialStep(g) === "done" ? null : tutorialHint(g, lang); // first-voyage tutorial step replaces the mission line while it runs (opt-in per game)
+  const line = tut ?? activeMissionLine(), open = !d.querySelector(".city-window")?.hidden;
   const cm = $("city-mission");
   if (cm) {
     cm.textContent = line ?? ""; cm.hidden = !line || open;

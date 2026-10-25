@@ -25,15 +25,15 @@ export function tutorialStep(g) {
 
 export const TUT_TEXT = {
   es: {
-    buy: "Tutorial 1/3: compra. Abre un puerto, elige un bien barato (stock alto) y pulsa Comprar.",
-    sell: "Tutorial 2/3: vende. Con la carga a bordo, vende donde el bien escasea, o espera a que suba el precio.",
-    sail: "Tutorial 3/3: zarpa. Clic en un puerto para elegir destino y clic derecho para navegar.",
+    buy: "Tutorial 1/3: compra un bien barato en el Mercado.",
+    sell: "Tutorial 2/3: vende la carga donde escasee.",
+    sail: "Tutorial 3/3: elige un puerto y zarpa (clic derecho).",
     done: "Tutorial completado. Tu casa comercial es tuya: gana monedas antes del plazo.",
   },
   en: {
-    buy: "Tutorial 1/3: buy. Open a port, pick a cheap good (high stock) and press Buy.",
-    sell: "Tutorial 2/3: sell. With cargo aboard, sell where the good is scarce, or wait for the price to rise.",
-    sail: "Tutorial 3/3: sail. Click a port to choose a destination, right-click to sail.",
+    buy: "Tutorial 1/3: buy a cheap good at the Market.",
+    sell: "Tutorial 2/3: sell the cargo where it is scarce.",
+    sail: "Tutorial 3/3: pick a port and sail (right-click).",
     done: "Tutorial complete. Your trading house is yours: earn coins before the deadline.",
   },
 };
