@@ -1,0 +1,31 @@
+OpenGameArt source and license record, verified 25 October 2026
+
+Each source page lists CC0. These are source-page license records, not
+claims that the Kenney license files cover these separate packs.
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+
+storm.ogg: rain and thunders
+Author: kindland
+Source: https://opengameart.org/content/rain-and-thunders
+License: CC0
+
+pirates.ogg: Horde War Drums loop
+Author: William Hector
+Source: https://opengameart.org/content/horde-war-drums-loop
+License: CC0
+
+mission.ogg: Medieval: Minstrel Dance
+Author: RandomMind
+Source: https://opengameart.org/content/medieval-minstrel-dance
+License: CC0
+
+council.ogg: Applause in a large hall or church
+Author: eXpl0it3r
+Source: https://opengameart.org/content/applause-in-a-large-hall-or-church
+License: CC0
+
+festival.ogg: Crowd Shouting/Speaking Ambience
+Author: StarNinjas
+Source: https://opengameart.org/content/crowd-shoutingspeaking-ambience
+License: CC0
+
