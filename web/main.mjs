@@ -343,14 +343,19 @@ function syncMissionEcho() {
     }
   }
   if (top) { wrap.style.top = top; mx.style.top = top; }
-  // The open window keeps clear of the expanded chip (same rule as the corner bar clamp).
-  const win = d.querySelector(".city-window"), chip = !wrap.hidden ? wrap : (!mx.hidden ? mx : null);
-  if (win && !win.hidden && chip) {
-    const cr = chip.getBoundingClientRect(), wr = win.getBoundingClientRect();
-    if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) {
-      const vt = d.getBoundingClientRect().top;
+  // The open window keeps clear of the mission chip and the corner bar (same rule as the drag clamp; Marco 25/10: market Cerrar landed under the bar).
+  const win = d.querySelector(".city-window"), chip = !wrap.hidden ? wrap : (!mx.hidden ? mx : null), cbar = d.querySelector(".city-corner");
+  if (win && !win.hidden && (chip || cbar)) {
+    const wr = win.getBoundingClientRect(), vt = d.getBoundingClientRect().top;
+    let need = 0;
+    for (const el of [chip, cbar]) {
+      if (!el || el.hidden) continue;
+      const cr = el.getBoundingClientRect();
+      if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, cr.bottom - vt + 6);
+    }
+    if (need) {
       win.style.left = win.offsetLeft + "px"; win.style.right = "auto";
-      win.style.top = Math.min(cr.bottom - vt + 6, Math.max(0, innerHeight - 70 - Math.min(win.offsetHeight, 80))) + "px";
+      win.style.top = Math.min(need, Math.max(0, innerHeight - 70 - Math.min(win.offsetHeight, 80))) + "px";
     }
   }
 }
