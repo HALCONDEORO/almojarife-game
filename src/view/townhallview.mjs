@@ -5,7 +5,7 @@ import { FEE } from "../sim/trade.mjs";
 import { feeMul } from "../game/reputation.mjs";
 import { repOf, respectIndex, RESPECT } from "../game/rank.mjs";
 import { TOLL_DIV, TOLL_DISCOUNT } from "../game/tolls.mjs";
-import { cajaOf, taxSteps, nextMeetingDay } from "../game/council.mjs";
+import { cajaOf, taxSteps, nextMeetingDay, SISA_STEP, TOLL_STEP } from "../game/council.mjs";
 import { identityLine } from "../game/identity.mjs";
 import { moodOutLine } from "../game/moodout.mjs";
 import { craftLine } from "../game/crafts.mjs";
@@ -26,9 +26,11 @@ export function hallView(g, cityId) {
     feePct: Math.round(FEE * feeMul(g, cityId) * 10000) / 100, // market fee as a % (reputation moves it)
     tollDiv: TOLL_DIV, // a ship pays capacity/TOLL_DIV when it docks
     tollDiscountPct: Math.round(TOLL_DISCOUNT[ri] * 100), // respect discount on the toll
-    caja: Math.round(cajaOf(g, cityId)), // the concejo's chest
+    caja: Math.round(cajaOf(g, cityId) * 100) / 100, // the concejo's chest, to cents
     sisa: taxSteps(g, cityId).sisa, // signed tax steps, 0 = normal
     portazgo: taxSteps(g, cityId).portazgo,
+    sisaPct: Math.round(SISA_STEP * taxSteps(g, cityId).sisa * 100), // effective rate shift in %, for display
+    portazgoPct: Math.round(TOLL_STEP * taxSteps(g, cityId).portazgo * 100),
     nextMeeting: nextMeetingDay(g.world, cityId, g.day),
     // City character, only with the identity flag on: the tab shows one sentence of who this city is. Off: no key at all.
     ...(g.cityIdentity === true ? { identity: identityLine(g.world, cityId) } : {}),

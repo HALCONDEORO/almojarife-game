@@ -131,8 +131,8 @@ test("OFF parity vs base code: golden market and cash figures of the pre-module 
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.deepEqual(
     { day: g.day, cash: g.cash, cadiz_grain: g.market.cadiz.grain.stock, cadiz_wine: g.market.cadiz.wine.stock, sevilla_grain: g.market.sevilla.grain.stock, sevilla_pop: g.market.sevilla.grain.pop, lisboa_beer: g.market.lisboa.beer.stock },
-    { day: 60, cash: 1888, cadiz_grain: 100, cadiz_wine: 124, sevilla_grain: 297, sevilla_pop: 40000, lisboa_beer: 269 });
-  // golden moved 121 -> 124 in cadiz_wine when saffron became NPC-tradeable (owner call 2026-10-24, the saffron-npc-trade PR):
+    { day: 60, cash: 1888, cadiz_grain: 100, cadiz_wine: 113, sevilla_grain: 297, sevilla_pop: 40000, lisboa_beer: 269 });
+  // golden moved 124 -> 113 in cadiz_wine with cent-settled market fees plus the recalibrated NPC carry margin 1.08 -> 1.12 (decimals PR: cents alone gave 168, the more selective trader carries less wine); earlier move 121 -> 124 when saffron became NPC-tradeable (owner call 2026-10-24, the saffron-npc-trade PR):
   // verified main (saffron player-only) still reproduces 121 exactly and ONLY this cell moves.
 });
 

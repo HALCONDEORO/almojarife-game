@@ -405,7 +405,7 @@ export function storeGoods(g, ship, good, qty) {
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
   qty = Math.min(Math.floor(qty), ship.cargo[good] ?? 0, warehouseCap(g, ship.at) - whUsed(w));
   if (!(qty > 0)) return { ok: false, reason: "nothing to store" };
-  const had=ship.cargo[good],paid=ship.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  const had=ship.cargo[good],paid=ship.basis?.[good]??0,transferred=qty===had?paid:Math.round(paid*qty/had);
   if(ship.basis)ship.basis[good]=paid-transferred;
   (w.basis??={})[good]=(w.basis[good]??0)+transferred;
   ship.cargo[good] -= qty; if (!ship.cargo[good]){delete ship.cargo[good];if(ship.basis)delete ship.basis[good];}
@@ -419,7 +419,7 @@ export function takeGoods(g, ship, good, qty) {
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
   qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
-  const had=w.goods[good],paid=w.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  const had=w.goods[good],paid=w.basis?.[good]??0,transferred=qty===had?paid:Math.round(paid*qty/had);
   if(w.basis)w.basis[good]=paid-transferred;
   (ship.basis??={})[good]=(ship.basis[good]??0)+transferred;
   w.goods[good] -= qty; if (!w.goods[good]){delete w.goods[good];if(w.basis)delete w.basis[good];}

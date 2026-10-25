@@ -5,7 +5,7 @@
 // fee; a cash reserve the player sets is never spent. No DOM here.
 import { price } from "../sim/market.mjs";
 import { craftCount } from "./crafts.mjs";
-import { FEE } from "../sim/trade.mjs";
+import { FEE, ceil2, floor2 } from "../sim/trade.mjs";
 import { post } from "./ledger.mjs";
 import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
 import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
@@ -62,11 +62,11 @@ export function stewardTick(g, city, cap) {
       const have = w.goods[good] ?? 0, can = have - r.sellKeep;
       if (can > 0) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
-        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; revenue += Math.floor(p * (1 - FEE)); n++; }
+        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; revenue += floor2(p * (1 - FEE)); n++; }
         if (n > 0) {
           const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
           e.stock += n;
-          const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = Math.round(paid * n / had);
+          const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = n === had ? paid : Math.round(paid * n / had);
           w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
           if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
           g.cash += revenue;
@@ -90,7 +90,7 @@ export function stewardTick(g, city, cap) {
         while (n < maxN) {
           const unit = price(g.world, e, good);
           if (unit > r.buyBelow) break;
-          const charged = Math.ceil(unit * (1 + FEE));
+          const charged = ceil2(unit * (1 + FEE));
           if (cost + charged > budget) break;
           cost += charged; e.stock -= 1; n++;
         }

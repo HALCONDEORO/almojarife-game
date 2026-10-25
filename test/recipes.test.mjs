@@ -6,7 +6,7 @@ test('recipe quote is pure and successful consumption removes exactly quoted sto
  const m=makeMarket(w),before=structuredClone(m),q=quoteRecipe(w,m,'cadiz','cog');
  assert.ok(q.ok);assert.deepEqual(m,before);const r=consumeRecipe(w,m,'cadiz','cog',q.cost);assert.deepEqual(r,q);
  for(const [g,n]of Object.entries(q.inputs))assert.equal(m.cadiz[g].stock,before.cadiz[g].stock-n);
- assert.ok(Number.isSafeInteger(q.cost)&&q.cost>0);
+ assert.ok(q.cost>0&&Number.isFinite(q.cost)&&Math.abs(q.cost*100-Math.round(q.cost*100))<1e-6,'positive cent-precise cost'); // decimals PR: quotes settle to cents, integer forcing removed
 });
 test('shortage, insufficient cash and invalid requests do not consume any goods',()=>{
  for(const args of [['cog',0,1],['cog',1e6,0],['cog',1e6,1.5],['unknown',1e6,1],['__proto__',1e6,1],['cog',NaN,1]]){

@@ -3,7 +3,7 @@
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
 import { quoteRecipe, consumeRecipe, quoteUnitsImport, consumeUnitsImport, RECIPES } from "../sim/recipes.mjs";
 import { price, seasonMul } from "../sim/market.mjs";
-import { FEE } from "../sim/trade.mjs";
+import { FEE, floor2 } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
 import { repOf } from "./rank.mjs";
@@ -213,7 +213,7 @@ export function sellQuote(world, market, city, good, qty) {
   if (!e) return 0;
   const sim = { ...e };
   let revenue = 0;
-  for (let i = 0; i < qty; i++) { revenue += Math.floor(price(world, sim, good) * (1 - FEE)); sim.stock++; }
+  for (let i = 0; i < qty; i++) { revenue += floor2(price(world, sim, good) * (1 - FEE)); sim.stock++; }
   return revenue;
 }
 

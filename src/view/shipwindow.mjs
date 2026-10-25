@@ -81,12 +81,12 @@ function swCard(g, s, lang, t, hp) {
   return `<div class="swcard">${shipIconSvg(s.type, 72, 40)}<div class="swc-main"><div class="swc-name"><b>${escA(hp.types[s.type] ?? s.type)} ${s.id}</b></div><div class="swc-state">${state}</div><div class="swc-stats">${cells}</div></div></div>`;
 }
 
-/** helpers: { fmt, cityName, types, goods, eta } — eta(ship) renders the arrival estimate. */
+/** helpers: { fmt, fmtM, cityName, types, goods, eta } — eta(ship) renders the arrival estimate; fmtM is the money format (cents), fmt the count format. */
 export function shipWindowHtml(g, s, lang, tab, hp) {
-  const t = SW[lang] ?? SW.es, fmt = hp.fmt, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
+  const t = SW[lang] ?? SW.es, fmt = hp.fmt, fmtM = hp.fmtM, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
-  return swCard(g, s, lang, t, hp) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
+  return swCard(g, s, lang, t, hp) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt, fmtM) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
 }
 
 function cargoTab(g, s, t, hp, gn, cn) {
@@ -113,7 +113,7 @@ function cargoTab(g, s, t, hp, gn, cn) {
   return h;
 }
 
-function crewTab(g, s, lang, t, fmt) {
+function crewTab(g, s, lang, t, fmt, fmtM = fmt) {
   const L = crewLimits(s), c = crewOf(s), sp = speedFactor(s);
   let h = `<div><b>${t.crew}</b>: ${c} (${t.min} ${L.min} · ${t.opt} ${L.opt} · ${t.max} ${L.max})<br>`;
   h += c < L.min ? `<b>${t.crewShort}</b>` : t.crewSpeed.replace("{s}", Math.round(sp * 100));
@@ -124,7 +124,7 @@ function crewTab(g, s, lang, t, fmt) {
   h += `</div>`;
   const cn = cannonsOf(s), mc = maxCannons(s), gr = gunRepairCost(s);
   h += `<div><b>${t.guns}</b>: ${cn ? `${cn}/${mc} · ${t.gunCond.replace("{c}", Math.round(gunCond(s)))}` : t.gunNone}<br>`;
-  h += `<button data-gunrepair="1" ${gr <= 0 || s.voyage || g.over || g.cash < gr ? "disabled" : ""}>${t.gunRepair.replace("{p}", fmt(gr))}</button> `;
+  h += `<button data-gunrepair="1" ${gr <= 0 || s.voyage || g.over || g.cash < gr ? "disabled" : ""}>${t.gunRepair.replace("{p}", fmtM(gr))}</button> `;
   h += `<button data-cannon="1" ${s.voyage || g.over || cn >= mc || g.cash < CANNON_PRICE ? "disabled" : ""}>${t.cannonBuy.replace("{p}", fmt(CANNON_PRICE))}</button></div>`;
   const gl = gearOf(s), gp = gl < GEAR_MAX ? armoryPrice(g, s.at, GEAR[gl + 1] - GEAR[gl]) : 0, lw = weaponWeight(s) + gearWeight(s);
   h += `<div class="armory"><b>${t.armory}</b>: ` + Object.entries(WEAPON_TYPES).map(([k, W]) => { const p = armoryPrice(g, s.at, W.price); return `<button data-weapon="${k}" ${s.voyage || g.over || cn >= mc || g.cash < p ? "disabled" : ""}>${t.weaponBuy.replace("{w}", WEAPON_NAME[lang]?.[k] ?? k).replace("{p}", fmt(p)).replace("{pw}", W.power).replace("{wt}", W.weight)}</button>`; }).join(" ");

@@ -6,7 +6,7 @@
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, netWorth, GOAL_CASH, buyWarehouse, doBuy, storeGoods } from "../src/game/game.mjs";
 import { loansOwed } from "../src/game/bank.mjs";
-import { buyPlot, startConstruction, staffingRatio, jobsNeeded, BUILDING_TYPES, JOBS_PER_LEVEL, WAGE_PER_WORKER, producerRate, sellQuote } from "../src/game/buildings.mjs";
+import { buyPlot, startConstruction, quoteConstruction, staffingRatio, jobsNeeded, BUILDING_TYPES, JOBS_PER_LEVEL, WAGE_PER_WORKER, producerRate, sellQuote } from "../src/game/buildings.mjs";
 import { RECIPES, quoteRecipe } from "../src/sim/recipes.mjs";
 import { price } from "../src/sim/market.mjs";
 
@@ -55,11 +55,11 @@ function scenarioB(seed = 0) {
     if (!b && !lostB) lostB = d;
     if (!wasHalted && b?.halted) haltEvents++;
     if (b?.state === "active") { staffSum += staffingRatio(g, home); staffDays++; if (b.halted) haltDays++; }
-    if (d % 7 === 0 && b?.state === "active" && !b.halted && b.level < 3) {
+    if (d % 7 === 0 && b?.state === "active" && !b.halted) { // restock at every level: a max-level loom still eats wool
       if (!g.warehouses[home] && g.cash > BUFFER + 1500) buyWarehouse(g, home);
       const ship = g.ships.find((s) => s.at === home && !s.voyage);
       if (g.warehouses[home] && ship) for (const [good, qty] of Object.entries(RECIPES.workshop)) {
-        const need = Math.max(0, qty * (b.level + 1) - (g.warehouses[home].goods[good] ?? 0));
+        const need = Math.max(0, qty * Math.min(b.level + 1, 3) - (g.warehouses[home].goods[good] ?? 0)); // one batch ahead while it can still grow
         const unit = Math.ceil(price(world, g.market[home][good], good) * 1.1);
         const n = Math.min(need, Math.max(0, Math.floor((g.cash - BUFFER) / unit)));
         if (n > 0) { const r = doBuy(g, ship, good, n); if (r.ok) { const stored = storeGoods(g, ship, good, r.qty); if (stored.ok) stockpiled += stored.qty; } }
@@ -67,7 +67,8 @@ function scenarioB(seed = 0) {
       const q = quoteRecipe(world, g.market, home, "weave");
       const margin = q.ok ? sellQuote(world, g.market, home, "cloth", 2) - q.cost : 0;
       const daily = (BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER) * (b.level + 1);
-      if (g.cash > BUFFER && margin * producerRate("workshop", b.level + 1) >= 3 * daily) {
+      const qc = quoteConstruction(g, home, home + ":1", "workshop"); // never start works that breach the buffer: an upgrade that leaves no cash for wool and wages kills the shop
+      if (b.level < 3 && qc.ok && g.cash > BUFFER + qc.cost && margin * producerRate("workshop", b.level + 1) >= 3 * daily) {
         const r = startConstruction(g, home, home + ":1", "workshop"); if (r.ok) upgrades++;
       }
     }
