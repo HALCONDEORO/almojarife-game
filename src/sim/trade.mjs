@@ -82,7 +82,7 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   let revenue = 0;
   for (let i = 0; i < qty; i++) { e.stock += 1; revenue += floor2(price(world, e, good) * (1 - fee)); }
   const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
-  const spent = Math.round(paid * qty / had); // share of the cost that leaves with the goods
+  const spent = qty === had ? paid : Math.round(paid * qty / had); // share of the cost that leaves with the goods; a full sale settles at the exact book cost, no cent lost
   ship.cargo[good] -= qty;
   if (ship.basis) ship.basis[good] = paid - spent;
   if (!ship.cargo[good]) { delete ship.cargo[good]; if (ship.basis) delete ship.basis[good]; }
@@ -108,6 +108,6 @@ export function previewSell(world, market, ship, good, qty, fee = FEE) {
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
   for (let i = 0; i < n; i++) { sim.stock += 1; revenue += floor2(price(world, sim, good) * (1 - fee)); }
-  const spent = Math.round((ship.basis?.[good] ?? 0) * n / have);
+  const spent = n === have ? (ship.basis?.[good] ?? 0) : Math.round((ship.basis?.[good] ?? 0) * n / have);
   return { qty: n, revenue, avg: Math.round(revenue / n * 100) / 100, profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }

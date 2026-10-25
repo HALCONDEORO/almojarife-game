@@ -66,7 +66,7 @@ export function stewardTick(g, city, cap) {
         if (n > 0) {
           const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
           e.stock += n;
-          const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = Math.round(paid * n / had);
+          const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = n === had ? paid : Math.round(paid * n / had);
           w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
           if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
           g.cash += revenue;
