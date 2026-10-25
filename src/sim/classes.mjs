@@ -54,6 +54,15 @@ export function affordMul(cls, ratio) {
   if (ratio <= 1) return 1;
   return Math.max(0, 1 - (ratio - 1) / (tol - 1));
 }
+/** Daily demand of EXPLICIT class counts (not a population split by shares), per class, at a price
+ *  ratio. Typed town houses shelter residents of one known class; the market adds their demand this
+ *  way instead of re-splitting them by the town's shares. */
+export function demandOf(counts, good, ratio = 1) {
+  const row = PER_1000[good] ?? OPTIONAL_PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
+  for (const c of CLASSES) out[c] = (counts?.[c] ?? 0) / 1000 * row[c] * affordMul(c, ratio);
+  return out;
+}
+
 /** Daily demand of a city for a good, per class, at a price ratio. Fractions are kept; the market rounds the total. */
 export function demandBy(pop, good, ratio = 1) {
   const n = classCounts(pop), row = PER_1000[good] ?? OPTIONAL_PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
