@@ -370,6 +370,7 @@ function render() {
   { const pn = $("pausenote"); if (pn) { const ps = !playing && pauseNote && !g.pending && !g.encounterReport && !g.over ? g.ships.find((x) => x.id === pauseNote.ship) : null;
     pn.textContent = ps ? t.pauseArrive.replace("{ship}", ps.name ?? `${T[lang].types[ps.type] ?? ps.type} ${ps.id}`).replace("{city}", cityName(pauseNote.city)) : ""; } }
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
+  syncCityControls();
   const missionLine = activeMissionLine();
   syncMissionEcho();
   setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmtM(netWorth(g))}` :
@@ -877,13 +878,45 @@ function openCityPanel(tb) {
   d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,hall:t.tabHall,buildings:t.bldBuild,route:t.tabRoute,house:premises(g,ship().at,lang).label,lonja:t.tabLonja,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})(),town:t.townTypes[townSel]??t.tabCity})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();
 }
+// Right city panel (P3-style button bar): flat own-work icons, one stroke style.
+const CC_ICONS = Object.fromEntries(Object.entries({
+  build: '<path d="M4 21h16M6 21V11l6-6 6 6v10" fill="none" stroke-width="1.7"/><path d="M10 21v-5h4v5" fill="currentColor" stroke="none"/>',
+  ships: '<path d="M12 3v13M12 5c4 1 6 4 7 8l-7 1zM12 8c-3 .5-5 3-5.5 6l5.5 1z" stroke="none"/><path d="M4 18h16l-2 3H6z" stroke="none"/>',
+  reports: '<rect x="6" y="4" width="12" height="16" rx="1.5" fill="none" stroke-width="1.7"/><path d="M9 9h6M9 13h6M9 17h4" fill="none" stroke-width="1.5"/>',
+  msgs: '<rect x="4" y="6" width="16" height="12" rx="1.5" fill="none" stroke-width="1.7"/><path d="M4.5 8 12 14l7.5-6" fill="none" stroke-width="1.7"/>',
+  clock: '<circle cx="12" cy="12" r="8" fill="none" stroke-width="1.7"/><path d="M12 7v5l3.5 2" fill="none" stroke-width="1.7"/>',
+  speed: '<path d="M5 6l7 6-7 6zM12 6l7 6-7 6z" stroke="none"/>',
+  menu: '<path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke-width="1.8"/>',
+  back: '<path d="M14 5l-8 7 8 7" fill="none" stroke-width="1.8"/><path d="M17 12h3" fill="none" stroke-width="1.8"/>',
+}).map(([k, v]) => [k, `<svg class="cc-ico" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="currentColor">${v}</svg>`]));
+// Live labels for the city right panel: same source values as the header buttons, re-read every render.
+function syncCityControls() {
+  const d = $("v3d"); if (!d || !g) return;
+  const set = (k, txt) => { const el = d.querySelector(`[data-cc="${k}"]`); if (el && el.textContent !== txt) el.textContent = txt; };
+  set("build", t.bldBuild);
+  set("ships", lang === "es" ? "Barcos" : "Ships");
+  set("reports", LT[lang].reports);
+  set("msgs", badge(LT[lang].messages, unread(g)));
+  set("play", playing ? t.pause : t.play);
+  set("speed", `${t.speed} ${speed}x`);
+  set("menu", lang === "es" ? "Menú" : "Menu");
+  set("back", lang === "es" ? "Volver al mapa" : "Back to map");
+  const fsb = $("fs"), cfs = d.querySelector("[data-city-fs]");
+  if (cfs && fsb) { cfs.hidden = fsb.hidden; cfs.title = fsb.title; cfs.setAttribute("aria-label", fsb.getAttribute("aria-label") ?? "Fullscreen"); }
+  const cl = d.querySelector("[data-city-lang]"); if (cl) cl.textContent = lang === "es" ? "EN" : "ES";
+  const s0 = ship(); if (s0 && !s0.voyage) updateCityHeader(s0.at);
+}
 function updateCityHeader(cityId) {
   const d = $("v3d"); if (!d || !cityId || !world.nodes[cityId]) return;
   const nm = d.querySelector("#city-header-name"), info = d.querySelector("#city-header-info");
   if (!nm || !info) return;
   const eff = cityEffects(g, cityId), rs = respectOf(g, cityId);
   nm.textContent = cityName(cityId);
-  info.textContent = ` · ${fmt(eff.pop + eff.popBonus)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}`;
+  const extra = [];
+  const wl = wallsLevel(g, cityId); if (wl > 0) extra.push(`${lang === "es" ? "Murallas" : "Walls"} ${wl}`);
+  if (hasOffice(g, cityId)) extra.push(t.tabOffice);
+  if (warehouseOf(g, cityId)) extra.push(t.tabStore);
+  info.textContent = ` · ${fmt(eff.pop + eff.popBonus)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}${extra.length ? " · " + extra.join(" · ") : ""}`;
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
@@ -891,7 +924,7 @@ function open3d(s0) {
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" role="status" aria-live="polite" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" role="status" aria-live="polite" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><p class="cc-section">${lang==="es"?"Ciudad":"City"}</p><button data-city-tab="buildings">${CC_ICONS.build}<span data-cc="build">${t.bldBuild}</span></button><button data-city-ships>${CC_ICONS.ships}<span data-cc="ships">${lang==="es"?"Barcos":"Ships"}</span></button><button data-city-reports>${CC_ICONS.reports}<span data-cc="reports">${LT[lang].reports}</span></button><button data-city-msgs>${CC_ICONS.msgs}<span data-cc="msgs">${LT[lang].messages}</span></button><p class="cc-section">${lang==="es"?"Tiempo":"Time"}</p><button data-city-play>${CC_ICONS.clock}<span data-cc="play"></span></button><button data-city-speed>${CC_ICONS.speed}<span data-cc="speed"></span></button><div class="cc-mini"><button data-city-fs>⛶</button><button data-city-lang>${lang === "es" ? "EN" : "ES"}</button></div><button data-city-menu>${CC_ICONS.menu}<span data-cc="menu">${lang==="es"?"Menú":"Menu"}</span></button><button data-map>${CC_ICONS.back}<span data-cc="back">${lang==="es"?"Volver al mapa":"Back to map"}</span></button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
   syncMissionEcho();
   d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
     try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
@@ -902,6 +935,11 @@ function open3d(s0) {
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
   d.querySelector("[data-city-menu]").onclick=showMenu;
+  d.querySelector("[data-city-msgs]").onclick=()=>showLedger("msg");
+  d.querySelector("[data-city-play]").onclick=()=>toggleClock();
+  d.querySelector("[data-city-speed]").onclick=()=>{speed=nextTimeSpeed(speed,automaticTime);render();};
+  d.querySelector("[data-city-fs]").onclick=()=>$("fs")?.click();
+  d.querySelector("[data-city-lang]").onclick=()=>$("lang")?.click();
   d.querySelector("[data-close-panel]").onclick=closeCityWindow;
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
@@ -912,6 +950,7 @@ function open3d(s0) {
   handle.onpointerup=handle.onpointercancel=()=>drag=null;
   handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
   d.querySelector("[data-city-tab]").focus();
+  syncCityControls();
 }
 addEventListener("message",e=>{
   const d=$("v3d");
