@@ -118,7 +118,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.townIndustry !== false && opts.townIndustry !== 1) g.townIndustry = true; // town-industry flag, ON by default (same owner order as citylife: every flag ships ON); false/1 keeps an off game with no key, saves stay identical (docs/design/town-industry-and-auctions.md)
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
-  if (opts.tutorial === true && opts.difficulty === "easy") initTutorial(g); // first-voyage tutorial: easy difficulty only (engine rule, not just the UI), OFF by default: no key in an off game (saves stay identical)
+  if (opts.tutorial === true) initTutorial(g); // first-voyage tutorial, any difficulty; OFF by default: no key in an off game (saves stay identical)
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
