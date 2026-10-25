@@ -64,3 +64,24 @@ test('data tab: voyage, route and prize badge render',()=>{
 test('both languages ship every tab label',()=>{
  for(const lang of['es','en'])for(const k of['tabCargo','tabCrew','tabData'])assert.ok(SW[lang][k],lang+'.'+k);
 });
+test('summary card: pinned on every tab with real hull, crew, guns and hold, ES and EN',()=>{
+ const{g,s}=mk();
+ for(const tab of['cargo','crew','data']){
+  const es=shipWindowHtml(g,s,'es',tab,hp),en=shipWindowHtml(g,s,'en',tab,hpEn);
+  assert.ok(es.includes('swcard')&&es.includes('Coca 1'),'ES card name on '+tab);
+  assert.ok(es.includes('En cadiz'),'ES state line');
+  assert.ok(es.includes('aria-label="Casco 100%"'),'ES hull aria');
+  assert.ok(es.includes('Bodega 25/60'),'ES hold aria with real cargo');
+  assert.ok(en.includes('Cog 1')&&en.includes('At cadiz'),'EN card on '+tab);
+  assert.ok(en.includes('aria-label="Hull 100%"'),'EN hull aria');
+  assert.ok(en.includes('Hold 25/60'),'EN hold aria');
+ }
+});
+test('summary card: short crew flagged, at-sea state shows the route and eta',()=>{
+ const g=newGame(world,'cadiz',{cash:100000});const s=g.ships[0];s.crew=0;
+ const short=shipWindowHtml(g,s,'es','cargo',hp);
+ assert.ok(short.includes('swc-bad'),'short crew cell flagged');
+ s.crew=12;s.voyage={from:'cadiz',to:'malaga',ticksLeft:50};
+ const sea=shipWindowHtml(g,s,'en','data',hpEn);
+ assert.ok(sea.includes('At sea: cadiz → malaga'),'sea state line');
+});
