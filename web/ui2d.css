@@ -53,3 +53,10 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 @media(max-width:650px){.ui2d-market-window .mkt-table{display:block}.mkt-tools{flex-wrap:wrap}.mkt-row,.mkt-head{grid-template-columns:1fr 1fr;row-gap:2px;padding:4px}.mkt-head{display:none}.mkt-good{grid-column:1/-1}.mkt-hold,.mkt-avg{text-align:left}.ui2d-market-window .mkt-pill{min-height:34px}}
 /* mkt fit tuning: two truly equal columns, 24px rows, tighter chrome */
 @media(min-width:900px){.mkt-heads,.mkt-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mkt-head,.mkt-row{grid-template-columns:minmax(66px,1.3fr) minmax(46px,.8fr) minmax(60px,1fr) 36px 40px 62px 62px;column-gap:4px}.mkt-row{min-height:20px;padding:0 4px}.mkt-good svg.gi{width:18px;height:18px}.ui2d-market-window .mkt-pill{min-height:20px;padding:0 4px;font-size:11px}.mkt-tools{margin:2px 0}.mkt-tools input[type=search]{min-height:24px}.ui2d-market-window .mkt-tools input,.ui2d-market-window .mkt-tools select{min-height:24px;padding:1px 4px}.mkt-preview{margin:1px 0;min-height:16px;line-height:16px}.mkt-qtybar{margin:3px 0 1px}.ui2d-market-window .mkt-alerts{margin:2px 0 0}.ui2d-market-window .ui2d-market-intro p{margin:2px 0}.ui2d-market-window .mkt-qtybar button{min-height:22px;padding:0 8px}.ui2d-market-window .ui2d-market-intro{padding:3px 10px;margin:3px 0;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}.ui2d-market-window .ui2d-market-intro h3{font-size:17px;margin:0}}
+/* Route tab: compact P3-style stops table (active route and editor). Global: the route tab renders in the plain panel, not a ui2d window. */
+.route-table{width:100%;border-collapse:collapse;margin:8px 0;font:15px Georgia,serif}
+.route-table th{padding:6px 8px;color:#405e4a;font-size:13px;text-align:left;border-bottom:2px solid #bba373}
+.route-table td{padding:6px 8px;border-bottom:1px solid #d3c29c;vertical-align:middle;text-align:left}
+.route-table tbody tr:nth-child(even) td{background:#eee3c8}
+.route-table select{max-width:100%}
+.route-table input[type=number]{width:78px;box-sizing:border-box}

@@ -85,3 +85,24 @@ test("the route tab shows its explainer line exactly once", async () => {
   const uses = src.split("t.routeInfo}").length - 1;
   assert.equal(uses, 1, "routeInfo renders once in the route tab (regression: it was concatenated twice)");
 });
+
+test("route tab source: the active advanced route renders as one compact table row per stop", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
+  assert.ok(route.includes('class="route-table"'), "route tab uses the compact stops table");
+  assert.ok(!route.includes("stopLine"), "old per-stop paragraph lines are gone");
+});
+
+test("route tab source: the simple A⇄B card never renders for an advanced (v2) route", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
+  assert.ok(route.includes("rt && rt.v !== 2"), "the simple card is gated to legacy A⇄B routes");
+});
+
+test("route tab source: the editor keeps its control ids inside the compact table", () => {
+  const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
+  for (const id of ["rts-city-", "rts-bg-", "rts-bp-", "rts-sg-", "rts-sp-", "rts-del-", "rts-add", "rts-mincash", "rts-set2"]) {
+    assert.ok(route.includes(id), `editor control ${id} survives the redesign`);
+  }
+});
