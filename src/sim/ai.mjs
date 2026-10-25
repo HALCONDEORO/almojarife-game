@@ -6,7 +6,7 @@ import { SHIP_TYPES, FEE, buy, sell, sail, cargoUsed, shipCapacity } from "./tra
 import { buyWeapon, buyGear } from "./armory.mjs";
 import { WEAPON_TYPES, weaponCount, maxCannons, loadWeight, gearOf } from "./armament.mjs";
 
-const CARRY_MIN_MARGIN = 1.08; // never sail for less than 8% gross margin (covers both fees)
+const CARRY_MIN_MARGIN = 1.12; // never sail for less than 12% gross margin. Recalibrated with cent-settled fees: realized margin now equals the planned one (integer rounding used to eat it on cheap goods), so the band the balance gate pins needs a more selective trader
 
 function bestPlan(world, market, ship, cash, planningMarket = market, canVisit = () => true, scoreCandidate = null) {
   let best = null;
