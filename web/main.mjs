@@ -476,15 +476,22 @@ function render() {
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe) { playing = false; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; }
   if (inCity || pe) {
+  // Marco 25/10: the ship card is not wallpaper for every window - it shows only where the
+  // selected ship actually operates: market (its cargo), warehouse (hold in/out), route, shipyard.
+  const shipCtx = !inCity || tab === "market" || tab === "store" || tab === "route" || tab === "yard";
+  if (shipCtx) {
   h += `<div class="port-ship-summary">` + g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
   h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${shipCapacity(s)}<br>`;
   h += assignedCaptainHtml(s,lang) + `</div>`;
+  }
   if (!s.voyage && !g.over) {
     const hv = Object.keys(s.cargo).reduce((a, gd) => a + (s.cargo[gd] ?? 0) * quote(g, s.at, gd), 0);
-    h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmtM(hv)}</div>`;
-    const bp = bestPorts(g, s).slice(0, 3);
-    if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmtM(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmtM(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
-    if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
+    if (!inCity || tab === "market") h += `<div title="${t.holdValue}">${t.holdValue}: ≈ ${fmtM(hv)}</div>`;
+    if (!inCity || tab === "market" || tab === "route") {
+      const bp = bestPorts(g, s).slice(0, 3);
+      if (bp.length) h += `<div class="best"><b>${t.bestLbl}</b>` + bp.map((r) => `<div><button data-pick="${r.city}">${t.target}</button> ${t.bestRow.replace("{city}", cityName(r.city)).replace("{r}", fmtM(r.revenue)).replace("{p}", (r.profit >= 0 ? "+" : "") + fmtM(r.profit)).replace("{d}", r.days)} <small>(${r.age === 0 ? t.ageNow : t.ageDays.replace("{n}", r.age)}${r.exact ? "" : ", " + t.rumorTag})</small></div>`).join("") + `</div>`;
+      if (!bp.length && Object.keys(s.cargo).length) h += `<div class="best"><i>${t.noInfo}</i></div>`;
+    }
     const wh = warehouseOf(g, s.at);
     if (!inCity) h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["hall", t.tabHall], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore], ...(lonjaEnabled(location.search) ? [["lonja", t.tabLonja]] : [])].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;    const bldCard = () => { // armed buy/build/upgrade action: quote card with confirm/cancel
     const impNote = (t, o) => { const nn = Object.values(o.imported ?? {}).reduce((a, b) => a + b, 0); return nn ? ` · <i>${t.bldImport.replace("{n}", fmt(nn))}</i>` : ""; };
