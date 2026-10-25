@@ -250,3 +250,60 @@ test("bldChipInner: icon + name + state, red when halted, percent when under con
   assert.ok(dk.includes("Dock") && dk.includes("active"), "English chip");
   assert.ok(!dk.includes("undefined") && !dk.includes("NaN"), "no raw holes");
 });
+
+test("bldOfferCard: a processor card shows drawing, investment, running costs and labeled base production", async () => {
+  const { bldOfferCard, bldOfferGroup, BO } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { workshop: "Taller" }, goods: { cloth: "paño", wool: "lana", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const g = funded();
+  buyPlot(g, "cadiz", PLOT);
+  const offer = buildOffers(g, "cadiz", PLOT.id).find((o) => o.ok && o.type === "workshop");
+  const html = bldOfferCard(t, offer, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(html, /bldoffer-name">Taller</);
+  assert.match(html, new RegExp(String(offer.cost)));
+  assert.match(html, /5 días de obra/);
+  assert.match(html, /mano de obra 300/); // labor fee = spec fee x level
+  assert.match(html, /mantenim\. 3\/día · salarios 8\/día/); // upkeep + JOBS_PER_LEVEL.workshop(8) x WAGE(1)
+  assert.match(html, /hasta 1\/día/); // base rate 0.5 batches/day x 2 cloth - "up to", never a promise
+  assert.match(html, /gasta 2\/día/);   // 0.5 batches/day x 4 wool
+  assert.ok(!html.includes("según temporada")); // processors are not seasonal
+  assert.equal(bldOfferGroup("workshop"), "workshop");
+  assert.ok(BO.es.groups.workshop && BO.en.groups.workshop);
+});
+
+test("bldOfferCard: a seasonal primary labels the season; house/warehouse/dock reuse their effect lines", async () => {
+  const { bldOfferCard, bldOfferGroup } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { farm: "Granja", house: "Casa", warehouse: "Almacén", dock: "Muelle" }, bldFxH: "+{n} habitantes", bldFxS: "+{n} de depósito", bldFxD: "-{n}% de peaje para tus barcos", goods: { grain: "grano", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const g = funded();
+  buyPlot(g, "cadiz", PLOT);
+  const offers = buildOffers(g, "cadiz", PLOT.id);
+  const farmOffer = { type: "farm", ok: true, level: 1, cost: 700, materials: 500, fee: 200, days: 4, upkeep: 2, affordable: true, imported: false }; // cadiz grows no grain; a fabricated ok row exercises the primary branch
+  const farm = bldOfferCard(t, farmOffer, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(farm, /hasta 2\/día/); // 0.5 batches/day x 4 grain
+  assert.match(farm, /según temporada/); // grain is a seasonal good (SEASON_PEAK)
+  assert.equal(bldOfferGroup("farm"), "primary");
+  const house = bldOfferCard(t, offers.find((o) => o.ok && o.type === "house"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(house, /\+50 habitantes/);
+  assert.equal(bldOfferGroup("house"), "own");
+  const wh = bldOfferCard(t, offers.find((o) => o.ok && o.type === "warehouse"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(wh, /\+300 de depósito/);
+  const dock = bldOfferCard(t, offers.find((o) => o.ok && o.type === "dock"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(dock, /-50% de peaje/); // DOCK_TOLL_DISCOUNT[1]
+});
+
+test("bldOfferCard: English strings, escaping, and decimals stay with the caller's fmt", async () => {
+  const { bldOfferCard, bldOfferGroup } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { ranch: 'Rancho "viejo"' }, goods: { meat: "carne", leather: "cuero", kid_meat: "cordero", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const o = { type: "ranch", ok: true, level: 1, cost: 1234.5, materials: 1000.5, fee: 250, days: 4, upkeep: 2, affordable: true, imported: true };
+  const html = bldOfferCard(t, o, "en", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(html, /up to 1\/day/); // 0.5 x 2 meat
+  assert.match(html, /up to 0\.5\/day/); // byproducts at the same base rate
+  assert.match(html, /partly imported/);
+  assert.match(html, /upkeep 2\/day · wages 6\/day/);
+  assert.match(html, /Rancho &quot;viejo&quot;/); // names escape
+  assert.equal(bldOfferGroup("ranch"), "primary"); // meat is not in SEASON_PEAK: primary, not seasonal
+  assert.ok(!html.includes("seasonal"));
+  const civic = { type: "molino", ok: true, level: 1, cost: 900, materials: 700, fee: 200, days: 4, upkeep: 2, affordable: true, imported: false };
+  const card = bldOfferCard({ bldTypes: { molino: "Molino" }, goods: {} }, civic, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  assert.match(card, /asegura el grano/);
+  assert.equal(bldOfferGroup("molino"), "civic");
+});
