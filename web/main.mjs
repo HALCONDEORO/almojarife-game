@@ -67,6 +67,7 @@ import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
+import { tutorialHint, tutorialStep } from "../src/game/tutorial.mjs"; // first-voyage tutorial hint (opt-in per game)
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 let mapMode = "geographic";
@@ -280,7 +281,7 @@ const routeDrafts = {}; // advanced-route editor drafts, per ship id
 const newRouteDraft = (at, ids) => ({ minCash: "", stops: [{ city: ids[0] ?? at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }] });
 function start(prof, save = true, opts = {}) {
   const p = cleanProfile({ ...prof, company: prof?.company || T[lang].defCo }, cityIds);
-  g = newGame(world, p.home, { ...startBonus(p), ...opts, profile: p, events: true, seed: crypto.getRandomValues(new Uint32Array(1))[0] }); sel = 0; pauseNote = null; company = p.company; if (save) autosave(); render(); if (prof && !ship().voyage) open3d(ship()); // city opens for a real new game, not for the background boot game
+  g = newGame(world, p.home, { ...startBonus(p), tutorial: p.difficulty === "easy", ...opts, profile: p, events: true, seed: crypto.getRandomValues(new Uint32Array(1))[0] }); sel = 0; pauseNote = null; company = p.company; if (save) autosave(); render(); if (prof && !ship().voyage) open3d(ship()); // city opens for a real new game, not for the background boot game
 }
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
@@ -364,7 +365,7 @@ function render() {
   const missionLine = activeMissionLine();
   syncMissionEcho();
   $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
-    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
+    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : ((tutorialStep(g) === "done" ? null : tutorialHint(g, lang)) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");

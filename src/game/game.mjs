@@ -24,6 +24,7 @@ import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
+import { initTutorial, tutorialNote } from "./tutorial.mjs";
 import { rollContracts, expireContracts, contractOnSale } from "./contracts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel, RUMOR_PRICE } from "./intel.mjs";
@@ -117,6 +118,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.townIndustry !== false && opts.townIndustry !== 1) g.townIndustry = true; // town-industry flag, ON by default (same owner order as citylife: every flag ships ON); false/1 keeps an off game with no key, saves stay identical (docs/design/town-industry-and-auctions.md)
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
+  if (opts.tutorial === true) initTutorial(g); // first-voyage tutorial, OFF by default: no key in an off game (saves stay identical)
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
   return g;
@@ -265,6 +267,7 @@ export function doBuy(g, ship, good, qty) {
   // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
   // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
   if (r.ok) { craftCount(g, ship.at, good, r.qty); if (good === "grain" && scarcityOf(g.market[ship.at].grain) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "grievance", r.qty); noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
+  if (r.ok) tutorialNote(g, "buy");
   return r;
 }
 export function doSell(g, ship, good, qty) {
@@ -275,6 +278,7 @@ export function doSell(g, ship, good, qty) {
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
   if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) tutorialNote(g, "sell");
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
@@ -324,6 +328,7 @@ export function doSail(g, ship, to) {
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
   if (r.ok) campaignEvent(g, { kind: "sail", to }, MISSION);
   if (r.ok && ship.voyage) ship.voyage.sailLogged = true; // this outing already logged its departure; reroutes will not log again
+  if (r.ok) tutorialNote(g, "sail");
   return r;
 }
 /** Buy a second ship (caravel) at the port where ship[0] is docked. */
