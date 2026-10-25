@@ -14,7 +14,7 @@ test("sfx is gated by the sound setting and never throws without Audio", () => {
 test("Ajustes has the sound toggle and credits name Kenney", () => {
   assert.match(main, /id="st-sound"/);
   assert.match(main, /stSound: "Sonido"/); assert.match(main, /stSound: "Sound"/);
-  assert.match(main, /credKenney/); assert.match(credits, /Kenney.*CC0/s); assert.match(credits, /rubberduck.*CC0/s); assert.match(credits, /kindland.*CC0/s); assert.match(credits, /RandomMind.*CC0/s);
+  assert.match(main, /credKenney/); assert.match(credits, /Kenney.*CC0/s); assert.match(credits, /rubberduck.*CC0/s); assert.match(credits, /kindland.*CC0/s); assert.match(credits, /RandomMind.*CC0/s); assert.match(credits, /InspectorJ.*CC BY 3.0/s); assert.match(credits, /jan125.*CC BY 4.0/s);
 });
 test("sailing, arrivals and window open/close play their effects", () => {
   assert.match(main, /if \(s0\.voyage\) sfx\("sail"\)/);
@@ -29,6 +29,15 @@ test("fresh events play their stinger once, at most one per render", () => {
   assert.match(main, /if \(s\) \{ sfx\(s\); break; \}/); // one stinger per pass
   assert.match(main, /if \(lastMsgId < 0\) lastMsgId = box\[0\]\?\.id \?\? 0;/); // no burst on page load
   assert.match(main, /g\?\.pending\?\.event === "sea-pirates"/); // pirate drums when the encounter opens
+});
+test("ambience follows the context and music rotates, both behind the same setting", () => {
+  for (const f of ["amb-sea", "amb-port", "music-water", "music-village", "music-tavern"]) assert.ok(existsSync(`web/audio/${f}.ogg`), f);
+  assert.match(mod, /export function syncAmbience\(name\)/);
+  assert.match(mod, /export function syncMusic\(\)/);
+  assert.match(mod, /if \(!soundOn\(\)\) name = null;/); // ambience stops when muted
+  assert.match(mod, /AMBIENCE\[name\].*loop = true/s);
+  assert.match(mod, /duckLoops\(\);/); // stingers duck the loops
+  assert.match(main, /syncAmbience\(/); // wired from render
 });
 test("buy and sell buttons play their effect, failures play error", () => {
   assert.match(main, /sfx\(r\.ok \? "buy" : "error"\)/);

@@ -1,0 +1,18 @@
+P3 ambience and music sources (verified on each OpenGameArt page, 25 Oct 2026):
+
+amb-sea.ogg      "Sea and River Wave Sounds" (Vistula) - randommind - CC0
+                 https://opengameart.org/content/sea-and-river-wave-sounds
+amb-port.ogg     "Crowded Pub" - bobjt - CC0
+                 https://opengameart.org/content/crowded-pub
+music-water.ogg  "A Tale of Water" (from "A Tale of Wind and Water") - InspectorJ - CC BY 3.0
+                 https://opengameart.org/content/a-tale-of-wind-and-water-rpg-orchestral-essentials-peace-music
+                 https://creativecommons.org/licenses/by/3.0/
+music-village.ogg "Peaceful Village Loop" - elerya - CC BY 3.0
+                 https://opengameart.org/content/peaceful-village-loop
+                 https://creativecommons.org/licenses/by/3.0/
+music-tavern.ogg "Dragon Tail Tavern" - jan125 - CC BY 4.0
+                 https://opengameart.org/content/dragon-tail-tavern
+                 https://creativecommons.org/licenses/by/4.0/
+
+Loops trimmed and faded for in-game use; the CC BY tracks are credited in
+CREDITS.md and in the in-game Credits window.
