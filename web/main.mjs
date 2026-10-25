@@ -398,11 +398,11 @@ function render() {
   else if (company) co.textContent = `· ${company}`;
   const cal = calendarOf(g.day, g.startYear ?? LEGACY_START_YEAR), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // exact even paused or just loaded
   const mins = Math.floor(dayFrac * 24 * 60), hh = String(Math.floor(mins / 60)).padStart(2, "0"), mm = String(mins % 60).padStart(2, "0");
-  $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
+  $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.noGoal || g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
   $("cash").textContent = `${t.cash}: ${fmtM(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
   $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, unread(g));
-  $("goal").textContent = g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
+  $("goal").textContent = g.noGoal || g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${t.speed} ${speed}x`;
   { const pn = $("pausenote"); if (pn) { const ps = !playing && pauseNote && !g.pending && !g.encounterReport && !g.over ? g.ships.find((x) => x.id === pauseNote.ship) : null;
@@ -413,7 +413,7 @@ function render() {
   const objMin = localStorage.getItem("missionMin") === "1", objLine = g.over ? "" : hudObjectiveLines().join(" \u00b7 "); // Marco 25/10: the mission stays visible on the map too, even under sail, unless minimised
   setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmtM(netWorth(g))}` :
     s.voyage ? ((s.voyage.anchored ? t.hintAnchored : t.hintSea) + (objLine && !objMin ? " \u00b7 " + objLine : "")) :
-    (objMin && objLine ? "" : objLine || (g.freePlay ? t.hintOpen : t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS))));
+    (objMin && objLine ? "" : objLine || ((g.noGoal || g.freePlay) ? t.hintOpen : t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS))));
   const ht = $("hint-mission-toggle");
   if (ht) {
     ht.hidden = !!g.over || !objLine;

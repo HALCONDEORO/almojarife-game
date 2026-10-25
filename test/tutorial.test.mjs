@@ -92,14 +92,19 @@ test("the real start path: every difficulty starts in the tutorial, with no 50,0
     const p = cleanProfile({ difficulty: d }, ids);
     const g = newGame(world, p.home, { ...startOptions(p), profile: p, events: true, seed: 1 });
     assert.ok(g.tut, d); assert.equal(tutorialLine(g, "en") !== null, true, d);
-    assert.equal(g.freePlay, true, d);
+    assert.ok(g.noGoal && !g.freePlay, d); assert.ok(g.campaign, d + ": the mission campaign stays");
     g.cash += 1e6; for (let i = 0; i < 400; i++) advanceDay(g); // far past the old 365-day deadline, far over the old goal
     assert.ok(!g.over, d + ": no win and no lose from the old goal/deadline");
   }
 });
+test("open-ended keeps bankruptcy as a real defeat", () => {
+  const p = cleanProfile({ difficulty: "normal" }, world.cities.map((c) => c.id)), g = newGame(world, p.home, { ...startOptions(p), seed: 1 });
+  g.cash = -1e7; advanceDay(g);
+  assert.equal(g.over, "lose"); assert.equal(g.overReason, "bankrupt");
+});
 test("a game without openended keeps the old 50,000 / 365 rules (existing saves)", () => {
   const g = newGame(world, "cadiz", { seed: 1 });
-  assert.ok(!g.freePlay);
+  assert.ok(!g.freePlay && !g.noGoal);
   for (let i = 0; i < 366 && !g.over; i++) advanceDay(g);
   assert.ok(g.over === "win" || g.over === "lose");
 });

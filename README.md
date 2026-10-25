@@ -47,7 +47,7 @@ _Captured on 25 Oct 2026 from the playable build at `main` 93f6386 (English, 128
 ## How to play
 
 1. Pick a name and a home port, then **Start**.
-2. A new game starts in the three-step tutorial. There is no fixed coin goal or deadline: the campaign missions set the pace (games started before this change keep their 50,000 coins / 365 days goal).
+2. A new game starts in the three-step tutorial, then the mission campaign. There is no fixed coin goal or deadline (games started before this change keep their 50,000 coins / 365 days goal). Going bankrupt still ends the game.
 3. In the **Market** tab, look for the green ▼ (cheap: buy) and red ▲ (dear: sell) arrows.
 4. Click a port on the map, or a **Sail to** button, then press **Sail** to move time. Your ship takes days to arrive.
 5. Sell where the price is high. Build a second ship in the **Shipyard**. Press **Esc** for the menu.
