@@ -6,29 +6,49 @@ const js = readFileSync('web/main.mjs', 'utf8');
 const css = readFileSync('web/index.html', 'utf8');
 const nav = js.match(/<nav class="city-controls"[^`]*?<\/nav>/)?.[0] ?? '';
 
-test('city right panel: header actions moved in, building tabs stay out', () => {
-  // Actions moved from the top bar into the panel (Marco 25/10): reports, messages, menu, clock and speed.
-  for (const m of ['data-city-tab="buildings"', 'data-city-ships', 'data-city-reports', 'data-city-msgs', 'data-city-play', 'data-city-speed', 'data-city-fs', 'data-city-lang', 'data-city-menu', 'data-map'])
+test('city right panel: actions only, building tabs stay out', () => {
+  // Panel keeps the real actions (Marco 25/10): build, ships, reports, messages, menu, back to map.
+  for (const m of ['data-city-tab="buildings"', 'data-city-ships', 'data-city-reports', 'data-city-msgs', 'data-city-menu', 'data-map'])
     assert.ok(nav.includes(m), m);
+  // Marco 25/10 14:33 "Elimina las 2 cosas rodeadas de esos sitios": no time/settings clones left in the panel.
+  for (const m of ['data-city-play', 'data-city-speed', 'data-city-fs', 'data-city-lang', 'cc-mini', 'Tiempo'])
+    assert.ok(!nav.includes(m), 'no panel clone: ' + m);
   // Still no per-building buttons: buildings open from the city itself (manual sec. 7.5).
   for (const k of ['city', 'yard', 'tavern', 'bank', 'hall', 'store', 'house', 'market'])
     assert.ok(!nav.includes(`data-city-tab="${k}"`), 'no building button ' + k);
-  // Sections and icons: every action button carries an icon svg and a labelled span.
-  assert.ok((nav.match(/cc-section/g) ?? []).length >= 2, 'section labels');
+  // One section header and icons on every action button.
+  assert.ok((nav.match(/cc-section/g) ?? []).length >= 1, 'section labels');
   assert.ok((nav.match(/CC_ICONS\./g) ?? []).length >= 6, 'icons');
+});
+
+test('corner bar carries time, view and settings, top-right, with no duplicates', () => {
+  assert.ok(js.includes('class="city-corner"'), 'corner bar');
+  for (const c of ['play', 'speed', 'fit', 'zoom-in', 'zoom-out', 'motion', 'construct', 'fs', 'lang'])
+    assert.ok(js.includes(`data-corner="${c}"`), c);
+  // View controls only exist with the 2D city; the iframe's own toolbar hides via chrome=0.
+  assert.ok(js.includes('{ chrome: "0" }'), 'chrome param');
+  assert.ok(js.includes('kind:"city2d-cmd"'), 'cmd bridge');
+  assert.ok(js.includes('e.data?.kind==="city2d-view"'), 'view-state back');
+  // One pause control only: the corner bar.
+  assert.ok(js.includes('cp.textContent = playing ? "⏸" : "▶"'), 'corner pause live');
+  assert.match(css, /\.city-corner\{[^}]*top:38px;right:194px/, 'corner position');
+  const scene = readFileSync('web/city2d/scene.mjs', 'utf8');
+  assert.ok(scene.includes("q.get('chrome')==='0'"), 'scene reads chrome');
+  assert.ok(scene.includes("e.data?.kind!=='city2d-cmd'"), 'scene cmd guard');
+  const frame = readFileSync('web/city2d/index.html', 'utf8');
+  assert.ok(frame.includes('nav.corner>div:not(#bm){display:none}'), 'iframe toolbar hidden, build sub-panel kept');
 });
 
 test('panel labels stay live from the same values as the header', () => {
   assert.ok(js.includes('function syncCityControls()'), 'sync fn');
   assert.ok(js.includes('syncCityControls();\n'), 'called from render');
-  assert.ok(js.includes('set("play", playing ? t.pause : t.play)'), 'pause label live');
-  assert.ok(js.includes('set("speed", `${t.speed} ${speed}x`)'), 'speed label live');
+  assert.ok(js.includes('cs.textContent = `${speed}x`'), 'speed label live');
   assert.ok(js.includes('set("msgs", badge(LT[lang].messages, unread(g)))'), 'message badge live');
   for (const h of [
     '[data-city-msgs]").onclick=()=>showLedger("msg")',
-    '[data-city-play]").onclick=()=>toggleClock()',
-    '[data-city-fs]").onclick=()=>$("fs")?.click()',
-    '[data-city-lang]").onclick=()=>$("lang")?.click()',
+    '[data-corner="play"]\').onclick=()=>toggleClock()',
+    '[data-corner="fs"]\').onclick=()=>$("fs")?.click()',
+    '[data-corner="lang"]\').onclick=()=>$("lang")?.click()',
   ]) assert.ok(js.includes(h), h);
 });
 
@@ -46,4 +66,12 @@ test('panel keeps parchment theme and P3 proportions', () => {
   assert.match(css, /\.city-controls\{[^}]*#f4ead0/, 'parchment');
   assert.match(css, /\.city-controls \.cc-ico\{width:18px;height:18px/, 'icon size');
   assert.match(css, /\.city-header\{[^}]*right:184px/, 'header clears panel');
+});
+
+test('language toggle re-translates the whole city chrome live (Boat #427 catch)', () => {
+  assert.ok(js.includes('function cityPanelTitle(tb)'), 'title fn');
+  assert.ok(js.includes('d.querySelector(".city-window-title").textContent=cityPanelTitle(tb)'), 'open uses fn');
+  assert.ok(js.includes('ttl.textContent = cityPanelTitle(w.dataset.cityPanel)'), 'sync refreshes title');
+  assert.ok(js.includes('cb.textContent = `${t.close} (Esc)`'), 'close label live');
+  assert.ok(js.includes('"Mover ventana con las flechas" : "Move window with arrow keys"'), 'handle aria live');
 });
