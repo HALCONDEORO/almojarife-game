@@ -1,6 +1,6 @@
 // Sound effects: Kenney "Casino Audio" and "Interface Sounds" packs, both CC0
-// (https://kenney.nl) and rubberduck's "100 CC0 SFX" (opengameart.org); both CC0, license copies in web/audio/LICENSE-*.txt.
-const FILES = { buy: "audio/buy.ogg", sell: "audio/sell.ogg", click: "audio/click.ogg", confirm: "audio/confirm.ogg", error: "audio/error.ogg", sail: "audio/sail.ogg", arrive: "audio/arrive.ogg", open: "audio/open.ogg", close: "audio/close.ogg" };
+// (https://kenney.nl) rubberduck's "100 CC0 SFX" (opengameart.org) and CC0 stingers by kindland ("Rain and Thunders"), William Hector ("Horde War Drums"), RandomMind ("Medieval Minstrel Dance"), eXpl0it3r ("Applause in a Large Hall") and StarNinjas ("Crowd"), all opengameart.org; every pack CC0, license copies in web/audio/LICENSE-*.txt.
+const FILES = { buy: "audio/buy.ogg", sell: "audio/sell.ogg", click: "audio/click.ogg", confirm: "audio/confirm.ogg", error: "audio/error.ogg", sail: "audio/sail.ogg", arrive: "audio/arrive.ogg", open: "audio/open.ogg", close: "audio/close.ogg", storm: "audio/storm.ogg", pirates: "audio/pirates.ogg", mission: "audio/mission.ogg", council: "audio/council.ogg", festival: "audio/festival.ogg", build: "audio/build.ogg", alert: "audio/alert.ogg" };
 const cache = {};
 export const soundOn = () => localStorage.getItem("sound") !== "0"; // on by default; Ajustes can mute
 export function sfx(name) {
