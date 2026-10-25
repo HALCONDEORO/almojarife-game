@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_PER_LEVEL, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
+import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_BY_TYPE, HOUSE_CLASS, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe, RECIPES, OUTPUTS } from "../sim/recipes.mjs";
 import { SEASON_PEAK } from "../sim/market.mjs";
 import { assetKey } from "./city2d.mjs";
@@ -35,7 +35,7 @@ export function buildingsRows(g, cityId) {
       row.jobs = (JOBS_PER_LEVEL[b.type] ?? 0) * b.level; // workers this building hires from the port
       if (row.jobs) row.wages = row.jobs * WAGE_PER_WORKER; // coins per day, accrued with the upkeep
     }
-    if (b.state === "active" && b.type === "house") row.popBonus = HOUSE_POP_PER_LEVEL * b.level;
+    if (b.state === "active" && HOUSE_POP_BY_TYPE[b.type]) row.popBonus = HOUSE_POP_BY_TYPE[b.type] * b.level;
     if (b.state === "active" && b.type === "warehouse") row.capBonus = WAREHOUSE_CAP_PER_LEVEL * b.level;
     if (b.state === "active" && b.type === "dock") row.tollCut = Math.round(DOCK_TOLL_DISCOUNT[b.level] * 100);
     return row;
@@ -53,7 +53,8 @@ export function plotOffers(world, g, cityId, layoutPlots) {
 
 /** Build quotes for every type on an owned empty plot, with days and upkeep. */
 export function buildOffers(g, cityId, plotId) {
-  return TYPE_KEYS.filter((type) => !PRODUCERS[type] || g.world.goods?.[PRODUCERS[type].output]) // a type whose good is not in this game is not offered
+  return TYPE_KEYS.filter((type) => type !== "house") // the legacy generic house is not offered: new builds pick a class (poor / comfortable / rich); old houses and auction lots still upgrade
+    .filter((type) => !PRODUCERS[type] || g.world.goods?.[PRODUCERS[type].output]) // a type whose good is not in this game is not offered
     .filter((type) => !CIVIC_BUILDINGS.includes(type) || g.citylife).map((type) => { // civic types belong to the city-life flag
     const q = quoteConstruction(g, cityId, plotId, type), spec = BUILDING_TYPES[type];
     return q.ok
@@ -222,6 +223,7 @@ export const BO = {
     armory: "vende armas y equipo",
     civic: { posito: "estabiliza el grano", hospital: "contra la peste", alhondiga: "mercado cubierto", caminos: "saneamiento", pozo: "agua limpia", capilla: "amparo en calamidades", carniceria: "carne y pescado estables", molino: "asegura el grano", corral: "alegra la ciudad" },
     groups: { own: "Casa y puerto", primary: "Materias primas", workshop: "Talleres y oficios", civic: "Edificios cívicos" },
+    fxClass: { poor: "+{n} vecinos pobres", middle: "+{n} vecinos acomodados", rich: "+{n} vecinos ricos" },
   },
   en: {
     days: "{d} days to build", fee: "labor {p}", imported: "partly imported",
@@ -230,6 +232,7 @@ export const BO = {
     armory: "sells arms and gear",
     civic: { posito: "steadies the grain supply", hospital: "against the plague", alhondiga: "a covered market", caminos: "sanitation", pozo: "clean water", capilla: "shelter in calamity", carniceria: "steady meat and fish", molino: "secures the grain", corral: "lifts the city's spirits" },
     groups: { own: "Home and harbour", primary: "Raw materials", workshop: "Workshops and crafts", civic: "Civic buildings" },
+    fxClass: { poor: "+{n} poor tenants", middle: "+{n} well-off tenants", rich: "+{n} rich tenants" },
   },
 };
 /** Isometric art for a build offer: the same sprite the city view draws for that building
@@ -315,7 +318,8 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood, art) {
         textParts.push(`${t.goods?.[good] ?? good} ${use}`);
       }
     }
-  } else if (o.type === "house" && t.bldFxH) { const x = t.bldFxH.replace("{n}", fmt(HOUSE_POP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
+  } else if (HOUSE_CLASS[o.type]) { const x = bo.fxClass[HOUSE_CLASS[o.type]].replace("{n}", fmt(HOUSE_POP_BY_TYPE[o.type] * level)); parts.push(escBw(x)); textParts.push(x); }
+  else if (o.type === "house" && t.bldFxH) { const x = t.bldFxH.replace("{n}", fmt(HOUSE_POP_BY_TYPE.house * level)); parts.push(escBw(x)); textParts.push(x); }
   else if (o.type === "warehouse" && t.bldFxS) { const x = t.bldFxS.replace("{n}", fmt(WAREHOUSE_CAP_PER_LEVEL * level)); parts.push(escBw(x)); textParts.push(x); }
   else if (o.type === "dock" && t.bldFxD) { const x = t.bldFxD.replace("{n}", Math.round(DOCK_TOLL_DISCOUNT[level] * 100)); parts.push(escBw(x)); textParts.push(x); }
   else if (o.type === "armory") { parts.push(bo.armory); textParts.push(bo.armory); }

@@ -14,6 +14,8 @@ export const RECIPES = Object.freeze({
   pasture: Object.freeze({ timber: 36, bricks: 5, ironware: 9 }),
   sawmill: Object.freeze({ timber: 37, bricks: 9, ironware: 9 }),
   mine: Object.freeze({ timber: 42, bricks: 13, ironware: 13 }),
+  house_poor: Object.freeze({ timber: 8, bricks: 3 }), // half-timbered: mostly timber, few bricks (11 units)
+  house_rich: Object.freeze({ timber: 8, bricks: 16, cloth: 4 }), // a merchant house: solid brickwork, furnished (28 units)
   office: Object.freeze({ timber: 10, bricks: 10, ironware: 1, cloth: 6 }),
   oil_mill: Object.freeze({ timber: 28, bricks: 22, ironware: 6, cloth: 6 }),
   vineyard: Object.freeze({ timber: 35, bricks: 7, ironware: 7, cloth: 7 }),

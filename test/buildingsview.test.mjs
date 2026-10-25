@@ -63,8 +63,8 @@ test("build offers quote every type on an empty plot; producers quote only where
   const g = funded();
   buyPlot(g, "cadiz", PLOT);
   const offers = buildOffers(g, "cadiz", PLOT.id);
-  assert.equal(offers.length, Object.keys(BUILDING_TYPES).filter((t) => (!PRODUCERS[t] || g.world.goods[PRODUCERS[t].output]) && (!CIVIC_BUILDINGS.includes(t) || g.citylife)).length); // one entry per offered type, refused ones carry their reason; a type whose optional good is not in the game (pottery) is not offered, nor a civic type with the city-life flag off
-  for (const t of ["house", "workshop", "warehouse", "saltworks", "fishery"]) { // cadiz makes salt and fish
+  assert.equal(offers.length, Object.keys(BUILDING_TYPES).filter((t) => t !== "house" && (!PRODUCERS[t] || g.world.goods[PRODUCERS[t].output]) && (!CIVIC_BUILDINGS.includes(t) || g.citylife)).length); // one entry per offered type, refused ones carry their reason; a type whose optional good is not in the game (pottery) is not offered, nor a civic type with the city-life flag off, nor the legacy generic house
+  for (const t of ["house_poor", "house_comfortable", "house_rich", "workshop", "warehouse", "saltworks", "fishery"]) { // cadiz makes salt and fish
     const o = offers.find((x) => x.type === t);
     assert.ok(o.ok && o.days === BUILDING_TYPES[t].buildDays && o.cost > 0, t + " quotes");
   }
@@ -282,9 +282,14 @@ test("bldOfferCard: a seasonal primary labels the season; house/warehouse/dock r
   assert.match(farm, /≈2\/día de media/); // 0.5 batches/day x 4 grain
   assert.match(farm, /según temporada/); // grain is a seasonal good (SEASON_PEAK)
   assert.equal(bldOfferGroup("farm"), "primary");
-  const house = bldOfferCard(t, offers.find((o) => o.ok && o.type === "house"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+  const house = bldOfferCard(t, { type: "house", ok: true, level: 1, cost: 900, materials: 700, fee: 150, days: 3, upkeep: 1, affordable: true, imported: false }, "es", (n) => String(n), (n) => String(n), () => "<svg/>"); // legacy generic houses still upgrade: their card keeps the old effect line
   assert.match(house, /\+50 habitantes/);
   assert.equal(bldOfferGroup("house"), "own");
+  for (const [type, fx] of [["house_poor", /\+60 vecinos pobres/], ["house_comfortable", /\+50 vecinos acomodados/], ["house_rich", /\+40 vecinos ricos/]]) {
+    const card = bldOfferCard(t, offers.find((o) => o.ok && o.type === type), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
+    assert.match(card, fx, type);
+    assert.equal(bldOfferGroup(type), "own");
+  }
   const wh = bldOfferCard(t, offers.find((o) => o.ok && o.type === "warehouse"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");
   assert.match(wh, /\+300 de depósito/);
   const dock = bldOfferCard(t, offers.find((o) => o.ok && o.type === "dock"), "es", (n) => String(n), (n) => String(n), () => "<svg/>");

@@ -1,5 +1,5 @@
 import { NEEDS_LEDGER_ENABLED, recordLegacyConsumption } from "./needs-telemetry.mjs";
-import { totalDemand, demandBy, CLASSES } from "./classes.mjs";
+import { totalDemand, demandBy, demandOf, CLASSES } from "./classes.mjs";
 import { COMMERCE_LEDGER_ENABLED, openCommerce, openMarketLedgers, recordLocalSupply, recordRetailSale } from "./procurement.mjs";
 import { settleHouseholdDay } from "./households.mjs";
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
@@ -59,9 +59,18 @@ export function affordRatio(e, base) {
   const raw = Math.min(3, Math.max(0.4, (e.target / Math.max(1, e.stock)) ** 0.6)); // same curve as price()
   return base ? Math.round(base * raw) / base : raw;
 }
+/** Per-class demand of one market entry: the mixed pool splits by the town's shares; class-typed
+ *  house residents (e.classExtra, already on the same scale as e.pop) buy by their own class. */
+export function cityDemandBy(e, good, base) {
+  const ratio = affordRatio(e, base), ex = e.classExtra ?? null;
+  const exTotal = ex ? CLASSES.reduce((a, c) => a + (ex[c] ?? 0), 0) : 0;
+  const by = demandBy(Math.max(0, (e.pop ?? 0) - exTotal), good, ratio);
+  if (exTotal) { const bx = demandOf(ex, good, ratio); for (const c of CLASSES) by[c] += bx[c]; }
+  return by;
+}
 export function cityDemand(e, good, base) {
-  const pop = e.pop;
-  return totalDemand(pop, good, affordRatio(e, base)) * DEMAND_SCALE * (e.needs ? NEEDS_MUL : 1) * (e.makes ? MAKES_MUL : 1);
+  const by = cityDemandBy(e, good, base);
+  return CLASSES.reduce((a, c) => a + by[c], 0) * DEMAND_SCALE * (e.needs ? NEEDS_MUL : 1) * (e.makes ? MAKES_MUL : 1);
 }
 export function tickMarket(market, day, world, options = {}) {
   for (const city of Object.values(market)) tickMarketCity(city, day, world, options);
@@ -81,7 +90,7 @@ export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABL
     const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
     if(track){
       actual[good]=Math.min(e.stock,Math.max(0,used));
-      const by=demandBy(e.pop,good,affordRatio(e,world?.goods?.[good]?.base));
+      const by=cityDemandBy(e,good,world?.goods?.[good]?.base); // same split as cityDemand: ledger desire matches the units actually drawn
       const mul=DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1)*scarcity;
       desired[good]=Object.fromEntries(Object.entries(by).map(([c,n])=>[c,n*mul]));
     }

@@ -19,6 +19,13 @@ export const BUILDING_TYPES = Object.freeze({
   pasture: Object.freeze({ recipe: "pasture", fee: 200, buildDays: 19, upkeep: 2, maxLevel: 3 }),
   sawmill: Object.freeze({ recipe: "sawmill", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
   mine: Object.freeze({ recipe: "mine", fee: 300, buildDays: 26, upkeep: 3, maxLevel: 3 }),
+  // Town houses by class (P3 11.2.2: half-timbered for the poor, gabled for the well off, merchant
+  // houses for the rich). Each shelters residents of ITS class, who buy by that class's basket
+  // (houseClassPop). The legacy generic house stays for old saves and auction lots; new builds pick
+  // a class below. buildDays follow the calibration formula ceil(units/3) + ceil(fee/100).
+  house_poor: Object.freeze({ recipe: "house_poor", fee: 100, buildDays: 5, upkeep: 1, maxLevel: 3 }),
+  house_comfortable: Object.freeze({ recipe: "house", fee: 150, buildDays: 8, upkeep: 1, maxLevel: 3 }),
+  house_rich: Object.freeze({ recipe: "house_rich", fee: 300, buildDays: 13, upkeep: 2, maxLevel: 3 }),
   // Primary producers (PR3 of the materials plan): buildable only where the city makes the good.
   oil_mill: Object.freeze({ recipe: "oil_mill", fee: 250, buildDays: 24, upkeep: 2, maxLevel: 3 }),
   vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
@@ -251,7 +258,8 @@ export function sellQuote(world, market, city, good, qty) {
  *  producer in the port runs at the same staffing ratio - a labour shortage slows the whole port, not
  *  one unlucky building. The ratio is computed from live state on each tick, never stored. */
 export const JOBS_PER_LEVEL = Object.freeze({
-  house: 0, warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
+  house: 0, house_poor: 0, house_comfortable: 0, house_rich: 0, // houses need no workers
+  warehouse: 3, workshop: 8, farm: 6, pasture: 6, sawmill: 8, mine: 10,
   oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
   posito: 2, hospital: 6, alhondiga: 3, // city-life civic types (own tuning; only buildable with the flag on)
   caminos: 1, pozo: 1, capilla: 3,
@@ -383,7 +391,23 @@ export function workshopTick(g, cityId) {
  *  (more of the existing class demand, nothing new); warehouse buildings extend its storage cap. */
 export const HOUSE_POP_PER_LEVEL = 50, WAREHOUSE_CAP_PER_LEVEL = 300;
 export const activeLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && b.type === type ? b.level : 0), 0);
-export const housePopBonus = (g, cityId) => HOUSE_POP_PER_LEVEL * activeLevels(g, cityId, "house");
+/** Every house type, legacy generic first. Residents per active level: the poor cram more under one
+ *  roof, a merchant house lodges fewer but wealthier mouths. */
+export const HOUSE_TYPES_ALL = Object.freeze(["house", "house_poor", "house_comfortable", "house_rich"]);
+export const HOUSE_POP_BY_TYPE = Object.freeze({ house: HOUSE_POP_PER_LEVEL, house_poor: 60, house_comfortable: HOUSE_POP_PER_LEVEL, house_rich: 40 });
+/** Class of residents a house type shelters (the legacy generic house stays mixed, split by the town's shares). */
+export const HOUSE_CLASS = Object.freeze({ house_poor: "poor", house_comfortable: "middle", house_rich: "rich" });
+export const housePopBonus = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" ? (HOUSE_POP_BY_TYPE[b.type] ?? 0) * b.level : 0), 0);
+/** Residents of each class sheltered by the TYPED houses (legacy houses excluded: they stay in the
+ *  shared pool). The market adds their demand class by class instead of re-splitting by town shares. */
+export function houseClassPop(g, cityId) {
+  const out = { poor: 0, middle: 0, rich: 0 };
+  for (const b of Object.values(g.buildings?.[cityId] ?? {})) {
+    const cls = HOUSE_CLASS[b.type];
+    if (cls && b.state === "active") out[cls] += HOUSE_POP_BY_TYPE[b.type] * b.level;
+  }
+  return out;
+}
 export const warehouseCapBonus = (g, cityId) => WAREHOUSE_CAP_PER_LEVEL * activeLevels(g, cityId, "warehouse");
 /** Dock: share of the port toll your ships still pay there, by summed ACTIVE dock levels (capped at 3:
  *  one good dock is enough; extra piers add nothing). Like the warehouse cap it is a passive effect:

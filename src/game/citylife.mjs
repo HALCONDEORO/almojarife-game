@@ -10,7 +10,7 @@
 // first principles. No internal figure is ever shown to the player.
 import { CLASSES, PER_1000, classShares } from "../sim/classes.mjs";
 import { activeShocks } from "./shocks.mjs";
-import { housePopBonus } from "./buildings.mjs";
+import { housePopBonus, HOUSE_TYPES_ALL } from "./buildings.mjs";
 import { plagueActive, PLAGUE_MOOD } from "./plague.mjs";
 import { calamityMoodHit } from "./calamities.mjs";
 
@@ -105,7 +105,7 @@ export function citylifeDay(g) {
     const city = (cl.cities[c.id] ??= { animo: { poor: START_MOOD, middle: START_MOOD, rich: START_MOOD }, extra: 0 });
     for (const cls of CLASSES) city.animo[cls] += (moodTarget(g, c.id, cls) - city.animo[cls]) / MOOD_MEMORY;
     if (g.day % 7 === 0) { // weekly drift: content cities draw newcomers, miserable ones lose people
-      const base = c.pop ?? 8000, room = workingLevels(g, c.id, "house") * ROOM_PER_HOUSE_LEVEL;
+      const base = c.pop ?? 8000, room = HOUSE_TYPES_ALL.reduce((a, t) => a + workingLevels(g, c.id, t), 0) * ROOM_PER_HOUSE_LEVEL; // every house class shelters newcomers
       let drift = Math.round((base + city.extra) * DRIFT_PER_WEEK * (meanMood(g, c.id) - MOOD_NEUTRAL) / (100 - MOOD_NEUTRAL));
       // Only an ACUTE crisis empties a city: famine or an active shock. Chronic dearth (coverage between
       // ACUTE and HUNGER lines) stagnates it - the hunger-capped mood already blocks growth - but people stayed put
