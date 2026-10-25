@@ -85,7 +85,9 @@ test('language toggle re-translates the whole city chrome live (Boat #427 catch)
   assert.ok(js.includes('function cityPanelTitle(tb)'), 'title fn');
   assert.ok(js.includes('d.querySelector(".city-window-title").textContent=cityPanelTitle(tb)'), 'open uses fn');
   assert.ok(js.includes('ttl.textContent = cityPanelTitle(w.dataset.cityPanel)'), 'sync refreshes title');
-  assert.ok(js.includes('cb.textContent = `${t.close} (Esc)`'), 'close label live');
+  assert.ok(js.includes('cb.setAttribute("aria-label", `${t.close} (Esc)`)'), 'close accessible label live');
+  assert.ok(js.includes('cb.title = `${t.close} (Esc)`'), 'close tooltip live');
+  assert.ok(!js.includes('cb.textContent = `${t.close} (Esc)`'), 'language switch preserves the drawn X');
   assert.ok(js.includes('"Mover ventana con las flechas" : "Move window with arrow keys"'), 'handle aria live');
 });
 

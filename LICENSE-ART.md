@@ -1,6 +1,6 @@
 # Art and documentation licence
 
-(c) 2026 Almojarife contributors.
+(c) 2026 Marco Tevar.
 
 Original artwork, map renders (`docs/map.svg`, `docs/map.png`) and documentation in this
 repository are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0):
