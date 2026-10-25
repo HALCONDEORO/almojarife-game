@@ -60,3 +60,9 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .route-table tbody tr:nth-child(even) td{background:#eee3c8}
 .route-table select{max-width:100%}
 .route-table input[type=number]{width:78px;box-sizing:border-box}
+/* Route editor: full-width selects so port/good names read complete, sensible column minimums. */
+.route-editor select{width:100%}
+.route-editor td:nth-child(2){min-width:8.5em}
+.route-editor td:nth-child(3),.route-editor td:nth-child(5){min-width:7em}
+.route-editor input[type=number]{width:64px}
+.route-editor td:last-child{white-space:nowrap}
