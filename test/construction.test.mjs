@@ -3,17 +3,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame } from "../src/game/game.mjs";
-import { BUILDING_TYPES } from "../src/game/buildings.mjs";
+import { BUILDING_TYPES, HOUSE_TYPES_ALL } from "../src/game/buildings.mjs";
 import { totalDemand } from "../src/sim/classes.mjs";
 import { RECIPES, quoteRecipe } from "../src/sim/recipes.mjs";
 
 const world = loadWorld();
 
-test("every building recipe needs timber and bricks, and tools except the house", () => {
+test("every building recipe needs timber and bricks, and tools except the houses", () => {
   for (const [type, spec] of Object.entries(BUILDING_TYPES)) {
     const r = RECIPES[spec.recipe];
     assert.ok(r.timber > 0 && r.bricks > 0, `${type}: timber and bricks`);
-    if (type !== "house") assert.ok(r.ironware > 0, `${type}: tools`);
+    if (!HOUSE_TYPES_ALL.includes(type)) assert.ok(r.ironware > 0, `${type}: tools`); // no house class needs tools: exact family list, not a prefix
     assert.equal(r.iron, undefined, `${type}: iron is replaced by tools`);
   }
 });
