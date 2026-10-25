@@ -53,12 +53,40 @@ export const SW = {
   },
 };
 
+/** Small flat icons for the summary card (own work, same style as web/icons.mjs). */
+const SWI = {
+  heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6 16 3 12.5 3 8.8 3 6 5.2 4 7.8 4c1.7 0 3.2.9 4.2 2.4C13 4.9 14.5 4 16.2 4 18.8 4 21 6 21 8.8c0 3.7-3 7.2-9 12.2z" fill="#c4322f" stroke="#7d1a14" stroke-width="1.2"/></svg>',
+  sailor: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.4" fill="#e8c9a0" stroke="#7a5a33" stroke-width="1.2"/><path d="M5 21c0-4.2 3-6.5 7-6.5s7 2.3 7 6.5z" fill="#3b6fb0" stroke="#264a7a" stroke-width="1.2"/></svg>',
+  cannon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h13l5 3-5 3H3z" fill="#4a4f55" stroke="#22262b" stroke-width="1.2"/><circle cx="8" cy="18" r="2.4" fill="#8a6a3f" stroke="#4d3a1a" stroke-width="1.2"/><circle cx="15" cy="18" r="2.4" fill="#8a6a3f" stroke="#4d3a1a" stroke-width="1.2"/></svg>',
+  barrel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12c1.5 2.5 1.5 15.5 0 18H6c-1.5-2.5-1.5-15.5 0-18z" fill="#a8733a" stroke="#6e4a22" stroke-width="1.2"/><path d="M4.8 8h14.4M4.8 16h14.4" stroke="#6e4a22" stroke-width="1.4"/></svg>',
+};
+const escA = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/** P3-style summary card: state, hull, crew, armament and hold of the ship at a glance,
+ *  pinned above the tabs so it stays visible on every tab. Real data only, no rules here. */
+function swCard(g, s, lang, t, hp) {
+  const cn = hp.cityName, L = crewLimits(s), c = crewOf(s), guns = cannonsOf(s), mc = maxCannons(s);
+  const hull = Math.round(s.hull ?? 100), used = cargoUsed(s), cap = shipCapacity(s);
+  const state = s.voyage
+    ? t.atSea.replace("{from}", cn(s.voyage.from)).replace("{to}", cn(s.voyage.to)).replace("{eta}", hp.eta(s))
+    : t.atPort.replace("{city}", cn(s.at));
+  const cell = (icon, label, val, bad = false) =>
+    `<span class="swc-stat${bad ? " swc-bad" : ""}" role="img" aria-label="${escA(label)}">${icon}<b>${val}</b></span>`;
+  const cells = [
+    cell(SWI.heart, t.hull.replace("{h}", hull), hull + "%", hull < 50),
+    cell(SWI.sailor, `${t.crew} ${c} (${t.min} ${L.min} · ${t.opt} ${L.opt} · ${t.max} ${L.max})`, c, c < L.min),
+    cell(SWI.cannon, `${t.guns} ${guns}/${mc}`, `${guns}/${mc}`),
+    cell(SWI.barrel, `${t.hold} ${used}/${cap}`, `${used}/${cap}`),
+  ].join("");
+  return `<div class="swcard">${shipIconSvg(s.type, 72, 40)}<div class="swc-main"><div class="swc-name"><b>${escA(hp.types[s.type] ?? s.type)} ${s.id}</b></div><div class="swc-state">${state}</div><div class="swc-stats">${cells}</div></div></div>`;
+}
+
 /** helpers: { fmt, cityName, types, goods, eta } — eta(ship) renders the arrival estimate. */
 export function shipWindowHtml(g, s, lang, tab, hp) {
   const t = SW[lang] ?? SW.es, fmt = hp.fmt, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
-  return `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
+  return swCard(g, s, lang, t, hp) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
 }
 
 function cargoTab(g, s, t, hp, gn, cn) {
@@ -107,7 +135,7 @@ function crewTab(g, s, lang, t, fmt) {
 
 function dataTab(g, s, t, hp) {
   const fmt = hp.fmt, cn = hp.cityName, rp = repairPrice(g, s), sv = shipValue(s);
-  let h = `<div class="card yc">${shipIconSvg(s.type)}<b>${hp.types[s.type] ?? s.type} ${s.id}</b></div>`;
+  let h = "";
   h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} <button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp))}</button><br>`;
   h += `${t.upkeep.replace("{u}", SHIP_TYPES[s.type].upkeepPerDay)} · ${t.value.replace("{v}", fmt(sv))}</p>`;
   h += s.voyage
