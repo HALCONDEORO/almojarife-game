@@ -30,3 +30,4 @@
 - Music, sailing (`web/audio/music-water.ogg`): "A Tale of Water" from "A Tale of Wind and Water" by InspectorJ (opengameart.org), CC BY 3.0 (https://opengameart.org/content/a-tale-of-wind-and-water-rpg-orchestral-essentials-peace-music). Added 25 Oct 2026.
 - Music (`web/audio/music-village.ogg`): "Peaceful Village Loop" by elerya (opengameart.org), CC BY 3.0 (https://opengameart.org/content/peaceful-village-loop). Added 25 Oct 2026.
 - Music, tavern (`web/audio/music-tavern.ogg`): "Dragon Tail Tavern" by jan125 (opengameart.org), CC BY 4.0 (https://opengameart.org/content/dragon-tail-tavern). Added 25 Oct 2026.
+- Seagull cries in port (`web/audio/gull{1,2}.ogg`): "Solo Seagull Sound Effects" by rango-mango (opengameart.org), CC0 (https://opengameart.org/content/solo-seagull-sound-effects). Added 25 Oct 2026.

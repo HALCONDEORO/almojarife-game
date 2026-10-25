@@ -39,6 +39,12 @@ test("ambience follows the context and music rotates, both behind the same setti
   assert.match(mod, /duckLoops\(\);/); // stingers duck the loops
   assert.match(main, /syncAmbience\(/); // wired from render
 });
+test("gull cries only under the port ambience, behind the same setting", () => {
+  for (const f of ["gull1", "gull2"]) assert.ok(existsSync(`web/audio/${f}.ogg`), f);
+  assert.match(mod, /if \(amb\.name === "port" && soundOn\(\)\)/); // cries only in port with sound on
+  assert.match(mod, /if \(name === "port"\) gullsStart\(\); else gullsStop\(\);/);
+  assert.match(credits, /rango-mango.*CC0/s);
+});
 test("buy and sell buttons play their effect, failures play error", () => {
   assert.match(main, /sfx\(r\.ok \? "buy" : "error"\)/);
   assert.match(main, /sfx\(r\.ok \? "sell" : "error"\)/);

@@ -14,5 +14,8 @@ music-tavern.ogg "Dragon Tail Tavern" - jan125 - CC BY 4.0
                  https://opengameart.org/content/dragon-tail-tavern
                  https://creativecommons.org/licenses/by/4.0/
 
+gull1.ogg, gull2.ogg "Solo Seagull Sound Effects" (Ambient 1 & 2) - rango-mango - CC0
+                 https://opengameart.org/content/solo-seagull-sound-effects
+
 Loops trimmed and faded for in-game use; the CC BY tracks are credited in
 CREDITS.md and in the in-game Credits window.
