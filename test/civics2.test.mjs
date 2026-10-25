@@ -16,7 +16,7 @@ const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json"
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts });
 const TYPES = ["carniceria", "molino", "corral"];
 const own = (g, cityId, n = 1) => { // office + one plot in the city
-  (g.rep ??= {})[cityId] = 5000; g.cash = 1e6; // rep is stored as coins sold (ensureRep migrates once), 5000 coins = 50 points >= the office gate
+  (g.rep ??= {})[cityId] = 12000; g.cash = 1e6; // rep is stored as coins sold (ensureRep migrates once), 12000 coins = 120 points >= the civic trusted gate (these tests exercise effects, not the gate)
   const off = buyOffice(g, cityId); assert.ok(off.ok || off.reason === "already owned", "office in " + cityId + ": " + JSON.stringify(off)); // the home port starts with one
   assert.ok(buyPlot(g, cityId, { id: `${cityId}:${n}`, type: "workshop", w: 10, d: 10 }).ok, "plot in " + cityId);
 };

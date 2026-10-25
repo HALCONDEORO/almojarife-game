@@ -352,3 +352,16 @@ test("bldOfferCard: with art it shows the isometric model; without art the flat 
   assert.match(flat, /<svg class="gi"/); // no art passed: original flat drawing
   assert.ok(!flat.includes("bldoffer-art"));
 });
+
+test("locked offers: unlockable refusals stay visible with their reason, soil limits stay hidden", async () => {
+  const { bldOfferLocked, OFFER_LOCKED_SHOW, buildOffers, bldOfferArt } = await import("../src/view/buildingsview.mjs");
+  for (const r of ["respect required", "one per city", "city limit", "walls required", "town too small"]) assert.ok(OFFER_LOCKED_SHOW.has(r), r);
+  assert.ok(!OFFER_LOCKED_SHOW.has("good not producible in this city")); // the player cannot change a city's soil
+  const t = { bldTypes: { posito: "Pósito", hospital: "Hospital" }, bldWhy: { "walls required": "requires level-1 walls in this port" } }; // bldWhy lives in the caller's T table in production
+  const es = bldOfferLocked(t, { type: "posito", ok: false, reason: "one per city" }, "es", bldOfferArt("cadiz:19", "posito", 1));
+  assert.match(es, /Pósito/); assert.match(es, /esta ciudad ya tiene uno/); assert.match(es, /posito-1\.webp/);
+  const en = bldOfferLocked(t, { type: "hospital", ok: false, reason: "walls required" }, "en");
+  assert.match(en, /requires level-1 walls in this port/); // the shared T table carries this one
+  assert.match(en, /<svg class="gi"/); // no art passed: flat fallback
+  assert.ok(!en.includes("bldoffer-art"));
+});

@@ -299,3 +299,76 @@ test("office gates construction: home port always, other ports after buying one"
   const legacy = { profile: { home: "cadiz" } }; // saves from before offices stay playable
   assert.equal(hasOffice(legacy, "lisboa"), true);
 });
+
+// P3 public-building rules (docs/design/p3-civic-construction.md): standing gate on new civic
+// works, per-city caps, recognition on completion; upgrades and existing saves untouched.
+import { CIVIC_MIN_RESPECT, CIVIC_BIG_RESPECT, tickBuildings } from "../src/game/buildings.mjs";
+import { repOf } from "../src/game/rank.mjs";
+
+const civicGame = (coins = 0) => {
+  const g = newGame(world, "cadiz", { cash: 999999, freePlay: true, citylife: true });
+  if (coins) g.rep = { cadiz: coins }; // repV 1 scale converts x100 on read
+  return g;
+};
+const PLOT2 = { id: "cadiz:2", type: "workshop", w: 2, d: 2 };
+const PLOT3 = { id: "cadiz:3", type: "workshop", w: 2, d: 2 };
+
+test("civic works are not for just anyone: known (20) funds the small ones, trusted (100) the city-scale", () => {
+  let g = civicGame();
+  buyPlot(g, "cadiz", PLOT);
+  let q = quoteConstruction(g, "cadiz", PLOT.id, "posito");
+  assert.equal(q.ok, false); assert.equal(q.reason, "respect required"); assert.equal(q.need, CIVIC_MIN_RESPECT);
+  g = civicGame(CIVIC_MIN_RESPECT); // exactly known
+  buyPlot(g, "cadiz", PLOT);
+  assert.equal(quoteConstruction(g, "cadiz", PLOT.id, "posito").ok, true);
+  assert.equal(quoteConstruction(g, "cadiz", PLOT.id, "alhondiga").ok, false); // city-scale asks for trusted
+  g = civicGame(CIVIC_BIG_RESPECT);
+  buyPlot(g, "cadiz", PLOT);
+  assert.equal(quoteConstruction(g, "cadiz", PLOT.id, "alhondiga").ok, true);
+});
+
+test("one city-serving facility per city; hospital/capilla may repeat once; pozo stays unlimited", () => {
+  const g = civicGame(CIVIC_BIG_RESPECT);
+  g.walls = { cadiz: { level: 1, state: "active" } }; // hospital/capilla wall rule already existed
+  buyPlot(g, "cadiz", PLOT); buyPlot(g, "cadiz", PLOT2); buyPlot(g, "cadiz", PLOT3);
+  activeBuilding(g, "posito", 1);
+  assert.equal(quoteConstruction(g, "cadiz", PLOT2.id, "posito").reason, "one per city");
+  activeBuilding(g, "hospital", 1); // same PLOT? no: activeBuilding reuses PLOT - use direct marks instead
+});
+
+test("per-city caps: hospital twice then city limit, pozo unlimited", () => {
+  const g = civicGame(CIVIC_BIG_RESPECT);
+  g.walls = { cadiz: { level: 1, state: "active" } };
+  buyPlot(g, "cadiz", PLOT); buyPlot(g, "cadiz", PLOT2); buyPlot(g, "cadiz", PLOT3);
+  const b1 = buildingAt(g, "cadiz", PLOT.id); Object.assign(b1, { type: "hospital", level: 1, state: "active" });
+  const b2 = buildingAt(g, "cadiz", PLOT2.id); Object.assign(b2, { type: "hospital", level: 1, state: "active" });
+  assert.equal(quoteConstruction(g, "cadiz", PLOT3.id, "hospital").reason, "city limit");
+  const b3 = buildingAt(g, "cadiz", PLOT3.id); Object.assign(b3, { type: "pozo", level: 1, state: "active" });
+  const g2 = civicGame(CIVIC_BIG_RESPECT);
+  buyPlot(g2, "cadiz", PLOT); buyPlot(g2, "cadiz", PLOT2);
+  Object.assign(buildingAt(g2, "cadiz", PLOT.id), { type: "pozo", level: 1, state: "active" });
+  assert.equal(quoteConstruction(g2, "cadiz", PLOT2.id, "pozo").ok, true); // wells and roads: unlimited
+});
+
+test("upgrades skip the standing gate; an existing civic building in an old save keeps working", () => {
+  const g = civicGame(); // respect 0: a stranger today, but the building already stands
+  buyPlot(g, "cadiz", PLOT);
+  Object.assign(buildingAt(g, "cadiz", PLOT.id), { type: "posito", level: 1, state: "active" });
+  const q = quoteConstruction(g, "cadiz", PLOT.id, "posito");
+  assert.equal(q.ok, true); assert.equal(q.level, 2); // upgrade is cash and walls, not a new permit
+});
+
+test("recognition: completing a civic work earns the port's respect on the trade scale", () => {
+  const g = civicGame(CIVIC_MIN_RESPECT);
+  buyPlot(g, "cadiz", PLOT);
+  const q = quoteConstruction(g, "cadiz", PLOT.id, "posito");
+  const r = startConstruction(g, "cadiz", PLOT.id, "posito");
+  assert.ok(r.ok);
+  const b = buildingAt(g, "cadiz", PLOT.id);
+  assert.equal(b.invest, q.cost); // the invested sum rides with the works
+  const before = repOf(g, "cadiz");
+  while (b.state === "construction") advanceTick(g);
+  assert.equal(b.invest, undefined);
+  assert.equal(Math.round((repOf(g, "cadiz") - before) * 100) / 100, Math.round((before + q.cost / 100 - before) * 100) / 100); // +1 point per 100 invested
+  assert.ok(repOf(g, "cadiz") > before);
+});

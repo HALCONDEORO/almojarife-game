@@ -7,7 +7,7 @@ import { price, seasonMul } from "../sim/market.mjs";
 import { FEE, floor2 } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
-import { repOf } from "./rank.mjs";
+import { repOf, addRespect } from "./rank.mjs";
 import { wallsAllow } from "./plague.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
@@ -59,6 +59,29 @@ export const BUILDING_TYPES = Object.freeze({
 
 /** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */
 export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla", "carniceria", "molino", "corral"]);
+
+/* Public-building rules after the P3 record (manual ch. 11.3, docs/design/p3-civic-construction.md):
+ * city buildings are funded by a citizen the port already knows - not just anyone - and the
+ * city-scale works ask for real standing. One facility per city-serving type (the record allows
+ * a single school and mint per town); hospital and capilla may repeat once, like the record's
+ * balanced chapels and hospitals; pozo and caminos stay unlimited, like wells and roads.
+ * Gates apply to NEW works; upgrading what you already built stays a matter of cash and walls. */
+export const CIVIC_MIN_RESPECT = 20; // "known" (rank.mjs RESPECT) before a port lets you fund public works
+export const CIVIC_BIG_RESPECT = 100; // "trusted" for the city-scale works
+const CIVIC_BIG = new Set(["hospital", "alhondiga", "corral"]);
+const CIVIC_CITY_CAP = { posito: 1, alhondiga: 1, carniceria: 1, molino: 1, corral: 1, hospital: 2, capilla: 2 };
+/** New civic works only: standing gate and per-city cap, from the P3 record. No mutation. */
+function civicAllow(g, cityId, type) {
+  if (!CIVIC_BUILDINGS.includes(type)) return null;
+  const need = CIVIC_BIG.has(type) ? CIVIC_BIG_RESPECT : CIVIC_MIN_RESPECT;
+  if (repOf(g, cityId) < need) return { ok: false, reason: "respect required", need };
+  const cap = CIVIC_CITY_CAP[type];
+  if (cap) {
+    const have = Object.values(g.buildings?.[cityId] ?? {}).filter((x) => x.type === type && x.state !== "plot").length;
+    if (have >= cap) return { ok: false, reason: cap === 1 ? "one per city" : "city limit" };
+  }
+  return null;
+}
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
 export function plotPrice(world, cityId, plot) {
@@ -127,6 +150,8 @@ export function quoteConstruction(g, cityId, plotId, type) {
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
   if (b.state === "construction") return { ok: false, reason: "already building" };
+  const civicNo = b.level === 0 ? civicAllow(g, cityId, type) : null; // gates gate new works, not upgrades
+  if (civicNo) return civicNo;
   const level = b.level + 1;
   if (b.type && b.type !== type) return { ok: false, reason: "plot has another building" };
   if (level > spec.maxLevel) return { ok: false, reason: "max level" };
@@ -163,7 +188,7 @@ export function startConstruction(g, cityId, plotId, type) {
   g.cash -= q.cost;
 
   const b = buildingAt(g, cityId, plotId);
-  Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks });
+  Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks, ...(CIVIC_BUILDINGS.includes(type) ? { invest: q.cost } : {}) });
   post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${type} nivel ${q.level})`, en: `Construction started in ${cityId} (${type} level ${q.level})` } });
   return { ok: true, ...q, readyTick: b.readyTick };
 }
@@ -173,6 +198,7 @@ export function tickBuildings(g) {
   for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots)) {
     if (b.state === "construction" && g.tick >= b.readyTick) {
       b.state = "active"; b.level = b.nextLevel; delete b.nextLevel; delete b.readyTick;
+      if (b.invest != null) { addRespect(g, cityId, b.invest); delete b.invest; } // the benefactor is remembered: funding public works earns the port's respect (P3 11.3)
       post(g, "info", { txt: { es: `Edificio listo en ${cityId} (${b.type} nivel ${b.level})`, en: `Building ready in ${cityId} (${b.type} level ${b.level})` } });
     }
   }
