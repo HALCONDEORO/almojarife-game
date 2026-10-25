@@ -146,6 +146,5 @@ function dataTab(g, s, t, hp) {
     h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;
   if (s.prize) h += `<p><i>${t.prize}</i></p>`;
-  h += `<p><button data-sellship="1" ${g.over || s.voyage || g.ships.length <= 1 || cargoUsed(s) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(sv))}</button></p>`;
   return h;
 }
