@@ -7,6 +7,7 @@ import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, doBuy, doSell } from "../src/game/game.mjs";
 import { cajaOf, cajaTarget, taxSteps, sisaMul, portazgoMul, creditCaja, nextMeetingDay, councilDay, STEP_MAX } from "../src/game/council.mjs";
 import { chargeToll, tollFor } from "../src/game/tolls.mjs";
+import { FEE } from "../src/sim/trade.mjs";
 import { feeMul } from "../game/../src/game/reputation.mjs";
 import { ensureRep } from "../src/game/rank.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
@@ -138,4 +139,16 @@ test("fee and toll stay at base values while steps are neutral", () => {
   assert.equal(feeMul(g, "cadiz"), 1); // neutral reputation x sisa 1
   const ship = g.ships[0];
   assert.equal(tollFor(g, ship, "cadiz"), 6); // 60 capacity / 10, no discounts
+});
+
+test("a sale pays its derecho into the chest in full (cent-settled)", () => {
+  const g = fresh();
+  const ship = g.ships[0];
+  ship.cargo.grain = 10;
+  const c0 = cajaOf(g, "cadiz");
+  const r = doSell(g, ship, "grain", 10);
+  assert.ok(r.ok);
+  const f = FEE * feeMul(g, "cadiz");
+  const expected = Math.round(r.revenue * f / (1 - f) * 100) / 100;
+  assert.equal(cajaOf(g, "cadiz"), Math.round((c0 + expected) * 100) / 100, "the sell derecho lands whole, not at 1/100");
 });
