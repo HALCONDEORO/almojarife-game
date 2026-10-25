@@ -53,11 +53,11 @@ test("failed actions do not advance the tutorial", () => {
   assert.equal(tutorialStep(g), "buy");
 });
 
-test("engine rule: the tutorial only starts on easy difficulty", () => {
-  for (const d of ["normal", "hard"]) assert.equal(newGame(world, "cadiz", { ...difficultyOpts(d), tutorial: true }).tut, undefined);
-  assert.equal(newGame(world, "cadiz", { tutorial: true }).tut, undefined); // no difficulty given: normal
-  assert.equal(newGame(world, "cadiz", { ...difficultyOpts("easy") }).tut, undefined); // easy alone does not turn it on
-  assert.ok(newGame(world, "cadiz", { ...difficultyOpts("easy"), tutorial: true }).tut);
+test("engine rule: the tutorial starts on any difficulty, only when asked for", () => {
+  for (const d of ["easy", "normal", "hard"]) assert.ok(newGame(world, "cadiz", { ...difficultyOpts(d), tutorial: true }).tut, d);
+  assert.equal(newGame(world, "cadiz", { tutorial: true }).tut !== undefined, true);
+  assert.equal(newGame(world, "cadiz", { ...difficultyOpts("easy") }).tut, undefined); // a difficulty alone does not turn it on
+  assert.equal(newGame(world, "cadiz", {}).tut, undefined); // OFF by default: no key
 });
 test("damaged g.tut never throws and trading still works", () => {
   for (const bad of [true, 5, "x", [], null, 0]) {
@@ -86,14 +86,30 @@ test("free navigation counts as sailing", () => {
 import { cleanProfile, startOptions } from "../src/game/profile.mjs";
 import { setRoute } from "../src/game/game.mjs";
 import { tutorialLine } from "../src/game/tutorial.mjs";
-test("the real start path: a profile's startOptions give easy a tutorial, others none", () => {
+test("the real start path: every difficulty starts in the tutorial, with no 50,000 goal and no deadline", () => {
   const ids = world.cities.map((c) => c.id);
-  for (const [d, on] of [["easy", true], ["normal", false], ["hard", false]]) {
+  for (const d of ["easy", "normal", "hard"]) {
     const p = cleanProfile({ difficulty: d }, ids);
     const g = newGame(world, p.home, { ...startOptions(p), profile: p, events: true, seed: 1 });
-    assert.equal(g.tut !== undefined, on, d);
-    assert.equal(tutorialLine(g, "en") !== null, on, d);
+    assert.ok(g.tut, d); assert.equal(tutorialLine(g, "en") !== null, true, d);
+    assert.ok(g.noGoal && !g.freePlay, d); assert.ok(g.campaign, d + ": the mission campaign stays");
+    g.cash += 1e6; for (let i = 0; i < 400; i++) advanceDay(g); // far past the old 365-day deadline, far over the old goal
+    assert.ok(!g.over, d + ": no win and no lose from the old goal/deadline");
   }
+});
+test("open-ended keeps bankruptcy as a real defeat", () => {
+  const p = cleanProfile({ difficulty: "normal" }, world.cities.map((c) => c.id)), g = newGame(world, p.home, { ...startOptions(p), seed: 1 });
+  g.cash = -1e7; advanceDay(g);
+  assert.equal(g.over, "lose"); assert.equal(g.overReason, "bankrupt");
+});
+test("a game without openended keeps the old 50,000 / 365 rules (existing saves)", () => {
+  const g = newGame(world, "cadiz", { seed: 1 });
+  assert.ok(!g.freePlay && !g.noGoal);
+  for (let i = 0; i < 366 && !g.over; i++) advanceDay(g);
+  assert.ok(g.over === "win" || g.over === "lose");
+});
+test("the tutorial step order on a started game", () => {
+  const ids = world.cities.map((c) => c.id);
   const p = cleanProfile({ difficulty: "easy" }, ids), g = newGame(world, p.home, { ...startOptions(p), profile: p, events: true, seed: 1 });
   assert.equal(tutorialStep(g), "buy");
 });
