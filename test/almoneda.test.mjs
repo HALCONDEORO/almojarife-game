@@ -12,7 +12,11 @@ import { BUILDING_TYPES } from "../src/game/buildings.mjs";
 import {
   AUCTION_EVERY, auctionOffset, isAuctionDay, nextAuctionDay,
   establishmentValue, reserveOf, lotOfDay, biddersOf, bidAuction,
+  GOODS_EVERY, PERMIT_EVERY, goodsCycleOffset, permitCycleOffset,
+  goodsLotOfDay, permitLotOfDay, maxGoodsLotValue, maxPermitLotValue,
 } from "../src/game/almoneda.mjs";
+import { buyPlot } from "../src/game/buildings.mjs";
+import { warehouseCap } from "../src/game/game.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 
@@ -379,5 +383,111 @@ describe("save fidelity", () => {
     const raw = JSON.stringify(serialize(g, "Casa Prueba"));
     const { g: g2 } = deserialize(JSON.parse(raw), world);
     assert.deepEqual(g2, g); // plain objects, no null-prototype drift (walls.mjs convention)
+  });
+});
+
+describe("piece 5: goods lots", () => {
+  const goodsDay = (g, cityId, k = 0) => { // k-th auction table whose cycle meets the goods cadence
+    let found = 0;
+    for (let i = 0; i < 7 * GOODS_EVERY + 7; i++) {
+      const day = auctionOffset(cityId) + i * AUCTION_EVERY;
+      if (Math.floor(day / AUCTION_EVERY) % GOODS_EVERY === goodsCycleOffset(cityId)) {
+        if (found === k) return day;
+        found++;
+      }
+    }
+    return null;
+  };
+  it("come up only on their cadence, deterministic and inside the value bound", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    const day = goodsDay(g, "cadiz");
+    assert.ok(day !== null);
+    g.day = day;
+    const lot = goodsLotOfDay(g, "cadiz");
+    assert.ok(lot && lot.kind === "goods");
+    assert.deepEqual(goodsLotOfDay(g, "cadiz"), lot); // same table, same lot
+    assert.ok(lot.goods.qty >= 10 && lot.goods.qty <= 60);
+    assert.ok(lot.value >= 1 && lot.value <= maxGoodsLotValue(g.world));
+    assert.equal(lot.reserve, reserveOf(lot.value));
+    g.day = day + AUCTION_EVERY; // next table: cadence over
+    assert.equal(goodsLotOfDay(g, "cadiz"), null);
+    assert.match(lot.id, /^cadiz:goods:\d+$/);
+  });
+  it("a won goods lot lands in the port warehouse with its cost as basis; cash and chest move exactly the hammer", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = goodsDay(g, "cadiz");
+    const lot = goodsLotOfDay(g, "cadiz");
+    g.warehouses.cadiz = { goods: {} };
+    const cash0 = g.cash, caja0 = cajaCash(g, "cadiz"), gen0 = g.hallAlmonedaGen?.cadiz ?? 0;
+    const r = bidAuction(g, "cadiz", 1e9, lot.id);
+    assert.equal(r.outcome, "won");
+    assert.equal(g.cash, cash0 - r.price);
+    assert.equal(g.warehouses.cadiz.goods[lot.goods.good], lot.goods.qty);
+    assert.equal(g.warehouses.cadiz.basis[lot.goods.good], r.price);
+    if (lot.seller.kind === "council") {
+      assert.equal(cajaCash(g, "cadiz"), caja0 + r.price);
+      assert.equal(g.hallAlmonedaGen.cadiz, gen0 + r.price);
+    } else {
+      assert.equal(cajaCash(g, "cadiz"), caja0); // a neighbour's pocket is not simulated
+      assert.equal(g.hallAlmonedaGen?.cadiz ?? 0, gen0);
+    }
+  });
+  it("without warehouse room the bid is void and the table falls through to the next bidder", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = goodsDay(g, "cadiz");
+    const lot = goodsLotOfDay(g, "cadiz");
+    const cash0 = g.cash; // no warehouse at all
+    const r = bidAuction(g, "cadiz", 1e9, lot.id);
+    assert.notEqual(r.outcome, "won");
+    assert.equal(g.cash, cash0);
+    assert.equal(g.warehouses.cadiz, undefined);
+    const w = warehouseCap(g, "cadiz"); // drift guard: almoneda.mjs mirrors WAREHOUSE_CAP from game.mjs
+    assert.equal(w, 300);
+  });
+});
+
+describe("piece 5: building permits", () => {
+  const permitDay = (g, cityId) => {
+    for (let i = 0; i < 7 * PERMIT_EVERY + 7; i++) {
+      const day = auctionOffset(cityId) + i * AUCTION_EVERY;
+      if (Math.floor(day / AUCTION_EVERY) % PERMIT_EVERY === permitCycleOffset(cityId)) return day;
+    }
+    return null;
+  };
+  it("a won permit is kept as a token and pays the plot price of the next buyPlot in that port", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = permitDay(g, "cadiz");
+    const lot = permitLotOfDay(g, "cadiz");
+    assert.ok(lot && lot.kind === "permit");
+    assert.ok(lot.value >= 1 && lot.value <= maxPermitLotValue(g.world));
+    const r = bidAuction(g, "cadiz", 1e9, lot.id);
+    assert.equal(r.outcome, "won");
+    assert.equal(g.almonedaPermits.cadiz, 1);
+    const plot = { id: "cadiz:998", type: "workshop", w: 10, d: 10 };
+    const cash0 = g.cash;
+    const b = buyPlot(g, "cadiz", plot); // home port always has an office
+    assert.equal(b.ok, true);
+    assert.equal(b.permit, true);
+    assert.equal(g.cash, cash0); // the paper paid, not the purse
+    assert.equal(g.almonedaPermits.cadiz, 0);
+    assert.equal(g.buildings.cadiz["cadiz:998"].paidPlot, b.price);
+    const b2 = buyPlot(g, "cadiz", { id: "cadiz:997", type: "workshop", w: 10, d: 10 });
+    assert.equal(b2.ok, true);
+    assert.equal(b2.permit, undefined); // token spent: the second solar costs cash, old return shape
+    assert.equal(g.cash, cash0 - b2.price);
+    const raw = JSON.stringify(serialize(g, "Casa Prueba"));
+    const { g: g2 } = deserialize(JSON.parse(raw), world);
+    assert.deepEqual(g2.almonedaPermits, g.almonedaPermits); // the token path stays plain-object save-safe
+    assert.deepEqual(g2.buildings.cadiz["cadiz:998"], { type: null, level: 0, state: "plot", plotType: "workshop", paidPlot: b.price });
+    assert.equal(g2.cash, g.cash);
+  });
+  it("a permit in a port without an office cannot be redeemed there yet", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.almonedaPermits = { lisboa: 1 };
+    g.offices = ["cadiz"]; // home cadiz keeps its implicit office; lisboa has none
+    const b = buyPlot(g, "lisboa", { id: "lisboa:999", type: "workshop", w: 10, d: 10 });
+    assert.equal(b.ok, false);
+    assert.equal(b.reason, "office required");
+    assert.equal(g.almonedaPermits.lisboa, 1); // the paper waits
   });
 });

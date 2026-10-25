@@ -101,10 +101,11 @@ export function buyPlot(g, cityId, plot) {
   if (price === null || !PLOT_ID.test(plot.id)) return { ok: false, reason: "bad plot" };
   if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
   if (buildingAt(g, cityId, plot.id)) return { ok: false, reason: "already owned" };
-  if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
-  g.cash -= price;
+  const permit = (g.almonedaPermits?.[cityId] ?? 0) > 0; // a municipal permit won at the almoneda pays this plot
+  if (!permit && g.cash < price) return { ok: false, reason: "no cash", cost: price };
+  if (permit) g.almonedaPermits[cityId] -= 1; else g.cash -= price;
   const maps = (g.buildings ??= Object.create(null)); (maps[cityId] ??= Object.create(null))[plot.id] = { type: null, level: 0, state: "plot", plotType: plot.type, paidPlot: price };
-  return { ok: true, price };
+  return permit ? { ok: true, price, permit: true } : { ok: true, price }; // cash path keeps its old shape
 }
 
 /** Quote for building or upgrading on an owned plot: materials at the local market plus the labor fee. No mutation.

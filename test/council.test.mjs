@@ -11,7 +11,7 @@ import { feeMul } from "../game/../src/game/reputation.mjs";
 import { ensureRep } from "../src/game/rank.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { townIndustry } from "../src/game/townindustry.mjs";
-import { AUCTION_EVERY, SHIP_EVERY, HOUSE_EVERY, maxShipLotValue, maxHouseLotValue } from "../src/game/almoneda.mjs";
+import { AUCTION_EVERY, SHIP_EVERY, HOUSE_EVERY, GOODS_EVERY, PERMIT_EVERY, maxShipLotValue, maxHouseLotValue, maxGoodsLotValue, maxPermitLotValue } from "../src/game/almoneda.mjs";
 import { establishmentValue } from "../src/game/almoneda.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
@@ -106,7 +106,7 @@ test("an idle year keeps every chest and tax step inside its band", () => {
     assert.ok(Math.abs(st.sisa) <= STEP_MAX && Math.abs(st.portazgo) <= STEP_MAX, `${c.id} out of band: ${JSON.stringify(st)}`);
     const caja = cajaOf(g, c.id), target = cajaTarget(world, c.id);
     const almoneda = g.hallAlmoneda?.[c.id] ?? 0; // municipal auction proceeds are legitimate one-off income, tracked apart from taxes (almoneda.mjs)
-    const almGen = g.hallAlmonedaGen?.[c.id] ?? 0; // generated lots (used ships, town houses) pay the chest too, cadence-bounded below
+    const almGen = g.hallAlmonedaGen?.[c.id] ?? 0; // generated lots (used ships, town houses, goods, permits) pay the chest too, cadence-bounded below
     // Invariant: the chest never goes bankrupt, and it can only exceed the old tax band by verified auction
     // income - the concejo may spend or relieve the windfall (money is fungible), so the tax part alone can
     // dip, but nothing may appear beyond taxes-plus-sales. Conservation per sale is proven in almoneda.test.
@@ -114,10 +114,11 @@ test("an idle year keeps every chest and tax step inside its band", () => {
     // The game world carries the optional goods: that is the roster the almoneda sells.
     const municipalValue = townIndustry(g.world, c.id).filter((e) => e.owner.kind === "council" && e.kind === "building" && establishmentValue(g.world, e) > 0).reduce((a, e) => a + establishmentValue(g.world, e), 0);
     assert.ok(almoneda <= Math.ceil(municipalValue * 1.15), `${c.id} auction income ${almoneda} beyond the value of its municipal works ${municipalValue}`); // finite: each municipal work sells once, at most the top bidder's factor
-    // Generated lots are unbounded in time but cadence-bounded: at most one ship every SHIP_EVERY cycles and
-    // one house every HOUSE_EVERY cycles, each at most the top bidder's factor over the top valuation.
+    // Generated lots are unbounded in time but cadence-bounded: at most one of each kind every KIND_EVERY
+    // cycles, each at most the top bidder's factor over the top valuation of that kind.
     const cycles = Math.floor(g.day / AUCTION_EVERY) + 1;
-    const genCap = cycles * (Math.ceil((maxShipLotValue() * 1.15) / SHIP_EVERY) + Math.ceil((maxHouseLotValue(g.world) * 1.15) / HOUSE_EVERY));
+    const genCap = cycles * (Math.ceil((maxShipLotValue() * 1.15) / SHIP_EVERY) + Math.ceil((maxHouseLotValue(g.world) * 1.15) / HOUSE_EVERY)
+      + Math.ceil((maxGoodsLotValue(g.world) * 1.15) / GOODS_EVERY) + Math.ceil((maxPermitLotValue(g.world) * 1.15) / PERMIT_EVERY));
     assert.ok(almGen <= genCap, `${c.id} generated auction income ${almGen} beyond the cadence cap ${genCap}`);
   }
 });
