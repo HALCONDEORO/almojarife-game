@@ -32,7 +32,7 @@ test('corner bar carries time, view and settings, top-right, with no duplicates'
   assert.ok(js.includes('e.data?.kind==="city2d-view"'), 'view-state back');
   // One pause control only: the corner bar.
   assert.ok(js.includes('cp.textContent = playing ? "⏸" : "▶"'), 'corner pause live');
-  assert.match(css, /\.city-corner\{[^}]*top:38px;right:194px/, 'corner position');
+  assert.match(css, /\.city-corner\{[^}]*top:38px;right:242px/, 'corner position');
   const scene = readFileSync('web/city2d/scene.mjs', 'utf8');
   assert.ok(scene.includes("q.get('chrome')==='0'"), 'scene reads chrome');
   assert.ok(scene.includes("e.data?.kind!=='city2d-cmd'"), 'scene cmd guard');
@@ -44,7 +44,10 @@ test('panel labels stay live from the same values as the header', () => {
   assert.ok(js.includes('function syncCityControls()'), 'sync fn');
   assert.ok(js.includes('syncCityControls();\n'), 'called from render');
   assert.ok(js.includes('cs.textContent = `${speed}x`'), 'speed label live');
-  assert.ok(js.includes('set("msgs", badge(LT[lang].messages, unread(g)))'), 'message badge live');
+  assert.ok(js.includes('set("msgs", LT[lang].messages)'), 'message label live');
+  assert.ok(js.includes('[data-cc-badge="msgs"]') && js.includes('unread(g)'), 'unread badge pill live');
+  assert.ok(js.includes('[data-cc-badge="ships"]') && js.includes('x.at === city3dId && !x.voyage'), 'docked ships badge live');
+  assert.ok(js.includes('set("section2", lang === "es" ? "Actividad" : "Activity")'), 'activity section live');
   for (const h of [
     '[data-city-msgs]").onclick=()=>showLedger("msg")',
     '[data-corner="play"]\').onclick=()=>toggleClock()',
@@ -63,10 +66,10 @@ test('city header data centred and enriched; top bar buttons hidden only in city
 });
 
 test('panel keeps parchment theme and P3 proportions', () => {
-  assert.match(css, /\.city-controls\{[^}]*width:184px/, 'width');
+  assert.match(css, /\.city-controls\{[^}]*width:232px/, 'width');
   assert.match(css, /\.city-controls\{[^}]*#f4ead0/, 'parchment');
-  assert.match(css, /\.city-controls \.cc-ico\{width:18px;height:18px/, 'icon size');
-  assert.match(css, /\.city-header\{[^}]*right:184px/, 'header clears panel');
+  assert.match(css, /\.city-controls \.cc-ico\{width:22px;height:22px/, 'icon size');
+  assert.match(css, /\.city-header\{[^}]*right:232px/, 'header clears panel');
 });
 
 test('language toggle re-translates the whole city chrome live (Boat #427 catch)', () => {
@@ -94,7 +97,7 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
 });
 
 test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
-  assert.match(css, /\.city-window\{position:absolute;right:180px;top:84px/, 'window home below bar');
+  assert.match(css, /\.city-window\{position:absolute;right:238px;top:84px/, 'window home below bar');
   assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")])'), 'drag clamp reads bar, chip and minimised flag');
   assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below them');
 });

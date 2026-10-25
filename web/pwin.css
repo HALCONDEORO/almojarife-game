@@ -12,9 +12,9 @@
 
 .needs-scroll-hint{display:none;font-size:.85rem;font-style:italic}@media(max-width:650px){.needs-scroll-hint{display:block}}
 /* Give trade decisions the available screen instead of a narrow decorative overlay. */
-body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:184px;width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - var(--game-header-height,96px) - 92px);box-sizing:border-box}
+body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:238px;width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - var(--game-header-height,96px) - 92px);box-sizing:border-box}
 /* 900-1180px viewports: keep the window fully on screen beside the right rail (was off-screen left, names cut) */
-@media(min-width:900px){body.in-city-3d .city-window[data-city-panel="market"]{width:min(1000px,calc(100vw - 200px))}}
+@media(min-width:900px){body.in-city-3d .city-window[data-city-panel="market"]{width:min(1000px,calc(100vw - 254px))}}
 @media(max-width:600px){body.in-city-3d .city-window[data-city-panel="market"]{right:6px;width:calc(100vw - 12px);max-height:calc(100dvh - var(--game-header-height,120px) - 220px)}}
 /* P3 building summary card (owned-building window): icon + name + state + scannable stat cells */
 .bwcard{display:flex;gap:10px;align-items:center;background:#fff8e6;border:2px solid #b98d4f;border-radius:8px;padding:6px 8px;margin:6px 0}
