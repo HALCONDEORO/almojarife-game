@@ -1,6 +1,7 @@
 {
   "name": "almojarife",
   "license": "MIT",
+  "author": "Marco Tevar",
   "private": true,
   "type": "module",
   "scripts": {
