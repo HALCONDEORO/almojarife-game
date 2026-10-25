@@ -28,8 +28,8 @@ test("brickworks is a processor: 2 timber -> 2 bricks, builds anywhere", () => {
   assert.deepEqual(RECIPES.firing, { timber: 2 }); assert.deepEqual(OUTPUTS.firing, { bricks: 2 });
   const def = PRODUCERS.brickworks;
   assert.equal(def.primary, false); assert.equal(def.output, "bricks"); assert.equal(def.recipe, "firing");
-  assert.deepEqual(BUILDING_TYPES.brickworks, { recipe: "brickworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 });
-  assert.deepEqual(RECIPES.brickworks, { timber: 8, bricks: 2, ironware: 2 });
+  assert.deepEqual(BUILDING_TYPES.brickworks, { recipe: "brickworks", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 });
+  assert.deepEqual(RECIPES.brickworks, { timber: 37, bricks: 9, ironware: 9 });
   for (const c of world.cities) assert.ok(cityAllowsProducer(world, c.id, "brickworks"), c.id);
 });
 

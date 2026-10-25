@@ -58,10 +58,10 @@ test('processors keep producing: the guard does not stop the workshop',()=>{
  assert.ok(g.market.cadiz.cloth.stock>cloth0,'the workshop still weaves');
 });
 test('spec numbers from the materials table',()=>{
- assert.deepEqual(BUILDING_TYPES.oil_mill,{recipe:'oil_mill',fee:250,buildDays:4,upkeep:2,maxLevel:3});
- assert.deepEqual(BUILDING_TYPES.vineyard,{recipe:'vineyard',fee:250,buildDays:4,upkeep:2,maxLevel:3});
- assert.deepEqual(BUILDING_TYPES.saltworks,{recipe:'saltworks',fee:200,buildDays:3,upkeep:1,maxLevel:3});
- assert.deepEqual(BUILDING_TYPES.fishery,{recipe:'fishery',fee:150,buildDays:3,upkeep:1,maxLevel:3});
+ assert.deepEqual(BUILDING_TYPES.oil_mill,{recipe:'oil_mill',fee:250,buildDays:24,upkeep:2,maxLevel:3});
+ assert.deepEqual(BUILDING_TYPES.vineyard,{recipe:'vineyard',fee:250,buildDays:22,upkeep:2,maxLevel:3});
+ assert.deepEqual(BUILDING_TYPES.saltworks,{recipe:'saltworks',fee:200,buildDays:20,upkeep:1,maxLevel:3});
+ assert.deepEqual(BUILDING_TYPES.fishery,{recipe:'fishery',fee:150,buildDays:16,upkeep:1,maxLevel:3});
  assert.equal(PRODUCERS.fishery.yield,3);
  for(const t of ['oil_mill','vineyard','saltworks'])assert.equal(PRODUCERS[t].yield,2);
 });

@@ -28,7 +28,7 @@ test("brewery is a processor: 3 grain -> 2 beer, builds anywhere", () => {
   assert.deepEqual(RECIPES.brew, { grain: 3 }); assert.deepEqual(OUTPUTS.brew, { beer: 2 });
   const def = PRODUCERS.brewery;
   assert.equal(def.primary, false); assert.equal(def.output, "beer"); assert.equal(def.recipe, "brew");
-  assert.deepEqual(BUILDING_TYPES.brewery, { recipe: "brewery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 });
+  assert.deepEqual(BUILDING_TYPES.brewery, { recipe: "brewery", fee: 250, buildDays: 28, upkeep: 2, maxLevel: 3 });
   assert.ok(RECIPES.brewery);
   for (const c of world.cities) assert.ok(cityAllowsProducer(world, c.id, "brewery"), c.id);
 });

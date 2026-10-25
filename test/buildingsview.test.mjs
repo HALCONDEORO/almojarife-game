@@ -30,7 +30,8 @@ test("a bare plot row has state plot, no upkeep; a construction row carries prog
   assert.ok(row.progress >= 0 && row.progress < 1);
   advanceDay(g); advanceDay(g);
   [row] = buildingsRows(g, "cadiz");
-  assert.ok(row.progress > 0.2, `progress after 2 of 5 days: ${row.progress}`);
+  const exp = 2 / BUILDING_TYPES.workshop.buildDays;
+  assert.ok(Math.abs(row.progress - exp) < 0.01, `progress after 2 of ${BUILDING_TYPES.workshop.buildDays} days: ${row.progress} vs ${exp}`);
 });
 
 test("active rows expose per-type effects: workshop rate and margin, house pop, warehouse cap", () => {
@@ -260,7 +261,7 @@ test("bldOfferCard: a processor card shows drawing, investment, running costs an
   const html = bldOfferCard(t, offer, "es", (n) => String(n), (n) => String(n), () => "<svg/>");
   assert.match(html, /bldoffer-name">Taller</);
   assert.match(html, new RegExp(String(offer.cost)));
-  assert.match(html, /5 días de obra/);
+  assert.match(html, new RegExp(offer.days + " días de obra"));
   assert.match(html, /mano de obra 300/); // labor fee = spec fee x level
   assert.match(html, /mantenim\. 3\/día · salarios 8\/día/); // upkeep + JOBS_PER_LEVEL.workshop(8) x WAGE(1)
   assert.match(html, /≈1\/día de media/); // average rate 0.5 batches/day x 2 cloth - labeled average, never a max (peak days make more)

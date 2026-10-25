@@ -12,49 +12,49 @@ import { wallsAllow } from "./plague.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
 export const BUILDING_TYPES = Object.freeze({
-  house: Object.freeze({ recipe: "house", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  workshop: Object.freeze({ recipe: "workshop", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
-  warehouse: Object.freeze({ recipe: "warehouse", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  farm: Object.freeze({ recipe: "farm", fee: 200, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  pasture: Object.freeze({ recipe: "pasture", fee: 200, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  sawmill: Object.freeze({ recipe: "sawmill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  mine: Object.freeze({ recipe: "mine", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
+  house: Object.freeze({ recipe: "house", fee: 150, buildDays: 8, upkeep: 1, maxLevel: 3 }),
+  workshop: Object.freeze({ recipe: "workshop", fee: 300, buildDays: 13, upkeep: 3, maxLevel: 3 }),
+  warehouse: Object.freeze({ recipe: "warehouse", fee: 250, buildDays: 15, upkeep: 2, maxLevel: 3 }),
+  farm: Object.freeze({ recipe: "farm", fee: 200, buildDays: 19, upkeep: 2, maxLevel: 3 }),
+  pasture: Object.freeze({ recipe: "pasture", fee: 200, buildDays: 19, upkeep: 2, maxLevel: 3 }),
+  sawmill: Object.freeze({ recipe: "sawmill", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
+  mine: Object.freeze({ recipe: "mine", fee: 300, buildDays: 26, upkeep: 3, maxLevel: 3 }),
   // Primary producers (PR3 of the materials plan): buildable only where the city makes the good.
-  oil_mill: Object.freeze({ recipe: "oil_mill", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  brewery: Object.freeze({ recipe: "brewery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  soapworks: Object.freeze({ recipe: "soapworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  oil_mill: Object.freeze({ recipe: "oil_mill", fee: 250, buildDays: 24, upkeep: 2, maxLevel: 3 }),
+  vineyard: Object.freeze({ recipe: "vineyard", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
+  saltworks: Object.freeze({ recipe: "saltworks", fee: 200, buildDays: 20, upkeep: 1, maxLevel: 3 }),
+  brewery: Object.freeze({ recipe: "brewery", fee: 250, buildDays: 28, upkeep: 2, maxLevel: 3 }),
+  soapworks: Object.freeze({ recipe: "soapworks", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
   // Brickworks (chains study PR3): fires timber into bricks, the construction material PR5 wires into every build quote.
-  pottery: Object.freeze({ recipe: "pottery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }), // only offered in games with the pottery flag (the good must exist)
-  brickworks: Object.freeze({ recipe: "brickworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  esparto_field: Object.freeze({ recipe: "esparto_field", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  ranch: Object.freeze({ recipe: "ranch", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  pottery: Object.freeze({ recipe: "pottery", fee: 250, buildDays: 25, upkeep: 2, maxLevel: 3 }), // only offered in games with the pottery flag (the good must exist)
+  brickworks: Object.freeze({ recipe: "brickworks", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 }),
+  esparto_field: Object.freeze({ recipe: "esparto_field", fee: 200, buildDays: 18, upkeep: 1, maxLevel: 3 }),
+  ranch: Object.freeze({ recipe: "ranch", fee: 250, buildDays: 20, upkeep: 2, maxLevel: 3 }),
   // Armory: sells ship weapons and sailors' gear; outside the 16-building production cap like dock and office (docs/design/armory.md).
-  armory: Object.freeze({ recipe: "armory", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  armory: Object.freeze({ recipe: "armory", fee: 250, buildDays: 13, upkeep: 2, maxLevel: 3 }),
   // Private dock: your ships pay less port toll in this city per active level (docs/design/dock-building.md).
-  dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
+  dock: Object.freeze({ recipe: "dock", fee: 150, buildDays: 32, upkeep: 1, maxLevel: 3 }),
   // Fishery: huts, nets and small boats; yields fresh fish where the city catches it (docs/design/fish-chain.md).
-  fishery: Object.freeze({ recipe: "fishery", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
+  fishery: Object.freeze({ recipe: "fishery", fee: 150, buildDays: 16, upkeep: 1, maxLevel: 3 }),
   // Ironworks: processor, iron and timber into ironware (docs/design/production-chains-study.md).
-  ironworks: Object.freeze({ recipe: "ironworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  ironworks: Object.freeze({ recipe: "ironworks", fee: 250, buildDays: 23, upkeep: 2, maxLevel: 3 }),
   // Civic buildings of the city-life module (src/game/citylife.mjs); names from the documented
   // record (posito, hospital, alhondiga). Effects live in that module and only apply when the
   // citylife flag created its state; the view never offers them in a flag-off game.
-  posito: Object.freeze({ recipe: "posito", fee: 200, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  hospital: Object.freeze({ recipe: "hospital", fee: 300, buildDays: 5, upkeep: 3, maxLevel: 3 }),
-  alhondiga: Object.freeze({ recipe: "alhondiga", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  posito: Object.freeze({ recipe: "posito", fee: 200, buildDays: 10, upkeep: 1, maxLevel: 3 }),
+  hospital: Object.freeze({ recipe: "hospital", fee: 300, buildDays: 17, upkeep: 3, maxLevel: 3 }),
+  alhondiga: Object.freeze({ recipe: "alhondiga", fee: 250, buildDays: 14, upkeep: 2, maxLevel: 3 }),
   // Sanitation and faith against calamity (block C2, plague module): caminos and pozo stand
   // anywhere; hospital and capilla only inside expanded walls (wallsAllow in plague.mjs).
-  caminos: Object.freeze({ recipe: "caminos", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
-  pozo: Object.freeze({ recipe: "pozo", fee: 150, buildDays: 2, upkeep: 1, maxLevel: 3 }),
-  capilla: Object.freeze({ recipe: "capilla", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  caminos: Object.freeze({ recipe: "caminos", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
+  pozo: Object.freeze({ recipe: "pozo", fee: 150, buildDays: 5, upkeep: 1, maxLevel: 3 }),
+  capilla: Object.freeze({ recipe: "capilla", fee: 250, buildDays: 13, upkeep: 2, maxLevel: 3 }),
   // Second civic batch (docs/design/civic-buildings-2.md): the carniceria steadies the meat and fish
   // supply, the molino turns grain into bread, the corral de comedias lifts spirits in the big ports
   // (it needs a large audience: minPop gate, engine-enforced like the walls rule).
-  carniceria: Object.freeze({ recipe: "carniceria", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  molino: Object.freeze({ recipe: "molino", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
-  corral: Object.freeze({ recipe: "corral", fee: 400, buildDays: 6, upkeep: 4, maxLevel: 3, minPop: 15000 }),
+  carniceria: Object.freeze({ recipe: "carniceria", fee: 250, buildDays: 14, upkeep: 2, maxLevel: 3 }),
+  molino: Object.freeze({ recipe: "molino", fee: 250, buildDays: 14, upkeep: 2, maxLevel: 3 }),
+  corral: Object.freeze({ recipe: "corral", fee: 400, buildDays: 22, upkeep: 4, maxLevel: 3, minPop: 15000 }),
 });
 
 /** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */

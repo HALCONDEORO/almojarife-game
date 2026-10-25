@@ -26,7 +26,7 @@ test("ironworks is a processor: 2 iron + 1 timber -> 2 ironware, builds anywhere
   assert.deepEqual(RECIPES.forge, { iron: 2, timber: 1 }); assert.deepEqual(OUTPUTS.forge, { ironware: 2 });
   const def = PRODUCERS.ironworks;
   assert.equal(def.primary, false); assert.equal(def.output, "ironware"); assert.equal(def.recipe, "forge");
-  assert.deepEqual(BUILDING_TYPES.ironworks, { recipe: "ironworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 });
+  assert.deepEqual(BUILDING_TYPES.ironworks, { recipe: "ironworks", fee: 250, buildDays: 23, upkeep: 2, maxLevel: 3 });
   assert.ok(RECIPES.ironworks);
   for (const c of world.cities) assert.ok(cityAllowsProducer(world, c.id, "ironworks"), c.id);
 });

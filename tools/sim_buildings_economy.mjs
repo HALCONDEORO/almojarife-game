@@ -84,7 +84,7 @@ function scenarioB(seed = 0) {
 }
 
 function scenarioC(seed = 0) {
-  const g = newGame(world, "cadiz", { cash: -800, seed, ...FLAGS }); // starts with 1,200: plot + build, almost nothing left
+  const g = newGame(world, "cadiz", { cash: 1000, seed, ...FLAGS }); // starts with 3,000: plot + build at the recalibrated price, almost nothing left for wages
   const s0 = base(g);
   const bp = buyPlot(g, "cadiz", { id: "cadiz:1", type: "saltworks", w: 3, d: 3 });
   const build = startConstruction(g, "cadiz", "cadiz:1", "saltworks");
@@ -101,7 +101,7 @@ function scenarioC(seed = 0) {
     if (snaps.includes(d)) horizons[d] = { cash: Math.round(g.cash), halted: !!b?.halted, produced: b?.produced ?? 0 };
   }
   const b = g.buildings?.cadiz?.["cadiz:1"] ?? {};
-  return { startCash: 1200, plotPrice: bp.price ?? null, buildOk: build.ok ?? false, buildCost: Math.round(build.cost ?? 0), firstHaltDay, resumedDay, halts: halts(g),
+  return { startCash: 3000, plotPrice: bp.price ?? null, buildOk: build.ok ?? false, buildCost: Math.round(build.cost ?? 0), firstHaltDay, resumedDay, halts: halts(g),
     haltedEnd: !!b.halted, cashEnd: Math.round(g.cash), produced: b.produced ?? 0, priceIndex: [s0.priceIndex, priceIndex(g)], campaignEnd: st.firstOver ?? null, horizons };
 }
 
