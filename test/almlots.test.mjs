@@ -190,9 +190,11 @@ describe("bids per lot", () => {
     g.day = shipDay("cadiz");
     const lots = lotsOfDay(g, "cadiz");
     (g.townBids ??= {}).cadiz = 0; // old save shape
+    const ships0 = g.ships.length, bld0 = JSON.stringify(g.buildings ?? null);
     almonedaDay(g); // must not throw, and the number never lands on a ship or a house
     assert.equal(g.townBids.cadiz, undefined);
-    assert.ok(lots.every((l) => l.kind === "establishment" || true));
+    assert.equal(g.ships.length, ships0); // a bare number bids only on the establishment table: no ship, no house
+    assert.equal(JSON.stringify(g.buildings ?? null), bld0);
   });
   it("state survives a save round-trip", () => {
     const g = game();
