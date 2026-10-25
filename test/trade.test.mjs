@@ -36,6 +36,19 @@ test("buying respects stock, capacity and cash; selling returns less than buying
   assert.equal(cargoUsed(s), 0);
   assert.equal(buy(world, m, s, 0, good, 5).ok, false);
 });
+test("the market fee keeps its nominal size on cheap goods (cents, not integer jumps)", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const [good] = Object.entries(world.goods).sort((a, b) => a[1].base - b[1].base)[0];
+  const p = price(world, m[A][good], good); // stock at target: base price
+  const b = buy(world, m, s, 1e9, good, 1);
+  assert.ok(b.ok);
+  assert.equal(b.cost, Math.ceil(p * 1.02 * 100 - 1e-9) / 100, "buy settles to the cent, not the coin");
+  assert.ok(b.cost - p <= p * 0.02 + 0.01, "effective fee within a cent of nominal");
+  const r = sell(world, m, s, good, 1);
+  assert.ok(r.ok && r.revenue < b.cost, "one-port round trip still loses to the fee");
+  assert.ok(r.revenue >= Math.floor(p * 0.98 * 100 + 1e-9) / 100 - 0.02, "sell side keeps its value to cents");
+});
+
 test("stock never goes negative via trading", () => {
   const m = makeMarket(world), s = makeShip(1, "cog", A);
   const good = world.cities[0].makes[0];

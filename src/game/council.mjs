@@ -10,7 +10,7 @@ import { townCouncil } from "./townhall.mjs";
 import { repOf } from "./rank.mjs";
 import { seeded } from "../view/cityscene.mjs"; // same hash the views use (news.mjs precedent)
 
-export const SISA_STEP = 0.25, TOLL_STEP = 0.25, STEP_MAX = 2, MEETING_EVERY = 30;
+export const SISA_STEP = 0.05, TOLL_STEP = 0.05, STEP_MAX = 10, MEETING_EVERY = 30; // 5% steps, same +-50% band: the concejo can land on intermediate rates
 const r2 = (x) => Math.round(x * 100) / 100;
 
 /** Coins in the town's chest (chests start full: saves from before B1 read as the target reserve). */
@@ -21,8 +21,8 @@ export const taxSteps = (g, city) => g.hallTax?.[city] ?? { sisa: 0, portazgo: 0
 export const sisaMul = (g, city) => 1 + SISA_STEP * taxSteps(g, city).sisa;
 /** Multiplier the concejo applies on the docking toll (1 at neutral). */
 export const portazgoMul = (g, city) => 1 + TOLL_STEP * taxSteps(g, city).portazgo;
-/** Daily cost of watch and walls. */
-export const upkeepOf = (world, city) => Math.max(1, Math.round((world.nodes[city]?.pop ?? 8000) / 1000));
+/** Daily cost of watch and walls: about 1 per 1,000 people, to cents so mid-size ports are not rounded up or down. */
+export const upkeepOf = (world, city) => Math.max(1, r2((world.nodes[city]?.pop ?? 8000) / 1000));
 /** The concejo keeps about thirty days of upkeep as its target reserve. */
 export const cajaTarget = (world, city) => 30 * upkeepOf(world, city);
 /** Credit the derechos a trade or a toll paid into the town's chest. */

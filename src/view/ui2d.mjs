@@ -27,7 +27,7 @@ export function hall2dHtml(hv,t,fmt,respect,lang){
  return `<div class="ui2d-hall"><p class="ui2d-hall-intro">${esc(t.hallInfo)}</p><div class="ui2d-officers">`+
  card('⚜',t.hallMayor,esc(hv.mayor))+hv.councillors.map((n,i)=>card('◈',`${t.hallRegs} ${i+1}`,esc(n))).join('')+`</div><p class="ui2d-standing">${line('hallStand',{r:respect,n:hv.respectPts})}</p>`+
  (cityLines.length?`<div class="ui2d-city-lines">${cityLines.map(l=>`<p>${esc(l)}</p>`).join('')}</div>`:'')+
- `<h3>${esc(t.hallDerechos)}</h3><div class="ui2d-duties">`+card('◎',lang==='es'?'Mercado':'Market',line('hallFee',{p:hv.feePct}))+card('⚓',lang==='es'?'Puerto':'Port',line('hallToll',{d:hv.tollDiv,x:hv.tollDiscountPct}))+`</div><section class="ui2d-hall-ledger"><p><b>${line('hallCaja',{c:fmt(hv.caja)})}</b></p><p>${line('hallLevies',{s:(hv.sisa>0?'+':'')+hv.sisa,p:(hv.portazgo>0?'+':'')+hv.portazgo})}</p><p class="ui2d-meeting">▤ ${line('hallNext',{d:hv.nextMeeting})}</p></section><p class="ui2d-hall-note">${esc(t.hallNote)}</p></div>`;
+ `<h3>${esc(t.hallDerechos)}</h3><div class="ui2d-duties">`+card('◎',lang==='es'?'Mercado':'Market',line('hallFee',{p:hv.feePct}))+card('⚓',lang==='es'?'Puerto':'Port',line('hallToll',{d:hv.tollDiv,x:hv.tollDiscountPct}))+`</div><section class="ui2d-hall-ledger"><p><b>${line('hallCaja',{c:fmt(hv.caja)})}</b></p><p>${line('hallLevies',{s:(hv.sisaPct>0?'+':'')+hv.sisaPct+'%',p:(hv.portazgoPct>0?'+':'')+hv.portazgoPct+'%'})}</p><p class="ui2d-meeting">▤ ${line('hallNext',{d:hv.nextMeeting})}</p></section><p class="ui2d-hall-note">${esc(t.hallNote)}</p></div>`;
 }
 
 /** Decorates the existing reports without recalculating or dropping report data. */

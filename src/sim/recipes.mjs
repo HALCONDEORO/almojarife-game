@@ -1,6 +1,6 @@
 // Own gameplay recipes. Not historical construction quantities. Not enabled in the game yet.
 import { price } from './market.mjs';
-import { FEE } from './trade.mjs';
+import { FEE, ceil2 } from './trade.mjs';
 export const RECIPES = Object.freeze({
   barca: Object.freeze({ timber: 10, iron: 3, cloth: 3, esparto: 3 }),
   cog: Object.freeze({ timber: 24, iron: 8, cloth: 10, esparto: 6 }),
@@ -65,7 +65,7 @@ export function quoteRecipe(world, market, city, recipe, batches = 1) {
     const qty = amount*batches, e = stock[good];
     if (!world.goods[good] || !e || !Number.isSafeInteger(e.stock) || e.stock < qty) return { ok: false, reason: 'missing materials', good, required: qty, available: e?.stock ?? 0 };
     const sim = {...e}; let line = 0;
-    for (let i=0;i<qty;i++) { line += Math.ceil(price(world, sim, good)*(1+FEE)); sim.stock--; }
+    for (let i=0;i<qty;i++) { line += ceil2(price(world, sim, good)*(1+FEE)); sim.stock--; }
     inputs[good]=qty; units[good]=line; cost+=line;
   }
   return { ok: true, recipe, city, batches, inputs, lineCosts: units, cost, outputs: Object.fromEntries(Object.entries(OUTPUTS[recipe]??{}).map(([g,n])=>[g,n*batches])) };
@@ -83,8 +83,8 @@ export function quoteUnitsImport(world, market, city, inputs) {
     if (!e || !Number.isSafeInteger(e.stock)) return { ok: false, reason: 'missing materials', good, required: qty, available: 0 };
     const take = Math.min(e.stock, qty), abroad = qty - take;
     const sim = { ...e }; let line = 0;
-    for (let i = 0; i < take; i++) { line += Math.ceil(price(world, sim, good) * (1 + FEE)); sim.stock--; }
-    if (abroad > 0) { line += abroad * Math.ceil(world.goods[good].base * (1 + FEE) * IMPORT_MUL); imported[good] = abroad; }
+    for (let i = 0; i < take; i++) { line += ceil2(price(world, sim, good) * (1 + FEE)); sim.stock--; }
+    if (abroad > 0) { line += abroad * ceil2(world.goods[good].base * (1 + FEE) * IMPORT_MUL); imported[good] = abroad; }
     if (take > 0) local[good] = take;
     lineCosts[good] = line; cost += line;
   }
@@ -120,7 +120,7 @@ export function quoteUnits(world, market, city, inputs) {
     const e = stock[good];
     if (!e || !Number.isSafeInteger(e.stock) || e.stock < qty) return { ok: false, reason: 'missing materials', good, required: qty, available: e?.stock ?? 0 };
     const sim = { ...e }; let line = 0;
-    for (let i = 0; i < qty; i++) { line += Math.ceil(price(world, sim, good) * (1 + FEE)); sim.stock--; }
+    for (let i = 0; i < qty; i++) { line += ceil2(price(world, sim, good) * (1 + FEE)); sim.stock--; }
     lineCosts[good] = line; cost += line;
   }
   return { ok: true, city, inputs: { ...inputs }, lineCosts, cost };
