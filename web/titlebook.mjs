@@ -8,6 +8,7 @@ export const TB = {
  "es": {
   "deskTitle": "El oficio de prosperar",
   "deskSubtitle": "Puertos, fortuna y buen nombre.",
+  "deskPlatform": "Juego de escritorio · teclado y ratón",
   "bookLabel": "El libro del mercader",
   "leftRunning": "De los puertos y sus gentes",
   "subtitle": "Una vida entre el mar y el comercio",
@@ -43,6 +44,7 @@ export const TB = {
  "en": {
   "deskTitle": "The art of prosperity",
   "deskSubtitle": "Harbours, fortune and a good name.",
+  "deskPlatform": "A desktop game · keyboard and mouse",
   "bookLabel": "The merchant’s book",
   "leftRunning": "Of harbours and their people",
   "subtitle": "A life of seafaring and trade",
@@ -187,7 +189,7 @@ export function titleBookHtml({ lang, saved, backup, dayLabel, coinsLabel }) {
   return fill(`<div class="tbroot" lang="${lang}">${DEFS}<div class="desk"><header class="desk-header">
       <div class="desk-signature">
         <svg aria-hidden="true"><use href="#merchant-mark"/></svg>
-        <div><span class="small-caps" data-i18n="deskTitle">El oficio de prosperar</span><small data-i18n="deskSubtitle">Puertos, fortuna y buen nombre.</small></div>
+        <div><span class="small-caps" data-i18n="deskTitle">El oficio de prosperar</span><small data-i18n="deskSubtitle">Puertos, fortuna y buen nombre.</small><small data-i18n="deskPlatform">Juego de escritorio · teclado y ratón</small></div>
       </div>
       ${langNav}
     </header>` +
