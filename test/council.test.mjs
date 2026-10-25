@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, doBuy, doSell } from "../src/game/game.mjs";
-import { cajaOf, cajaTarget, taxSteps, sisaMul, portazgoMul, creditCaja, nextMeetingDay, councilDay, upkeepOf, SISA_STEP, TOLL_STEP, STEP_MAX } from "../src/game/council.mjs";
+import { cajaOf, cajaTarget, taxSteps, sisaMul, portazgoMul, creditCaja, meetingDay, nextMeetingDay, councilDay, upkeepOf, SISA_STEP, TOLL_STEP, STEP_MAX } from "../src/game/council.mjs";
 import { chargeToll, tollFor } from "../src/game/tolls.mjs";
 import { FEE } from "../src/sim/trade.mjs";
 import { feeMul } from "../game/../src/game/reputation.mjs";
@@ -42,18 +42,31 @@ test("the derechos the player pays feed the town's chest", () => {
   assert.equal(cajaOf(g, "cadiz"), Math.round((c1 + t) * 100) / 100);
 });
 
-test("a poor chest makes the concejo raise a tax on its meeting day, by one bounded step", () => {
+test("a poor chest makes the concejo raise a tax on its meeting day, scaled to the hole", () => {
   const g = fresh();
   const meet = nextMeetingDay(world, "cadiz", 1);
-  g.hallCaja = { cadiz: 0 }; // an empty chest before the meeting
+  g.hallCaja = { cadiz: 0 }; // an empty chest before the meeting: half the target missing
   const before = taxSteps(g, "cadiz");
   runTo(g, meet); // the meeting day fires inside dayTick
   const after = taxSteps(g, "cadiz");
-  assert.equal(after.sisa + after.portazgo, before.sisa + before.portazgo + 1);
+  // deficit-scaled raise: ceil((target/2 - caja)/target * STEP_MAX), clamped 1..MAX; caja 0 -> 5
+  assert.equal(after.sisa + after.portazgo, before.sisa + before.portazgo + 5);
   assert.ok(Math.abs(after.sisa) <= STEP_MAX && Math.abs(after.portazgo) <= STEP_MAX);
-  // the step moves the real multipliers the trader pays
+  // the steps move the real multipliers the trader pays
   if (after.sisa !== before.sisa) assert.ok(sisaMul(g, "cadiz") > 1);
   else assert.ok(portazgoMul(g, "cadiz") > 1);
+});
+
+test("a barely-poor chest still raises one step; a deep hole raises at most STEP_MAX", () => {
+  for (const [caja, want] of [[cajaTarget(world, "cadiz") / 2 - 0.01, 1], [-10 * cajaTarget(world, "cadiz"), STEP_MAX]]) {
+    const g = fresh();
+    const meet = nextMeetingDay(world, "cadiz", 1);
+    g.hallCaja = { cadiz: caja };
+    const before = taxSteps(g, "cadiz");
+    runTo(g, meet);
+    const after = taxSteps(g, "cadiz");
+    assert.equal(after.sisa + after.portazgo, before.sisa + before.portazgo + want, `caja ${caja} -> +${want}`);
+  }
 });
 
 test("a flush chest makes the concejo lower a tax", () => {
@@ -170,4 +183,19 @@ test("a sale pays its derecho into the chest in full (cent-settled)", () => {
   const f = FEE * feeMul(g, "cadiz");
   const expected = Math.round(r.revenue * f / (1 - f) * 100) / 100;
   assert.equal(cajaOf(g, "cadiz"), Math.round((c0 + expected) * 100) / 100, "the sell derecho lands whole, not at 1/100");
+});
+
+test("chest income follows the real tax rate, not raw steps (fixAB regression)", () => {
+  for (const [steps, want] of [
+    [{ sisa: STEP_MAX, portazgo: STEP_MAX }, 0.5], // both at +50%: income 1.5x upkeep, net +0.5
+    [{ sisa: -STEP_MAX, portazgo: -STEP_MAX }, -0.5], // both at -50%: income 0.5x, net -0.5
+    [{ sisa: 1, portazgo: 0 }, 0.6 * SISA_STEP], // one fine step moves income one rate-step
+  ]) {
+    const g = fresh();
+    g.hallTax = { cadiz: steps };
+    while (meetingDay(world, "cadiz", g.day)) g.day++; // no vote interferes
+    const up = upkeepOf(world, "cadiz"), c0 = cajaOf(g, "cadiz");
+    councilDay(g);
+    assert.equal(cajaOf(g, "cadiz"), Math.round((c0 + up * want) * 100) / 100, `steps ${JSON.stringify(steps)} -> net ${want}x upkeep`);
+  }
 });

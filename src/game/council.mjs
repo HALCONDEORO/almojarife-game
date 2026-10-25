@@ -39,13 +39,13 @@ export const nextMeetingDay = (world, city, day) => { const off = Math.floor(see
 export function councilDay(g) {
   for (const c of g.world.cities) {
     const id = c.id, st = taxSteps(g, id), up = upkeepOf(g.world, id);
-    const income = up * (1 + 0.6 * st.sisa + 0.4 * st.portazgo); // higher taxes, fuller chest
+    const income = up * (1 + 0.6 * SISA_STEP * st.sisa + 0.4 * TOLL_STEP * st.portazgo); // higher taxes, fuller chest
     creditCaja(g, id, r2(income - up));
     if (!meetingDay(g.world, id, g.day)) continue;
     const caja = cajaOf(g, id), target = cajaTarget(g.world, id);
     const rnd = seeded(`vote:${id}:${g.day}`);
     let move = null;
-    if (caja < target / 2) move = { tax: rnd() < 0.5 ? "sisa" : "portazgo", d: +1 };
+    if (caja < target / 2) move = { tax: rnd() < 0.5 ? "sisa" : "portazgo", d: Math.max(1, Math.min(STEP_MAX, Math.ceil(((target / 2 - caja) / target) * STEP_MAX))) }; // deeper hole, more steps in one vote
     else if (caja > target * 1.5) move = { tax: rnd() < 0.5 ? "sisa" : "portazgo", d: -1 };
     if (!move) continue;
     const next = { ...st };
