@@ -44,6 +44,16 @@ test("a tower mounts on the wall: no standing wall, no quote", () => {
   assert.ok(quoteTowers(g, "cadiz").ok, "wall level 1 carries towers");
 });
 
+test("quote is pure: arming the preview changes no state and builds nothing early", () => {
+  const g = game(); rich(g); withWalls(g);
+  const snap = JSON.stringify({ towers: g.towers, cash: g.cash, tick: g.tick, wh: g.warehouses });
+  const q1 = quoteTowers(g, "cadiz"), q2 = quoteTowers(g, "cadiz");
+  assert.ok(q1.ok && q2.ok);
+  assert.deepEqual(q1, q2, "same quote twice");
+  assert.equal(JSON.stringify({ towers: g.towers, cash: g.cash, tick: g.tick, wh: g.warehouses }), snap, "no state moved while quoting");
+  assert.equal(towersCount(g, "cadiz"), 0, "nothing built by the preview");
+});
+
 test("happy path: quote, pay with money identity, tower stands on the exact readyTick", () => {
   const g = game(); rich(g); withWalls(g);
   const q = quoteTowers(g, "cadiz");
