@@ -94,8 +94,8 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
 
 test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
   assert.match(css, /\.city-window\{position:absolute;right:180px;top:84px/, 'window home below bar');
-  assert.ok(js.includes('const bar=d.querySelector(".city-corner");'), 'drag clamp reads bar');
-  assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below bar');
+  assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap")])'), 'drag clamp reads bar and mission chip');
+  assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below them');
 });
 
 test('class percentages use one decimal and stay truthful (67+27+7=101 catch)', () => {
@@ -119,4 +119,25 @@ test('language toggle also re-labels corner toolbar and panel section', () => {
 test('mission line docks below the corner bar when they would overlap (600px catch)', () => {
   assert.ok(js.includes('mr.right > br.left - 8'), 'overlap test');
   assert.ok(js.includes('top = (br.bottom - vt + 6) + "px"'), 'dock below bar');
+});
+
+test('mission stays visible while the tutorial runs: stacked, mission first (Marco 25/10)', () => {
+  assert.ok(js.includes('function hudObjectiveLines()'), 'shared composition');
+  assert.ok(js.includes('[activeMissionLine(), tutorialLine(g, lang)].filter(Boolean)'), 'mission first, tutorial after');
+  assert.ok(js.includes('hudObjectiveLines().join("\\n")'), 'city chip stacks lines');
+  assert.ok(js.includes('hudObjectiveLines().join(" \\u00b7 ")'), 'map hint stacks inline');
+  assert.ok(!js.includes('tutorialLine(g, lang) ?? activeMissionLine()'), 'tutorial never replaces the mission in the chip');
+  assert.ok(!js.includes('tutorialLine(g, lang) ?? missionLine'), 'tutorial never replaces the mission in the hint');
+});
+
+test('mission stays visible with a window open and minimises to a restorable chip (Marco 25/10)', () => {
+  assert.ok(!js.includes('cm.hidden = !line || open'), 'never hidden by the open window');
+  assert.ok(js.includes('wrap.hidden = !line || minimized'), 'expanded chip hidden only when empty or minimised');
+  assert.ok(js.includes('mx.hidden = !line || !minimized'), 'minimised chip mirrors it');
+  assert.ok(js.includes('localStorage.getItem("missionMin") === "1"'), 'persisted minimised state');
+  assert.ok(js.includes('$("mission-min").onclick=()=>{localStorage.setItem("missionMin","1")'), 'minimise button');
+  assert.ok(js.includes('$("mission-max").onclick=()=>{localStorage.setItem("missionMin","0")'), 'restore button');
+  assert.ok(js.includes('"Minimizar misión"') && js.includes('"Show mission"'), 'es+en labels');
+  assert.ok(js.includes('<span class="city-mission" id="city-mission" role="status"'), 'live text span kept');
+  assert.ok(!js.includes('handle-mission'), 'redundant window-handle echo removed (no duplicate controls)');
 });

@@ -306,31 +306,52 @@ function activeMissionLine() {
   const missions = missionView(g, lang, MISSION_HOOKS).filter((m) => !m.done && !m.failed);
   return missions.length ? "⚑ " + missions.map((m) => `${m.title}: ${m.stepLabel}${m.progress ? " (" + m.progress + ")" : ""}${m.daysLeft !== null ? " · " + (lang === "es" ? "quedan" : "left") + " " + m.daysLeft + " " + (lang === "es" ? "días" : "days") : ""}`).join(" · ") : null;
 }
-// City-view echo of the map hint's mission line: scene line while the panel is closed,
-// a strip in the panel handle while it is open. Same state, no progression change.
+// Marco 25/10: the mission being worked on is always visible, even while the tutorial runs.
+// Priority: the mission line first, the tutorial step after it; whichever exists.
+function hudObjectiveLines() {
+  return [activeMissionLine(), tutorialLine(g, lang)].filter(Boolean);
+}
+// City-view mission chip: the same objective lines as the map hint, always visible,
+// minimizable to a flag button; the open window keeps clear of it. Same state, no progression change.
 function syncMissionEcho() {
   const d = $("v3d"); if (!d) return;
-  const line = tutorialLine(g, lang) ?? activeMissionLine(), // first-voyage tutorial step replaces the mission line while it runs (opt-in per game)
-    open = !d.querySelector(".city-window")?.hidden;
-  const cm = $("city-mission");
-  if (cm) {
-    setLiveText(cm, line ?? ""); cm.hidden = !line || open;
-    // The 2D city has its own toolbar (nav) at the top of the iframe: dock the line 6px below
-    // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
-    let top = "";
-    const hh = d.querySelector(".city-header");
-    if (hh) {
-      const vt = d.getBoundingClientRect().top;
-      top = (hh.getBoundingClientRect().bottom - vt + 6) + "px";
-      const bar = d.querySelector(".city-corner");
-      if (bar) { // narrow screens: the corner bar can reach the mission line - dock the line below the bar instead of under it (Marco 25/10: the bar covers no text)
-        const br = bar.getBoundingClientRect(), mr = cm.getBoundingClientRect();
-        if (mr.right > br.left - 8) top = (br.bottom - vt + 6) + "px";
-      }
+  // Marco 25/10: the mission line is always visible in the city view - it no longer hides
+  // while a window is open - and minimizable to a small chip that restores it.
+  const line = hudObjectiveLines().join("\n"),
+    minimized = localStorage.getItem("missionMin") === "1";
+  const wrap = $("city-mission-wrap"), cm = $("city-mission"), mn = $("mission-min"), mx = $("mission-max");
+  if (!wrap || !cm || !mn || !mx) return;
+  setLiveText(cm, line ?? "");
+  wrap.hidden = !line || minimized;
+  mx.hidden = !line || !minimized;
+  mn.title = lang === "es" ? "Minimizar misión" : "Minimise mission";
+  mn.setAttribute("aria-label", mn.title);
+  mx.title = lang === "es" ? "Mostrar misión" : "Show mission";
+  mx.setAttribute("aria-label", mx.title);
+  mx.textContent = "\u2691";
+  // Dock 6px below the header; if the corner bar reaches the line, dock below the bar instead.
+  let top = "";
+  const hh = d.querySelector(".city-header"), el = minimized ? mx : wrap;
+  if (hh && !el.hidden) {
+    const vt = d.getBoundingClientRect().top;
+    top = (hh.getBoundingClientRect().bottom - vt + 6) + "px";
+    const bar = d.querySelector(".city-corner");
+    if (bar) {
+      const br = bar.getBoundingClientRect(), mr = el.getBoundingClientRect();
+      if (mr.right > br.left - 8) top = (br.bottom - vt + 6) + "px";
     }
-    cm.style.top = top;
   }
-  const hm = $("handle-mission"); if (hm) { hm.textContent = line ?? ""; hm.title = line ?? ""; hm.hidden = !line; }
+  if (top) { wrap.style.top = top; mx.style.top = top; }
+  // The open window keeps clear of the expanded chip (same rule as the corner bar clamp).
+  const win = d.querySelector(".city-window");
+  if (win && !win.hidden && !wrap.hidden) {
+    const cr = wrap.getBoundingClientRect(), wr = win.getBoundingClientRect();
+    if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) {
+      const vt = d.getBoundingClientRect().top;
+      win.style.left = win.offsetLeft + "px"; win.style.right = "auto";
+      win.style.top = Math.min(cr.bottom - vt + 6, Math.max(0, innerHeight - 70 - Math.min(win.offsetHeight, 80))) + "px";
+    }
+  }
 }
 // State for the 2D city iframe: walls, buildings, labels and the player's real docked ships.
 // The iframe asks for a resend when it finishes booting, so a state post that raced its load is not lost.
@@ -380,10 +401,9 @@ function render() {
     pn.textContent = ps ? t.pauseArrive.replace("{ship}", ps.name ?? `${T[lang].types[ps.type] ?? ps.type} ${ps.id}`).replace("{city}", cityName(pauseNote.city)) : ""; } }
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
   syncCityControls();
-  const missionLine = activeMissionLine();
   syncMissionEcho();
   setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmtM(netWorth(g))}` :
-    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (tutorialLine(g, lang) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
+    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (hudObjectiveLines().join(" \u00b7 ") || t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");
@@ -956,7 +976,7 @@ function open3d(s0) {
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ ...(city2dEnabled(location.search) ? { chrome: "0" } : {}), city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" role="status" aria-live="polite" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><p class="cc-section" data-cc="section">${lang==="es"?"Ciudad":"City"}</p><button data-city-tab="buildings">${CC_ICONS.build}<span data-cc="build">${t.bldBuild}</span></button><button data-city-ships>${CC_ICONS.ships}<span data-cc="ships">${lang==="es"?"Barcos":"Ships"}</span></button><button data-city-reports>${CC_ICONS.reports}<span data-cc="reports">${LT[lang].reports}</span></button><button data-city-msgs>${CC_ICONS.msgs}<span data-cc="msgs">${LT[lang].messages}</span></button><button data-city-menu>${CC_ICONS.menu}<span data-cc="menu">${lang==="es"?"Menú":"Menu"}</span></button><button data-map>${CC_ICONS.back}<span data-cc="back">${lang==="es"?"Volver al mapa":"Back to map"}</span></button></nav><div class="city-corner" role="toolbar" aria-label="${lang==="es"?"Controles de tiempo, vista y configuración":"Time, view and settings controls"}"><button data-corner="play"></button><button data-corner="speed"></button>${city2dEnabled(location.search) ? `<span class="cc-sep"></span><button data-corner="fit">&#x2922;</button><button data-corner="zoom-in">+</button><button data-corner="zoom-out">&minus;</button><button data-corner="motion" aria-pressed="true">&#x2726;</button><button data-corner="construct" aria-pressed="false">&#x2692;</button>` : ""}<span class="cc-sep"></span><button data-corner="fs">⛶</button><button data-corner="lang">${lang === "es" ? "EN" : "ES"}</button></div><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission-wrap" id="city-mission-wrap" hidden><span class="city-mission" id="city-mission" role="status" aria-live="polite"></span><button type="button" id="mission-min">\u2212</button></div><button type="button" class="city-mission-max" id="mission-max" hidden>\u2691</button><nav class="city-controls" aria-label="${t.tabCity}"><p class="cc-section" data-cc="section">${lang==="es"?"Ciudad":"City"}</p><button data-city-tab="buildings">${CC_ICONS.build}<span data-cc="build">${t.bldBuild}</span></button><button data-city-ships>${CC_ICONS.ships}<span data-cc="ships">${lang==="es"?"Barcos":"Ships"}</span></button><button data-city-reports>${CC_ICONS.reports}<span data-cc="reports">${LT[lang].reports}</span></button><button data-city-msgs>${CC_ICONS.msgs}<span data-cc="msgs">${LT[lang].messages}</span></button><button data-city-menu>${CC_ICONS.menu}<span data-cc="menu">${lang==="es"?"Menú":"Menu"}</span></button><button data-map>${CC_ICONS.back}<span data-cc="back">${lang==="es"?"Volver al mapa":"Back to map"}</span></button></nav><div class="city-corner" role="toolbar" aria-label="${lang==="es"?"Controles de tiempo, vista y configuración":"Time, view and settings controls"}"><button data-corner="play"></button><button data-corner="speed"></button>${city2dEnabled(location.search) ? `<span class="cc-sep"></span><button data-corner="fit">&#x2922;</button><button data-corner="zoom-in">+</button><button data-corner="zoom-out">&minus;</button><button data-corner="motion" aria-pressed="true">&#x2726;</button><button data-corner="construct" aria-pressed="false">&#x2692;</button>` : ""}<span class="cc-sep"></span><button data-corner="fs">⛶</button><button data-corner="lang">${lang === "es" ? "EN" : "ES"}</button></div><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
   syncMissionEcho();
   d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
     try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
@@ -976,14 +996,16 @@ function open3d(s0) {
   const cc2=d.querySelector('[data-corner="construct"]');if(cc2)cc2.onclick=()=>cornerCmd("toggle-construct");
   d.querySelector('[data-corner="fs"]').onclick=()=>$("fs")?.click();
   d.querySelector('[data-corner="lang"]').onclick=()=>$("lang")?.click();
+  $("mission-min").onclick=()=>{localStorage.setItem("missionMin","1");syncMissionEcho();};
+  $("mission-max").onclick=()=>{localStorage.setItem("missionMin","0");syncMissionEcho();};
   d.querySelector("[data-close-panel]").onclick=closeCityWindow;
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
   const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);
-  const bar=d.querySelector(".city-corner");
-  if(bar){const bl=bar.offsetLeft,br=bl+bar.offsetWidth,bb=bar.offsetTop+bar.offsetHeight; // the bar must never cover the title/close row (Marco 25/10)
-    if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,innerHeight-70-Math.min(win.offsetHeight,80)));}
+  for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap")]){ // the bar and the mission chip never cover the title/close row (Marco 25/10)
+    if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight;
+      if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,innerHeight-70-Math.min(win.offsetHeight,80)));}}
   win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
   handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX-win.offsetLeft,e.clientY-win.offsetTop];handle.setPointerCapture(e.pointerId);};
   handle.onpointermove=e=>{if(drag)move(e.clientX-drag[0],e.clientY-drag[1]);};
