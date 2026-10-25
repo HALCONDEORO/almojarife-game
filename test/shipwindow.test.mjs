@@ -41,16 +41,12 @@ test('crew tab: a crewless prize ship shows the short-crew warning',()=>{
  const html=shipWindowHtml(g,s,'es','crew',hp);
  assert.ok(html.includes('Faltan marineros'),'short-crew warning');
 });
-test('data tab: hull, upkeep, value, sell disabled on the last ship and on a full hold',()=>{
+test('data tab: hull, upkeep and value render; no sell button (sales only at the town auction)',()=>{
  const{g,s}=mk();
  const one=shipWindowHtml(g,s,'es','data',hp); // one ship + full hold: both guards apply
  assert.ok(one.includes('Casco'),'hull line');
  assert.ok(one.includes('Mantenimiento'),'upkeep');
- const sellBtns=[...one.matchAll(/data-sellship="1"([^>]*)>/g)];
- assert.ok(sellBtns.length&&sellBtns[0][1].includes('disabled'),'sell disabled');
- const g2=newGame(world,'cadiz',{cash:100000});g2.ships.push({...g2.ships[0],id:2,cargo:{},basis:{}});
- const two=shipWindowHtml(g2,g2.ships[0],'es','data',hp);
- assert.ok(![...two.matchAll(/data-sellship="1"([^>]*)>/g)][0][1].includes('disabled'),'sell enabled with two ships and empty hold');
+ assert.ok(!one.includes('data-sellship'),'no sell button in the ship window: selling moved to the town auction');
 });
 test('data tab: voyage, route and prize badge render',()=>{
  const g=newGame(world,'cadiz',{cash:100000});const s=g.ships[0];
