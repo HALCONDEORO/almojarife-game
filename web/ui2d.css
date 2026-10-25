@@ -59,6 +59,18 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .route-table tbody tr:nth-child(even) td{background:#eee3c8}
 .route-table select{max-width:100%}
 .route-table input[type=number]{width:78px;box-sizing:border-box}
+/* P3 visual route strip: port chips with what the ship buys/sells at each, arrows between, loop home */
+.rpath-card{display:block}
+.rpath-chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.rpath-stop{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 10px;background:#eee3c8;border:1px solid #bba373;border-radius:10px;max-width:230px}
+.rpath-stop b{color:#405e4a;font-size:15px}
+.rpath-io{display:flex;flex-direction:column;gap:1px;font-size:13px;line-height:1.35}
+.rpath-io svg{vertical-align:-3px}
+.rpath-buy{color:#2e6b34}
+.rpath-sell{color:#8a5a17}
+.rpath-arrow{color:#8a6f3a;font-size:18px;line-height:1}
+.rpath-home{font-size:16px}
+.rpath-preview{border-style: dashed;opacity:.92}
 /* Route editor: full-width selects so port/good names read complete, sensible column minimums. */
 .route-editor select{width:100%}
 .route-editor td:nth-child(2){min-width:6em}
