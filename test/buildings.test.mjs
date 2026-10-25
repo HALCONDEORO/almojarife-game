@@ -121,7 +121,7 @@ test("guards: unowned plot, unknown type, over game", () => {
 import { workshopTick } from "../src/game/buildings.mjs";
 import { marketSlot } from "../src/game/game.mjs";
 import { price } from "../src/sim/market.mjs";
-import { FEE } from "../src/sim/trade.mjs";
+import { FEE, ceil2, floor2 } from "../src/sim/trade.mjs";
 
 function fundedWorkshop(level = 1) {
   const g = newGame(world, "cadiz", { cash: 50000 });
@@ -143,9 +143,9 @@ test("profitable workshop runs batches per its level's daily pattern at its port
   workshopTick(g, "cadiz");
   assert.equal(g.market.cadiz.wool.stock, wool - 4);
   assert.equal(g.market.cadiz.cloth.stock, cloth + 2);
-  // exact net: 2 cloth sold at the clamped top price, 4 wool bought at the clamped bottom, fees both sides
-  const clothP = Math.floor(270 * (1 - FEE)), woolP = Math.ceil(24 * (1 + FEE));
-  assert.equal(g.cash, cash + 2 * clothP - 4 * woolP);
+  // exact net: 2 cloth sold at the clamped top price, 4 wool bought at the clamped bottom, fees both sides (settled to cents)
+  const clothP = floor2(270 * (1 - FEE)), woolP = ceil2(24 * (1 + FEE));
+  assert.ok(Math.abs(g.cash - (cash + 2 * clothP - 4 * woolP)) < 1e-9, `net ${g.cash - cash} vs ${2 * clothP - 4 * woolP}`);
   assert.equal(buildingAt(g, "cadiz", PLOT.id).produced, 1);
   const g2 = fundedWorkshop(2);
   woolTown(g2);

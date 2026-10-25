@@ -14,6 +14,9 @@ export const SHIP_TYPES = {
 /** Hold space of a ship: its type capacity minus the weight of mounted weapons and sailors' gear. Never negative. */
 export const shipCapacity = (ship) => Math.max(0, SHIP_TYPES[ship.type].capacity - loadWeight(ship));
 export const FEE = 0.02; // market fee on every deal, both sides
+/** Unit prices settle to cents: the fee keeps its nominal size on cheap goods instead of vanishing into integer rounding. Buy rounds up, sell rounds down, so a one-port round trip still loses to the fee. The epsilon keeps binary float noise (5.1*100 = 510.000...06) from flipping a cent. */
+export const ceil2 = (x) => Math.ceil(x * 100 - 1e-9) / 100;
+export const floor2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
 
 export function makeShip(id, type, at) {
   if (!Object.hasOwn(SHIP_TYPES, type)) throw new Error("unknown ship type " + type);
@@ -59,7 +62,7 @@ export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   qty = Math.min(qty, e.stock, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   let n = 0, cost = 0;
   while (n < qty) {
-    const unit = Math.ceil(price(world, e, good) * (1 + fee));
+    const unit = ceil2(price(world, e, good) * (1 + fee));
     if (cost + unit > cash) break;
     cost += unit; e.stock -= 1; n++;
   }
@@ -77,7 +80,7 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   qty = Math.min(qty, ship.cargo[good] ?? 0);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
-  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += Math.floor(price(world, e, good) * (1 - fee)); }
+  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += floor2(price(world, e, good) * (1 - fee)); }
   const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
   const spent = Math.round(paid * qty / had); // share of the cost that leaves with the goods
   ship.cargo[good] -= qty;
@@ -93,18 +96,18 @@ export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
   const lim = Math.min(qty, e.stock, room);
   const sim = { ...e }; let n = 0, cost = 0;
   while (n < lim) {
-    const unit = Math.ceil(price(world, sim, good) * (1 + fee));
+    const unit = ceil2(price(world, sim, good) * (1 + fee));
     if (cost + unit > cash) break;
     cost += unit; sim.stock -= 1; n++;
   }
-  return { qty: n, cost, avg: n ? Math.round(cost / n) : 0, next: price(world, sim, good), limit: n < qty ? (e.stock < qty && n === e.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
+  return { qty: n, cost, avg: n ? Math.round(cost / n * 100) / 100 : 0, next: price(world, sim, good), limit: n < qty ? (e.stock < qty && n === e.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
 }
 /** What a sell of qty would do, without changing anything. Same rules as sell(). */
 export function previewSell(world, market, ship, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
-  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += Math.floor(price(world, sim, good) * (1 - fee)); }
+  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += floor2(price(world, sim, good) * (1 - fee)); }
   const spent = Math.round((ship.basis?.[good] ?? 0) * n / have);
-  return { qty: n, revenue, avg: Math.round(revenue / n), profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
+  return { qty: n, revenue, avg: Math.round(revenue / n * 100) / 100, profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }
