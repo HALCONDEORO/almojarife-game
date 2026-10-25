@@ -298,7 +298,7 @@ test("bldOfferCard: a seasonal primary labels the season; house/warehouse/dock r
 
 test("bldOfferCard: English strings, escaping, and decimals stay with the caller's fmt", async () => {
   const { bldOfferCard, bldOfferGroup } = await import("../src/view/buildingsview.mjs");
-  const t = { bldTypes: { ranch: 'Rancho "viejo"' }, goods: { meat: "carne", leather: "cuero", kid_meat: "cordero", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const t = { bldTypes: { ranch: 'Rancho "viejo"' }, goods: { meat: "carne", leather: "cuero", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
   const o = { type: "ranch", ok: true, level: 1, cost: 1234.5, materials: 1000.5, fee: 250, days: 4, upkeep: 2, affordable: true, imported: { timber: 3 } };
   const html = bldOfferCard(t, o, "en", (n) => String(n), (n) => String(n), () => "<svg/>");
   assert.match(html, /≈1\/day on average/); // 0.5 x 2 meat

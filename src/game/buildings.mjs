@@ -309,7 +309,7 @@ export const PRODUCERS = Object.freeze({
   saltworks: Object.freeze({ output: "salt", primary: true, yield: 2, pattern: WORKSHOP_BATCH_PATTERN }),
   esparto_field: Object.freeze({ output: "esparto", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
   // byproducts: extra goods the same building yields per batch (no inputs, same stock cap, same staffing).
-  ranch: Object.freeze({ output: "meat", primary: true, yield: 2, byproducts: Object.freeze({ leather: 1, kid_meat: 1 }), pattern: WORKSHOP_BATCH_PATTERN }),
+  ranch: Object.freeze({ output: "meat", primary: true, yield: 2, byproducts: Object.freeze({ leather: 1 }), pattern: WORKSHOP_BATCH_PATTERN }),
   fishery: Object.freeze({ output: "fish", primary: true, yield: 3, pattern: WORKSHOP_BATCH_PATTERN }),
   ironworks: Object.freeze({ recipe: "forge", output: "ironware", primary: false, pattern: WORKSHOP_BATCH_PATTERN }),
 });

@@ -2,7 +2,7 @@
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
 import { campaignShapeOk, newCampaign } from "./campaigns.mjs";
 import { fillMissingMarketRows } from "../sim/market.mjs";
-import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
+import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
 export const MAX_COMPANY = 30;
@@ -23,7 +23,7 @@ export function migrate(save) {
 // Ids retired from the catalogue and what they became. Saves written before the retirement keep loading:
 // market rows are renamed (or dropped when a row for the new id exists), every other count (cargo, warehouses,
 // cost basis) is added to the new id, and building types and stray id strings are renamed.
-export const RETIRED_GOODS = Object.freeze({ dried_fish: "fish" });
+export const RETIRED_GOODS = Object.freeze({ dried_fish: "fish", kid_meat: "meat" }); // kid_meat retired: the good leaves the catalogue; stock, cost basis and route/order ids become common meat, no cash changes hands
 export const RETIRED_BUILDINGS = Object.freeze({ smokehouse: "fishery" });
 export function migrateRetired(g) {
   const addInto = (a, b) => (typeof a === "number" && typeof b === "number" ? a + b : a && b && typeof a === "object" && typeof b === "object" ? Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, addInto(a[k], b[k])])) : a ?? b);
@@ -56,7 +56,7 @@ export function deserialize(save, world) {
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
   if (g.pottery === true) g.world = withPottery(g.world);
   if (g.legumes === true) g.world = withLegumes(g.world);
-  if (g.kidMeat === true) g.world = withKidMeat(g.world); // a save made with the optional goods flag keeps its goods
+  delete g.kidMeat; // the retired optional-goods flag rides along in old saves; drop it
   migrateRetired(g);
   fillMissingMarketRows(g.world, g.market); // goods or ports added since the save was written get a fresh market row, so old saves keep loading
   return { g, company: cleanCompany(s.company) };

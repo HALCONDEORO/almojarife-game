@@ -7,7 +7,7 @@ No private data: the bundled fixture is a synthetic game save; art is never bund
 1. A **worktree of the commit under test**: `git worktree add /tmp/<wt> <SHA>`.
 2. **Coastline data**: copy `data/ne_50m_land.geojson` (untracked, fetched by `tools/fetch_data.sh`) into the worktree `data/` — the web build will not serve without it.
 3. **Programs on PATH**: `python3`, `google-chrome` (headless), and the python package `websocket-client`.
-4. **The save fixture** `fixtures/all-discovered-save.json` is bundled and synthetic. To regenerate it you first need a *base save created by hand in the UI*: start a new game with the optional goods (pottery/legumes/kidMeat) enabled, then export `almojarife.save.v1` from localStorage. With that file: `python3 fixtures/make-all-discovered-save.py <base-save.json> <repo>/src/game/charts.mjs <out.json>`.
+4. **The save fixture** `fixtures/all-discovered-save.json` is bundled and synthetic. To regenerate it you first need a *base save created by hand in the UI*: start a new game with the optional goods (pottery/legumes) enabled, then export `almojarife.save.v1` from localStorage. With that file: `python3 fixtures/make-all-discovered-save.py <base-save.json> <repo>/src/game/charts.mjs <out.json>`.
 5. The expected port count is **derived at runtime** from `src/game/charts.mjs` in the worktree under test; if the port catalog changes, the audits follow it (the bundled fixture still marks the ports it was generated from — regenerate it when charts change).
 
 ## Security note: loopback CDP

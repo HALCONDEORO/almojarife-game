@@ -33,3 +33,16 @@ test("a save that has both ids keeps the existing fish row and adds the counts",
   assert.deepEqual(g.market.cadiz, { fish: { stock: 5 } });
   assert.deepEqual(g.ships[0].cargo, { fish: 5 });
 });
+
+test("an old save with kid meat loads it as common meat and drops the flag", () => {
+  const g = newGame(world, "cadiz", { cash: 20000 });
+  const s = g.ships[0]; s.cargo.kid_meat = 4; s.basis = { ...(s.basis ?? {}), kid_meat: 160 };
+  for (const c of Object.values(g.market)) c.kid_meat = { ...c.meat };
+  const save = serialize(g, "T"); save.state.kidMeat = true; // saves written while the good existed carry the flag
+  const r = deserialize(save, world).g;
+  assert.equal(r.ships[0].cargo.meat, 4); assert.equal(r.ships[0].cargo.kid_meat, undefined);
+  assert.equal(r.ships[0].basis.meat, 160);
+  assert.equal(r.kidMeat, undefined);
+  assert.equal(JSON.stringify(r).includes("kid_meat"), false);
+  for (const c of world.cities) { assert.ok(r.market[c.id].meat, c.id); assert.equal(r.market[c.id].kid_meat, undefined); }
+});
