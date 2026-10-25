@@ -40,7 +40,7 @@ import { repOf, respectOf } from "../src/game/rank.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding, portLayout } from "../src/view3d/port3d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
-import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel } from "../src/view/buildingsview.mjs";
+import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard } from "../src/view/buildingsview.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
 import { quoteWalls, startWalls, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX_LEVEL, WALL_UPKEEP, WALL_BUILD_DAYS } from "../src/game/walls.mjs";
@@ -448,18 +448,6 @@ function render() {
       else if (bldAction.kind === "upgrade") { const o = upgradeOffer(g, s.at, bldAction.plotId); if (o?.ok) { card = `<b>${t.bldTypes[o.type]}</b> ${bldAction.plotId}<br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>` + impNote(t, o); canPay = o.affordable; } }
       return card ? `<div class="card">${card}<br><button data-bldconf="1" ${canPay ? "" : "disabled"}>${t.bldConfirm}</button> <button data-bldcancel="1">${t.bldCancel}</button>${canPay ? "" : ` <small>${t.capCash}</small>`}${bldError ? ` <small style="color:#a11">${bldError}</small>` : ""}</div>` : "";
     };
-    const bldFx = (r) => { // one line: what this building does or when it is ready
-      if (r.state === "construction") return `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`;
-      if (r.halted) return r.fire ? t.bldState.fire : t.bldState.halted; // no running stats while the workers are gone (or the fire burns)
-      if (r.state === "active") {
-        if (r.type === "workshop") return t.bldFxW.replace("{r}", r.rate).replace("{m}", r.margin === null ? "—" : fmt(r.margin)).replace("{n}", fmt(r.produced));
-        if (r.rate !== undefined) return t.bldFxP.replace("{r}", r.rate).replace("{n}", fmt(r.produced)); // primary producers: rate and units, no margin
-        if (r.type === "house") return t.bldFxH.replace("{n}", fmt(r.popBonus));
-        if (r.type === "warehouse") return t.bldFxS.replace("{n}", fmt(r.capBonus));
-        if (r.type === "dock") return t.bldFxD.replace("{n}", r.tollCut);
-      }
-      return "-";
-    };
     const ui2dMark = h.length; // start of the tab content (ui2d wraps it below)
     if (tab === "market") {
       const market2d=ui2dEnabled(location.search);
@@ -614,7 +602,7 @@ function render() {
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {
-        h += `<h3>${buildingLabel(t, r)} <small>${r.plotId}</small></h3><p>${bldFx(r)}${r.upkeep ? ` · ${t.bldUpkeep.replace("{u}", r.upkeep)}` : ""}${r.jobs ? ` · ${t.bldJobsW.replace("{j}", r.jobs)}` : ""}${r.wages ? ` · ${t.bldWagesW.replace("{w}", r.wages)}` : ""}</p>`;
+        h += bldSummaryCard(t, r, lang, fmt, goodIcon); // P3 summary card: name, state and only the stats that apply
         if (r.halted && r.fire) h += `<p><b style="color:#a11">${t.bldFireNote}</b></p>`; // a burnt building reopens when the fire is out, not by button
         else if (r.halted) h += `<p><b style="color:#a11">${t.bldHaltedNote}</b></p><p><button data-bldact="restart|${r.plotId}" ${g.cash > 0 ? "" : "disabled"}>${t.bldRestart}</button></p>`;
         h += bldCard();

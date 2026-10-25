@@ -167,3 +167,56 @@ test("the buildings tab carries the employment strings in both languages", () =>
   assert.equal((src.match(/bldJobsShort:/g) || []).length, 2);
   assert.ok(src.includes("eff.staffing < 1"), "short-staffing warning rendered");
 });
+
+test("bldSummaryCard: an active producer shows rate, margin (red when negative), produced, upkeep and workers", async () => {
+  const { bldSummaryCard, BW } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { workshop: "Taller" }, bldState: { plot: "solar", construction: "en obras", active: "activo", halted: "parado", fire: "incendio" }, bldReady: "listo el día {d} ({p}%)" };
+  const g = newGame(world, "cadiz", { cash: 30000 });
+  g.buildings = { cadiz: { "cadiz:7": { type: "workshop", level: 1, state: "active", produced: 12 } } };
+  const r = buildingsRows(g, "cadiz")[0];
+  const html = bldSummaryCard(t, r, "es", (n) => String(n));
+  assert.ok(html.includes("bwcard"), "card wrapper");
+  assert.ok(html.includes("Taller"), "building name");
+  assert.ok(html.includes("activo"), "state line");
+  assert.ok(html.includes('aria-label="' + BW.es.rate.replace("{r}", r.rate)), "rate cell with full label");
+  assert.ok(html.includes(BW.es.margin.replace("{m}", String(r.margin))), "margin label");
+  if (r.margin < 0) assert.ok(html.includes("bwc-bad"), "negative margin flagged red");
+  assert.ok(html.includes(BW.es.upkeep.replace("{u}", String(r.upkeep))), "upkeep label");
+  assert.ok(html.includes(BW.es.jobs.replace("{j}", r.jobs)), "jobs label");
+  assert.ok(!html.includes("undefined") && !html.includes("NaN"), "no raw holes");
+});
+
+test("bldSummaryCard: a construction row shows works state with percent and no running stats", async () => {
+  const { bldSummaryCard } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { warehouse: "Almacén" }, bldState: { plot: "solar", construction: "en obras", active: "activo", halted: "parado", fire: "incendio" }, bldReady: "listo el día {d} ({p}%)" };
+  const g = newGame(world, "cadiz", { cash: 30000 });
+  const started = startConstruction(buyPlot(g, "cadiz", PLOT).ok ? g : g, "cadiz", PLOT.id, "warehouse");
+  assert.equal(started.ok, true);
+  const r = buildingsRows(g, "cadiz").find((x) => x.plotId === PLOT.id);
+  const html = bldSummaryCard(t, r, "es", (n) => String(n));
+  assert.ok(html.includes("en obras"), "works state");
+  assert.ok(/listo el día \d+ \(\d+%\)/.test(html), "ready day and percent");
+  assert.ok(!/class="bwc-stat[ "]/.test(html), "no running stats while under construction");
+});
+
+test("bldSummaryCard: halted and house/warehouse/dock rows render their own stats, in English too", async () => {
+  const { bldSummaryCard, BW } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { house: "Casa", warehouse: "Almacén", dock: "Muelle" }, bldState: { plot: "solar", construction: "en obras", active: "activo", halted: "parado", fire: "incendio" }, bldReady: "listo el día {d} ({p}%)" };
+  const tEn = { bldTypes: { house: "House", warehouse: "Warehouse", dock: "Dock" }, bldState: { plot: "plot", construction: "under construction", active: "active", halted: "halted", fire: "fire" }, bldReady: "ready on day {d} ({p}%)" };
+  const g = newGame(world, "cadiz", { cash: 30000 });
+  g.buildings = { cadiz: {
+    "cadiz:1": { type: "house", level: 2, state: "active" },
+    "cadiz:2": { type: "warehouse", level: 1, state: "active", halted: "cash" },
+    "cadiz:3": { type: "dock", level: 1, state: "active" },
+  } };
+  const rows = buildingsRows(g, "cadiz");
+  const house = bldSummaryCard(t, rows.find((x) => x.type === "house"), "es", (n) => String(n));
+  assert.ok(house.includes(BW.es.pop.replace("{n}", "100")), "house shows its inhabitants");
+  const wh = bldSummaryCard(t, rows.find((x) => x.type === "warehouse"), "es", (n) => String(n));
+  assert.ok(wh.includes("parado"), "halted state visible");
+  assert.ok(!/class="bwc-stat[ "]/.test(wh), "a halted building shows no running stats");
+  const dock = bldSummaryCard(tEn, rows.find((x) => x.type === "dock"), "en", (n) => String(n));
+  assert.ok(dock.includes("Dock"), "English name");
+  assert.ok(dock.includes(BW.en.toll.replace("{n}", rows.find((x) => x.type === "dock").tollCut)), "dock toll cut, English label");
+  assert.ok(!dock.includes("undefined") && !dock.includes("NaN"));
+});
