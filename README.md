@@ -32,7 +32,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Screenshots
 
-_Captured from the playable build (PR #378 branch, 24 Oct 2026; city view refreshed 25 Oct 2026 from the published build); refresh when the UI changes so they never show unmerged work._
+_Captured on 25 Oct 2026 from the playable build at `main` 93f6386 (English, 1280x900, a fresh game on Easy from day 0); refresh when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
