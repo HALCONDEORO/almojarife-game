@@ -637,7 +637,7 @@ function render() {
         if (up) h += up.ok ? `<p><button data-bldact="upgrade|${r.plotId}|${r.type}" ${up.affordable ? "" : "disabled"}>${t.bldUpgrade.replace("{l}", up.level).replace("{p}", fmt(up.cost))}</button></p>` : `<p><small>${up.reason === "max level" ? t.bldMax : whyText(t, up.reason, lang)}</small></p>`;
         if (r.state === "plot") { // P3 build menu: one card per type - drawing, investment, running costs, production; grouped like the classic Hansa build menu
           const offers = buildOffers(g, s.at, r.plotId).filter((o) => o.ok || OFFER_LOCKED_SHOW.has(o.reason)), bo2 = BO[lang] ?? BO.es; // only types this city's resources allow; refused-but-unlockable ones stay visible, disabled, with their reason
-          for (const grp of ["own", "primary", "workshop", "civic"]) {
+          for (const grp of ["primary", "workshop", "own", "civic"]) { // Marco 25/10: fields and factories first, civic buildings last so they stay out of the way
             const list = offers.filter((o) => bldOfferGroup(o.type) === grp);
             if (list.length) h += `<p class="bldoffer-group"><b>${bo2.groups[grp]}</b></p><div class="bldoffers">` + list.map((o) => o.ok
               ? `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon, bldOfferArt(r.plotId, o.type, o.level))}</button>`
