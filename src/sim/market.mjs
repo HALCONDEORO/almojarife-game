@@ -75,7 +75,7 @@ export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABL
     const beforeSupply = e.stock;
     if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * (e.townShare ?? 1) * seasonMul(good, day))); // warehouses are finite; townShare: share of the town's industry still in town hands (docs/design/town-industry-and-auctions.md piece 2), absent = 1
     e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
-    if (commerce && e.stock > beforeSupply) recordLocalSupply(city, good, e.stock - beforeSupply, world.goods[good].base);
+    if (commerce && e.stock > beforeSupply) recordLocalSupply(city, good, e.stock - beforeSupply, world.goods[good]?.base); // a partial world (fixture) just skips the good
     const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
     const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
     const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
@@ -85,9 +85,10 @@ export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABL
       const mul=DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1)*scarcity;
       desired[good]=Object.fromEntries(Object.entries(by).map(([c,n])=>[c,n*mul]));
     }
-    const shelfBefore = e.stock, retailPrice = commerce && actual[good] > 0 ? price(world, e, good) : 0; // households face the day's price after production, before their own consumption depletes the shelf
+    const shelfBefore = e.stock, priced = commerce && actual[good] > 0 && world.goods[good]; // a partial world (fixture) records no retail for goods it does not know
+    const retailPrice = priced ? price(world, e, good) : 0; // households face the day's price after production, before their own consumption depletes the shelf
     e.stock = Math.max(0, e.stock - used);
-    if (commerce && actual[good] > 0) retailValues[good] = recordRetailSale(city, good, actual[good], retailPrice, shelfBefore);
+    if (priced) retailValues[good] = recordRetailSale(city, good, actual[good], retailPrice, shelfBefore);
   }
   if(needsLedger)recordLegacyConsumption(city,day,actual,desired,g=>{const e=city[g];return DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1);});
   if (commerce) { // attribute the day's ACTUAL retail spend to the classes, proportional to their desire (estimate, like needsLedger)
