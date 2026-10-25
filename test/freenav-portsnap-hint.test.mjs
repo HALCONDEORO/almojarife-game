@@ -14,7 +14,7 @@ test('free-nav contextmenu snaps a near-port click to the port, zoom-independent
 });
 
 test('anchored ships get a holding-position hint in both locales', () => {
-  assert.match(src, /s\.voyage \? \(s\.voyage\.anchored \? t\.hintAnchored : t\.hintSea\) :/, 'the bottom hint branches on anchored');
+  assert.match(src, /s\.voyage \? \(\(s\.voyage\.anchored \? t\.hintAnchored : t\.hintSea\) \+ \(objLine && !objMin/, 'the bottom hint branches on anchored and stacks the mission line under sail (Marco 25/10)');
   assert.match(src, /hintAnchored: "Tu barco está al pairo\. Clic derecho para darle un nuevo rumbo\."/, 'es string');
   assert.match(src, /hintAnchored: "Your ship is holding position\. Right-click to set a new course\."/, 'en string');
 });
