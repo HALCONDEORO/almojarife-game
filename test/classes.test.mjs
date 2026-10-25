@@ -65,3 +65,9 @@ test("tickMarket: daily demand below 0.5 still consumes over time, and the long 
     assert.ok(Math.abs(total - d * 1000) <= 1, `d=${d} total=${total}`);
   }
 });
+
+test("city rows: percentages carry one decimal and sum cleanly (12000 -> 66.5/26.5/7)", () => {
+  const rows = cityRows(12000, ["grain"]);
+  assert.deepEqual(rows.map((r) => r.pct), [66.5, 26.5, 7]);
+  assert.equal(rows.reduce((a, r) => a + r.pct, 0), 100);
+});
