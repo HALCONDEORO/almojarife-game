@@ -56,6 +56,15 @@ test('panel labels stay live from the same values as the header', () => {
   ]) assert.ok(js.includes(h), h);
 });
 
+test('open window keeps clear of the corner bar as well as the mission chip', () => {
+  const i = js.indexOf('The open window keeps clear of the mission chip and the corner bar');
+  assert.ok(i > 0, 'unified keep-clear comment');
+  const body = js.slice(i, i + 900);
+  assert.ok(body.includes('for (const el of [chip, cbar])'), 'chip and bar both considered');
+  assert.ok(body.includes('need = Math.max(need, cr.bottom - vt + 6)'), 'deepest blocker wins');
+  assert.ok(body.includes('win.style.top = Math.min(need,'), 'pushed below the deepest blocker');
+});
+
 test('city header data centred and enriched; top bar buttons hidden only in city view', () => {
   assert.match(css, /\.city-header\{[^}]*justify-content:center/, 'centred');
   assert.match(css, /body\.in-city-3d #ctl button,body\.in-city-3d #hdr-right\{display:none\}/, 'header buttons hidden in city');
