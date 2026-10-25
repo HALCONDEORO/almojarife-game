@@ -2,6 +2,7 @@
 // A route is: buy `out` at port A, sail to port B, sell it, optionally buy `back` there, sail home, repeat.
 // Pure game logic, no DOM. The ship uses the normal buy/sell/sail rules, so prices, fees, hold space and cash all apply.
 import { post } from "./ledger.mjs";
+import { tutorialNote } from "./tutorial.mjs"; // setting your first route by hand is a tutorial step
 import { cargoUsed, SHIP_TYPES, shipCapacity, FEE } from "../sim/trade.mjs";
 import { feeMul } from "./reputation.mjs";
 import { price } from "../sim/market.mjs";
@@ -13,6 +14,7 @@ export function setRoute(g, ship, a, b, out, back = "") {
   if (!out || !has(a, out) || !has(b, out)) return { ok: false, reason: "bad good" };
   if (back && (back === out || !has(a, back) || !has(b, back))) return { ok: false, reason: "bad good" };
   ship.route = { a, b, out, back: back || null, legs: 0, stuck: 0, since: g.day };
+  tutorialNote(g, "route");
   return { ok: true, route: ship.route };
 }
 export function clearRoute(ship) { const had = !!ship.route; delete ship.route; return had; }
@@ -75,6 +77,7 @@ export function setRouteAdv(g, ship, stops, opts = {}) {
     norm.push({ city: st.city, buy, sell });
   }
   ship.route = { v: 2, stops: norm, idx: 0, minCash, legs: 0, stuck: 0, since: g.day };
+  tutorialNote(g, "route"); // an advanced circuit is a standing route too
   return { ok: true, route: ship.route };
 }
 
