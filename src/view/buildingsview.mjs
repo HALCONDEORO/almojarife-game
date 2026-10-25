@@ -114,8 +114,13 @@ export function plotViewState(plotsCache, world, g, cityId, selPlot) {
 
 // Localised "why not" for a failed build/upgrade offer; falls back to the raw reason
 // so a missing locale key can never throw inside the confirm card.
-export function whyText(t, reason) {
-  return t.bldWhy?.[reason] ?? reason;
+/** Reasons the shared T table does not carry, own strings so the sweep lines stay untouched. */
+export const WHY = {
+  es: { "one per city": "esta ciudad ya tiene uno", "city limit": "la ciudad no admite más" },
+  en: { "one per city": "this city already has one", "city limit": "the city has room for no more" },
+};
+export function whyText(t, reason, lang) {
+  return t.bldWhy?.[reason] ?? WHY[lang]?.[reason] ?? reason;
 }
 
 /* P3 summary card for the owned-building window: name + state + only the stats that
