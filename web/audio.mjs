@@ -60,9 +60,13 @@ export function syncAmbience(name) {
   if (name === "port") gullsStart(); else gullsStop();
 }
 
-/** Keep the music rotation going while sound is on; each track hands over to the next. */
+/** While the title menu is up the in-game rotation stays silent (the title has its own music). */
+let menuMode = false;
+export function setMenuMode(on) { menuMode = !!on; if (menuMode) { try { music?.pause(); } catch {} music = null; } }
+
+/** Keep the music rotation going while sound is on and no menu is up; each track hands over to the next. */
 export function syncMusic() {
-  if (!soundOn()) { try { music?.pause(); } catch {} music = null; return; }
+  if (!soundOn() || menuMode) { try { music?.pause(); } catch {} music = null; return; }
   if (music) return;
   try {
     const el = new Audio(MUSIC[track % MUSIC.length]); track++;
