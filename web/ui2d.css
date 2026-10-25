@@ -62,7 +62,8 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .route-table input[type=number]{width:78px;box-sizing:border-box}
 /* Route editor: full-width selects so port/good names read complete, sensible column minimums. */
 .route-editor select{width:100%}
-.route-editor td:nth-child(2){min-width:6.5em}
-.route-editor td:nth-child(3),.route-editor td:nth-child(5){min-width:5.5em}
-.route-editor input[type=number]{width:54px;padding:6px 4px}
+.route-editor td:nth-child(2){min-width:6em}
+.route-editor td:nth-child(3),.route-editor td:nth-child(5){min-width:5em}
+.route-editor input[type=number]{width:50px;padding:6px 4px}
+.route-editor .rt-x{min-width:32px;padding:4px 6px}
 .route-editor td:last-child{white-space:nowrap}
