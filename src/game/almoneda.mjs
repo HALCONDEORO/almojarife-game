@@ -1,8 +1,10 @@
-// La almoneda: the town auction (docs/design/town-industry-and-auctions.md piece 3).
-// One general mechanism, one lot per city and auction day for now: a town-industry
+// La almoneda: the town auction (docs/design/town-industry-and-auctions.md pieces 3-4).
+// One general mechanism, several lot kinds per city and auction day: a town-industry
 // establishment (piece 1) that changes hands under piece-2 rules - production and hands
-// move with it, never duplicate. Houses, ships, permits and goods lots plug into the same
-// table later (own lot kinds with their own valuations).
+// move with it, never duplicate - plus generated lots (piece 4): used ships and town
+// houses, each on its own seeded cadence. Permits and goods lots plug into the same
+// table later (own lot kinds with their own valuations). Lot ids follow the establishment
+// shape `city:kind:n` so a won house keys g.buildings exactly like a bought works.
 //
 // Everyone plays by the same rules: the player and the named neighbours bid a single
 // maximum; the highest bid wins and pays one coin above the second-highest (never above
@@ -89,7 +91,7 @@ export function shipLotOfDay(g, cityId) {
   const type = types[Math.floor(rnd() * types.length)];
   const hull = SHIP_HULL_RANGE[0] + Math.floor(rnd() * (SHIP_HULL_RANGE[1] - SHIP_HULL_RANGE[0] + 1));
   const value = shipLotValue(type, hull);
-  return { kind: "ship", id: `ship:${cityId}:${g.day}`, ship: { type, hull }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "ship"),
+  return { kind: "ship", id: `${cityId}:ship:${g.day}`, ship: { type, hull }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "ship"), // id shaped city:kind:n like the establishment roster
     name: { es: `${type} de segunda mano (casco ${hull}%)`, en: `used ${type} (hull ${hull}%)` } };
 }
 
@@ -102,7 +104,7 @@ export function houseLotOfDay(g, cityId) {
   const rnd = seeded(`houselot:${cityId}:${g.day}`);
   const level = 1 + Math.floor(rnd() * 3);
   const value = establishmentValue(g.world, { type: "house", level });
-  return { kind: "house", id: `house:${cityId}:${g.day}`, house: { level }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "house"),
+  return { kind: "house", id: `${cityId}:house:${g.day}`, house: { level }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "house"), // a won house lands in g.buildings under this key: the buildings-tab plotId guards expect city:-prefixed keys (as bought works have)
     name: { es: `casa de vecinos (nivel ${level})`, en: `town house (level ${level})` } };
 }
 

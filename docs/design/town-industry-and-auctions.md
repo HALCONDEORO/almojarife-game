@@ -147,8 +147,8 @@ sells about one works per week while it lasts; a ship a month and a house a fort
 variety without flooding the table, and the cadence cap lets the council-chest invariant stay
 a hard bound (tested) instead of a hope.
 
-**Valuation (balance choice).** A used ship is valued at `shipLotValue = floor(type.price x
-hull/100 x 0.95)` with hull 55-90%: always below the new-ship price (a worn hull is never
+**Valuation (balance choice).** A used ship is valued at `shipLotValue = max(1, round(type.price x
+hull/100 x 0.95))` with hull 55-90%: always below the new-ship price (a worn hull is never
 worth more than a fresh build), always above scrap. A house reuses `establishmentValue` for
 `{type:"house", level 1-3}` so its price tracks the same works-valuation curve as everything
 else the almoneda sells. Reserves stay `0.6 x value`; bidder maxima stay the roster's

@@ -90,7 +90,10 @@ describe("generated lot valuation", () => {
     assert.ok(lots.some((l) => l.kind === "ship"));
     const est = lotOfDay(g, "cadiz");
     if (est) assert.ok(lots.some((l) => l.kind === "establishment" && l.id === est.id));
-    for (const l of lots) assert.ok(l.id && l.value > 0 && l.reserve <= l.value);
+    for (const l of lots) {
+      assert.ok(l.id && l.value > 0 && l.reserve <= l.value);
+      assert.ok(l.id.startsWith("cadiz:"), `${l.id} must key like the establishment roster: the buildings-tab guards expect city:-prefixed keys`); // a won house lands in g.buildings under this id
+    }
   });
 });
 
