@@ -39,6 +39,7 @@ export const TB = {
   "restoreEmpty": "No hay copia previa disponible.",
   "restoreHint": "Copia del día {day} · {house}",
   "pageNote": "Un libro bien guardado es un viaje que continúa.",
+  "credits": "Créditos",
   "language": "Idioma"
  },
  "en": {
@@ -75,6 +76,7 @@ export const TB = {
   "restoreEmpty": "No previous copy is available.",
   "restoreHint": "Copy from day {day} · {house}",
   "pageNote": "A well-kept ledger is a voyage that continues.",
+  "credits": "Credits",
   "language": "Language"
  }
 };
@@ -142,7 +144,8 @@ export function titleBookHtml({ lang, saved, backup, dayLabel, coinsLabel }) {
   const first = saved ? [cont, start] : [start, cont];
   const menu = first.map((h) => h.replace(/@[SC]/, idx())).join("") + `<div class="menu-divider">${esc(x.archive)}</div>` +
     entry("t-imp", idx(), x.import, null, " utility") + entry("t-exp", idx(), x.export, { dis: !saved }, " utility") +
-    entry("t-rest", idx(), x.restore, { text: backup ? x.restoreHint.replace("{day}", backup.day).replace("{house}", backup.house) : x.restoreEmpty, dis: !backup }, " utility");
+    entry("t-rest", idx(), x.restore, { text: backup ? x.restoreHint.replace("{day}", backup.day).replace("{house}", backup.house) : x.restoreEmpty, dis: !backup }, " utility") +
+    entry("t-cred", idx(), x.credits, null, " utility");
   const card = saved
     ? `<div class="save-card" id="save-card"><div class="save-heading"><span class="small-caps">${esc(x.lastSave)}</span><svg aria-hidden="true"><use href="#merchant-mark"/></svg></div><h3 class="house-name">${esc(saved.house)}</h3><div class="save-stats"><span>${esc(dayLabel)}</span><span>${esc(coinsLabel)}</span></div></div>`
     : `<div class="empty-save" id="empty-save"><svg aria-hidden="true"><use href="#merchant-mark"/></svg><div><p>${esc(x.emptyTitle)}</p><small>${esc(x.emptyDescription)}</small></div></div>`;
