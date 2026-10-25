@@ -124,6 +124,20 @@ test("unkept on a broke day; hysteresis resumes only with two days of cost in ha
   assert.ok(g.inbox.some((m) => m.txt?.es && m.txt?.en), "ES+EN watch messages");
 });
 
+test("hysteresis band: cash in [cost, 2*cost) does NOT resume the watch (mutation killer: < cost*2 must not degrade to < cost)", () => {
+  const g = game(); rich(g);
+  g.towers.cadiz = { count: 2, state: "active" };
+  const cost = TOWER_UPKEEP * 2; // one day of the whole watch
+  g.cash = 0; accrueTowers(g);
+  assert.equal(g.towers.cadiz.unkept, true);
+  g.cash = cost; accrueTowers(g); // exactly one day of cost in hand
+  assert.equal(g.towers.cadiz.unkept, true, "one full day of cost stays under the two-day bar");
+  g.cash = 2 * cost - 1; accrueTowers(g); // one coin short of the bar
+  assert.equal(g.towers.cadiz.unkept, true, "one coin short still keeps the watch down");
+  g.cash = 2 * cost; accrueTowers(g); // the bar itself
+  assert.equal(g.towers.cadiz.unkept, false, "the bar resumes the watch");
+});
+
 test("fire watch: kept towers cut the fire chance and length, nothing else", () => {
   const g = game(); rich(g);
   const baseChance = calamityChance(g, "cadiz", "incendio"), baseDays = calamityDays(g, "cadiz", "incendio");
