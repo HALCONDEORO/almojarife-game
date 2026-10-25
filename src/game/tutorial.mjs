@@ -5,22 +5,24 @@ export const TUT_STEPS = ["buy", "sell", "sail", "done"];
 /** Start the tutorial on a game. */
 export const initTutorial = (g) => { g.tut = { bought: false, sold: false, sailed: false }; return g.tut; };
 
-/** Record one successful player action: "buy", "sell" or "sail". No-op when the tutorial is off. */
+const live = (g) => { const t = g?.tut; return t !== null && typeof t === "object" && !Array.isArray(t) ? t : null; }; // a damaged save key (true, 5, "x", [], null) counts as tutorial off, never throws
+
+/** Record one successful player action: "buy", "sell" or "sail". No-op when the tutorial is off or its data is damaged. */
 export function tutorialNote(g, kind) {
-  const t = g.tut;
+  const t = live(g);
   if (!t) return false;
   if (kind === "buy") t.bought = true;
-  else if (kind === "sell" && t.bought) t.sold = true; // a sale only counts after the first purchase
-  else if (kind === "sail" && t.sold) t.sailed = true; // sailing only counts after the sale
+  else if (kind === "sell" && t.bought === true) t.sold = true; // a sale only counts after the first purchase
+  else if (kind === "sail" && t.sold === true) t.sailed = true; // sailing only counts after the sale
   else return false;
   return true;
 }
 
-/** Current step id: "buy", "sell", "sail" or "done". null when the tutorial is off. */
+/** Current step id: "buy", "sell", "sail" or "done". null when the tutorial is off or damaged. */
 export function tutorialStep(g) {
-  const t = g.tut;
+  const t = live(g);
   if (!t) return null;
-  return !t.bought ? "buy" : !t.sold ? "sell" : !t.sailed ? "sail" : "done";
+  return t.bought !== true ? "buy" : t.sold !== true ? "sell" : t.sailed !== true ? "sail" : "done";
 }
 
 export const TUT_TEXT = {
