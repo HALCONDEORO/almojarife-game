@@ -24,6 +24,13 @@ test("every tradeable good renders its Spanish name in shocks, with de-contracti
   assert.ok(shockText({ type: "poor_harvest", good: "ironware", region: "atlantico" }, "es").includes("de los herrajes"));
 });
 
+test("every tradeable good renders its English name in shocks", () => {
+  for (const g of Object.keys(world.goods)) {
+    const txt = shockText({ type: "new_demand", good: g, region: "mediterraneo" }, "en");
+    assert.ok(txt.includes(GOOD_EN[g]) && !txt.includes("_"), `shock shows raw id for ${g}: ${txt}`);
+  }
+});
+
 test("newsEs agreement: masculine plural goods conjugate as plural", () => {
   const t = newsEs(GOOD_ES.bricks, true, "Cádiz", 50);
   assert.ok(t.includes("los ladrillos están caros"), t);
