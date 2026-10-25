@@ -5,6 +5,7 @@
 import { seeded } from "../view/cityscene.mjs";
 import { post } from "./ledger.mjs";
 import { healthShield, cityHealth } from "./household.mjs";
+import { GOOD_EN } from "./news.mjs";
 
 /** The three regions. Every city of the world belongs to exactly one (a test checks this). */
 export const REGIONS = {
@@ -34,9 +35,9 @@ const GOOD_NAMES = { es: { grain: "el grano", wine: "el vino", olive_oil: "el ac
 const DE_GOOD = Object.fromEntries(Object.entries(GOOD_NAMES.es).map(([k, v]) => [k, v.replace(/^el /, "del ").replace(/^la /, "de la ").replace(/^los /, "de los ").replace(/^las /, "de las ")]));
 /** Plain text of a shock (start or end), ES/EN. */
 export function shockText(sh, lang, end = false) {
-  const es = lang === "es", reg = REGION_NAMES[lang]?.[sh.region] ?? sh.region, good = (es ? GOOD_NAMES.es[sh.good] : null) ?? sh.good;
-  if (sh.type === "poor_harvest") return es ? `Mala cosecha ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": la producción vuelve a la normalidad" : ": la producción cae durante unas semanas"}.` : `Poor ${sh.good} harvest in ${reg}${end ? ": production is back to normal" : ": output falls for a few weeks"}.`;
-  if (sh.type === "new_demand") return es ? `Nueva demanda ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": el mercado se calma" : ": los precios tiran hacia arriba durante unas semanas"}.` : `New demand for ${sh.good} in ${reg}${end ? ": the market settles" : ": prices pull up for a few weeks"}.`;
+  const es = lang === "es", reg = REGION_NAMES[lang]?.[sh.region] ?? sh.region, good = (es ? GOOD_NAMES.es[sh.good] : GOOD_EN[sh.good]) ?? sh.good;
+  if (sh.type === "poor_harvest") return es ? `Mala cosecha ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": la producción vuelve a la normalidad" : ": la producción cae durante unas semanas"}.` : `Poor ${good} harvest in ${reg}${end ? ": production is back to normal" : ": output falls for a few weeks"}.`;
+  if (sh.type === "new_demand") return es ? `Nueva demanda ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": el mercado se calma" : ": los precios tiran hacia arriba durante unas semanas"}.` : `New demand for ${good} in ${reg}${end ? ": the market settles" : ": prices pull up for a few weeks"}.`;
   return es ? `${sh.city} cierra su puerto unos días por un susto de peste${end ? "; ya se puede comerciar otra vez" : ""}.` : `${sh.city} closes its port for a few days over a plague scare${end ? "; trading is open again" : ""}.`;
 }
 
