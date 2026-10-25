@@ -226,3 +226,27 @@ test("bldSummaryCard: halted and house/warehouse/dock rows render their own stat
   assert.ok(dock.includes('class="bwc-lab">' + BWLE.en.toll + "<"), "visible English toll caption");
   assert.ok(!dock.includes("undefined") && !dock.includes("NaN"));
 });
+
+test("bldChipInner: icon + name + state, red when halted, percent when under construction", async () => {
+  const { bldChipInner } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { workshop: "Taller", warehouse: "Almacén", dock: "Muelle" }, bldState: { plot: "solar", construction: "en obras", active: "activo", halted: "parado", fire: "incendio" }, bldReady: "listo el día {d} ({p}%)" };
+  const tEn = { bldTypes: { dock: "Dock" }, bldState: { plot: "plot", construction: "under construction", active: "active", halted: "halted", fire: "fire" }, bldReady: "ready on day {d} ({p}%)" };
+  const g = newGame(world, "cadiz", { cash: 30000 });
+  g.buildings = { cadiz: {
+    "cadiz:1": { type: "workshop", level: 1, state: "active", produced: 5 },
+    "cadiz:2": { type: "warehouse", level: 1, state: "active", halted: true },
+    "cadiz:3": { type: "dock", level: 1, state: "active" },
+    "cadiz:4": { type: "warehouse", level: 0, state: "construction", nextLevel: 1, readyTick: g.tick + 96 },
+  } };
+  const rows = buildingsRows(g, "cadiz");
+  const ws = bldChipInner(t, rows.find((x) => x.plotId === "cadiz:1"), "es", null);
+  assert.ok(ws.includes("bldchip") && ws.includes("Taller") && ws.includes("activo"), "active chip: name and state");
+  assert.ok(!ws.includes("bldchip-bad"), "active chip is not flagged");
+  const wh = bldChipInner(t, rows.find((x) => x.plotId === "cadiz:2"), "es", null);
+  assert.ok(wh.includes("bldchip-bad") && wh.includes("parado"), "halted chip is red with state");
+  const con = bldChipInner(t, rows.find((x) => x.plotId === "cadiz:4"), "es", null);
+  assert.ok(/en obras \d+%/.test(con), "works chip shows its percent");
+  const dk = bldChipInner(tEn, rows.find((x) => x.plotId === "cadiz:3"), "en", null);
+  assert.ok(dk.includes("Dock") && dk.includes("active"), "English chip");
+  assert.ok(!dk.includes("undefined") && !dk.includes("NaN"), "no raw holes");
+});

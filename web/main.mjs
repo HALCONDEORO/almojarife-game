@@ -40,7 +40,7 @@ import { repOf, respectOf } from "../src/game/rank.mjs";
 import { cityRows } from "../src/view/cityview.mjs";
 import { tabForBuilding, portLayout } from "../src/view3d/port3d.mjs";
 import { cityPlots } from "../src/view3d/cityplots.mjs";
-import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard } from "../src/view/buildingsview.mjs";
+import { whyText, plotViewState, buildingsRows, plotOffers, buildOffers, upgradeOffer, cityEffects, parseBldAct, buildingLabel, bldSummaryCard, bldChipInner } from "../src/view/buildingsview.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { buyPlot, startConstruction, buyOffice, hasOffice, OFFICE_PRICE, OFFICE_MIN_RESPECT, restartBuilding } from "../src/game/buildings.mjs";
 import { quoteWalls, startWalls, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX_LEVEL, WALL_UPKEEP, WALL_BUILD_DAYS } from "../src/game/walls.mjs";
@@ -590,7 +590,7 @@ function render() {
       else {
         if (permits > 0) h += `<p><i>${pb.permits.replace("{n}", permits)}</i></p>`;
         h += `<p><i>${$("v3d") ? t.bldHint : t.bldPick2d}</i></p>`;
-        if (own.length) h += `<p>` + own.map((r) => `<button data-bldact="sel|${r.plotId}">${buildingLabel(t, r)}</button>`).join(" ") + `</p>`; // also the no-WebGL path to build/upgrade
+        if (own.length) h += `<p class="bldchips">` + own.map((r) => `<button data-bldact="sel|${r.plotId}">${bldChipInner(t, r, lang, goodIcon)}</button>`).join(" ") + `</p>`; // P3 chips: icon + name + state; also the no-WebGL path to build/upgrade
         const lay = plotsCache[s.at];
         if (lay === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
         else if (!Array.isArray(lay)) h += `<p><i>${t.bldLoading}</i></p>`;
