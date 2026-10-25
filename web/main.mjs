@@ -324,7 +324,7 @@ function postCity2dState() {
       typeName = t.bldTypes[e.type] ?? t.indTypes[e.type] ?? e.type,
       ownerDesc = gone.has(e.id) ? t.indSoldNpc : own.has(e.id) ? t.indYours : council ? t.indCouncil : e.owner.name;
       return { id: e.id, type: e.type, level: e.level, own: own.has(e.id), gone: gone.has(e.id), council, typeName, ownerDesc, label: typeName + " · " + ownerDesc }; }); })() : undefined;
-  frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), industry }, location.origin);
+  frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), industry, civic: [{ id: "hall", label: t.tabHall }, ...(lonjaEnabled(location.search) ? [{ id: "lonja", label: t.tabLonja }] : [])] }, location.origin);
 }
 addEventListener("message", (e) => { const frame = document.getElementById("v3d")?.querySelector("iframe"); if (frame && e.origin === location.origin && e.source === frame.contentWindow && e.data?.kind === "city2d-ready" && e.data.city === g.ships[sel]?.at) postCity2dState(); });
 function render() {
@@ -876,7 +876,7 @@ function open3d(s0) {
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info"></span></header><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button>${lonjaEnabled(location.search)?`<button data-city-tab="lonja">${t.tabLonja}</button>`:""}<button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info" role="button" tabindex="0"></span></header><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
   syncMissionEcho();
   d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
     try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
@@ -888,15 +888,15 @@ function open3d(s0) {
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
   d.querySelector("[data-city-menu]").onclick=showMenu;
   d.querySelector("[data-close-panel]").onclick=closeCityWindow;
-  d.querySelector("[data-open-panel]").onclick=()=>openCityPanel("market");
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
+  const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
   const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
   handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX-win.offsetLeft,e.clientY-win.offsetTop];handle.setPointerCapture(e.pointerId);};
   handle.onpointermove=e=>{if(drag)move(e.clientX-drag[0],e.clientY-drag[1]);};
   handle.onpointerup=handle.onpointercancel=()=>drag=null;
   handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
-  d.querySelector("[data-open-panel]").focus();
+  d.querySelector("[data-city-tab]").focus();
 }
 addEventListener("message",e=>{
   const d=$("v3d");
@@ -904,6 +904,7 @@ addEventListener("message",e=>{
   if(e.data?.kind==="plot"){if(bldSelPlot!==e.data.id){bldAction=null;bldError=null;}bldSelPlot=e.data.id;openCityPanel("plot");return;} // switching plots drops an armed action so confirm cannot hit the old plot
   if(e.data?.kind!=="building")return;
   if(String(e.data.id).startsWith("town:")){townSel=e.data.id.slice(5);openCityPanel("town");return;}
+  if(e.data.id==="hall"||e.data.id==="lonja"){openCityPanel(e.data.id);return;}
   const tb=tabForBuilding(e.data.id);if(tb)openCityPanel(tb);
 });
 // Free navigation (only in games with g.freeNav): right click sends the selected ship there, port or open sea, no menu and no Zarpar button.

@@ -32,7 +32,7 @@ export function litAt(seedKey, tod) { return tod >= LIT_TOD && seeded("lit:" + s
 /** The market's look: marked by the harbour crane or rebuilt as an exchange hall (lonja). Estudio picks once here. */
 export const MARKET_STYLES = ["crane", "lonja"], MARKET_STYLE = "crane";
 /** Which game panel a building opens; the warehouse opens the store. null for anything else (houses, water, unknown ids). */
-export const tabForBuilding = (id) => (id === "warehouse" ? "store" : BUILDINGS.find((b) => b.id === id)?.tab ?? null);
+export const tabForBuilding = (id) => (id === "warehouse" ? "store" : id === "office" ? "house" : BUILDINGS.find((b) => b.id === id)?.tab ?? null);
 
 /** Pure layout: houses climb the hillside behind the building row, the bell tower stands far back. Same input, same layout. */
 export function portLayout(id, pop = 8000) {
