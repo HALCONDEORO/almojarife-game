@@ -30,7 +30,7 @@ test("soapworks is a processor: 1 olive oil -> 2 soap, builds anywhere", () => {
   assert.deepEqual(RECIPES.boil, { olive_oil: 1 }); assert.deepEqual(OUTPUTS.boil, { soap: 2 });
   const def = PRODUCERS.soapworks;
   assert.equal(def.primary, false); assert.equal(def.output, "soap"); assert.equal(def.recipe, "boil");
-  assert.deepEqual(BUILDING_TYPES.soapworks, { recipe: "soapworks", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 });
+  assert.deepEqual(BUILDING_TYPES.soapworks, { recipe: "soapworks", fee: 250, buildDays: 22, upkeep: 2, maxLevel: 3 });
   assert.ok(RECIPES.soapworks);
   for (const c of world.cities) assert.ok(cityAllowsProducer(world, c.id, "soapworks"), c.id);
 });

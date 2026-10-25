@@ -65,6 +65,7 @@ test("upkeep accrues daily per active building, lands in the weekly report, and 
   advanceDay(g); // still under construction: no building upkeep (the ship's own upkeep accrues as usual)
   assert.equal(g.accrued?.buildings?.["cadiz/cadiz:7"] ?? 0, 0);
   while (buildingAt(g, "cadiz", PLOT.id).state !== "active") advanceTick(g);
+  while (g.day % 7 === 6) advanceTick(g); // never measure across a weekly settlement (it zeroes accrued)
   const day0 = accruedTotal(g);
   advanceDay(g);
   const perDay = BUILDING_TYPES.workshop.upkeep * 1;

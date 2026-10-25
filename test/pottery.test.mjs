@@ -43,7 +43,7 @@ test("withPottery leaves the loaded world untouched and adds only the sourced ma
 test("flag ON: kiln is a processor 2 timber -> 2 pottery, builds anywhere, class demand 0.1/0.3/0.4", () => {
   assert.deepEqual(RECIPES.kiln, { timber: 2 }); assert.deepEqual(OUTPUTS.kiln, { pottery: 2 });
   assert.equal(PRODUCERS.pottery.primary, false); assert.equal(PRODUCERS.pottery.output, "pottery");
-  assert.deepEqual(BUILDING_TYPES.pottery, { recipe: "pottery", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }); assert.ok(RECIPES.pottery);
+  assert.deepEqual(BUILDING_TYPES.pottery, { recipe: "pottery", fee: 250, buildDays: 25, upkeep: 2, maxLevel: 3 }); assert.ok(RECIPES.pottery);
   const k = OPTIONAL_PER_1000.pottery; assert.deepEqual([k.poor, k.middle, k.rich], [0.1, 0.3, 0.4]);
   assert.ok(demandBy(40000, "pottery", 1).rich > 0);
   const g = newGame(world, "sevilla", { cash: 100000, freePlay: true, pottery: true }); g.cash = 100000;

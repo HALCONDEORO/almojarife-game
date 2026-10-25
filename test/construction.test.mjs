@@ -22,5 +22,5 @@ test("bricks have citizen demand and a warehouse quote draws them", () => {
   const g = newGame(world, "cadiz", { freePlay: true });
   assert.ok(totalDemand(10000, "bricks", 1) > 0);
   const q = quoteRecipe(world, g.market, "sevilla", "warehouse", 1);
-  assert.ok(q.ok && q.inputs.bricks === 16 && q.inputs.ironware === 1);
+  assert.ok(q.ok && q.inputs.timber === 15 && q.inputs.bricks === 20 && q.inputs.ironware === 1);
 });
