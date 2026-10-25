@@ -154,7 +154,7 @@ describe("the table at the day boundary", () => {
     const { placeBid, almonedaDay } = await import("../src/game/almoneda.mjs");
     const bad = placeBid(g, "cadiz", 5000);
     assert.equal(bad.ok, true); // today IS the auction day
-    assert.equal(g.townBids["cadiz"], 5000);
+    assert.deepEqual(Object.values(g.townBids["cadiz"]), [5000]); // bids are kept per lot now: one maximum on today's establishment table
     const cash0 = g.cash;
     almonedaDay(g);
     assert.equal(g.townBids?.["cadiz"], undefined); // consumed

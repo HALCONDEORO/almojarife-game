@@ -17,6 +17,8 @@ import { creditCaja } from "./council.mjs";
 import { townCouncil } from "./townhall.mjs";
 import { post } from "./ledger.mjs";
 import { isDiscovered } from "./fog.mjs";
+import { makeShip, SHIP_TYPES } from "../sim/trade.mjs";
+import { hasOffice } from "./buildings.mjs";
 
 export const AUCTION_EVERY = 7; // one almoneda per city and week, staggered like the concejo meetings
 /** The city's weekly auction day offset inside the AUCTION_EVERY cycle. Deterministic per city. */
@@ -50,7 +52,70 @@ export function lotOfDay(g, cityId) {
   const pick = Math.floor(seeded(`lot:${cityId}:${g.day}`)() * available.length);
   const est = available[pick];
   const value = establishmentValue(g.world, est);
-  return { kind: "establishment", est, value, reserve: reserveOf(value) };
+  return { kind: "establishment", id: est.id, est, value, reserve: reserveOf(value), seller: est.owner };
+}
+
+// ---- More lot kinds: used ships and town houses (owner direction 24 Oct: "subastas de todo tipo",
+// houses, ships, factories, permits). Establishments keep their weekly table; generated lots come up
+// at their own staggered cadence so no roster drains and the same port does not sell the same hulk twice.
+export const SHIP_EVERY = 4, HOUSE_EVERY = 2; // cycles of AUCTION_EVERY days: a ship about monthly, a house about fortnightly
+export const shipCycleOffset = (cityId) => Math.floor(seeded("almoneda-ship:" + cityId)() * SHIP_EVERY);
+export const houseCycleOffset = (cityId) => Math.floor(seeded("almoneda-house:" + cityId)() * HOUSE_EVERY);
+const cycleOf = (day) => Math.floor(day / AUCTION_EVERY);
+/** Who sells a generated lot: the concejo about half the time (an old hulk, a repossessed house), a named
+ *  neighbour otherwise. Deterministic per city, kind and cycle. */
+function generatedSeller(world, cityId, cycle, kind) {
+  if (seeded(`almseller:${kind}:${cityId}:${cycle}`)() < 0.5) return { kind: "council" };
+  const council = townCouncil(world, cityId, cycle * AUCTION_EVERY);
+  const people = [...council.councillors, council.mayor];
+  return { kind: "townsfolk", name: people[Math.floor(seeded(`almsellern:${kind}:${cityId}:${cycle}`)() * people.length)] };
+}
+
+/** A used ship the seller puts on the block: hull worn 55-90%, priced off the hull-proportional
+ *  new price with a used-market discount. Own tuning, documented as such. */
+export const SHIP_HULL_RANGE = [55, 90], SHIP_VALUE_MUL = 0.95;
+export function shipLotValue(type, hull) {
+  if (!SHIP_TYPES[type] || !Number.isInteger(hull) || hull < 1 || hull > 100) return null;
+  return Math.max(1, Math.round(SHIP_TYPES[type].price * (hull / 100) * SHIP_VALUE_MUL));
+}
+/** The most valuable ship lot that can ever come up (hull at the top of the range). */
+export const maxShipLotValue = () => Math.max(...Object.keys(SHIP_TYPES).map((t) => shipLotValue(t, SHIP_HULL_RANGE[1])));
+export function shipLotOfDay(g, cityId) {
+  if (g.townIndustry !== true || !isAuctionDay(cityId, g.day)) return null;
+  const cycle = cycleOf(g.day);
+  if (cycle % SHIP_EVERY !== shipCycleOffset(cityId)) return null;
+  const rnd = seeded(`shiplot:${cityId}:${g.day}`);
+  const types = Object.keys(SHIP_TYPES);
+  const type = types[Math.floor(rnd() * types.length)];
+  const hull = SHIP_HULL_RANGE[0] + Math.floor(rnd() * (SHIP_HULL_RANGE[1] - SHIP_HULL_RANGE[0] + 1));
+  const value = shipLotValue(type, hull);
+  return { kind: "ship", id: `ship:${cityId}:${g.day}`, ship: { type, hull }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "ship"),
+    name: { es: `${type} de segunda mano (casco ${hull}%)`, en: `used ${type} (hull ${hull}%)` } };
+}
+
+/** A town house on the block, level 1-3, valued by the same replacement-cost rule as the works. */
+export const maxHouseLotValue = (world) => establishmentValue(world, { type: "house", level: 3 });
+export function houseLotOfDay(g, cityId) {
+  if (g.townIndustry !== true || !isAuctionDay(cityId, g.day)) return null;
+  const cycle = cycleOf(g.day);
+  if (cycle % HOUSE_EVERY !== houseCycleOffset(cityId)) return null;
+  const rnd = seeded(`houselot:${cityId}:${g.day}`);
+  const level = 1 + Math.floor(rnd() * 3);
+  const value = establishmentValue(g.world, { type: "house", level });
+  return { kind: "house", id: `house:${cityId}:${g.day}`, house: { level }, value, reserve: reserveOf(value), seller: generatedSeller(g.world, cityId, cycle, "house"),
+    name: { es: `casa de vecinos (nivel ${level})`, en: `town house (level ${level})` } };
+}
+
+/** Every lot on the block today: the establishment table plus whatever generated kinds meet their cadence. */
+export function lotsOfDay(g, cityId) {
+  return [lotOfDay(g, cityId), shipLotOfDay(g, cityId), houseLotOfDay(g, cityId)].filter(Boolean);
+}
+export const sellerOf = (lot) => lot.seller ?? lot.est?.owner ?? { kind: "council" }; // the UI reads the seller the same way the engine does
+/** Short lot description for the hammer notices. */
+function lotDesc(lot, lang) {
+  if (lot.kind === "ship") return lang === "en" ? `the ${lot.ship.type} (hull ${lot.ship.hull}%)` : `la ${lot.ship.type} (casco ${lot.ship.hull}%)`;
+  if (lot.kind === "house") return lang === "en" ? `the house (level ${lot.house.level})` : `la casa (nivel ${lot.house.level})`;
+  return lang === "en" ? `the ${lot.est.type} (level ${lot.est.level})` : `${lot.est.type} (nivel ${lot.est.level})`;
 }
 
 /** The named neighbours bidding today, each with his maximum. Deterministic from city, day and
@@ -58,10 +123,11 @@ export function lotOfDay(g, cityId) {
  *  out below the reserve. Names come from the port's concejo table; the seller never bids
  *  (you do not buy back your own works). */
 export function biddersOf(g, cityId, lot) {
-  const rnd = seeded(`bidders:${cityId}:${g.day}:${lot.est.id}`);
+  const rnd = seeded(`bidders:${cityId}:${g.day}:${lot.id}`);
   const council = townCouncil(g.world, cityId, g.day);
+  const seller = sellerOf(lot);
   const people = [...council.councillors, council.mayor]
-    .filter((n) => lot.est.owner.kind !== "townsfolk" || n !== lot.est.owner.name);
+    .filter((n) => seller.kind !== "townsfolk" || n !== seller.name);
   const bids = [];
   for (const name of people) {
     const factor = 0.7 + rnd() * 0.45; // 0.70 to 1.15 of the valuation
@@ -71,15 +137,49 @@ export function biddersOf(g, cityId, lot) {
   return bids;
 }
 
-/** Resolve the day's auction with the player's maximum bid. Returns what happened, view-ready.
- *  Side effects only on a decided sale: the winner takes the works (the player via
- *  buyEstablishment, which moves production share and hands; a neighbour takes it off the
- *  market, the town keeps its share). The seller is paid: the concejo's chest when the works
- *  were municipal, the neighbour's own pocket otherwise (not simulated). */
-export function bidAuction(g, cityId, playerMax) {
+/** The winner settles the lot he took, per kind. Only called with the hammer decided.
+ *  Establishments move under piece-2 rules; a ship is delivered moored at the auction port; a house
+ *  lands in g.buildings like any transferred works (office required, then it lives by the player's
+ *  rules). A council sale credits the chest: roster sales under hallAlmoneda (finite bound in
+ *  council.test), generated lots under hallAlmonedaGen with their own cadence bound. */
+function settle(g, cityId, lot, price) {
+  if (lot.kind === "establishment") return buyEstablishment(g, cityId, lot.est.id, price);
+  if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
+  if (lot.kind === "ship") {
+    g.cash -= price;
+    const s = makeShip(g.nextId++, lot.ship.type, cityId);
+    s.hull = lot.ship.hull;
+    g.ships.push(s);
+    if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
+    post(g, "info", { city: cityId, txt: {
+      es: `Ganas la almoneda de ${cityId}: una ${lot.ship.type} (casco ${lot.ship.hull}%) por ${price} monedas. Ya es tuya y amarra en este puerto.`,
+      en: `You win the ${cityId} auction: a ${lot.ship.type} (hull ${lot.ship.hull}%) for ${price} coins. She is yours, moored in this port.`,
+    } });
+    return { ok: true };
+  }
+  if (lot.kind === "house") {
+    if (!hasOffice(g, cityId)) return { ok: false, reason: "office required" };
+    g.cash -= price;
+    ((g.buildings ??= {})[cityId] ??= {})[lot.id] = { type: "house", level: lot.house.level, state: "active", plotType: "house", paidPlot: 0, fromTown: lot.id, produced: 0 }; // plain object: save round-trip fidelity (walls.mjs convention)
+    if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
+    post(g, "info", { city: cityId, txt: {
+      es: `Ganas la almoneda de ${cityId}: una casa de vecinos (nivel ${lot.house.level}) por ${price} monedas. Sus inquilinos engordan la demanda del puerto.`,
+      en: `You win the ${cityId} auction: a town house (level ${lot.house.level}) for ${price} coins. Its tenants add to the port's demand.`,
+    } });
+    return { ok: true };
+  }
+  return { ok: false, reason: "unknown lot" };
+}
+
+/** Resolve one lot with the player's maximum bid. Returns what happened, view-ready.
+ *  Side effects only on a decided sale: the winner takes the lot (the player via settle, which
+ *  moves cash and the goods; a neighbour takes it off the market). The seller is paid: the
+ *  concejo's chest when the lot was municipal, the neighbour's own pocket otherwise (not simulated). */
+export function bidAuction(g, cityId, playerMax, lotId) {
   if (g.townIndustry !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
-  const lot = lotOfDay(g, cityId);
+  const lots = lotsOfDay(g, cityId);
+  const lot = lotId ? lots.find((l) => l.id === lotId) : (lots.find((l) => l.kind === "establishment") ?? lots[0]); // legacy callers mean the establishment table
   if (!lot) return { ok: false, reason: "no auction today" };
   if (!Number.isSafeInteger(playerMax) || playerMax < 0) return { ok: false, reason: "bad bid" };
   const bids = [...biddersOf(g, cityId, lot), { who: "player", max: playerMax }];
@@ -89,21 +189,27 @@ export function bidAuction(g, cityId, playerMax) {
     if (top.max < lot.reserve) return { ok: true, outcome: "withdrawn", lot }; // nobody meets the reserve: the town keeps it
     const price = Math.min(top.max, Math.max(lot.reserve, (second?.max ?? lot.reserve - 1) + 1));
     if (top.who !== "player") {
-      const sales = ((g.townSales ??= {})[cityId] ??= { jobs: 0, ids: [], gone: [] }); // plain object: the JSON save round-trip returns plain objects (walls.mjs convention)
-      (sales.gone ??= []).push(lot.est.id);
-      if (lot.est.owner.kind === "council") { creditCaja(g, cityId, price); (g.hallAlmoneda ??= {})[cityId] = (g.hallAlmoneda[cityId] ?? 0) + price; } // municipal proceeds to the concejo's chest, counted apart so the tax band stays a tax band
-      if (isDiscovered(g, cityId) || playerMax > 0) post(g, "info", { city: cityId, txt: { // you hear the hammer where you know the town or sat at the table; a far port you have never charted stays silent
-        es: `Almoneda en ${cityId}: ${top.who} se lleva ${lot.est.type} (nivel ${lot.est.level}) por ${price} monedas.`,
-        en: `Auction in ${cityId}: ${top.who} takes the ${lot.est.type} (level ${lot.est.level}) for ${price} coins.`,
+      if (lot.kind === "establishment") {
+        const sales = ((g.townSales ??= {})[cityId] ??= { jobs: 0, ids: [], gone: [] }); // plain object: the JSON save round-trip returns plain objects (walls.mjs convention)
+        (sales.gone ??= []).push(lot.est.id);
+      }
+      if (lot.kind === "establishment" && sellerOf(lot).kind === "council") { // municipal proceeds to the concejo's chest, counted apart so the tax band stays a tax band
+        creditCaja(g, cityId, price);
+        (g.hallAlmoneda ??= {})[cityId] = (g.hallAlmoneda[cityId] ?? 0) + price;
+      } // generated lots won by a neighbour move no chest money: neighbour coins are not simulated, so crediting the concejo would mint phantom income (only the player's real coins count, in settle)
+      const tell = lot.kind === "establishment" ? (isDiscovered(g, cityId) || playerMax > 0) : playerMax > 0; // generated lots cry their result only at a table the player joined: the weekly ship and house would double the home port's inbox noise for an idle player (MAX_INBOX eviction is a real failure mode)
+      if (tell) post(g, "info", { city: cityId, txt: { // you hear the hammer where you know the town or sat at the table; a far port you have never charted stays silent
+        es: `Almoneda en ${cityId}: ${top.who} se lleva ${lotDesc(lot, "es")} por ${price} monedas.`,
+        en: `Auction in ${cityId}: ${top.who} takes ${lotDesc(lot, "en")} for ${price} coins.`,
       } });
       return { ok: true, outcome: "lost", winner: top.who, price, lot };
     }
-    if (g.cash >= price) {
-      const r = buyEstablishment(g, cityId, lot.est.id, price);
-      if (!r.ok) return r;
-      return { ok: true, outcome: "won", price, lot };
-    }
-    post(g, "info", { city: cityId, txt: { // his max was a promise his purse cannot keep: the bid leaves the table
+    const r = settle(g, cityId, lot, price);
+    if (r.ok) return { ok: true, outcome: "won", price, lot };
+    post(g, "info", { city: cityId, txt: r.reason === "office required" ? { // his max was a promise he cannot keep: the bid leaves the table and the next bidder comes up
+      es: `Tu puja en la almoneda de ${cityId} queda sin efecto: necesitas una oficina comercial en este puerto.`,
+      en: `Your bid at the ${cityId} auction is void: you need a trading office in this port.`,
+    } : {
       es: `Tu puja en la almoneda de ${cityId} queda sin efecto: no tienes ${price} monedas.`,
       en: `Your bid at the ${cityId} auction is void: you do not have ${price} coins.`,
     } });
@@ -111,26 +217,34 @@ export function bidAuction(g, cityId, playerMax) {
   return { ok: true, outcome: "withdrawn", lot };
 }
 
-/** The player's standing maximum for today's table in a port. He sets it while the lot is on
- *  the block (that same day); the hammer falls at the day boundary. Refuses off day, bad bids
- *  and tables that are already over. */
-export function placeBid(g, cityId, playerMax) {
+/** The player's standing maximum for one lot on today's table in a port. He sets it while the lot is
+ *  on the block (that same day); the hammer falls at the day boundary. Refuses off day, bad bids and
+ *  tables that are already over. Bids are kept per lot; a bare number from an old save means the
+ *  establishment table. */
+export function placeBid(g, cityId, playerMax, lotId) {
   if (g.townIndustry !== true) return { ok: false, reason: "off" };
-  if (!isAuctionDay(cityId, g.day) || !lotOfDay(g, cityId)) return { ok: false, reason: "no auction today" };
+  const lots = lotsOfDay(g, cityId);
+  const lot = lotId ? lots.find((l) => l.id === lotId) : (lots.find((l) => l.kind === "establishment") ?? lots[0]);
+  if (!lot) return { ok: false, reason: "no auction today" };
   if (!Number.isSafeInteger(playerMax) || playerMax < 0) return { ok: false, reason: "bad bid" };
   if (playerMax > g.cash) return { ok: false, reason: "no cash", cost: playerMax }; // you cannot promise coins you do not have
-  ((g.townBids ??= {})[cityId]) = playerMax; // plain object: save round-trip fidelity
+  const cur = g.townBids?.[cityId];
+  (g.townBids ??= {})[cityId] = { ...(typeof cur === "object" && cur !== null ? cur : {}), [lot.id]: playerMax }; // plain object: save round-trip fidelity
   return { ok: true };
 }
-/** Day-boundary hook (game.mjs dayTick): every port whose almoneda meets today brings its lot
- *  down. The player bids through placeBid during the day; absent a bid he sits the table out.
- *  No-op with the flag off or on any other day. */
+/** Day-boundary hook (game.mjs dayTick): every port whose almoneda meets today brings its lots down,
+ *  one hammer per lot. The player bids through placeBid during the day; absent a bid he sits the
+ *  table out. No-op with the flag off or on any other day. */
 export function almonedaDay(g) {
   if (g.townIndustry !== true) return;
   for (const c of g.world.cities) {
-    if (!isAuctionDay(c.id, g.day)) continue;
-    const max = g.townBids?.[c.id] ?? 0;
+    const lots = lotsOfDay(g, c.id);
+    if (!lots.length) continue;
+    const raw = g.townBids?.[c.id];
+    for (const lot of lots) {
+      const max = typeof raw === "number" ? (lot.kind === "establishment" ? raw : 0) : (raw?.[lot.id] ?? 0); // legacy bare number: the establishment table only
+      bidAuction(g, c.id, max, lot.id);
+    }
     if (g.townBids) delete g.townBids[c.id];
-    bidAuction(g, c.id, max);
   }
 }

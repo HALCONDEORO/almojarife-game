@@ -65,7 +65,7 @@ import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "
 import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs";
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
-import { lotOfDay, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
+import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 let mapMode = "geographic";
@@ -538,12 +538,20 @@ function render() {
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmt(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisa > 0 ? "+" : "") + hv.sisa).replace("{p}", (hv.portazgo > 0 ? "+" : "") + hv.portazgo)}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
-      if (g.townIndustry === true) { // the weekly town auction (flag on only)
-        const lot = lotOfDay(g, s.at);
-        h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lot ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
-        if (lot) {
-          const nb = biddersOf(g, s.at, lot), mine = g.townBids?.[s.at];
-          h += `<div class="card"><b>${t.almLot.replace("{x}", (t.bldTypes[lot.est.type] ?? t.indTypes[lot.est.type] ?? lot.est.type) + " · " + t.indLevel.replace("{l}", lot.est.level)).replace("{g}", goodIcon(lot.est.good, 16) + (t.goods[lot.est.good] ?? lot.est.good))}</b><br>${t.almSeller}: <i>${lot.est.owner.kind === "council" ? t.indCouncil : lot.est.owner.name}</i> · ${t.almReserve.replace("{p}", fmt(lot.reserve))}<br>${nb.length ? t.almBidders + " " + nb.map((b) => b.who).join(", ") : t.almNoBidders}${mine != null ? `<br><b>${t.almBidPlaced.replace("{p}", fmt(mine))}</b>` : ""}<br><input id="alm-bid" type="number" min="0" step="1" style="width:8em"> <button data-almbid="1">${t.almBid}</button>${almNote ? ` <small style="color:#a11">${almNote}</small>` : ""}<br><small>${t.almFollowing.replace("{d}", nextAuctionDay(s.at, g.day))}</small></div>`;
+      if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
+        const lots = lotsOfDay(g, s.at);
+        h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
+        if (lots.length) {
+          const bids = g.townBids?.[s.at];
+          h += lots.map((lot) => {
+            const nb = biddersOf(g, s.at, lot);
+            const mine = typeof bids === "number" ? (lot.kind === "establishment" ? bids : null) : bids?.[lot.id]; // a bare number from an old save belongs to the establishment table
+            const title = lot.kind === "establishment"
+              ? t.almLot.replace("{x}", (t.bldTypes[lot.est.type] ?? t.indTypes[lot.est.type] ?? lot.est.type) + " · " + t.indLevel.replace("{l}", lot.est.level)).replace("{g}", goodIcon(lot.est.good, 16) + (t.goods[lot.est.good] ?? lot.est.good))
+              : (lot.name?.[lang] ?? lot.name?.es); // generated lots name themselves in the engine: no i18n-table edit needed
+            const sv = sellerOf(lot);
+            return `<div class="card"><b>${title}</b><br>${t.almSeller}: <i>${sv.kind === "council" ? t.indCouncil : sv.name}</i> · ${t.almReserve.replace("{p}", fmt(lot.reserve))}<br>${nb.length ? t.almBidders + " " + nb.map((b) => b.who).join(", ") : t.almNoBidders}${mine != null ? `<br><b>${t.almBidPlaced.replace("{p}", fmt(mine))}</b>` : ""}<br><input data-alminput="${lot.id}" type="number" min="0" step="1" style="width:8em"> <button data-almbid="${lot.id}">${t.almBid}</button></div>`;
+          }).join("") + `${almNote ? `<small style="color:#a11">${almNote}</small><br>` : ""}<small>${t.almFollowing.replace("{d}", nextAuctionDay(s.at, g.day))}</small>`;
         } else h += `<p><i>${t.almNone}</i></p>`;
       }
     } else if (tab === "buildings") {
@@ -705,7 +713,7 @@ function render() {
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
   });
   P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
-  const ab = P.querySelector("[data-almbid]"); if (ab) ab.onclick = () => { const v = Math.floor(+P.querySelector("#alm-bid").value); const r = placeBid(g, s.at, v); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); };
+  P.querySelectorAll("[data-almbid]").forEach((e) => e.onclick = () => { const v = Math.floor(+P.querySelector(`[data-alminput="${e.dataset.almbid}"]`)?.value); const r = placeBid(g, s.at, v, e.dataset.almbid); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); });
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => { const city = P.querySelector("#rum").value, r = buyRumor(g, city, s.at); rumorNote = r.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: r.reason === "already known" ? t.rumorErrKnown : r.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : r.reason }; act(() => {}); };
   P.querySelectorAll("[data-chart]").forEach((e) => e.onclick = () => act(() => buyChart(g, e.dataset.chart, s.at)));
   const ch = P.querySelector("#cta-hire"); if (ch) ch.onclick = () => act(() => hireContact(g, s.at));
