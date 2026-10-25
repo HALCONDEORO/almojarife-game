@@ -141,8 +141,8 @@ test('steward sales earn respect like manual trades, and count for the docked sh
  assert.ok(did?.[0]?.sold>0,'the sale happened');
  assert.ok(repOf(g,'cadiz')>before,'respect rose with the sale revenue, as in doSell');
  const v=voyageLog(g,s.id)[0];
- assert.ok(v&&v.sold===did[0].sold&&v.revenue===did[0].revenue,'the sale counts for the docked ship\'s voyage');
- assert.equal(v.profit,did[0].revenue-Math.round(500*did[0].sold/50),'with its cost-basis profit');
+ assert.ok(v&&v.sold===did[0].sold&&v.revenue===Math.round(did[0].revenue*100)/100,'the sale counts for the docked ship\'s voyage (voyage log keeps cents)');
+ assert.equal(v.profit,Math.round((did[0].revenue-Math.round(500*did[0].sold/50))*100)/100,'with its cost-basis profit (cents)');
 });
 test('steward sale with no ship in port still works: respect rises, no voyage entry',()=>{
  const{g}=mk();g.ships=[]; // nobody docked

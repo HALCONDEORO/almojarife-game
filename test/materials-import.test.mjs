@@ -5,7 +5,7 @@ import {loadWorld} from '../src/sim/world.mjs';
 import {newGame} from '../src/game/game.mjs';
 import {quoteUnits, quoteUnitsImport, consumeUnitsImport, IMPORT_MUL, RECIPES} from '../src/sim/recipes.mjs';
 import {quoteConstruction, startConstruction} from '../src/game/buildings.mjs';
-import {FEE} from '../src/sim/trade.mjs';
+import {FEE, ceil2} from '../src/sim/trade.mjs';
 const world = loadWorld();
 const recipe = RECIPES.house, good = Object.keys(recipe)[0]; // the house recipe and its first material
 
@@ -32,8 +32,8 @@ test('short stock: the shortfall is imported at the premium, never below zero st
  const zeroed = Object.fromEntries(Object.entries(g.market.cadiz).map(([k, e]) => [k, {...e, stock: 0}]));
  const qAll = quoteUnitsImport(world, {cadiz: zeroed}, 'cadiz', recipe);
  assert.deepEqual(Object.keys(qAll.imported).sort(), Object.keys(recipe).sort(), 'zero stock imports the whole recipe');
- const expectedAll = Object.entries(recipe).reduce((a, [gd, n]) => a + n * Math.ceil(world.goods[gd].base * (1 + FEE) * IMPORT_MUL), 0);
- assert.equal(qAll.cost, expectedAll, 'with empty shelves the whole recipe is priced at the premium');
+ const expectedAll = Object.entries(recipe).reduce((a, [gd, n]) => a + n * ceil2(world.goods[gd].base * (1 + FEE) * IMPORT_MUL), 0); // per-unit premium to the cent (decimals PR): same formula the engine applies
+ assert.equal(qAll.cost, expectedAll, 'with empty shelves the whole recipe is priced at the premium (to the cent)');
  const stock0 = g.market.cadiz[good].stock;
  consumeUnitsImport(world, g.market, 'cadiz', recipe, 10 ** 9);
  assert.equal(g.market.cadiz[good].stock, stock0 - (need - 2), 'only the local part leaves the market');
