@@ -43,7 +43,6 @@ export const PER_1000 = {
 export const OPTIONAL_PER_1000 = Object.freeze({
   legumes: Object.freeze({ poor: 0.45, middle: 0.3, rich: 0.1 }), // 0.45 = the poor's grain 1.3 x 148/450 g (González-Mariscal 2015, Seville 1521-40)
   pottery: Object.freeze({ poor: 0.1, middle: 0.3, rich: 0.4 }), // study section 5 table: 0.1 / 0.3 / 0.4; P3 pattern poor 12, wealthy 18, rich 30 per 100 (p3modding consumption table)
-  kid_meat: Object.freeze({ poor: 0, middle: 0.05, rich: 0.5 }), // a luxury: Barcelona sold kid as luxury meat (Estudio, meat sources 22/10)
 });
 /** Highest price, as a multiple of the base price, that each class will still pay. */
 export const TOLERANCE = { poor: 1.4, middle: 2, rich: 3 };

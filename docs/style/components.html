@@ -1,0 +1,109 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Style reference</title><style>
+:root{--paper:#f4ead0;--paper-raised:#fff6e0;--paper-sunken:#e5d7b7;--paper-alt:#eee2c4;--ink:#302719;--ink-soft:#5a4a32;--ink-faint:#7a6845;--line:#c5ae80;--line-strong:#bba373;--wood:#6b4f2a;--brass:#c9a35f;--brass-bright:#ffd876;--green:#405e4a;--green-deep:#243b34;--green-ink:#304c3c;--gold-cream:#fff0cd;--buy:#2e6b34;--sell:#8a5a17;--danger:#a11;}
+*{box-sizing:border-box}body{margin:0;background:#d9cba6;font:15px/1.5 Georgia,"Times New Roman",serif;color:var(--ink);padding:16px;width:1120px}
+h1{font-size:22px;margin:0 0 2px;letter-spacing:.5px}p.sub{margin:0 0 12px;color:var(--ink-soft);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+section{background:var(--paper);border:3px solid var(--wood);outline:1px solid var(--brass);outline-offset:-5px;border-radius:4px;padding:12px 14px;margin-bottom:14px;box-shadow:0 8px 24px #0003}
+h2{font-size:13px;font-variant:small-caps;color:var(--ink-faint);margin:0 0 10px;letter-spacing:.6px;border-bottom:1px solid var(--line-strong);padding-bottom:5px}
+.sw{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sw div{border:1px solid var(--line);border-radius:3px;padding:6px 8px;font-size:12px;background:var(--paper-raised)}
+.sw b{display:inline-block;width:26px;height:14px;border:1px solid #0006;border-radius:2px;vertical-align:-2px;margin-right:6px}
+.sw small{display:block;color:var(--ink-faint)}
+button{font:15px Georgia,serif;min-height:30px;padding:4px 10px;border-radius:3px;cursor:default}
+.b1{background:linear-gradient(#6d543a,#4a3722 55%,#3d2d1b);color:var(--gold-cream);border:1px solid var(--brass)}
+.b2{background:var(--paper-raised);color:var(--ink);border:1px solid var(--line)}
+.b3{background:var(--paper-raised);color:var(--danger);border:1px solid var(--line)}
+.b4{background:var(--paper);border:1px dashed var(--line-strong);color:var(--ink-faint);font-style:italic}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row small{color:var(--ink-faint);font-size:12px;width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{color:var(--green);font-size:11.5px;text-align:left;border-bottom:1px solid var(--line-strong);padding:6px 8px}
+td{padding:6px 8px;border-bottom:1px solid var(--line)}
+tbody tr:nth-child(odd){background:var(--paper-raised)}tbody tr:nth-child(even){background:var(--paper-alt)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;background:var(--paper-sunken);border:1px solid var(--line);border-radius:11px;padding:0 8px;font-size:13px;min-height:22px}
+.card{background:var(--paper-raised);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:3px;padding:10px 12px}
+.card h4{margin:0 0 4px;font-size:13px;font-variant:small-caps;color:var(--ink-faint)}
+.card p{margin:0;font-size:15px}
+input,select{background:var(--paper-raised);border:1px solid #aa9367;font:15px Georgia,serif;min-height:30px;padding:4px 8px;color:var(--ink)}
+label{font-size:13px;color:var(--ink-soft)}
+.empty{text-align:center;color:var(--ink-faint);padding:22px 10px;border:1px dashed var(--line);border-radius:4px;background:var(--paper)}
+.empty .orn{font-size:40px;display:block;margin-bottom:6px;color:var(--brass)}
+.dlg{border:3px solid var(--wood);outline:1px solid var(--brass);outline-offset:-5px;border-radius:4px;background:var(--paper);box-shadow:0 18px 70px #171c1bbb;max-width:420px;margin:0 auto}
+.dlg .hd{background:linear-gradient(#6d543a,#4a3722 55%,#3d2d1b);color:var(--gold-cream);font-size:22px;padding:8px 14px;border-bottom:2px solid var(--brass);display:flex;justify-content:space-between;align-items:center}
+.dlg .hd button{min-height:32px}
+.dlg .bd{padding:14px}
+.dlg .ft{display:flex;gap:10px;padding:0 14px 14px}
+.dlg .ft button{flex:1}
+.focus-demo{outline:3px solid var(--brass-bright)}
+.type div{border-bottom:1px dashed var(--line);padding:3px 0}
+.type small{color:var(--ink-faint);font-size:12px;margin-left:8px}
+.t-t{font-size:22px;letter-spacing:.5px}.t-h3{font-size:21px;color:var(--green)}.t-h4{font-size:13px;font-variant:small-caps;color:var(--ink-faint)}.t-b{font-size:15px}.t-tb{font-size:13.5px}.t-th{font-size:11.5px;font-weight:bold;color:var(--green)}.t-m{font-size:12.5px;color:var(--ink-faint)}.t-e{font-size:15px;color:var(--ink-faint);text-align:center}
+</style></head><body>
+<h1>Style reference sheet</h1><p class="sub">Every value below is a token or rule of docs/STYLE.md. Regenerate: serve the repo and screenshot this page at 1120px wide.</p>
+<section><h2>Colour tokens - swatch = token = value</h2><div class="sw">
+<div><b style="background:#f4ead0"></b>--paper #f4ead0<small>window body</small></div>
+<div><b style="background:#fff6e0"></b>--paper-raised #fff6e0<small>cards, rows, inputs</small></div>
+<div><b style="background:#e5d7b7"></b>--paper-sunken #e5d7b7<small>intro strips</small></div>
+<div><b style="background:#eee2c4"></b>--paper-alt #eee2c4<small>zebra rows</small></div>
+<div><b style="background:#302719"></b>--ink #302719<small>body text</small></div>
+<div><b style="background:#5a4a32"></b>--ink-soft #5a4a32<small>secondary text</small></div>
+<div><b style="background:#7a6845"></b>--ink-faint #7a6845<small>captions, empty</small></div>
+<div><b style="background:#c5ae80"></b>--line #c5ae80<small>hairlines</small></div>
+<div><b style="background:#bba373"></b>--line-strong #bba373<small>section rules</small></div>
+<div><b style="background:#6b4f2a"></b>--wood #6b4f2a<small>frame border</small></div>
+<div><b style="background:#c9a35f"></b>--brass #c9a35f<small>outline, header rule</small></div>
+<div><b style="background:#ffd876"></b>--brass-bright #ffd876<small>focus on dark</small></div>
+<div><b style="background:#405e4a"></b>--green #405e4a<small>accent, headings</small></div>
+<div><b style="background:#243b34"></b>--green-deep #243b34<small>header gradient</small></div>
+<div><b style="background:#2e6b34"></b>--buy #2e6b34<small>gains, buy side</small></div>
+<div><b style="background:#8a5a17"></b>--sell #8a5a17<small>sell side</small></div>
+<div><b style="background:#a11"></b>--danger #a11<small>destructive</small></div>
+<div><b style="background:#fff0cd"></b>--gold-cream #fff0cd<small>text on header</small></div>
+</div></section>
+<div class="grid">
+<section class="type"><h2>Type scale - Georgia everywhere</h2>
+<div class="t-t">Window title<small>22px regular, .5px tracking</small></div>
+<div class="t-h3">Section heading<small>21px regular, --green</small></div>
+<div class="t-h4">Sub-heading<small>13px small-caps, --ink-faint</small></div>
+<div class="t-b">Body text 15px/1.5 regular.<small>15px</small></div>
+<div class="t-tb">Table body 13-14px.<small>13-14px</small></div>
+<div class="t-th">TABLE HEADER<small>11-12px bold, --green</small></div>
+<div class="t-m">Meta and captions.<small>12-13px --ink-faint</small></div>
+<div class="t-e">Empty state sentence.<small>15px --ink-faint centered</small></div>
+</section>
+<section><h2>Buttons - one family, four roles</h2>
+<div class="row"><button class="b1">Primary action</button><small>solid wood gradient, cream text, brass border</small></div>
+<div class="row" style="margin-top:8px"><button class="b2">Secondary</button><small>paper, --line border</small></div>
+<div class="row" style="margin-top:8px"><button class="b3">Destructive</button><small>paper, --danger text</small></div>
+<div class="row" style="margin-top:8px"><button class="b4">Locked: needs 500 coins</button><small>disabled: dashed border + reason, never a bare fade</small></div>
+<div class="row" style="margin-top:8px"><button class="b2 focus-demo">Focused</button><small>:focus-visible 3px --brass-bright (on dark) / --green (on paper)</small></div>
+</section>
+</div>
+<section><h2>Table - green header, zebra rows, numbers right-aligned</h2>
+<table><thead><tr><th>Good</th><th class="n">Price</th><th class="n">Stock</th><th class="n">Hold</th><th class="n">Buy</th></tr></thead>
+<tbody><tr><td>Salt</td><td class="n">18</td><td class="n">1,339</td><td class="n">0</td><td class="n"><span class="pill">10 &rarr; 183.6</span></td></tr>
+<tr><td>Wine</td><td class="n">58</td><td class="n">119</td><td class="n">12</td><td class="n"><span class="pill">10 &rarr; 602.82</span></td></tr>
+<tr><td>Silk</td><td class="n">402</td><td class="n">66</td><td class="n">0</td><td class="n"><span class="pill">5 &rarr; 2,086.92</span></td></tr></tbody></table>
+</section>
+<div class="grid">
+<section><h2>Card and chip</h2>
+<div class="card"><h4>Alcalde</h4><p>Gutierre de Guzm&aacute;n</p></div>
+<div class="row" style="margin-top:10px"><span class="pill">3 ships</span><span class="pill">Day 19</span><small>pill: --paper-sunken, --line border, 13px, radius 11-20px</small></div>
+</section>
+<section><h2>Form row</h2>
+<div class="row"><label for="i1">Find good</label><input id="i1" placeholder="Salt"><select><option>Compare with&hellip;</option></select></div>
+<div class="row" style="margin-top:6px"><small>input/select: --paper-raised, 1px #aa9367, Georgia 15px, min-height 30px; label 13px --ink-soft</small></div>
+</section>
+</div>
+<div class="grid">
+<section><h2>Empty state - designed, never a bare italic line</h2>
+<div class="empty"><span class="orn">&#9875;</span>No reports yet. The first one arrives on day 7.</div>
+</section>
+<section><h2>Dialog chrome - the one .pwin frame</h2>
+<div class="dlg"><div class="hd"><span>Menu</span><button class="b1">Close (Esc)</button></div>
+<div class="bd">Same frame for every window: 3px --wood border, 1px --brass outline, wood-gradient header, parchment body.</div>
+<div class="ft"><button class="b2">Back</button><button class="b1">Confirm</button></div></div>
+</section>
+</div>
+</body></html>

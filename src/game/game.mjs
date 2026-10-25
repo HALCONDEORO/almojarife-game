@@ -60,7 +60,7 @@ import { npcPlan } from "../sim/npcplan.mjs";
 import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
 import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
 import { embargoOn, embargoNotice, GRAIN } from "./embargo.mjs";
-import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
+import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const HISTORY_DAYS = 30;
 /** Append today's price of every good in every port; keep the last HISTORY_DAYS. */
@@ -91,7 +91,6 @@ export const normalizeSeed = (n) => (Number.isSafeInteger(n) && n >= 0 && n <= 0
 export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.pottery === undefined || opts.pottery === true) world = withPottery(world); // optional processor good and kiln, default ON (owner order 23/10); pass false/1 to disable
   if (opts.legumes === undefined || opts.legumes === true) world = withLegumes(world); // optional staple, default ON (owner order 23/10); pass false/1 to disable
-  if (opts.kidMeat === undefined || opts.kidMeat === true) world = withKidMeat(world); // optional luxury meat, default ON (owner order 23/10); pass false/1 to disable (src/sim/optional_goods.mjs)
   const ids = world.cities.map((c) => c.id);
   // Opt-in research option only. Production defaults stay exactly three traders.
   const houses = opts.regionalRivals === true ? regionalHousePlan(world,normalizeSeed(opts.seed)) : null;
@@ -100,7 +99,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if(houses)ai.forEach((bot,i)=>{bot.house=houses[i];});
   const market = makeMarket(world), hist = {};
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if(houses)regionalRivalStep({world,market,day:d-WARMUP_DAYS,tick:d*TICKS_PER_DAY,seed:normalizeSeed(opts.seed),regionalRivals:true},t);else aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, noGoal: !!opts.noGoal, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === undefined || opts.kidMeat === true, credit: opts.credit === undefined || opts.credit === true, ...(opts.foreclosure === undefined || opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes: opts.legumes === undefined || opts.legumes === true, pottery: opts.pottery === undefined || opts.pottery === true, pirateFight: opts.pirateFight === undefined || opts.pirateFight === true, marque: opts.marque === undefined || opts.marque === true, ...(opts.household === true ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, noGoal: !!opts.noGoal, seed: normalizeSeed(opts.seed), startYear: START_YEAR, credit: opts.credit === undefined || opts.credit === true, ...(opts.foreclosure === undefined || opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes: opts.legumes === undefined || opts.legumes === true, pottery: opts.pottery === undefined || opts.pottery === true, pirateFight: opts.pirateFight === undefined || opts.pirateFight === true, marque: opts.marque === undefined || opts.marque === true, ...(opts.household === true ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   if(houses)g.regionalRivals=true;
   if (opts.citylife !== false && opts.citylife !== 1) g.citylife = initCitylife(world); // city-life flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.captainXp !== false && opts.captainXp !== 1) g.captainXp = true; // captain-experience flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
