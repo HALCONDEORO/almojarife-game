@@ -67,6 +67,7 @@ import { alertsOf, setPriceAlert, clearPriceAlert } from "../src/game/alerts.mjs
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
+import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
 import { tutorialLine } from "../src/game/tutorial.mjs"; // first-voyage tutorial hint (opt-in per game)
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -300,7 +301,7 @@ function syncMissionEcho() {
     open = !d.querySelector(".city-window")?.hidden;
   const cm = $("city-mission");
   if (cm) {
-    cm.textContent = line ?? ""; cm.hidden = !line || open;
+    setLiveText(cm, line ?? ""); cm.hidden = !line || open;
     // The 2D city has its own toolbar (nav) at the top of the iframe: dock the line 6px below
     // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
     let top = "";
@@ -359,8 +360,8 @@ function render() {
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
   const missionLine = activeMissionLine();
   syncMissionEcho();
-  $("hint").textContent = g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
-    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (tutorialLine(g, lang) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS));
+  setLiveText($("hint"), g.over === "win" ? t.win : g.over === "lose" ? `${g.overReason === "bankrupt" ? t.bankrupt : t.lose} ${fmt(netWorth(g))}` :
+    s.voyage ? (s.voyage.anchored ? t.hintAnchored : t.hintSea) : (tutorialLine(g, lang) ?? missionLine ?? t.hint0.replace("{goal}", fmt(GOAL_CASH)).replace("{days}", DEADLINE_DAYS)));
   // map: historical views are player-facing information, never internal metrics.
   if (HISTORICAL_MAPS_ENABLED) {
     let tools = $("historical-map-tools");

@@ -11,3 +11,20 @@ test("the map hint and the city mission line are polite live regions (tutorial a
     assert.match(t, /aria-live="polite"/, id);
   }
 });
+
+import { setLiveText } from "../web/livetext.mjs";
+test("a live region is written only when its text changes", () => {
+  let writes = 0, v = "";
+  const el = { get textContent() { return v; }, set textContent(x) { writes++; v = x; } };
+  assert.equal(setLiveText(el, "Tutorial 1/3"), true);
+  assert.equal(setLiveText(el, "Tutorial 1/3"), false);
+  assert.equal(setLiveText(el, "Tutorial 2/3"), true);
+  assert.equal(setLiveText(el, null), true);
+  assert.equal(setLiveText(el, ""), false);
+  assert.equal(writes, 3);
+  assert.equal(setLiveText(null, "x"), false);
+});
+test("main.mjs writes #hint and #city-mission through setLiveText", () => {
+  assert.match(main, /setLiveText\(\$\("hint"\)/);
+  assert.match(main, /setLiveText\(cm,/);
+});
