@@ -35,8 +35,12 @@ says, what the game already did, and what changed.
 - Recognition wired in: completing a civic work earns the port's respect for the full
   invested sum, at the same one-point-per-100-coins scale as trade (rank.mjs).
 
-Gated offers stay out of the build menu, as the record does ("Only buildings which can
-actually be erected in a town will appear on the menus"); a refused quote still names its
-reason. Existing buildings in existing saves are untouched: the gates only consult quotes.
+Menu feedback is our adaptation, not the record: the record hides what cannot be erected
+("Only buildings which can actually be erected in a town will appear on the menus"); we
+instead keep the unlockable refused offers visible as locked cards that name their reason
+(respect, walls, city size, per-city cap), so the unlock path is discoverable (Main design
+call 25/10). "Good not producible in this city" stays hidden: the player cannot change a
+city's soil. Existing buildings in existing saves are untouched: the gates only consult
+quotes.
 The town-funded path (the record's building department) is NOT in this piece; it belongs to
 the council module and needs its own economy review.

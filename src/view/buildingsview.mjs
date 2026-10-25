@@ -116,11 +116,23 @@ export function plotViewState(plotsCache, world, g, cityId, selPlot) {
 // so a missing locale key can never throw inside the confirm card.
 /** Reasons the shared T table does not carry, own strings so the sweep lines stay untouched. */
 export const WHY = {
-  es: { "one per city": "esta ciudad ya tiene uno", "city limit": "la ciudad no admite más" },
-  en: { "one per city": "this city already has one", "city limit": "the city has room for no more" },
+  es: { "one per city": "esta ciudad ya tiene uno", "city limit": "la ciudad no admite más", "town too small": "la ciudad es aún demasiado pequeña" },
+  en: { "one per city": "this city already has one", "city limit": "the city has room for no more", "town too small": "the town is still too small" },
 };
 export function whyText(t, reason, lang) {
   return t.bldWhy?.[reason] ?? WHY[lang]?.[reason] ?? reason;
+}
+
+/** Rejected offers still worth showing (disabled, with the reason) so the player sees how to
+ *  unlock them - Main design call 25/10. "good not producible" stays hidden: the player cannot
+ *  change what a city's soil yields, so that card would be noise. */
+export const OFFER_LOCKED_SHOW = new Set(["respect required", "one per city", "city limit", "walls required", "town too small"]);
+/** Card inner HTML for a refused offer row: drawing, name, and the reason it is locked. */
+export function bldOfferLocked(t, o, lang, art) {
+  const name = t.bldTypes[o.type] ?? o.type;
+  const fig = art?.src ? `<img class="bldoffer-art" src="${escBw(art.src)}" alt="" loading="lazy"${art.filter ? ` style="filter:${escBw(art.filter)}"` : ""}>` : bwSvg(BOI[o.type] ?? BWI[o.type] ?? BWI.building, 44);
+  return `<span class="bldoffer" title="${escBw(name)}: ${escBw(whyText(t, o.reason, lang))}">${fig}<b class="bldoffer-name">${escBw(name)}</b>`
+    + `<span class="bldoffer-block bldoffer-why">${escBw(whyText(t, o.reason, lang))}</span></span>`;
 }
 
 /* P3 summary card for the owned-building window: name + state + only the stats that

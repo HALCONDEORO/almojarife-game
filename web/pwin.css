@@ -55,3 +55,6 @@ body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:184px;widt
 
 /* Build-offer card: the city's isometric model as the drawing (kept inside the card grid cell). */
 .bldoffer-art{display:block;width:64px;height:64px;object-fit:contain;margin:0 auto}
+/* Locked offer card: visible but truly disabled, the reason it cannot be built yet. */
+.bldoffer-locked{opacity:.6}
+.bldoffer-why{color:#7a6845;font-style:italic}
