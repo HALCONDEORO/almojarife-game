@@ -86,10 +86,11 @@ test("the route tab shows its explainer line exactly once", async () => {
   assert.equal(uses, 1, "routeInfo renders once in the route tab (regression: it was concatenated twice)");
 });
 
-test("route tab source: the active advanced route renders as one compact table row per stop", () => {
+test("route tab source: the active advanced route renders as a visual P3 chain with one chip per stop", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   const route = src.slice(src.indexOf('tab === "route"'), src.indexOf('tab === "city"'));
-  assert.ok(route.includes('class="route-table"'), "route tab uses the compact stops table");
+  assert.ok(route.includes("rpathLoop(rt.stops.map"), "active v2 route renders the visual chip circuit");
+  assert.ok(route.includes("rpath-preview"), "the advanced editor shows a live preview of the draft");
   assert.ok(!route.includes("stopLine"), "old per-stop paragraph lines are gone");
 });
 
