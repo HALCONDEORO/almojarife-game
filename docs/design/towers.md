@@ -39,8 +39,10 @@ defense works with their own costs and a real effect today.
 - Flag `towers`, ON by default for new games (owner order 24/10 12:08: every
   flag ships ON), strict semantics: only `towers === false` or `=== 1` turns it
   off. An off game keeps no `g.towers` key, so saves stay identical.
-- Old saves without the key load fine: counts read as zero until the first
-  tower is built. The state is a plain object, so the JSON round-trip is exact.
+- Old saves without the key load fine, but cannot build towers: there is no
+  deserialize injection (same precedent as walls), so a pre-feature save reads
+  counts as zero yet `quoteTowers` rejects. Tower play needs a new game. The
+  state is a plain object, so the JSON round-trip is exact.
 
 ## UI
 
