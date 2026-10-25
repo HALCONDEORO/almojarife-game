@@ -5,9 +5,10 @@
 // A plague never kills in the model: people shut in and trade less; mortality is
 // deliberately not coded. Same rules for the player and the bots: the market itself shifts.
 import { seeded } from "../view/cityscene.mjs";
+import { wallsLevel } from "./walls.mjs";
 
 // Own tuning constants (inference, not documented figures).
-export const PLAGUE_BASE_CHANCE = 0.02;   // per city and week
+export const PLAGUE_BASE_CHANCE = 0.01;   // per city and week; measured: 0.02 let an unlucky seed bankrupt a healthy builder inside two years (no mitigations), 0.01 keeps the risk without that tail
 export const PLAGUE_BASE_DAYS = 28;       // how long a plague sits on a city
 export const PLAGUE_MIN_DAYS = 7;
 export const PLAGUE_DEMAND = 0.75;        // effective population for demand while it lasts
@@ -56,12 +57,15 @@ export function expandWalls(g, cityId) {
   g.plague.walls[cityId] = 1;
   return { ok: true, cost: WALL_COST };
 }
-/** Hospital and capilla stand inside the expanded walls (doc reference: P3 manual, wall growth). */
-export const needsWalls = (type) => type === "hospital" || type === "capilla";
+/** Civic types licensed by wall level (doc reference: P3 manual, wall growth - a construction gate,
+ *  not a health effect). D's new civic types join this table at the level Estudio assigns them. */
+export const WALL_GATE = Object.freeze({ hospital: 1, capilla: 1 });
+export const needsWalls = (type) => (WALL_GATE[type] ?? 0) >= 1;
 export function wallsAllow(g, cityId, type) {
-  if (!needsWalls(type)) return true;
-  if (!g.plague) return true; // flag off: the plague gate does not exist
-  return (g.plague.walls[cityId] ?? 0) >= 1;
+  const need = WALL_GATE[type] ?? 0;
+  if (!need) return true;
+  if (!g.plague && !g.walls) return true; // flags off: the wall gate does not exist
+  return wallsLevel(g, cityId) >= need; // modern record or legacy plague.walls=1 (walls.mjs)
 }
 
 /** Weekly roll: every city can catch the plague; mitigations decide how often and how long. */

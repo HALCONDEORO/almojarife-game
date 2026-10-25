@@ -39,7 +39,8 @@
     "fish",
     "ironware",
     "beer",
-    "esparto"
+    "esparto",
+    "saffron"
    ],
    "river": true
   },
@@ -74,7 +75,8 @@
    "pop": 30000,
    "makes": [
     "grain",
-    "silk"
+    "silk",
+    "saffron"
    ],
    "needs": [
     "timber",
@@ -107,7 +109,8 @@
     "beer",
     "esparto",
     "leather",
-    "soap"
+    "soap",
+    "saffron"
    ]
   },
   {
@@ -141,6 +144,7 @@
     "ironware"
    ],
    "needs": [
+    "grain",
     "wine",
     "olive_oil",
     "sugar",
@@ -303,7 +307,8 @@
    "makes": [
     "salt",
     "wine",
-    "fish"
+    "fish",
+    "saffron"
    ],
    "needs": [
     "wool",
@@ -652,6 +657,9 @@
   },
   "pepper": {
    "base": 200
+  },
+  "saffron": {
+   "base": 210
   },
   "esparto": {
    "base": 30

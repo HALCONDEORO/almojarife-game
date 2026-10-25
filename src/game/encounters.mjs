@@ -1,6 +1,7 @@
 import {TICKS_PER_DAY} from '../sim/clock.mjs';
 // Original automatic sea encounter rules, independent of UI and not enabled by this module.
 import {defenceOf} from './crew.mjs';
+import {xpOfEncounter} from './captainxp.mjs';
 const skill=(ship,key)=>{const n=ship.captain?.[key];return Number.isSafeInteger(n)&&n>=0&&n<=3?n:0;};
 const unit=n=>{if(!Number.isFinite(n)||n<0||n>=1)throw Error('roll must be finite in [0,1)');return n;};
 /** Resolve a single encounter with supplied random draws. No mutation, money or hidden user choice. */
@@ -35,6 +36,7 @@ export function applyEncounter(g,ship,outcome){
   const b=g.basis?.[good];if(b&&b.qty>0){const used=Math.min(lost,b.qty),unit=b.cost/b.qty;b.qty-=used;b.cost=Math.max(0,b.cost-used*unit);}
  }
  ship.voyage.ticksLeft+=outcome.delay*TICKS_PER_DAY;ship.voyage.totalTicks=Math.max((ship.voyage.totalTicks??ship.voyage.ticksLeft-outcome.delay*TICKS_PER_DAY)+outcome.delay*TICKS_PER_DAY,ship.voyage.ticksLeft);
+ xpOfEncounter(g,ship,outcome); // flag off: nothing
  return {ok:true,...outcome,hullLost:before-ship.hull,cargoLost};
 }
 

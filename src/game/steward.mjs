@@ -15,8 +15,8 @@ import { recordSale } from "./voyages.mjs";
 
 export const stewardOf = (g, city) => g.warehouses?.[city]?.admin ?? null;
 const GOOD_NAMES = {
-  es: { grain: "trigo", fish: "pescado", esparto: "esparto", meat: "carne", pottery: "cerámica", legumes: "legumbres", kid_meat: "cabrito", leather: "cuero", salt: "sal", wool: "lana", iron: "hierro", timber: "madera", cloth: "paño", olive_oil: "aceite", wine: "vino", silk: "seda", sugar: "azúcar", pepper: "pimienta", beer: "cerveza", soap: "jabón" },
-  en: { grain: "grain", fish: "fish", esparto: "esparto", meat: "meat", pottery: "pottery", legumes: "legumes", kid_meat: "kid", leather: "leather", salt: "salt", wool: "wool", iron: "iron", timber: "timber", cloth: "cloth", olive_oil: "olive oil", wine: "wine", silk: "silk", sugar: "sugar", pepper: "pepper", beer: "beer", soap: "soap" },
+  es: { grain: "trigo", fish: "pescado", esparto: "esparto", meat: "carne", pottery: "cerámica", legumes: "legumbres", kid_meat: "cabrito", leather: "cuero", salt: "sal", wool: "lana", iron: "hierro", ironware: "herrajes", bricks: "ladrillos", timber: "madera", cloth: "paño", olive_oil: "aceite", wine: "vino", silk: "seda", sugar: "azúcar", pepper: "pimienta", saffron: "azafrán", beer: "cerveza", soap: "jabón" },
+  en: { grain: "grain", fish: "fish", esparto: "esparto", meat: "meat", pottery: "pottery", legumes: "legumes", kid_meat: "kid", leather: "leather", salt: "salt", wool: "wool", iron: "iron", ironware: "ironware", bricks: "bricks", timber: "timber", cloth: "cloth", olive_oil: "olive oil", wine: "wine", silk: "silk", sugar: "sugar", pepper: "pepper", saffron: "saffron", beer: "beer", soap: "soap" },
 };
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
 

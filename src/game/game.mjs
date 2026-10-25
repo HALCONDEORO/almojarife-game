@@ -19,6 +19,7 @@ import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
+import { gainXp } from "./captainxp.mjs";
 import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
@@ -38,6 +39,7 @@ import { growthTick, growthMul } from "./growth.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
+import { almonedaDay } from "./almoneda.mjs"; // the weekly town auction (flag-gated inside)
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
@@ -45,6 +47,7 @@ import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
+import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, WALL_POP } from "./walls.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -97,8 +100,10 @@ export function newGame(world, start = "cadiz", opts = {}) {
   for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if(houses)regionalRivalStep({world,market,day:d-WARMUP_DAYS,tick:d*TICKS_PER_DAY,seed:normalizeSeed(opts.seed),regionalRivals:true},t);else aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
   const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === undefined || opts.kidMeat === true, credit: opts.credit === undefined || opts.credit === true, ...(opts.foreclosure === undefined || opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes: opts.legumes === undefined || opts.legumes === true, pottery: opts.pottery === undefined || opts.pottery === true, pirateFight: opts.pirateFight === undefined || opts.pirateFight === true, marque: opts.marque === undefined || opts.marque === true, ...(opts.household === true ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   if(houses)g.regionalRivals=true;
-  if (opts.citylife === true) g.citylife = initCitylife(world); // city-life flag, OFF by default: no key at all in an off game (saves stay identical)
-  if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
+  if (opts.citylife !== false && opts.citylife !== 1) g.citylife = initCitylife(world); // city-life flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
+  if (opts.captainXp !== false && opts.captainXp !== 1) g.captainXp = true; // captain-experience flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
+  if (opts.plague !== false && opts.plague !== 1) g.plague = initPlague(); // plague flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
+  if (opts.walls !== false && opts.walls !== 1) g.walls = initWalls(); // walls flag, ON by default: only false or 1 turns it off (an off game keeps no key, saves stay identical)
   if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
@@ -107,6 +112,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
   if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
   if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
+  if (opts.townIndustry !== false && opts.townIndustry !== 1) g.townIndustry = true; // town-industry flag, ON by default (same owner order as citylife: every flag ships ON); false/1 keeps an off game with no key, saves stay identical (docs/design/town-industry-and-auctions.md)
   if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
   refreshIntel(g);
@@ -143,6 +149,7 @@ export function resolveBankruptcy(g) {
 export const DAILY_HOOKS = [];
 /** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
 function dayTick(g) {
+  almonedaDay(g); // the hammer falls at the END of the auction day, before the calendar turns: the player bids while the lot is on the block (flag off: nothing)
   g.day++;
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
@@ -150,7 +157,8 @@ function dayTick(g) {
     if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
     accrueDay(g, s);
   }
-  accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  accrueWalls(g, buildingCommit); // walls share today's cash budget with buildings (flag off: nothing)
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
@@ -189,6 +197,7 @@ function arrive(g, s) {
   wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
   arrivalJustice(g, s); // flag off or no data: nothing
+  gainXp(g, s, "navigation"); // flag off: nothing
   arrivalNews(g, s.at); // dockside talk: price news from passing ships
   arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
   arrivalIdentity(g, s.at); // first docking: the port shows its character (flag off: nothing)
@@ -213,7 +222,7 @@ function marketTick(g) {
   const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
   g.world.cities.forEach((c, i) => {
     if (marketSlot(g.world, i) !== slot) return;
-    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
+    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id) + WALL_POP * wallsKeptLevel(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
     growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
@@ -236,6 +245,7 @@ export function advanceTick(g) {
   if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
+  tickWalls(g); // wall works finish on their exact tick (flag off: nothing)
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {
@@ -432,7 +442,7 @@ export function bestPorts(g, ship) {
     const there = { ...ship, at: c.id, voyage: null };
     let revenue = 0, profit = 0, any = false;
     for (const [good, q] of Object.entries(ship.cargo)) {
-      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, there));
+      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, c.id));
       if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
     }
     if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });

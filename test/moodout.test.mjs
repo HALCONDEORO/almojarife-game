@@ -17,7 +17,7 @@ test("flag off: no state, no notices, no tab field, trade unchanged", () => {
   assert.equal(doBuy(g, s, "salt", 1).ok, true);
 });
 test("mood flag on but citylife off: silence, no state", () => {
-  const g = mk({ cityMoodOut: true });
+  const g = mk({ citylife: false, cityMoodOut: true }); // citylife OFF pinned explicitly (ships ON by default since 24/10)
   assert.equal(moodOutLine(g, "cadiz"), null); assert.equal(arrivalMood(g, "cadiz"), null);
   assert.equal(g.moodSeen, undefined); assert.equal(hallView(g, "cadiz").mood, undefined);
 });

@@ -109,7 +109,7 @@ The roadmap lives in `ROADMAP.md` (v5.3). Official plan (Option 2, owner decisio
 
 ## 7. Where it will be playable
 
-1. **Web (browser), free, first.** Static site, runs on any device, no install. Alpha and Beta ship here.
+1. **Web (desktop browser), free, first.** Static site, no install. Desktop only: Windows, Mac and Linux browsers with keyboard and mouse; phones and tablets are out of scope. Alpha and Beta ship here.
 2. **Desktop builds** (Windows, Linux) after 1.0. 1.0 is web only.
 3. **Steam** only if the owner decides to. It needs a paid developer registration and store review, so nothing is done until the owner says so.
 

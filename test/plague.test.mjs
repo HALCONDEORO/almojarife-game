@@ -4,19 +4,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newGame, advanceDay } from "../src/game/game.mjs";
+import { newGame, advanceDay, buyWarehouse, doBuy, storeGoods } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
-import { buyPlot, buyOffice, startConstruction, quoteConstruction } from "../src/game/buildings.mjs";
+import { buyPlot, buyOffice, startConstruction, quoteConstruction, BUILDING_TYPES, JOBS_PER_LEVEL, WAGE_PER_WORKER, producerRate, sellQuote } from "../src/game/buildings.mjs";
 import { initPlague, plagueWeek, plagueChance, plagueDays, plagueActive, plaguePopMul, expandWalls, PLAGUE_BASE_CHANCE, PLAGUE_BASE_DAYS, WALL_COST } from "../src/game/plague.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { post } from "../src/game/ledger.mjs";
+import { RECIPES, quoteRecipe } from "../src/sim/recipes.mjs";
+import { price } from "../src/sim/market.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, plague: true, ...opts });
 const withBuildings = (g, cityId, defs) => { g.buildings ??= {}; g.buildings[cityId] = Object.fromEntries(defs.map(([type, level, halted], i) => [`${cityId}:${i + 1}`, { type, level, state: "active", ...(halted ? { halted: true } : {}) }])); };
 
-test("flag OFF: no state, no rolls, market untouched", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 7 });
+test("flag OFF (forced): no state, no rolls, market untouched", () => {
+  const g = newGame(world, "cadiz", { freePlay: true, seed: 7, plague: false }); // forced OFF (the default is ON since 24/10 12:08)
   assert.equal(g.plague, undefined);
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.equal(g.plague, undefined);
@@ -52,7 +54,7 @@ test("walls: hospital and capilla need the one expansion; pozo does not; expansi
   assert.ok(r.ok && g.cash === before - WALL_COST, "money identity on the expansion");
   assert.equal(expandWalls(g, "cadiz").reason, "already expanded");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").ok, "hospital allowed after the expansion");
-  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true }); // no plague flag: no wall gate
+  const g2 = newGame(world, "cadiz", { freePlay: true, seed: 7, citylife: true, walls: false, plague: false }); // no wall system at all (plague pinned off, walls pinned off): no gate
   (g2.rep ??= {}).cadiz = 100; g2.cash = 1e6; buyOffice(g2, "cadiz"); buyPlot(g2, "cadiz", { id: "cadiz:1", type: "house", w: 10, d: 10 });
   assert.ok(quoteConstruction(g2, "cadiz", "cadiz:1", "hospital").ok, "without the plague flag the wall gate does not exist");
 });
@@ -97,4 +99,40 @@ test("save round trip with the plague flag ON keeps the plague book", () => {
   assert.equal(b.plague.walls.cadiz, 1);
   for (let i = 0; i < 20; i++) { advanceDay(a); advanceDay(b); }
   assert.deepEqual(JSON.parse(JSON.stringify({ ...b, world: undefined })), JSON.parse(JSON.stringify({ ...a, world: undefined })));
+});
+
+// Measured tuning of the weekly base chance (sim_buildings_economy scenario B, 3650 days, plague ON):
+// with the previous 0.02 the seed-1 builder bot in casablanca caught two early plagues (days 84-112
+// and 301-329) inside his tight starting-cash window, went bankrupt on day 686 and lost the workshop
+// to the free-play seizure; 0.01 keeps every measured seed below the flag-off baseline (the risk
+// stays) while taking that tail bankruptcy out. The engine never crashed on this: the bankruptcy is
+// the designed seizure; the old sim probe just assumed the record survived. This test replays the
+// bot's cash-relevant loop past the old bankruptcy day and pins the constant.
+test("the builder bot survives the early plague windows at the measured base chance", () => {
+  assert.equal(PLAGUE_BASE_CHANCE, 0.01, "measured tuning: halved weekly base chance");
+  const home = "casablanca";
+  const g = newGame(world, home, { cash: 2500, freePlay: true, seed: 1, plague: true });
+  buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
+  assert.ok(startConstruction(g, home, home + ":1", "workshop").ok, "workshop starts");
+  const BUFFER = 1200; // same cash discipline as the sim bot
+  for (let d = 1; d <= 700; d++) {
+    advanceDay(g);
+    const b = g.buildings?.[home]?.[home + ":1"];
+    if (d % 7 === 0 && b?.state === "active" && !b.halted && b.level < 3) {
+      if (!g.warehouses[home] && g.cash > BUFFER + 1500) buyWarehouse(g, home);
+      const ship = g.ships.find((s) => s.at === home && !s.voyage);
+      if (g.warehouses[home] && ship) for (const [good, qty] of Object.entries(RECIPES.workshop)) {
+        const need = Math.max(0, qty * (b.level + 1) - (g.warehouses[home].goods[good] ?? 0));
+        const unit = Math.ceil(price(world, g.market[home][good], good) * 1.1);
+        const n = Math.min(need, Math.max(0, Math.floor((g.cash - BUFFER) / unit)));
+        if (n > 0) { const r = doBuy(g, ship, good, n); if (r.ok) storeGoods(g, ship, good, r.qty); }
+      }
+      const q = quoteRecipe(world, g.market, home, "weave");
+      const margin = q.ok ? sellQuote(world, g.market, home, "cloth", 2) - q.cost : 0;
+      const daily = (BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER) * (b.level + 1);
+      if (g.cash > BUFFER && margin * producerRate("workshop", b.level + 1) >= 3 * daily) startConstruction(g, home, home + ":1", "workshop");
+    }
+  }
+  assert.equal(g.bankruptcies ?? 0, 0, "no bankruptcy in the early plague windows");
+  assert.ok(g.buildings[home]?.[home + ":1"], "the workshop is not seized");
 });

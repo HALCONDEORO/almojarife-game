@@ -1,7 +1,7 @@
 // Construction engine, sim slice (docs/design/city-builder.md piece 2): plot ownership,
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
-import { quoteRecipe, consumeRecipe, quoteUnits, consumeUnits, RECIPES } from "../sim/recipes.mjs";
+import { quoteRecipe, consumeRecipe, quoteUnitsImport, consumeUnitsImport, RECIPES } from "../sim/recipes.mjs";
 import { price, seasonMul } from "../sim/market.mjs";
 import { FEE } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
@@ -48,10 +48,16 @@ export const BUILDING_TYPES = Object.freeze({
   caminos: Object.freeze({ recipe: "caminos", fee: 150, buildDays: 3, upkeep: 1, maxLevel: 3 }),
   pozo: Object.freeze({ recipe: "pozo", fee: 150, buildDays: 2, upkeep: 1, maxLevel: 3 }),
   capilla: Object.freeze({ recipe: "capilla", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  // Second civic batch (docs/design/civic-buildings-2.md): the carniceria steadies the meat and fish
+  // supply, the molino turns grain into bread, the corral de comedias lifts spirits in the big ports
+  // (it needs a large audience: minPop gate, engine-enforced like the walls rule).
+  carniceria: Object.freeze({ recipe: "carniceria", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  molino: Object.freeze({ recipe: "molino", fee: 250, buildDays: 4, upkeep: 2, maxLevel: 3 }),
+  corral: Object.freeze({ recipe: "corral", fee: 400, buildDays: 6, upkeep: 4, maxLevel: 3, minPop: 15000 }),
 });
 
 /** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */
-export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla"]);
+export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla", "carniceria", "molino", "corral"]);
 
 /** Plot price from the city's population and the plot's suggested type and area. Deterministic, no rolls. */
 export function plotPrice(world, cityId, plot) {
@@ -110,6 +116,7 @@ export function quoteConstruction(g, cityId, plotId, type) {
   if (!spec) return { ok: false, reason: "unknown type" };
   if (CIVIC_BUILDINGS.includes(type) && !g.citylife) return { ok: false, reason: "unknown type" }; // civic types exist only with the city-life flag (off games cannot build them even by direct call)
   if (!wallsAllow(g, cityId, type)) return { ok: false, reason: "walls required" }; // hospital and capilla stand inside expanded walls (plague module)
+  if (spec.minPop && (g.world.nodes[cityId]?.pop ?? 8000) < spec.minPop) return { ok: false, reason: "town too small" }; // a corral de comedias needs a big-city audience
   if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
@@ -124,10 +131,10 @@ export function quoteConstruction(g, cityId, plotId, type) {
     fromStore[good] = Math.min(inputs[good], Math.max(0, store[good] ?? 0));
     missing[good] = inputs[good] - fromStore[good];
   }
-  const q = quoteUnits(g.world, g.market, cityId, missing);
+  const q = quoteUnitsImport(g.world, g.market, cityId, missing); // warehouse first, then the market; what the port lacks is imported at IMPORT_MUL
   if (!q.ok) return q;
   const fee = spec.fee * level, ticks = spec.buildDays * level * TICKS_PER_DAY;
-  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing };
+  return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing, imported: q.imported };
 }
 
 /** Pay and start construction; the building turns active exactly at readyTick (tickBuildings). */
@@ -137,7 +144,7 @@ export function startConstruction(g, cityId, plotId, type) {
   if (!q.ok) return q;
   if (g.cash < q.cost) return { ok: false, reason: "no cash", cost: q.cost };
   const spec = BUILDING_TYPES[type];
-  const c = consumeUnits(g.world, g.market, cityId, q.missing, g.cash - q.fee);
+  const c = consumeUnitsImport(g.world, g.market, cityId, q.missing, g.cash - q.fee); // local stock down; imported units never touch the market
   if (!c.ok) return c; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
   const w = g.warehouses?.[cityId];
   for (const [good, qty] of Object.entries(q.fromStore)) {
@@ -148,6 +155,7 @@ export function startConstruction(g, cityId, plotId, type) {
     if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
   }
   g.cash -= q.cost;
+
   const b = buildingAt(g, cityId, plotId);
   Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks });
   post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${type} nivel ${q.level})`, en: `Construction started in ${cityId} (${type} level ${q.level})` } });
@@ -182,6 +190,7 @@ export function accrueBuildings(g) {
     (a.buildings ??= {})[key(cityId, plotId)] = (a.buildings[key(cityId, plotId)] ?? 0) + cost;
     committed += cost;
   }
+  return committed; // shared with accrueWalls: one daily budget across both consumers
 }
 /** Restart a halted building once there is cash to pay its upkeep and people again. */
 export function restartBuilding(g, cityId, plotId) {
@@ -214,6 +223,7 @@ export const JOBS_PER_LEVEL = Object.freeze({
   oil_mill: 6, vineyard: 6, saltworks: 5, brewery: 6, brickworks: 6, pottery: 6, soapworks: 6, esparto_field: 5, armory: 4, ranch: 6, dock: 0, fishery: 4, ironworks: 6,
   posito: 2, hospital: 6, alhondiga: 3, // city-life civic types (own tuning; only buildable with the flag on)
   caminos: 1, pozo: 1, capilla: 3,
+  carniceria: 3, molino: 4, corral: 5, // second civic batch (own tuning; only buildable with the flag on)
 });
 /** Share of the base population already working the town's own economy; the rest can be hired. */
 export const TOWN_JOBS_SHARE = 0.9;
@@ -222,9 +232,14 @@ export const TOWN_JOBS_SHARE = 0.9;
 export const WAGE_PER_WORKER = 1;
 /** Total workers the port's active buildings want. */
 export const jobsNeeded = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type ? (JOBS_PER_LEVEL[b.type] ?? 0) * b.level : 0), 0);
+/** Hands that left the town's own economy when their establishment was sold to the player
+ *  (docs/design/town-industry-and-auctions.md piece 2): they now work the buyer's building, so the
+ *  town's 90% share shrinks by exactly their count. 0 unless the town-industry flag is on. */
+export const townJobsFreed = (g, cityId) => (g?.townIndustry === true ? g.townSales?.[cityId]?.jobs ?? 0 : 0);
 /** Inhabitants available for hire: effective population (city pop + house bonus) minus the town's own jobs. */
-// The extra term is the city-life population drift (src/game/citylife.mjs state contract): 0 in a flag-off game.
-export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) + (g.citylife?.cities?.[cityId]?.extra ?? 0) - Math.round(pop * TOWN_JOBS_SHARE)); };
+// The extra terms are the city-life population drift and the hands that came with bought establishments
+// (state contracts of citylife.mjs and townindustry.mjs): both 0 in a flag-off game.
+export const freeLabor = (g, cityId) => { const pop = g.world?.nodes?.[cityId]?.pop ?? 8000; return Math.max(0, pop + housePopBonus(g, cityId) + (g.citylife?.cities?.[cityId]?.extra ?? 0) + townJobsFreed(g, cityId) - Math.round(pop * TOWN_JOBS_SHARE)); };
 /** Staffing ratio for the whole port: 1 when there are enough inhabitants, free/needed below that. */
 export const staffingRatio = (g, cityId) => { const need = jobsNeeded(g, cityId); return need < 1 ? 1 : Math.min(1, freeLabor(g, cityId) / need); };
 

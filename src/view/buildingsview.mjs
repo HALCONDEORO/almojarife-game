@@ -55,7 +55,7 @@ export function buildOffers(g, cityId, plotId) {
     .filter((type) => !CIVIC_BUILDINGS.includes(type) || g.citylife).map((type) => { // civic types belong to the city-life flag
     const q = quoteConstruction(g, cityId, plotId, type), spec = BUILDING_TYPES[type];
     return q.ok
-      ? { type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: spec.upkeep * q.level, affordable: g.cash >= q.cost }
+      ? { type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: spec.upkeep * q.level, affordable: g.cash >= q.cost, imported: q.imported }
       : { type, ok: false, reason: q.reason };
   });
 }
@@ -66,7 +66,7 @@ export function upgradeOffer(g, cityId, plotId) {
   if (!b || b.state !== "active" || !b.type) return null;
   const q = quoteConstruction(g, cityId, plotId, b.type);
   if (!q.ok) return { type: b.type, ok: false, reason: q.reason, level: b.level };
-  return { type: b.type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: BUILDING_TYPES[b.type].upkeep * q.level, affordable: g.cash >= q.cost, maxLevel: BUILDING_TYPES[b.type].maxLevel };
+  return { type: b.type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: BUILDING_TYPES[b.type].upkeep * q.level, affordable: g.cash >= q.cost, maxLevel: BUILDING_TYPES[b.type].maxLevel, imported: q.imported };
 }
 
 /** Headline numbers for the tab: effective population with the house bonus, storage cap with the warehouse bonus. */

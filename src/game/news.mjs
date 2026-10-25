@@ -7,16 +7,16 @@ import { post } from "./ledger.mjs";
 import { isLive } from "./intel.mjs";
 import { price } from "../sim/market.mjs";
 export const NEWS_CHANCE = 0.7, NEWS_DEVIATION = 0.15;
-export const GOOD_EN = { grain: "grain", wine: "wine", olive_oil: "olive oil", sugar: "sugar", wool: "wool", fish: "fish", esparto: "esparto", meat: "meat", pottery: "pottery", legumes: "legumes", kid_meat: "kid", leather: "leather", salt: "salt", timber: "timber", iron: "iron", cloth: "cloth", silk: "silk", pepper: "pepper", beer: "beer", soap: "soap" };
-export const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", pottery: "la cerámica", legumes: "las legumbres", kid_meat: "el cabrito", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", cloth: "el paño", silk: "la seda", pepper: "la pimienta", beer: "la cerveza", soap: "el jabón" };
+export const GOOD_EN = { grain: "grain", wine: "wine", olive_oil: "olive oil", sugar: "sugar", wool: "wool", fish: "fish", esparto: "esparto", meat: "meat", pottery: "pottery", legumes: "legumes", kid_meat: "kid", leather: "leather", salt: "salt", timber: "timber", iron: "iron", ironware: "ironware", bricks: "bricks", cloth: "cloth", silk: "silk", pepper: "pepper", saffron: "saffron", beer: "beer", soap: "soap" };
+export const GOOD_ES = { grain: "el trigo", wine: "el vino", olive_oil: "el aceite", sugar: "el azúcar", wool: "la lana", fish: "el pescado", esparto: "el esparto", meat: "la carne", pottery: "la cerámica", legumes: "las legumbres", kid_meat: "el cabrito", leather: "el cuero", salt: "la sal", timber: "la madera", iron: "el hierro", ironware: "los herrajes", bricks: "los ladrillos", cloth: "el paño", silk: "la seda", pepper: "la pimienta", saffron: "el azafrán", beer: "la cerveza", soap: "el jabón" };
 /** Fair price: what the entry would charge at its target stock. */
 export const fairPrice = (world, e, good) => price(world, { ...e, stock: e.target }, good);
 /** Maybe post one price-news line on arrival at `at`. Returns {city, good, dear, price} or null. */
 /** Spanish price news; article, verb and adjective agree in gender and number ("las legumbres están caras"). */
 export function newsEs(gEs, dear, cName, about) {
-  const fem = gEs.startsWith("la "), plur = gEs.startsWith("las ");
-  const adj = dear ? (plur ? "caras" : fem ? "cara" : "caro") : (plur ? "baratas" : fem ? "barata" : "barato");
-  const pron = plur ? "las" : fem ? "la" : "lo", verb = plur ? "están" : "está";
+  const fem = gEs.startsWith("la ") || gEs.startsWith("las "), plur = gEs.startsWith("las ") || gEs.startsWith("los ");
+  const adj = dear ? (plur ? (fem ? "caras" : "caros") : fem ? "cara" : "caro") : (plur ? (fem ? "baratas" : "baratos") : fem ? "barata" : "barato");
+  const pron = plur ? (fem ? "las" : "los") : fem ? "la" : "lo", verb = plur ? "están" : "está";
   return dear ? `Marineros de paso por ${cName} dicen que ${gEs} ${verb} ${adj} allí: ${pron} pagan a unas ${about} monedas.`
     : `Marineros de paso por ${cName} dicen que ${gEs} ${verb} ${adj} allí: apenas ${pron} pagan a ${about} monedas.`;
 }

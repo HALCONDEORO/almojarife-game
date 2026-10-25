@@ -1,4 +1,5 @@
 import {goodIcon} from "../../web/icons.mjs";
+import {markerScale,labelFontSize} from "./camera.mjs";
 // Original SVG/UI. Informational only: no economy, discovery or warfare effects.
 export const HISTORICAL_MAPS_ENABLED=true;
 export const MAP_MODES=['geographic','political','leagues','trade'];
@@ -58,7 +59,11 @@ export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,o
  const gap=5/zoom,boxes=[],out=[];
  const hits=(a,b)=>a.x<b.x+b.w+gap&&a.x+a.w+gap>b.x&&a.y<b.y+b.h+gap&&a.y+a.h+gap>b.y;
  // Protect real port markers and the labels already placed on the chart.
- const obstacles=obstaclePorts.flatMap(p=>{const px=x(p.lon),py=y(p.lat),l=mapLabelPlacement(p.id),w=p.name.length*7;return[{x:px-13,y:py-13,w:26,h:26},{x:px+l.x-(l.anchor==='end'?w:l.anchor==='middle'?w/2:0),y:py+l.y-13,w,h:17}];});
+ const fs=labelFontSize(zoom),k=markerScale(zoom);
+ // Obstacles mirror the DOM label model (maplabels.test.mjs): labels render inside a group
+ // scaled by markerScale(zoom) with font labelFontSize(zoom); 0.571*fs per char is the audited
+ // conservative width bound. Cards must avoid the label the player actually sees.
+ const obstacles=obstaclePorts.flatMap(p=>{const px=x(p.lon),py=y(p.lat),l=mapLabelPlacement(p.id),w=p.name.length*fs*0.571*k,h=1.214*fs*k,tx=px+k*l.x,ty=py+k*l.y;return[{x:px-13*k,y:py-13*k,w:26*k,h:26*k},{x:tx-(l.anchor==='end'?w:l.anchor==='middle'?w/2:0),y:ty-13*(fs/14)*k,w,h}];});
  for(const p of [...ports].sort((a,b)=>{const near=p=>ports.filter(q=>Math.hypot(x(q.lon)-x(p.lon),y(q.lat)-y(p.lat))<100).length;return near(b)-near(a)||a.id.localeCompare(b.id)})){const px=x(p.lon),py=y(p.lat),size=tradeCardSize(p),W=size.w/zoom,H=size.h/zoom,candidates=[];
  for(let yy=8;yy<bounds.height-H-8;yy+=Math.max(4,16/zoom))for(let xx=8;xx<bounds.width-W-8;xx+=Math.max(4,16/zoom)){const b={x:xx,y:yy,w:W,h:H};if([...boxes,...obstacles].some(o=>hits(b,o)))continue;const dx=xx+W/2-px,dy=yy+H-py;candidates.push({...b,score:dx*dx+dy*dy+(dy>0?1600:0)});}
  candidates.sort((a,b)=>a.score-b.score);const b=candidates[0];if(!b)continue;boxes.push(b);out.push({port:p,box:b,px,py});
