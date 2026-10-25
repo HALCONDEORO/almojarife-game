@@ -25,18 +25,18 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 - **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
 - **Captains and the sea.** Captains with navigation, weather and defence skills change how a ship sails, weathers storms and fights pirates. Storms, pirates, fair winds and drifting cargo bring choices at sea; win a pirate fight and you may keep the enemy ship as a prize. Prices of ports you have not visited are rumours with an age and an error margin.
 - **Ranks and respect.** Climb ranks by net worth (they unlock bigger loans and better ships), and earn respect port by port to open offices.
-- **A 3D port (prototype).** A three.js harbour built from your game state: docked ships, warehouse, time of day. Desktop first.
+- **Your port, drawn.** Every city is drawn as a 2D plan built from the live game state: plots, buildings, shoreline and the working quay. A three.js harbour prototype (docked ships, warehouse, time of day) remains available with `?city2d=0`. Desktop first.
 - **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file. Until launch the save format can change without migration: test saves from earlier builds are not preserved.
 - **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your desktop browser.
 - **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
 
 ## Screenshots
 
-_Captured from the playable build (PR #378 branch, 24 Oct 2026); refresh when the UI changes so they never show unmerged work._
+_Captured from the playable build (PR #378 branch, 24 Oct 2026; city view refreshed 25 Oct 2026 from the published build); refresh when the UI changes so they never show unmerged work._
 
-| The 3D port | Trade in the market |
+| The city plan | Trade in the market |
 |---|---|
-| ![3D port view with the city toolbar](docs/img/port3d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
+| ![2D city plan of the home port with the city toolbar](docs/img/city2d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
 | **The sea chart** | **Build ships at the shipyard** |
 | ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard tab with the ship classes and their orders](docs/img/shipyard.png) |
 | **Tavern: captains and news** | **Bank: loans and interest** |
