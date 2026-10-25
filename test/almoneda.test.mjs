@@ -302,6 +302,24 @@ describe("hammer price (second price + 1, reserve-clamped: a mutation here must 
     }
     assert.fail("no mixed establishment + generated table found in 12 weeks");
   });
+  it("a legacy bare-number bid settles ONLY on the establishment table, never on a generated ship table", async () => {
+    const { shipLotOfDay, almonedaDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    for (let k = 0; k < 12; k++) { // settlement path, no placeBid: the raw save number reaches almonedaDay as-is
+      g.day = auctionOffset("cadiz") + k * AUCTION_EVERY;
+      const est = lotOfDay(g, "cadiz");
+      const ship = shipLotOfDay(g, "cadiz");
+      if (!est || !ship) continue;
+      g.townBids = { cadiz: 999999 }; // old save: the player had bid big on the establishment table
+      const ships0 = g.ships.length, cash0 = g.cash;
+      almonedaDay(g);
+      assert.equal(g.ships.length, ships0); // the number was never a bid on the ship table: a neighbour takes her
+      assert.ok(g.cash < cash0, "the establishment the bid belonged to should be bought and paid");
+      assert.ok(g.buildings?.cadiz?.[est.id], "the establishment changes hands to the player");
+      return;
+    }
+    assert.fail("no mixed establishment + ship table found in 12 weeks");
+  });
 });
 
 describe("notice reach", () => {

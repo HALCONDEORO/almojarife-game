@@ -610,7 +610,7 @@ function render() {
         const pv = plotViewState(plotsCache, world, g, s.at, bldSelPlot), o = pv.kind === "offer" ? pv.offer : null;
         if (pv.kind === "loading") h += `<p><i>${t.bldLoading}</i></p>`;
         else if (pv.kind === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
-        else if (o && hasOffice(g, s.at)) { h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
+        else if (o && hasOffice(g, s.at)) { const pnl = g.almonedaPermits?.[s.at] ?? 0; h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); if (pnl > 0) h += `<p><i>${({ es: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar este solar.", en: "Building permits from the town auction: {n}. Redeem one when buying this plot." }[lang] ?? "Permisos de obra de la almoneda: {n}.").replace("{n}", pnl)}</i></p>`; h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmt(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {

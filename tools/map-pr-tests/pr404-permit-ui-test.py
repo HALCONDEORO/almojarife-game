@@ -99,12 +99,19 @@ try:
   framejs("parent.postMessage({kind:'plot',id:'%s'},location.origin)"%plotid,ctx);time.sleep(1.2)
   assert js("document.body.innerText.includes('%s')"%plotid),'plot panel did not open for '+plotid
  def body(): return js('document.body.innerText')
+ def scrolltxt(t):
+  js("(()=>{const els=[...document.querySelectorAll('p,div,small,i,b')].filter(e=>e.children.length===0&&e.textContent.includes("+json.dumps(t)+"));if(els.length)els[0].scrollIntoView({block:'center'});return els.length})()");time.sleep(.4)
  # ---- scenario A: cash 0 + 1 permit
  loadsave(mint(0));open_buildings()
  txt=body()
  assert 'Permisos de obra de la almoneda: 1' in txt,'A: permit counter missing in Buildings tab'
+ scrolltxt('Permisos de obra')
  shot('pr404-a-counter.png')
  open_plot('cadiz:7')
+ txt=body()
+ assert 'Permisos de obra de la almoneda: 1' in txt,'A: permit counter missing in the plot view'
+ scrolltxt('Permisos de obra')
+ shot('pr404-a-plotcounter.png')
  assert js('!!document.querySelector("[data-bldact^=\'buy|\']:disabled")'),'A: cash button must be disabled at cash 0'
  pb=js("""(()=>{const b=document.querySelector('[data-bldact^="buypermit|"]');return b?{disabled:b.disabled,label:b.textContent,act:b.dataset.bldact}:null})()""")
  assert pb and not pb['disabled'],'A: permit button missing or disabled'
@@ -117,6 +124,8 @@ try:
  js('document.querySelector("[data-bldconf]").click()');time.sleep(1.5)
  txt=body()
  assert 'Permisos de obra de la almoneda' not in txt,'A: counter must be gone after the only permit is spent'
+ js("document.querySelector('[data-city-tab=\"buildings\"]').click()");time.sleep(1.2)
+ scrolltxt('solar')
  assert js("(()=>{const s=JSON.parse(localStorage.getItem('almojarife.save.v1'));const b=s&&s.state&&s.state.buildings&&s.state.buildings.cadiz;return !!(b&&b['cadiz:7'])})()"),'A: plot cadiz:7 not owned in the save after redemption'
  shot('pr404-a-after.png')
  print('PASS A cash0: counter visible, permit button enabled, confirm at 0 monedas, plot owned, counter spent')
@@ -129,6 +138,7 @@ try:
  js("""document.querySelector('[data-city-tab="buildings"]').click()""");time.sleep(1)
  txt=body()
  assert 'Permisos de obra de la almoneda: 1' in txt,'B: a cash purchase must NOT spend the permit (silent consumption)'
+ scrolltxt('Permisos de obra')
  shot('pr404-b-cashpath.png')
  print('PASS B cash path: permit untouched (explicit choice only)')
  print('ALL PASS',SHA)
