@@ -319,7 +319,13 @@ function postCity2dState() {
   const frame = document.getElementById("v3d")?.querySelector("iframe");
   if (!frame || !city2dEnabled(location.search)) return;
   const s = g.ships[sel];
-  frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor) }, location.origin);
+  // The town's real industry (flag on only; off or old save: no field, the iframe draws nothing).
+  const industry = g.townIndustry === true ? (() => { const sales = salesOf(g, s.at), gone = new Set(sales.gone ?? []), own = new Set(sales.ids ?? []);
+    return townIndustry(g.world, s.at).map((e) => { const council = e.owner.kind === "council",
+      typeName = t.bldTypes[e.type] ?? t.indTypes[e.type] ?? e.type,
+      ownerDesc = gone.has(e.id) ? t.indSoldNpc : own.has(e.id) ? t.indYours : council ? t.indCouncil : e.owner.name;
+      return { id: e.id, type: e.type, level: e.level, own: own.has(e.id), gone: gone.has(e.id), council, typeName, ownerDesc, label: typeName + " · " + ownerDesc }; }); })() : undefined;
+  frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), industry }, location.origin);
 }
 addEventListener("message", (e) => { const frame = document.getElementById("v3d")?.querySelector("iframe"); if (frame && e.origin === location.origin && e.source === frame.contentWindow && e.data?.kind === "city2d-ready" && e.data.city === g.ships[sel]?.at) postCity2dState(); });
 function render() {
