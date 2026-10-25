@@ -37,6 +37,9 @@ export function startBonus(p) {
   return { cash: (b.cash ?? 0) + d.cash, upkeepMul: (b.upkeepMul ?? 1) * d.upkeepMul };
 }
 
+/** Everything newGame needs from a profile at start: the bonus, the difficulty id (the engine's tutorial rule reads it) and the tutorial switch (easy only). */
+export const startOptions = (p) => ({ ...startBonus(p), difficulty: p.difficulty, tutorial: p.difficulty === "easy" });
+
 const SHIELD_PATH = { heater: "M5 5h90v50c0 34-24 52-45 62C29 107 5 89 5 55z", round: "M50 6a44 44 0 1 0 .01 0z" };
 const light = (hex) => hex === "#e8e0cc" || hex === "#c9962a";
 const CHARGE_SVG = (kind, fill) => ({

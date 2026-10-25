@@ -31,7 +31,7 @@ test("every step has es and en text, no leftover placeholders", () => {
 
 import { loadWorld } from "../src/sim/world.mjs";
 import { difficultyOpts } from "../src/game/difficulty.mjs";
-import { newGame, doBuy, doSell, doSail, doGoTo, quote } from "../src/game/game.mjs";
+import { advanceDay, newGame, doBuy, doSell, doSail, doGoTo, quote } from "../src/game/game.mjs";
 const world = loadWorld();
 test("a real game: off by default, on with opts.tutorial, advances on real trades", () => {
   assert.equal(newGame(world, "cadiz").tut, undefined);
@@ -44,7 +44,8 @@ test("a real game: off by default, on with opts.tutorial, advances on real trade
   assert.equal(tutorialStep(g), "sail");
   const to = world.cities.find((c) => c.id !== ship.at).id;
   const r = doSail(g, ship, to);
-  if (r.ok) assert.equal(tutorialStep(g), "done");
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(tutorialStep(g), "done");
 });
 test("failed actions do not advance the tutorial", () => {
   const g = newGame(world, "cadiz", { ...difficultyOpts("easy"), tutorial: true });
@@ -80,4 +81,29 @@ test("free navigation counts as sailing", () => {
   const r = doGoTo(g, ship, node.lat, node.lon);
   assert.ok(r.ok && !r.toPort, JSON.stringify(r));
   assert.equal(tutorialStep(g), "done");
+});
+
+import { cleanProfile, startOptions } from "../src/game/profile.mjs";
+import { setRoute } from "../src/game/game.mjs";
+import { tutorialLine } from "../src/game/tutorial.mjs";
+test("the real start path: a profile's startOptions give easy a tutorial, others none", () => {
+  const ids = world.cities.map((c) => c.id);
+  for (const [d, on] of [["easy", true], ["normal", false], ["hard", false]]) {
+    const p = cleanProfile({ difficulty: d }, ids);
+    const g = newGame(world, p.home, { ...startOptions(p), profile: p, events: true, seed: 1 });
+    assert.equal(g.tut !== undefined, on, d);
+    assert.equal(tutorialLine(g, "en") !== null, on, d);
+  }
+  const p = cleanProfile({ difficulty: "easy" }, ids), g = newGame(world, p.home, { ...startOptions(p), profile: p, events: true, seed: 1 });
+  assert.equal(tutorialStep(g), "buy");
+});
+test("automated trading (standing routes) does not advance the tutorial", () => {
+  const g = newGame(world, "cadiz", { ...difficultyOpts("easy"), tutorial: true }), ship = g.ships[0];
+  const b = world.cities.map((c) => c.id).find((c) => c !== ship.at && Object.keys(world.goods).some((k) => g.market[c]?.[k] && g.market[ship.at]?.[k]));
+  const good = Object.keys(world.goods).find((k) => g.market[b]?.[k] && g.market[ship.at]?.[k]);
+  assert.ok(setRoute(g, ship, ship.at, b, good).ok);
+  const cash0 = g.cash;
+  for (let i = 0; i < 60; i++) advanceDay(g);
+  assert.ok(g.cash !== cash0 || ship.route?.legs > 0, "the route really traded");
+  assert.equal(tutorialStep(g), "buy");
 });

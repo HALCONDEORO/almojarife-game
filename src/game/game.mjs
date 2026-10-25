@@ -24,7 +24,7 @@ import { seeded } from "../view/cityscene.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
-import { initTutorial, tutorialNote } from "./tutorial.mjs";
+import { initTutorial, tutorialNote, quietly } from "./tutorial.mjs";
 import { rollContracts, expireContracts, contractOnSale } from "./contracts.mjs";
 import { defaultProfile } from "./profile.mjs";
 import { refreshIntel, knownMarket, buyRumor as buyRumorIntel, RUMOR_PRICE } from "./intel.mjs";
@@ -171,7 +171,7 @@ function dayTick(g) {
   if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
-  processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
+  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
   dailyJustice(g); // flag off: nothing
