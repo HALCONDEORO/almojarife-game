@@ -306,9 +306,8 @@ function syncMissionEcho() {
     // The 2D city has its own toolbar (nav) at the top of the iframe: dock the line 6px below
     // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
     let top = "";
-    try { const fr = d.querySelector("iframe"), nav = fr?.contentDocument?.querySelector("nav");
-      if (fr && nav) top = (fr.getBoundingClientRect().top + nav.getBoundingClientRect().bottom + 6 - d.getBoundingClientRect().top) + "px";
-    } catch { /* cross-document read unavailable: keep stylesheet top */ }
+    const hh = d.querySelector(".city-header");
+    if (hh) top = (hh.getBoundingClientRect().bottom - d.getBoundingClientRect().top + 6) + "px";
     cm.style.top = top;
   }
   const hm = $("handle-mission"); if (hm) { hm.textContent = line ?? ""; hm.title = line ?? ""; hm.hidden = !line; }
@@ -792,6 +791,7 @@ function render() {
   P.querySelectorAll("[data-wait]").forEach((e) => e.onclick = () => act(() => advanceDay(g)));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
   renderShipWin();
+  if ($("v3d")) updateCityHeader(g.ships[sel]?.at);
 }
 
 // Ship window: floating .pwin dialog for the selected ship. Rebuilt on every render pass, so
@@ -862,19 +862,27 @@ function openCityPanel(tb) {
   d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,hall:t.tabHall,buildings:t.bldBuild,route:t.tabRoute,house:premises(g,ship().at,lang).label,lonja:t.tabLonja,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})(),town:t.townTypes[townSel]??t.tabCity})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();
 }
+function updateCityHeader(cityId) {
+  const d = $("v3d"); if (!d || !cityId || !world.nodes[cityId]) return;
+  const nm = d.querySelector("#city-header-name"), info = d.querySelector("#city-header-info");
+  if (!nm || !info) return;
+  const eff = cityEffects(g, cityId), rs = respectOf(g, cityId);
+  nm.textContent = cityName(cityId);
+  info.textContent = ` · ${fmt(eff.pop + eff.popBonus)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}`;
+}
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   if (automaticTime) { planningResume = playing && !manualPause; playing = false; }
   shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
   const d=document.createElement("div");d.id="v3d";
-  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button>${lonjaEnabled(location.search)?`<button data-city-tab="lonja">${t.tabLonja}</button>`:""}<button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel"));
+  d.innerHTML=`<iframe src="${city2dEnabled(location.search)?"city2d":"proto3d"}/index.html?${q}" title="${t.tabCity}"></iframe><header class="city-header"><strong id="city-header-name"></strong><span id="city-header-info"></span></header><div class="city-mission" id="city-mission" hidden></div><nav class="city-controls" aria-label="${t.tabCity}"><button data-open-panel>${t.tabMarket}</button><button data-city-tab="city">${t.tabCity}</button><button data-city-tab="yard">${t.tabYard}</button><button data-city-tab="tavern">${t.tabTavern}</button><button data-city-tab="bank">${t.tabBank}</button><button data-city-tab="buildings">${t.bldBuild}</button><button data-city-tab="hall">${t.tabHall}</button><button data-city-tab="store">${t.tabStore}</button>${lonjaEnabled(location.search)?`<button data-city-tab="lonja">${t.tabLonja}</button>`:""}<button data-city-tab="house">${premises(g,s0.at,lang).label}</button><button data-city-ships>${lang==="es"?"Barcos":"Ships"}</button><button data-city-reports>${LT[lang].reports}</button><button data-city-menu>${lang==="es"?"Menú":"Menu"}</button><button data-map>${lang==="es"?"Volver al mapa":"Back to map"}</button></nav><section class="city-window pwin" role="dialog" aria-label="${t.tabCity}" hidden><div class="city-window-handle pwin-handle" tabindex="0" role="button" aria-label="${lang==="es"?"Mover ventana con las flechas":"Move window with arrow keys"}"><span class="city-window-title pwin-title"></span><span class="handle-mission" id="handle-mission" hidden></span><button class="pwin-close" data-close-panel>${t.close} (Esc)</button></div><div class="city-panel-host pwin-body"></div></section>`;  document.body.appendChild(d);document.body.classList.add("in-city-3d"); d.querySelector(".city-panel-host").appendChild($("panel")); updateCityHeader(s0.at);
   syncMissionEcho();
   d.querySelector("iframe").addEventListener("load", () => { syncMissionEcho(); // re-dock the mission line once the iframe's own chrome (2D toolbar) exists
     try { const nav = d.querySelector("iframe").contentDocument?.querySelector("nav");
       if (nav) { d.city2dNavObs?.disconnect(); d.city2dNavObs = new MutationObserver(() => syncMissionEcho()); d.city2dNavObs.observe(nav, { attributes: true, childList: true, subtree: true, attributeFilter: ["hidden", "class", "style"] }); }
     } catch { /* cross-document watch unavailable: load/resize hooks still cover placement */ } });
-  if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.height=Math.max(120,d.clientHeight-d.querySelector(".city-controls").offsetHeight)+"px";syncMissionEcho();};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
+  if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.width=Math.max(200,d.clientWidth-d.querySelector(".city-controls").offsetWidth)+"px";syncMissionEcho();};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
   d.querySelector("[data-map]").onclick=close3d;
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
