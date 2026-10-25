@@ -840,7 +840,7 @@ function sailToTarget() { if (!target) return; const to = target; const s0 = shi
   target = null; render(); }
 function closeCityWindow() {
   const d=$("v3d"); if (!d) return;
-  const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.querySelector("[data-city-tab]")?.focus();}
+  const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.classList.remove("win-open");d.querySelector("[data-city-tab]")?.focus();}
   syncMissionEcho();
 }
 function close3d() {
@@ -853,7 +853,7 @@ function close3d() {
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;if(tb!==tab)rumorNote=null;tab=tb;
-  const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;w.hidden=false;
+  const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;w.hidden=false;d.classList.add("win-open");
   render();
   d.querySelector(".city-window-title").textContent=({market:t.tabMarket,yard:t.tabYard,tavern:t.tabTavern,bank:t.tabBank,city:t.tabCity,hall:t.tabHall,buildings:t.bldBuild,route:t.tabRoute,house:premises(g,ship().at,lang).label,lonja:t.tabLonja,store:t.tabStore,plot:(()=>{const r=buildingsRows(g,ship().at).find((x)=>x.plotId===bldSelPlot);return r?buildingLabel(t,r):t.tabBuildings;})(),town:t.townTypes[townSel]??t.tabCity})[tb]||t.tabCity;
   d.querySelector("[data-close-panel]").focus();

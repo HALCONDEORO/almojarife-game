@@ -173,7 +173,7 @@ function placeLabels(){
  }
  // Owned names keep anchor priority; service/town labels yield or hide in dense clusters.
  items.sort((a,b)=>a.own-b.own);
- const placed=[],RING=[[0,0],[0,-14],[-15,-8],[15,-8],[0,-28],[-26,-16],[26,-16],[0,-42],[-18,-36],[18,-36],[-34,-26],[34,-26]];
+ const placed=[],RING=[[0,0],[0,-14],[-15,-8],[15,-8],[0,-28],[-26,-16],[26,-16],[0,-42],[-18,-36],[18,-36],[-34,-26],[34,-26],[0,-56],[-24,-50],[24,-50],[-44,-40],[44,-40],[0,14],[-15,8],[15,8]];
  for(const it of items){
   let spot=null;
   for(const[ox,oy]of RING){
