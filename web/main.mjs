@@ -319,7 +319,15 @@ function syncMissionEcho() {
     // whatever height the toolbar actually occupies (it can wrap). proto3d has no nav: CSS top stays.
     let top = "";
     const hh = d.querySelector(".city-header");
-    if (hh) top = (hh.getBoundingClientRect().bottom - d.getBoundingClientRect().top + 6) + "px";
+    if (hh) {
+      const vt = d.getBoundingClientRect().top;
+      top = (hh.getBoundingClientRect().bottom - vt + 6) + "px";
+      const bar = d.querySelector(".city-corner");
+      if (bar) { // narrow screens: the corner bar can reach the mission line - dock the line below the bar instead of under it (Marco 25/10: the bar covers no text)
+        const br = bar.getBoundingClientRect(), mr = cm.getBoundingClientRect();
+        if (mr.right > br.left - 8) top = (br.bottom - vt + 6) + "px";
+      }
+    }
     cm.style.top = top;
   }
   const hm = $("handle-mission"); if (hm) { hm.textContent = line ?? ""; hm.title = line ?? ""; hm.hidden = !line; }

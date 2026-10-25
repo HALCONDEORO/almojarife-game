@@ -115,3 +115,8 @@ test('language toggle also re-labels corner toolbar and panel section', () => {
   assert.ok(js.includes('data-cc="section"'), 'section bound');
   assert.ok(js.includes('bar2.setAttribute("aria-label", lang === "es" ? "Controles de tiempo'), 'corner aria live');
 });
+
+test('mission line docks below the corner bar when they would overlap (600px catch)', () => {
+  assert.ok(js.includes('mr.right > br.left - 8'), 'overlap test');
+  assert.ok(js.includes('top = (br.bottom - vt + 6) + "px"'), 'dock below bar');
+});
