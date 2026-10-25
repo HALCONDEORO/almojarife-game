@@ -1,5 +1,7 @@
 import { NEEDS_LEDGER_ENABLED, recordLegacyConsumption } from "./needs-telemetry.mjs";
-import { totalDemand, demandBy } from "./classes.mjs";
+import { totalDemand, demandBy, CLASSES } from "./classes.mjs";
+import { COMMERCE_LEDGER_ENABLED, openCommerce, openMarketLedgers, recordLocalSupply, recordRetailSale } from "./procurement.mjs";
+import { settleHouseholdDay } from "./households.mjs";
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
 // Written from first principles; not derived from any other game's data.
 export function makeMarket(world) {
@@ -12,6 +14,7 @@ export function makeMarket(world) {
       m[c.id][g] = { stock: target, target, makes, needs, rate: Math.max(1, Math.round(c.pop / 1000)), pop: c.pop };
     }
   }
+  if (COMMERCE_LEDGER_ENABLED) openMarketLedgers(world, m); // every port starts with its wholesale account (telemetry only)
   return m;
 }
 /** Bring a loaded market up to the current world: any city or good added since the save was written
@@ -23,6 +26,7 @@ export function fillMissingMarketRows(world, market) {
     const row = (market[city] ??= {});
     for (const [good, e] of Object.entries(goods)) if (!row[good]) { row[good] = e; added++; }
   }
+  if (COMMERCE_LEDGER_ENABLED) openMarketLedgers(world, market); // an old save without accounts gets them, valued at its current stock (declared approximation)
   return added;
 }
 /** price = base * (target/stock)^elasticity, clamped to 0.4x-3x. */
@@ -63,21 +67,37 @@ export function tickMarket(market, day, world, options = {}) {
   for (const city of Object.values(market)) tickMarketCity(city, day, world, options);
 }
 /** One day for ONE city (market[cityId]): the same formulas and quantities as a full tickMarket day. */
-export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABLED} = {}) {
-  const actual={},desired={};
+export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABLED, commerceLedger=COMMERCE_LEDGER_ENABLED} = {}) {
+  const commerce = commerceLedger && world?.goods && city?.grain ? openCommerce(world, city) : null; // lazy open: an account-less market (old save, bare fixture) gets its account on its first tick
+  const actual={},desired={},retailValues={};
+  const track = needsLedger || commerce;
   for (const [good, e] of Object.entries(city)) {
+    const beforeSupply = e.stock;
     if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * (e.townShare ?? 1) * seasonMul(good, day))); // warehouses are finite; townShare: share of the town's industry still in town hands (docs/design/town-industry-and-auctions.md piece 2), absent = 1
     e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
+    if (commerce && e.stock > beforeSupply) recordLocalSupply(city, good, e.stock - beforeSupply, world.goods[good].base);
     const scarcity = Math.min(1.5, e.stock / Math.max(1, e.target)); // low stock, low demand
     const d = cityDemand(e, good, world?.goods?.[good]?.base) * scarcity; // units per day, often below 1
     const used = Number.isFinite(day) ? Math.round(d * (day + 1)) - Math.round(d * day) : Math.round(d); // whole units whose running total matches d per day (no day given: plain rounding); no hidden state, so a year repeats exactly
-    if(needsLedger){
+    if(track){
       actual[good]=Math.min(e.stock,Math.max(0,used));
       const by=demandBy(e.pop,good,affordRatio(e,world?.goods?.[good]?.base));
       const mul=DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1)*scarcity;
       desired[good]=Object.fromEntries(Object.entries(by).map(([c,n])=>[c,n*mul]));
     }
+    const shelfBefore = e.stock, retailPrice = commerce && actual[good] > 0 ? price(world, e, good) : 0; // households face the day's price after production, before their own consumption depletes the shelf
     e.stock = Math.max(0, e.stock - used);
+    if (commerce && actual[good] > 0) retailValues[good] = recordRetailSale(city, good, actual[good], retailPrice, shelfBefore);
   }
   if(needsLedger)recordLegacyConsumption(city,day,actual,desired,g=>{const e=city[g];return DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1);});
+  if (commerce) { // attribute the day's ACTUAL retail spend to the classes, proportional to their desire (estimate, like needsLedger)
+    const spentByClass = Object.fromEntries(CLASSES.map((c) => [c, 0]));
+    for (const [good, value] of Object.entries(retailValues)) {
+      if (!(value > 0)) continue;
+      const by = desired[good], total = CLASSES.reduce((s, c) => s + (by?.[c] ?? 0), 0);
+      if (!total) continue;
+      for (const c of CLASSES) spentByClass[c] += (value * by[c]) / total;
+    }
+    settleHouseholdDay(city, spentByClass);
+  }
 }

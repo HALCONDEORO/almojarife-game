@@ -12,6 +12,7 @@ import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { relationsOnSale } from "./relations.mjs";
 import { addRespect } from "./rank.mjs";
 import { recordSale } from "./voyages.mjs";
+import { recordMarketPurchase, recordWholesaleSale } from "../sim/procurement.mjs";
 
 export const stewardOf = (g, city) => g.warehouses?.[city]?.admin ?? null;
 const GOOD_NAMES = {
@@ -77,6 +78,7 @@ export function stewardTick(g, city, cap) {
           if (addRespect(g, city, revenue)) post(g, "respect", { city }); // and the house earns respect, as in doSell
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
           if (docked) recordSale(g, docked, n, revenue, revenue - spent);
+          recordWholesaleSale(g.market[city], good, n, revenue); // telemetry: the port's purse paid for the goods
           did.push({ good, sold: n, revenue });
         }
       }
@@ -102,6 +104,7 @@ export function stewardTick(g, city, cap) {
           if (good === "grain" && scarcityOf(e) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "grievance", n); // hauling grain out of a starving port is remembered too
           w.goods[good] = (w.goods[good] ?? 0) + n;
           (w.basis ??= {})[good] = (w.basis[good] ?? 0) + cost;
+          recordMarketPurchase(g.market[city], good, n, cost, e.stock + n); // telemetry: the port's purse received the payment
           did.push({ good, bought: n, cost });
         }
       }

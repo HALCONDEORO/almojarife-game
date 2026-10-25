@@ -59,11 +59,12 @@ test("sawmill produces evenly all year (no season peak for timber), level 1 rest
 test("primary production needs no cash and consumes nothing else", () => {
   const g = activeBuilding("bilbao", "bilbao:4", "mine", 3); // level 3, day 0: 2 batches -> 2 iron
   g.cash = 0;
-  const before = JSON.stringify(Object.fromEntries(Object.entries(g.market.bilbao).filter(([k]) => k !== "iron")));
+  const noLedger = (m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== "iron").map(([k, e]) => { const { commerce, ...rest } = e; return [k, rest]; })); // commerce is port-wide telemetry on the grain row (needsLedger precedent), not economic state
+  const before = JSON.stringify(noLedger(g.market.bilbao));
   const iron = g.market.bilbao.iron.stock;
   workshopTick(g, "bilbao");
   assert.equal(g.market.bilbao.iron.stock, iron + 2);
-  assert.equal(JSON.stringify(Object.fromEntries(Object.entries(g.market.bilbao).filter(([k]) => k !== "iron"))), before);
+  assert.equal(JSON.stringify(noLedger(g.market.bilbao)), before);
   assert.equal(g.cash, 0);
 });
 

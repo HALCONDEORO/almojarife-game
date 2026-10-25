@@ -2,6 +2,7 @@
 // construction timing on ticks, and daily upkeep accrued into the weekly ledger.
 // Building effects (production, population, storage) land in later pieces. Own design. Desktop only.
 import { quoteRecipe, consumeRecipe, quoteUnitsImport, consumeUnitsImport, RECIPES } from "../sim/recipes.mjs";
+import { recordLocalSupply, recordMarketPurchase, recordWholesaleSale } from "../sim/procurement.mjs";
 import { price, seasonMul } from "../sim/market.mjs";
 import { FEE, floor2 } from "../sim/trade.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
@@ -321,12 +322,16 @@ export function workshopTick(g, cityId) {
       const e = g.market[cityId]?.[def.output];
       if (!e) continue;
       const amount = Math.max(1, Math.round(def.yield * batches * seasonMul(def.output, day)));
+      const beforeSupply = e.stock;
       e.stock = Math.max(e.stock, Math.min(e.target * 4, e.stock + amount)); // same stock cap as city production, but never clip stock already above it
+      if (e.stock > beforeSupply) recordLocalSupply(g.market[cityId], def.output, e.stock - beforeSupply, g.world.goods[def.output]?.base); // telemetry: the land yields inventory nobody was paid for
       b.produced = (b.produced ?? 0) + amount; // lifetime units, for the Buildings tab
       for (const [good, perBatch] of Object.entries(def.byproducts ?? {})) { // by-products: same batches and staffing, own season, own stock cap
         const be = g.market[cityId]?.[good];
         if (!be) continue;
+        const beforeByproduct = be.stock;
         be.stock = Math.max(be.stock, Math.min(be.target * 4, be.stock + Math.max(1, Math.round(perBatch * batches * seasonMul(good, day)))));
+        if (be.stock > beforeByproduct) recordLocalSupply(g.market[cityId], good, be.stock - beforeByproduct, g.world.goods[good]?.base);
       }
       continue;
     }
@@ -340,6 +345,8 @@ export function workshopTick(g, cityId) {
       const c = consumeRecipe(g.world, g.market, cityId, def.recipe, g.cash, batches); // input stock down, output stock up
       if (!c.ok) break; // re-quoted inside; never mutate half-way
       g.cash += revenue - c.cost;
+      for (const [good, qty] of Object.entries(c.inputs)) recordMarketPurchase(g.market[cityId], good, qty, c.lineCosts[good], g.market[cityId][good].stock + qty); // telemetry: materials paid the purse
+      recordWholesaleSale(g.market[cityId], def.output, c.outputs[def.output] ?? 0, revenue); // telemetry: the purse bought the output
       b.produced = (b.produced ?? 0) + batches; // lifetime batches, for the Buildings tab (piece 4)
       break;
     }
