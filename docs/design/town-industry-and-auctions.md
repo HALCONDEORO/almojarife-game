@@ -124,3 +124,59 @@ legacy test and surfaced three integration faults. How each was fixed, and why:
    spend or relieve the windfall - money is fungible - so the tax part alone is not banded.
    Note: auction rosters live in the GAME world (optional goods included); bounds computed from
    the raw data file undercount and fail honestly, as Valencia's pottery showed.
+
+## Piece 4: the almoneda sells more than establishments (25 Oct 2026)
+
+The owner asked for auctions "of every kind: houses, ships, factories, permits, whatever you
+come up with" ("subastas de todo tipo casas barcos fábricas permisos lo que se te ocurra",
+24 Oct 2026). Factories were the establishment roster (pieces 1-3). This piece adds the first
+two generated lot kinds; permits, goods lots and embargoes are designed to follow on the same
+rails. Design decisions below are this piece's choices under that creative brief, not user
+defaults: each is argued from the existing systems and is tunable in one place
+(`src/game/almoneda.mjs`).
+
+**Generated lots, not world objects.** Establishments are finite world objects with a sold
+registry. Ships and houses are generated per auction day from the city's seeded rng and need
+no registry: the same day always offers the same lot, and the lot either sells that day or is
+gone. This keeps save format and world state untouched until a hammer actually falls.
+
+**Cadence (balance choice).** A city offers a used ship every `SHIP_EVERY = 4` auction cycles
+(i.e. every 4 weeks) and a town house every `HOUSE_EVERY = 2` cycles, each on its own seeded
+offset so ports do not sell the same kind the same week. Rationale: the establishment roster
+sells about one works per week while it lasts; a ship a month and a house a fortnight add
+variety without flooding the table, and the cadence cap lets the council-chest invariant stay
+a hard bound (tested) instead of a hope.
+
+**Valuation (balance choice).** A used ship is valued at `shipLotValue = max(1, round(type.price x
+hull/100 x 0.95))` with hull 55-90%: always below the new-ship price (a worn hull is never
+worth more than a fresh build), always above scrap. A house reuses `establishmentValue` for
+`{type:"house", level 1-3}` so its price tracks the same works-valuation curve as everything
+else the almoneda sells. Reserves stay `0.6 x value`; bidder maxima stay the roster's
+0.70-1.15x, so second-price mechanics and the 1.15x income bound carry over unchanged.
+
+**Seller (balance choice).** About half of generated lots are sold by the concejo, half by a
+named neighbour (seeded). Only the player's real coins move the chest: when a neighbour wins
+a generated lot, no chest income is recorded, because neighbour purses are not simulated and
+crediting the concejo would mint phantom money every week (verified: it broke the
+poor-chest tax behaviour). When the player wins a municipal lot, the price credits the chest
+and is tracked apart in `hallAlmonedaGen` so the tax-band invariant stays a tax band; the
+bound is cadence-based (`cycles x (max ship / SHIP_EVERY + max house / HOUSE_EVERY) x 1.15`)
+and tested over six idle months. A multi-seed (3 seeds x 180 idle days) state-hash comparison
+against the pre-change baseline is bit-identical: for a player who never bids, the new lots
+change nothing - not the chest, not taxes, not the inbox.
+
+**Bids are per lot.** `townBids[cityId]` is now a map `{lotId: max}`. A bare number from an
+old save is read as the establishment table's bid, so old saves keep their meaning. The day
+hook brings every lot down in order, one hammer each.
+
+**Settlement.** A won ship is delivered moored at the port with its worn hull (`makeShip` +
+hull), a won house needs the same trading office as any building purchase and lands in
+`g.buildings` as an active house (it feeds the population bonus like a built one). A winning
+bid the player cannot settle - no cash, or no office for a house - is voided with a notice and
+the lot passes to the next bidder instead of dying silently (this last part deliberately
+changes the old establishment behaviour, where an office-less win silently kept the works).
+
+**Noise budget.** Establishment results keep the old reach rule (discovered port or joined
+table). Generated lots cry their result only at a table the player joined: a weekly ship plus
+a fortnightly house at the home port would roughly triple the baseline notice rate, and
+MAX_INBOX eviction is a real failure mode (see the integration findings above).

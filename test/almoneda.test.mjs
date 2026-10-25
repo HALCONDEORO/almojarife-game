@@ -154,7 +154,7 @@ describe("the table at the day boundary", () => {
     const { placeBid, almonedaDay } = await import("../src/game/almoneda.mjs");
     const bad = placeBid(g, "cadiz", 5000);
     assert.equal(bad.ok, true); // today IS the auction day
-    assert.equal(g.townBids["cadiz"], 5000);
+    assert.deepEqual(Object.values(g.townBids["cadiz"]), [5000]); // bids are kept per lot now: one maximum on today's establishment table
     const cash0 = g.cash;
     almonedaDay(g);
     assert.equal(g.townBids?.["cadiz"], undefined); // consumed
@@ -238,6 +238,49 @@ describe("solvency at the table", () => {
     for (const c of world.cities.filter((c) => isAuctionDay(c.id, day))) { g.cash = Math.min(g.cash, 2000); ((g.townBids ??= Object.create(null))[c.id]) = 999999; }
     almonedaDay(g);
     assert.ok(g.cash >= 0); // every win was settled, every promise the purse could not keep was voided
+  });
+});
+
+describe("hammer price (second price + 1, reserve-clamped: a mutation here must fail)", () => {
+  it("the winner pays exactly max(reserve, runner-up + 1), never his own max", () => {
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npc = biddersOf(g, "cadiz", lot); // only bids at or above the reserve make the list
+    const cash0 = g.cash;
+    const r = bidAuction(g, "cadiz", 999999999, lot.id);
+    assert.equal(r.outcome, "won");
+    assert.equal(r.price, npc.length ? Math.max(lot.reserve, Math.max(...npc.map((b) => b.max)) + 1) : lot.reserve);
+    assert.equal(g.cash, cash0 - r.price);
+    assert.ok(r.price < 999999999); // his promise is a ceiling, not the price
+  });
+  it("a tie at the top hammers at the tied max: the winner's own ceiling binds, never above it", () => {
+    // (An uncontested table cannot happen: the neighbour factor floor 0.70 always clears the 0.6
+    //  reserve, so the reserve-only branch is unreachable defence-in-depth; the reachable clamps are pinned here.)
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    g.day = auctionOffset("cadiz");
+    const lot = lotOfDay(g, "cadiz");
+    const npcTop = Math.max(...biddersOf(g, "cadiz", lot).map((b) => b.max));
+    const r = bidAuction(g, "cadiz", npcTop, lot.id); // player matches the best neighbour
+    assert.equal(r.price, npcTop); // whoever takes it, the hammer is the tied max - not a coin above
+  });
+  it("a per-lot bid carries a legacy numeric bid for the establishment table instead of dropping it", async () => {
+    const { placeBid, shipLotOfDay, houseLotOfDay, almonedaDay } = await import("../src/game/almoneda.mjs");
+    const g = newGame(world, "cadiz", { cash: 1e6, freePlay: true, townIndustry: true });
+    for (let k = 0; k < 12; k++) { // find a table with both an establishment and a generated lot
+      g.day = auctionOffset("cadiz") + k * AUCTION_EVERY;
+      const est = lotOfDay(g, "cadiz");
+      const gen = shipLotOfDay(g, "cadiz") ?? houseLotOfDay(g, "cadiz");
+      if (!est || !gen) continue;
+      g.townBids = { cadiz: 500 }; // an old save's bare number: the establishment table
+      assert.equal(placeBid(g, "cadiz", 700, gen.id).ok, true);
+      assert.equal(g.townBids.cadiz[est.id], 500); // carried, not wiped
+      assert.equal(g.townBids.cadiz[gen.id], 700);
+      almonedaDay(g); // both tables settle on their own bids, no crash, bids cleared
+      assert.equal(g.townBids.cadiz, undefined);
+      return;
+    }
+    assert.fail("no mixed establishment + generated table found in 12 weeks");
   });
 });
 
