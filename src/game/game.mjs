@@ -48,6 +48,7 @@ import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseC
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
 import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, WALL_POP } from "./walls.mjs";
+import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -104,6 +105,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.captainXp !== false && opts.captainXp !== 1) g.captainXp = true; // captain-experience flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.plague !== false && opts.plague !== 1) g.plague = initPlague(); // plague flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.walls !== false && opts.walls !== 1) g.walls = initWalls(); // walls flag, ON by default: only false or 1 turns it off (an off game keeps no key, saves stay identical)
+  if (opts.towers !== false && opts.towers !== 1) g.towers = initTowers(); // towers flag, ON by default (owner order 24/10 12:08: every flag ships ON): only false or 1 turns it off (an off game keeps no key, saves stay identical)
   if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
   if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
@@ -158,7 +160,8 @@ function dayTick(g) {
     accrueDay(g, s);
   }
   const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
-  accrueWalls(g, buildingCommit); // walls share today's cash budget with buildings (flag off: nothing)
+  const wallCommit = accrueWalls(g, buildingCommit) ?? buildingCommit; // walls share today's cash budget with buildings (flag off: nothing)
+  accrueTowers(g, wallCommit); // towers share the same daily cash budget after walls (flag off: nothing)
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
@@ -246,6 +249,7 @@ export function advanceTick(g) {
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
   tickWalls(g); // wall works finish on their exact tick (flag off: nothing)
+  tickTowers(g); // tower works finish on their exact tick (flag off: nothing)
   if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
 }
 export function waitUntilArrival(g, ship) {
