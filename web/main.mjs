@@ -844,7 +844,7 @@ function sailToTarget() { if (!target) return; const to = target; const s0 = shi
   target = null; render(); }
 function closeCityWindow() {
   const d=$("v3d"); if (!d) return;
-  const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.querySelector("[data-open-panel]")?.focus();}
+  const w=d.querySelector(".city-window"); if(w){w.hidden=true;d.querySelector("[data-city-tab]")?.focus();}
   syncMissionEcho();
 }
 function close3d() {
