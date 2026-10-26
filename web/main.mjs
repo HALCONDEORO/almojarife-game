@@ -815,7 +815,7 @@ function render() {
           for (const grp of ["primary", "workshop", "own", "civic"]) { // Marco 25/10: fields and factories first, civic buildings last so they stay out of the way
             const list = offers.filter((o) => bldOfferGroup(o.type) === grp);
             if (list.length) h += `<p class="bldoffer-group"><b>${bo2.groups[grp]}</b></p><div class="bldoffers">` + list.map((o) => o.ok
-              ? `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon, bldOfferArt(r.plotId, o.type, o.level))}</button>`
+              ? `<button class="bldoffer-btn" data-bldact="build|${r.plotId}|${o.type}" ${o.affordable ? "" : "disabled"}>${bldOfferCard(t, o, lang, fmt, fmtM, goodIcon, bldOfferArt(r.plotId, o.type, o.level))}${o.affordable ? "" : `<span class="bldoffer-short">${(lang === "es" ? "Te faltan {n} monedas" : "You are {n} coins short").replace("{n}", fmt(Math.max(1, Math.ceil(o.cost - g.cash))))}</span>`}</button>`
               : `<button class="bldoffer-btn bldoffer-locked" disabled>${bldOfferLocked(t, o, lang, bldOfferArt(r.plotId, o.type, 1))}</button>`).join("") + `</div>`;
           }
         }
@@ -945,6 +945,7 @@ function render() {
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
     if (e.dataset.bldact.startsWith("restart|")) { const ra = parseBldAct(e.dataset.bldact); if (ra) act(() => restartBuilding(g, s.at, ra.plotId)); return; }
     bldAction = parseBldAct(e.dataset.bldact); bldError = null; render();
+    document.querySelector(".card [data-bldconf]")?.scrollIntoView({ block: "nearest" }); // the confirm card is drawn above a long list: bring it into view so the click never looks ignored
   });
   P.querySelectorAll("[data-wallact]").forEach((e) => e.onclick = () => { bldAction = { kind: "walls", plotId: s.at + ":walls" }; bldError = null; render(); });
   P.querySelectorAll("[data-toweract]").forEach((e) => e.onclick = () => { bldAction = { kind: "towers", plotId: s.at + ":towers" }; bldError = null; render(); }); // city-level works: fake plot id keeps the sailed-away guard (same as walls) // city-level works: fake plot id keeps the sailed-away guard working
