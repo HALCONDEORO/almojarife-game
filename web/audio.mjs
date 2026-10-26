@@ -60,9 +60,13 @@ export function syncAmbience(name) {
   if (name === "port") gullsStart(); else gullsStop();
 }
 
-/** Keep the music rotation going while sound is on; each track hands over to the next. */
+/** While the title menu is up the in-game rotation stays silent (the title has its own music). */
+let menuMode = false;
+export function setMenuMode(on) { menuMode = !!on; if (menuMode) { try { music?.pause(); } catch {} music = null; } }
+
+/** Keep the music rotation going while sound is on and no menu is up; each track hands over to the next. */
 export function syncMusic() {
-  if (!soundOn()) { try { music?.pause(); } catch {} music = null; return; }
+  if (!soundOn() || menuMode) { try { music?.pause(); } catch {} music = null; return; }
   if (music) return;
   try {
     const el = new Audio(MUSIC[track % MUSIC.length]); track++;
@@ -81,11 +85,18 @@ export function setVolume(kind, pct) {
   const n = Math.min(100, Math.max(0, Math.round(Number(pct) || 0)));
   try { localStorage.setItem("vol-" + kind, String(n)); } catch {}
   try { if (amb.el) amb.el.volume = AMB_VOL * volOf("amb"); if (music) music.volume = MUSIC_VOL * volOf("music"); } catch {}
+  fireSoundChange();
 }
 
 /** Flip the sound setting (the M key). Returns the new state; the caller re-renders so the loops follow. */
 export function toggleSound() {
   const next = !soundOn();
   try { localStorage.setItem("sound", next ? "1" : "0"); } catch {}
+  fireSoundChange();
   return next;
 }
+
+const volWatchers = new Set();
+/** Register a callback fired right after any volume or mute change, so loops outside this module (the menu music) react at once. */
+export function onSoundChange(fn) { volWatchers.add(fn); }
+function fireSoundChange() { for (const fn of volWatchers) { try { fn(); } catch {} } }
