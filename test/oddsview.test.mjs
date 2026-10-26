@@ -34,3 +34,10 @@ test("pirate dialog shows the real flee and fight chances on both buttons", () =
   const h = encounterDialogHtml(g, "es"); assert.equal((h.match(/class="ev-odds"/g) || []).length, 2);
   g.pirateFight = true; assert.match(pirateOdds(g, "en").fight, /^≈ \d+ %/); // real battles: an estimate, marked as such
 });
+test("salvage effect reads as a hold-size payout with its band, never as no consequences", () => {
+  const fx = { salvage: { perCap: 2, jitter: 0.25 } };
+  assert.equal(effectText(fx, "es"), "recuperas monedas según la bodega (de 1,5 a 2,5 por plaza de carga)");
+  assert.equal(effectText(fx, "en"), "you recover coins by hold size (1.5 to 2.5 per hold slot)");
+  for (const l of ["es", "en"]) assert.ok(!/consequences|consecuencias/.test(effectText(fx, l)));
+  assert.ok(!/consequences|consecuencias/.test(choiceOdds({ outcomes: [{ p: 0.85, effects: fx }, { p: 0.15, effects: { salvage: { perCap: 1, jitter: 0.25 } } }] }, "es")));
+});
