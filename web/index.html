@@ -334,6 +334,10 @@ body:not(.in-city-3d):not(.has-event) #panel{display:none}
 #panel-home>#mapside>#mapleft{position:static;display:flex;flex-direction:column;gap:6px;align-items:stretch;max-width:none;overflow:visible;pointer-events:auto}
 #panel-home #voyage-card{width:auto;max-width:none;box-sizing:border-box}
 body.has-event #panel-home>#panel{order:-1}
+/* Finance summary is the fixed header of the right-hand card; fleet follows, then the selected ship and map tools. */
+#panel-home>#mapside>#mapleft{display:contents}
+#panel-home>#mapside>#mapleft>#cash-card{order:-2}
+#panel-home>#mapside>#fleet{order:-1}
 </style>
 </head><body>
 <header><b>El Almojarife</b><span id="co"></span><span id="day"></span><span id="todbar" role="img" title="time of day"><i></i></span><span id="cash"></span><span id="goal"></span><span id="ships"></span>
