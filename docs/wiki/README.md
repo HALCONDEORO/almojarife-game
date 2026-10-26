@@ -23,6 +23,7 @@ One place for how the game works and every statistic behind it. It lives in the 
 | Page | Content | Status |
 |---|---|---|
 | [ports.md](ports.md) | The 33 ports: coasts, realms, population, production and demand. |
+| [routes.md](routes.md) | Sea lanes, distances from Cádiz and sailing times. |
 | [rules.md](rules.md) | Core rules and mechanics: time, trade, voyages, fees | core rules written; buildings and missions to fill |
 | [economy.md](economy.md) | Prices, market saturation, class demand, imports, balance gates | skeleton + established decisions |
 | [classes.md](classes.md) | Poor, middle, rich: shares, tolerance, baskets | skeleton, table generated |
@@ -31,4 +32,4 @@ One place for how the game works and every statistic behind it. It lives in the 
 | [decisions.md](decisions.md) | Decisions of the last days and why | started |
 | [audit.md](audit.md) | What documentation already exists and where it fits | done once, update when docs move |
 
-Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/). Goods: [generated/goods.md](generated/goods.md). Ports: [generated/ports.md](generated/ports.md).
+Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/). Goods: [generated/goods.md](generated/goods.md). Ports: [generated/ports.md](generated/ports.md). Routes: [generated/routes.md](generated/routes.md).
