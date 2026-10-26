@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 const src = readFileSync('web/main.mjs', 'utf8');
 
 test('free-nav contextmenu snaps a near-port click to the port, zoom-independent', () => {
-  assert.match(src, /querySelectorAll\("g\.city"\)\.forEach\(\(el\) => \{ const d = Math\.hypot\(Number\(el\.dataset\.mx\) - q\.x, Number\(el\.dataset\.my\) - q\.y\)/, 'snaps against the rendered port dots in map space');
+  assert.match(src, /querySelectorAll\('g\.city\[data-explored="true"\]'\)\.forEach\(\(el\) => \{ const d = Math\.hypot\(Number\(el\.dataset\.mx\) - q\.x, Number\(el\.dataset\.my\) - q\.y\)/, 'snaps against the rendered port dots in map space');
   assert.match(src, /const tol = 48 \/ \(ctm\.a \|\| 1\)/, 'tolerance is 48 screen px converted with the CTM (zoom-independent)');
   assert.match(src, /if \(snap && world\.nodes\[snap\]\) \(\{ lat, lon \} = world\.nodes\[snap\]\); else \{ lon = q\.x \/ sc \+ x0; lat = y1 - q\.y \/ \(sc \* 1\.25\); \}/, 'a snapped click goes to the port node, anything else keeps the sea point');
 });

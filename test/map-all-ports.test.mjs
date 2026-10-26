@@ -5,6 +5,7 @@ test('chart draws all port names, but unknown ports cannot open menus or become 
  assert.match(loop,/const explored = isDiscovered\(g, c.id\)/);assert.doesNotMatch(loop.slice(0,loop.indexOf('m += historical.svg')),/if \(!isDiscovered\(g, c.id\)\) continue/);
  assert.match(loop,/data-explored="\$\{explored\}"/);assert.match(loop,/Puerto no explorado/);
  assert.ok(main.includes(`querySelectorAll('g.city[data-explored="true"]')`));
+ assert.ok(main.includes('if (cityEl && cityEl.dataset.explored !== "true") return;'));
  assert.match(main,/ports:world.cities.filter\(c=>isDiscovered\(g,c.id\)\)/);
  assert.match(main,/const hiddenPort = \(id\) => cityIdSet.has\(id\) && !isDiscovered\(g, id\)/);
 });

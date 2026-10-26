@@ -1114,6 +1114,7 @@ mapEl.addEventListener("contextmenu", (ev) => {
   if (g?.freeNav !== true) return; // flag off: the port menu works as before
   ev.preventDefault(); ev.stopPropagation(); closeMenu();
   const cityEl = ev.target.closest?.("g.city"), s0 = ship(); if (!s0) return;
+  if (cityEl && cityEl.dataset.explored !== "true") return; // chart-only ports do not become free-nav destinations
   let lat, lon;
   if (cityEl && world.nodes[cityEl.dataset.c]) ({ lat, lon } = world.nodes[cityEl.dataset.c]);
   else { const p = mapEl.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const ctm = mapEl.getScreenCTM(), q = p.matrixTransform(ctm.inverse()); const tol = 48 / (ctm.a || 1); let snap = null, snapD = tol; mapEl.querySelectorAll('g.city[data-explored="true"]').forEach((el) => { const d = Math.hypot(Number(el.dataset.mx) - q.x, Number(el.dataset.my) - q.y); if (d < snapD) { snapD = d; snap = el.dataset.c; } }); if (snap && world.nodes[snap]) ({ lat, lon } = world.nodes[snap]); else { lon = q.x / sc + x0; lat = y1 - q.y / (sc * 1.25); } } // missing the small port dot by a few screen px must not send the ship to open sea (24/10 human playtest: 3 near-port clicks missed, one routed 759 km away); snap within 48 screen px, zoom-independent via the CTM
