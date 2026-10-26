@@ -34,7 +34,7 @@ export function shoreline(bounds,seed='city'){
 export function mainland(bounds){
  const {minX,minY,maxX,maxY}=bounds;
  if(![minX,minY,maxX,maxY].every(Number.isFinite)||minX>=maxX||minY>=maxY)throw Error('invalid mainland');
- const back=Math.max(maxX-minX,maxY-minY)*8;
+ const back=Math.max(maxX-minX,maxY-minY)*3; /* land margin: enough for the minimum zoom (half the fitted zoom), not a canvas eight cities wide */
  const coast=[];
  // The working quay remains straight, the other coast bends away from the town.
  for(let i=0;i<=20;i++){const x=maxX-5-(maxX-minX+35)*i/20;coast.push([x,maxY+5+Math.sin(i*.27)**2*10+Math.sin(i*.68)**2*2]);}
