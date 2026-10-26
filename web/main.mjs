@@ -669,15 +669,6 @@ function render() {
           `<div class="mkt-act mkt-act-sell" style="padding-left:6px"><button class="mkt-pill mkt-sell mkt-sell-btn" style="${ps.qty ? "background:#8a5a17;color:#fff0cd;border-color:#5e3c0e;" : ""}border-left:4px solid #8a5a17" aria-label="${esc(t.sell)}" data-s="${gd}:${sq}" data-tip="${esc(sellTip)}" title="${esc(sellTip)}" ${ps.qty ? "" : "disabled"}>${ps.qty ? `−${ps.qty} → ${fmtM(sellPay)}` : t.sell}</button></div></div>`;
       }
       h += `</div></div><div class="mkt-qtybar"><span>${esc(t.qtyAll)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
-      { // Price alerts: the engine (src/game/alerts.mjs) existed with no UI; this block is it.
-        const als = alertsOf(g, s.at), alOthers = alertsOf(g).length - als.length;
-        h += `<div class="al-box"><h3 class="al-title">${t.alTitle}</h3><p class="al-info">${t.alInfo}</p>`;
-        h += als.length
-          ? `<ul class="al-list">` + als.map((a) => `<li>${t.goods[a.good] ?? a.good} · ${a.dir === "below" ? t.alBelow : t.alAbove} ${fmt(a.price)} <button class="al-del" data-al-del="${a.good}" aria-label="${esc(t.close)}" title="${esc(t.close)}">✕</button></li>`).join("") + `</ul>`
-          : `<p class="al-none">${t.alNone}</p>`;
-        if (alOthers > 0) h += `<p class="al-else">${t.alElse.replace("{n}", alOthers)}</p>`;
-        h += `<div class="al-form"><select data-al-good>${Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang)).map((gd) => `<option value="${gd}">${t.goods[gd]}</option>`).join("")}</select> <select data-al-dir><option value="below">${t.alBelow}</option><option value="above">${t.alAbove}</option></select> <input data-al-price type="number" min="1" step="1" inputmode="numeric" placeholder="${esc(t.alPrice)}"> <button data-al-set>${t.alSet}</button></div><p class="al-err" role="alert" hidden></p></div>`;
-      }
     } else if (tab === "route") {
       const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
       h += `<p>${t.routeInfo}</p>`;
