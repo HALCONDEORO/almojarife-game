@@ -429,7 +429,7 @@ function render() {
   $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, unread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
   $("goal").textContent = g.noGoal || g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
-  $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${t.speed} ${speed}x`; $("play").title = t.tipHdrPlay; $("spd").title = t.tipHdrSpeed;
+  $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${speed}x`; $("play").title = t.tipHdrPlay; $("spd").title = t.tipHdrSpeed;
   { const pn = $("pausenote"); if (pn) { const ps = !playing && pauseNote && !g.pending && !g.encounterReport && !g.over ? g.ships.find((x) => x.id === pauseNote.ship) : null;
     pn.textContent = ps ? t.pauseArrive.replace("{ship}", ps.name ?? `${T[lang].types[ps.type] ?? ps.type} ${ps.id}`).replace("{city}", cityName(pauseNote.city)) : ""; } }
   $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
