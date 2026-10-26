@@ -3,7 +3,7 @@
 
 Source: `cities` in `data/world.json` (33 ports with their population at the 1480 start; `pop1500` keeps the historical figure with its source in `docs/port-sources.md`), `COASTS` in `src/game/charts.mjs`, holdings in `data/realms.json` read at the start year with `realmOf` (`src/game/marque.mjs`, `START_YEAR` in `src/sim/clock.mjs`). Type of data: institutional for holdings and historical populations (each row carries its source in the data files); the rest is game design (assumed). ⚓ marks a river port.
 
-A port starts unknown unless it is home; sailing, charts and rumours reveal it (see [rules.md](rules.md#port-information-charts-rumours-and-informants)).
+A port starts unknown unless it is home; sailing, charts and rumours reveal it (see [rules.md](../rules.md#port-information-charts-rumours-and-informants)).
 
 | Port | Coast | Realm (1480) | Pop. at start | Produces | Needs |
 | --- | --- | --- | --- | --- | --- |

@@ -3,7 +3,7 @@
 
 Fuente: `cities` en `data/world.json` (33 puertos con su población al inicio de 1480; `pop1500` guarda la cifra histórica con su fuente en `docs/port-sources.md`), `COASTS` en `src/game/charts.mjs`, tenencias de `data/realms.json` leídas en el año de inicio con `realmOf` (`src/game/marque.mjs`, `START_YEAR` en `src/sim/clock.mjs`). Tipo de dato: institucional para tenencias y poblaciones históricas (cada fila lleva su fuente en los archivos de datos); lo demás es diseño del juego (supuesto). ⚓ marca un puerto fluvial.
 
-Un puerto empieza desconocido salvo que sea el de origen; navegar, las cartas y los rumores lo revelan (ver [rules.md](rules.md#información-portuaria-cartas-rumores-e-informantes)).
+Un puerto empieza desconocido salvo que sea el de origen; navegar, las cartas y los rumores lo revelan (ver [rules.md](../../es/rules.md#información-portuaria-cartas-rumores-e-informantes)).
 
 | Puerto | Costa | Reino (1480) | Pob. inicial | Produce | Necesita |
 | --- | --- | --- | --- | --- | --- |
