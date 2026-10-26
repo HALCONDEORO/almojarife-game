@@ -83,3 +83,5 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .route-editor input[type=number]{width:50px;padding:6px 4px}
 .route-editor .rt-x{min-width:32px;padding:4px 6px}
 .route-editor td:last-child{white-space:nowrap}
+
+.pregon-badge{flex:none;font-size:10px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;color:#fff0cd;background:#7a1f1f;border:1px solid #5e1414;border-radius:3px;padding:0 4px;margin-left:5px;line-height:14px;cursor:help}
