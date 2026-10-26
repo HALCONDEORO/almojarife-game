@@ -167,9 +167,9 @@ test('mission stays visible with a window open and minimises to a restorable chi
   assert.ok(!js.includes('handle-mission'), 'redundant window-handle echo removed (no duplicate controls)');
 });
 
-test('city windows show the ship card only where the ship operates (Marco 25/10)', () => {
-  assert.ok(js.includes('const shipCtx = !inCity || tab === "market" || tab === "store" || tab === "route" || tab === "yard"'), 'ship card gated per tab');
+test('city windows show the ship card only where the ship operates', () => {
+  assert.ok(js.includes('const shipCtx = !inCity || tab === "store" || tab === "route" || tab === "yard"'), 'ship card gated per tab (not in the market)');
   assert.ok(js.includes('if (shipCtx) {'), 'summary wrapped');
-  assert.ok(js.includes('if (!inCity || tab === "market") h += `<div title="${t.holdValue}">${t.holdValue}: '), 'hold value stays with the market');
+  assert.ok(js.includes('if (!inCity) h += `<div title="${t.holdValue}">${t.holdValue}: '), 'hold value stays out of city windows');
   assert.ok(js.includes('if (!inCity || tab === "market" || tab === "route") {'), 'best-ports box stays with market and route');
 });
