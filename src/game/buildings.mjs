@@ -64,6 +64,51 @@ export const BUILDING_TYPES = Object.freeze({
   corral: Object.freeze({ recipe: "corral", fee: 400, buildDays: 22, upkeep: 4, maxLevel: 3, minPop: 15000 }),
 });
 
+/** Display names for each building type, for game-layer text (auction and purchase messages) so no
+ *  message shows a raw type key. Spanish entries carry their article ("la granja") because every
+ *  current sentence wants it ("se lleva la granja", "compras la granja"); English entries are bare
+ *  and each sentence adds "the"/"a" as it needs. The web panel keeps its own bare table (T.bldTypes). */
+export const BUILDING_NAMES = Object.freeze({
+  house: Object.freeze({ es: "la casa", en: "house" }),
+  workshop: Object.freeze({ es: "el taller", en: "workshop" }),
+  warehouse: Object.freeze({ es: "el almacén", en: "warehouse" }),
+  farm: Object.freeze({ es: "la granja", en: "farm" }),
+  pasture: Object.freeze({ es: "la dehesa", en: "pasture" }),
+  sawmill: Object.freeze({ es: "el aserradero", en: "sawmill" }),
+  mine: Object.freeze({ es: "la mina", en: "mine" }),
+  house_poor: Object.freeze({ es: "la casa pobre", en: "poor house" }),
+  house_comfortable: Object.freeze({ es: "la casa acomodada", en: "well-off house" }),
+  house_rich: Object.freeze({ es: "la casa rica", en: "rich house" }),
+  oil_mill: Object.freeze({ es: "la almazara", en: "oil mill" }),
+  vineyard: Object.freeze({ es: "el viñedo", en: "vineyard" }),
+  saltworks: Object.freeze({ es: "la salina", en: "saltworks" }),
+  brewery: Object.freeze({ es: "la cervecería", en: "brewery" }),
+  soapworks: Object.freeze({ es: "la jabonería", en: "soapworks" }),
+  pottery: Object.freeze({ es: "la alfarería", en: "pottery works" }),
+  brickworks: Object.freeze({ es: "la ladrillería", en: "brickworks" }),
+  esparto_field: Object.freeze({ es: "el espartizal", en: "esparto field" }),
+  ranch: Object.freeze({ es: "la ganadería", en: "ranch" }),
+  armory: Object.freeze({ es: "la armería", en: "armory" }),
+  dock: Object.freeze({ es: "el muelle", en: "dock" }),
+  fishery: Object.freeze({ es: "la pesca", en: "fishery" }),
+  ironworks: Object.freeze({ es: "la fragua", en: "ironworks" }),
+  posito: Object.freeze({ es: "el pósito", en: "granary" }),
+  hospital: Object.freeze({ es: "el hospital", en: "hospital" }),
+  alhondiga: Object.freeze({ es: "la alhóndiga", en: "corn exchange" }),
+  caminos: Object.freeze({ es: "los caminos", en: "streets" }),
+  pozo: Object.freeze({ es: "el pozo", en: "well" }),
+  capilla: Object.freeze({ es: "la capilla", en: "chapel" }),
+  carniceria: Object.freeze({ es: "la carnicería", en: "butcher's" }),
+  molino: Object.freeze({ es: "el molino", en: "mill" }),
+  corral: Object.freeze({ es: "el corral de comedias", en: "playhouse" }),
+});
+
+/** The display name of a building type in one language, raw key as fallback (never throws). */
+export function buildingName(type, lang) {
+  const n = BUILDING_NAMES[type];
+  return (n && (lang === "en" ? n.en : n.es)) || type;
+}
+
 /** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */
 export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla", "carniceria", "molino", "corral"]);
 
