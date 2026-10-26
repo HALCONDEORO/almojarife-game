@@ -404,7 +404,8 @@ const FLEET_PIN_MIN = 1100; // px of chart-area width; keep in step with nothing
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
 function render() {
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   fitFleet();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
