@@ -6,7 +6,7 @@ Updated 26 October 2026. This is not a release announcement.
 
 This documentation branch starts at main commit `20ab136e1473d28b1aa0e1e317f93e1a0560f83e` (tree `64c04a606071d19aeb3303e07a2a1d224c74643c`). Later PRs may still be open. Refresh this record after the release batch integrates.
 
-The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.1.0-alpha.1`; the PUBLIC audience was conditionally approved on26 October18:20; the release date is not decided. No deployment or public-alpha readiness is certified here.
+The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the PUBLIC audience was conditionally approved on26 October18:20; the release date is not decided. No deployment or public-alpha readiness is certified here.
 
 ## Implemented in the checkpoint
 

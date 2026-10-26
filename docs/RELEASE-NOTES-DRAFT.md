@@ -1,8 +1,8 @@
-# Release notes draft: v0.1.0-alpha.1
+# Release notes draft: v0.5.0-beta.1
 
 DRAFT ONLY. The public audience is approved conditionally; no tag, release date or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
 
-## El Almojarife: first alpha batch
+## El Almojarife: first beta batch
 
 A desktop browser trading game set around Iberia and North Africa. Build a merchant house, trade between ports, manage ships and automatic routes, and respond to events at sea. English and Spanish are available in the game.
 
@@ -32,7 +32,7 @@ Forecasts, variable salvage rewards, workshop margin warnings, persistent course
 ## Release record to complete
 
 - Final commit and tree: PENDING.
-- Version: v0.1.0-alpha.1 under the delegated alpha.N policy; beta uses v0.5.0-beta.N, full release v1.0.0. Intended audience: PUBLIC, approved conditionally on26 October18:20.
+- Version: v0.5.0-beta.1 under the beta.N policy; no alpha release, full release v1.0.0. Intended audience: PUBLIC, approved conditionally on26 October18:20.
 - Independent documentation review: PENDING.
 - Exact-head CI and simulation gates for the full batch: PENDING.
 - Deployment and ES desktop post-merge playtest: PENDING.

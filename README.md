@@ -61,7 +61,7 @@ Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to 
 
 ## What is missing for the alpha
 
-Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.1.0-alpha.1`, not yet published. Its PUBLIC audience is conditionally approved; final integrated documentation, polish and Playtest approval remain required. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
+Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.5.0-beta.1`, not yet published. Its PUBLIC audience is conditionally approved; final integrated documentation, polish and Playtest approval remain required. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
 
 **Still missing or in progress:**
 
