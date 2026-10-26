@@ -5,3 +5,9 @@ test('docked ship reports current port not stale ETA',()=>{const h=voyageCardHtm
 test('ETA is explicitly estimated and escaped',()=>{const h=voyageCardHtml({id:1,voyage:{from:'a',to:'b',totalTicks:10,ticksLeft:5}},{lang:'en',eta:()=>'<tomorrow>'});assert.match(h,/Estimated arrival/);assert.match(h,/&lt;tomorrow&gt;/);});
 test('card shows cargo at port and has an Open ship action',()=>{const h=voyageCardHtml({id:3,at:'cadiz'},{lang:'es',cityName:()=> 'Cádiz',cargo:{used:5,cap:60}});assert.match(h,/Carga: 5\/60/);assert.match(h,/id="voyage-open"[^>]*>Abrir barco</);assert.match(h,/En puerto: Cádiz/);});
 test('docked ship with a chosen destination offers a Sail button with the estimate',()=>{const h=voyageCardHtml({id:1,at:'cadiz'},{lang:'es',cityName:()=> 'Cádiz',sail:{city:'Sevilla',hours:'12'}});assert.match(h,/id="voyage-sail"[^>]*>Zarpar a Sevilla \(≈12 h\)/);const n=voyageCardHtml({id:1,at:'cadiz'},{lang:'es'});assert.doesNotMatch(n,/voyage-sail/);});
+test('a pending voyage event gets a button to resolve it, in both languages and only then',()=>{
+ const s={id:1,at:'cadiz',voyage:{from:'cadiz',to:'malaga',ticksLeft:10,totalTicks:20,km:100}};
+ assert.match(voyageCardHtml(s,{lang:'es',eventPending:true}),/id="voyage-event"[^>]*>Resolver suceso/);
+ assert.match(voyageCardHtml(s,{lang:'en',eventPending:true}),/Resolve voyage event/);
+ assert.doesNotMatch(voyageCardHtml(s,{lang:'es'}),/voyage-event/);
+});
