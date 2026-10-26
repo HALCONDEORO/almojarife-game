@@ -32,7 +32,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 
 ## Screenshots
 
-_The city plan (`city2d.png`) and sea chart (`map.png`) were refreshed on 25 Oct 2026 from the playable build at `main` 2bca84349d37f49e839aafae2710fdfe89bf2ba0 (English). The remaining screenshots are earlier captures and were not refreshed in that update. Refresh screenshots when the UI changes so they never show unmerged work._
+_The city plan (`city2d.png`) and sea chart (`map.png`) were refreshed on 26 Oct 2026 from the playable build at `main` d8a7383bf9713fd0d4f980363685cc1d06a1a22b (English). The remaining screenshots are earlier captures and were not refreshed in that update. Refresh screenshots when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
