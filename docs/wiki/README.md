@@ -30,4 +30,4 @@ One place for how the game works and every statistic behind it. It lives in the 
 | [decisions.md](decisions.md) | Decisions of the last days and why | started |
 | [audit.md](audit.md) | What documentation already exists and where it fits | done once, update when docs move |
 
-Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/).
+Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/). Goods: [generated/goods.md](generated/goods.md).

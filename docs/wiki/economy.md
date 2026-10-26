@@ -14,4 +14,4 @@ Skeleton plus the decisions already taken. Existing sources: `docs/design/econom
 - Research notes (Drive, not in repo): how other games model saturation and import.
 
 ## To fill
-Goods table (base price, class weights, source type), imports and finite supply, balance gates (NPC worth bands per horizon).
+Goods table: [generated/goods.md](generated/goods.md). To fill: imports and finite supply, balance gates (NPC worth bands per horizon).

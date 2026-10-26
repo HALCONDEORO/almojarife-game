@@ -14,4 +14,4 @@ Esqueleto más las decisiones ya tomadas. Fuentes existentes: `docs/design/econo
 - Notas de investigación (Drive, no en el repo): cómo modelan otros juegos la saturación y la importación.
 
 ## Por rellenar
-Tabla de mercancías (precio base, pesos por clase, tipo de fuente), importaciones y oferta finita, puertas de equilibrio (bandas de patrimonio PNJ por horizonte).
+Tabla de mercancías: [generated/es/goods.md](../generated/es/goods.md). Por rellenar: importaciones y oferta finita, puertas de equilibrio (bandas de patrimonio PNJ por horizonte).
