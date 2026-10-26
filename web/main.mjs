@@ -525,7 +525,7 @@ function render() {
   const mins = Math.floor(dayFrac * 24 * 60), hh = String(Math.floor(mins / 60)).padStart(2, "0"), mm = String(mins % 60).padStart(2, "0");
   $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.noGoal || g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
-  $("cash").textContent = `${t.cash}: ${fmtM(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
+  $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
   $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, actionUnread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
   $("goal").textContent = g.noGoal || g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
