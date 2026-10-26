@@ -19,3 +19,11 @@ test('packaging includes entry point and its local runtime modules', () => {
   }
   assert.equal(config.publish, null, 'no public release publishing');
 });
+
+
+test('sync includes browser runtime geometry helper', () => {
+  const root = path.join(__dirname, '..');
+  require('node:child_process').execFileSync(process.execPath, ['sync.mjs'], { cwd: root });
+  assert.equal(fs.readFileSync(path.join(root, 'app/tools/geo.mjs'), 'utf8'),
+    fs.readFileSync(path.join(root, '../tools/geo.mjs'), 'utf8'));
+});
