@@ -298,7 +298,7 @@ let fleetFilter="all",fleetSearch="";
 
 // Floating windows scale with the screen (Marco 26/10: on a big screen or at 80% zoom they looked tiny). CSS zoom on .city-window and #shipwin follows --win-zoom; drag maths below uses local (unzoomed) units.
 const winZoom = () => parseFloat(document.documentElement.style.getPropertyValue("--win-zoom")) || 1;
-function updateWinZoom() { const z = Math.min(1.75, Math.max(1, Math.min(innerWidth / 1500, innerHeight / 820))); document.documentElement.style.setProperty("--win-zoom", z.toFixed(3)); }
+function updateWinZoom() { const z = !(window.CSS && CSS.supports && CSS.supports("zoom", "1")) ? 1 : Math.min(1.75, Math.max(1, Math.min(innerWidth / 1500, innerHeight / 820))); document.documentElement.style.setProperty("--win-zoom", z.toFixed(3)); }
 updateWinZoom(); addEventListener("resize", updateWinZoom);
 let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours' house card opened from the city map (read only)
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
@@ -1229,10 +1229,10 @@ function open3d(s0) {
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
-  const move=(x,y)=>{const wz=winZoom(),p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth/wz,(innerHeight-70)/wz);
+  const move=(x,y)=>{const wz=winZoom(),cc=d.querySelector(".city-controls"),ccr=cc&&cc.offsetWidth?cc.getBoundingClientRect().left:innerWidth,p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,Math.min(innerWidth,ccr)/wz,(innerHeight-70)/wz); /* stays left of the right panel so the close button is never covered */
   for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")]){ // the bar and the mission chip (expanded or minimised flag) never cover the title/close row (Marco 25/10)
-    if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight;
-      if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,(innerHeight-70)/wz-Math.min(win.offsetHeight,80)));}}
+    if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight; /* bar offsets are screen px; the window's are zoomed local units */
+      if(p.left*wz<br&&(p.left+win.offsetWidth)*wz>bl&&p.top*wz<bb+6)p.top=Math.min((bb+6)/wz,Math.max(0,(innerHeight-70)/wz-Math.min(win.offsetHeight,80)));}}
   win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
   handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX/winZoom()-win.offsetLeft,e.clientY/winZoom()-win.offsetTop];handle.setPointerCapture(e.pointerId);};
   handle.onpointermove=e=>{if(drag)move(e.clientX/winZoom()-drag[0],e.clientY/winZoom()-drag[1]);};
