@@ -471,10 +471,10 @@ function render() {
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   m += historical.underlay ?? ""; // realm washes sit behind ports and labels
   for (const c of world.cities) {
-    if (!isDiscovered(g, c.id)) continue; // fog of war
-    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
+    const explored = isDiscovered(g, c.id); // chart shows every port, discovery still gates interactions
+    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (!explored ? (lang === "es" ? " · Puerto no explorado" : " · Unexplored port") : "") + (explored && e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
-    m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:pointer">${c.name}</text></g>`;
+    m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? "#c0392b" : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
   }
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
@@ -489,7 +489,7 @@ function render() {
     if (!shipsKeep) map.insertAdjacentHTML("beforeend", `<g id="shipsLayer" pointer-events="none"></g>`);
   }
   drawShips(); scaleMarkers();
-  $("map").querySelectorAll("g.city").forEach((el) => {
+  $("map").querySelectorAll('g.city[data-explored="true"]').forEach((el) => {
     el.onclick = () => {
       const a = portClickAction(g, el.dataset.c); // own ship docked there -> enter the city; else destination
       if (a.kind === "city") { sel = a.ship; closeMenu(); open3d(g.ships[a.ship]); return; }
@@ -1116,7 +1116,7 @@ mapEl.addEventListener("contextmenu", (ev) => {
   const cityEl = ev.target.closest?.("g.city"), s0 = ship(); if (!s0) return;
   let lat, lon;
   if (cityEl && world.nodes[cityEl.dataset.c]) ({ lat, lon } = world.nodes[cityEl.dataset.c]);
-  else { const p = mapEl.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const ctm = mapEl.getScreenCTM(), q = p.matrixTransform(ctm.inverse()); const tol = 48 / (ctm.a || 1); let snap = null, snapD = tol; mapEl.querySelectorAll("g.city").forEach((el) => { const d = Math.hypot(Number(el.dataset.mx) - q.x, Number(el.dataset.my) - q.y); if (d < snapD) { snapD = d; snap = el.dataset.c; } }); if (snap && world.nodes[snap]) ({ lat, lon } = world.nodes[snap]); else { lon = q.x / sc + x0; lat = y1 - q.y / (sc * 1.25); } } // missing the small port dot by a few screen px must not send the ship to open sea (24/10 human playtest: 3 near-port clicks missed, one routed 759 km away); snap within 48 screen px, zoom-independent via the CTM
+  else { const p = mapEl.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const ctm = mapEl.getScreenCTM(), q = p.matrixTransform(ctm.inverse()); const tol = 48 / (ctm.a || 1); let snap = null, snapD = tol; mapEl.querySelectorAll('g.city[data-explored="true"]').forEach((el) => { const d = Math.hypot(Number(el.dataset.mx) - q.x, Number(el.dataset.my) - q.y); if (d < snapD) { snapD = d; snap = el.dataset.c; } }); if (snap && world.nodes[snap]) ({ lat, lon } = world.nodes[snap]); else { lon = q.x / sc + x0; lat = y1 - q.y / (sc * 1.25); } } // missing the small port dot by a few screen px must not send the ship to open sea (24/10 human playtest: 3 near-port clicks missed, one routed 759 km away); snap within 48 screen px, zoom-independent via the CTM
   let r; act(() => { r = doGoTo(g, s0, lat, lon); });
   if (r && !r.ok && r.reason !== "already there") { const h = $("hint"); h.textContent = r.reason === "no sea there" ? t.navNoSea : t.navCannot; setTimeout(() => render(), 2500); }
   else target = null, render();
