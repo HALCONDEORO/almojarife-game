@@ -1,6 +1,6 @@
 # Release notes draft: v0.1.0-alpha.1
 
-DRAFT ONLY. No tag, release date, audience or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
+DRAFT ONLY. The public audience is approved conditionally; no tag, release date or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
 
 ## El Almojarife: first alpha batch
 
@@ -8,15 +8,15 @@ A desktop browser trading game set around Iberia and North Africa. Build a merch
 
 ## Integrated at the documentation checkpoint
 
-- A right panel with route and finance information, missions, notices and fleet views.
-- Repeat the last route and see profit per trip.
-- Automatic route hull repair while respecting the cash limit.
-- More useful Messages: actionable messages separated from grouped notices.
-- Pending voyage events remain accessible after repainting and also appear inside the city.
-- Event choices show probabilities and effects. Pirate fighting odds marked approximately are estimates, not exact forecasts.
-- Clearer feedback for blocked armory purchases and purchased offices.
-- A fleet search that appears only when there are more than five ships.
-- Live-data reference pages in the wiki, including seasons.
+- A right panel ordered by priority with a red event warning ([PR #553](https://github.com/HALCONDEORO/almojarife-game/pull/553)).
+- Repeat the last route and see profit per trip ([PR #536](https://github.com/HALCONDEORO/almojarife-game/pull/536)).
+- Automatic route hull repair while respecting the cash limit ([PR #546](https://github.com/HALCONDEORO/almojarife-game/pull/546)).
+- More useful Messages: actionable messages separated from grouped notices ([PR #552](https://github.com/HALCONDEORO/almojarife-game/pull/552)).
+- Pending voyage events remain accessible after repainting ([PR #551](https://github.com/HALCONDEORO/almojarife-game/pull/551)) and also appear inside the city ([PR #550](https://github.com/HALCONDEORO/almojarife-game/pull/550)).
+- Event choices show probabilities and effects ([PR #555](https://github.com/HALCONDEORO/almojarife-game/pull/555)). Pirate fighting odds marked approximately are estimates, not exact forecasts.
+- Clearer feedback for blocked armory purchases ([PR #537](https://github.com/HALCONDEORO/almojarife-game/pull/537)) and purchased offices ([PR #538](https://github.com/HALCONDEORO/almojarife-game/pull/538)).
+- A fleet search that appears only when there are more than five ships ([PR #554](https://github.com/HALCONDEORO/almojarife-game/pull/554)).
+- Live-data reference pages in the wiki, including seasons ([PR #527](https://github.com/HALCONDEORO/almojarife-game/pull/527)).
 
 ## Pending batch candidates, not release claims
 
@@ -32,7 +32,7 @@ Forecasts, variable salvage rewards, workshop margin warnings, persistent course
 ## Release record to complete
 
 - Final commit and tree: PENDING.
-- Version and intended audience: PENDING owner decision.
+- Version: proposed v0.1.0-alpha.1. Intended audience: PUBLIC, approved conditionally on26 October18:20.
 - Independent documentation review: PENDING.
 - Exact-head CI and simulation gates for the full batch: PENDING.
 - Deployment and ES desktop post-merge playtest: PENDING.

@@ -6,7 +6,7 @@ Updated 26 October 2026. This is not a release announcement.
 
 This documentation branch starts at main commit `20ab136e1473d28b1aa0e1e317f93e1a0560f83e` (tree `64c04a606071d19aeb3303e07a2a1d224c74643c`). Later PRs may still be open. Refresh this record after the release batch integrates.
 
-The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.1.0-alpha.1`; the release audience and date are not decided. No deployment or public-alpha readiness is certified here.
+The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.1.0-alpha.1`; the PUBLIC audience was conditionally approved on26 October18:20; the release date is not decided. No deployment or public-alpha readiness is certified here.
 
 ## Implemented in the checkpoint
 
@@ -23,7 +23,7 @@ The repository is public. No GitHub release existed when this record was prepare
 - Full simulation gates, exact-commit CI, deployment verification and ES desktop playtest must be recorded on the final batch commit.
 - Screenshots in README are an older source set. They are not screenshots of an approved release candidate.
 - Campaign completion, balance, save migration, accessibility and browser coverage are not declared complete.
-- The public/private tester decision remains open. Publishing a pre-release in this public repository would expose its notes and assets publicly.
+- The public audience was approved conditionally on26 October18:20. Final documentation, integrated-code links, polish and Playtest approval remain required.
 
 ## Documentation map
 
