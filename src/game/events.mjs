@@ -2,6 +2,7 @@
 // Pure game logic: no DOM. The page shows g.pending as a choice box and calls resolveEvent.
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
+import { shipCapacity } from "../sim/trade.mjs";
 import { seeded } from "../view/cityscene.mjs";
 export const EVENT_CHANCE = 0.07; // per day, per player ship at sea, while nothing is pending
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -21,11 +22,18 @@ export function validateEvents(list, textKeys = ["es", "en"]) {
       if (!c.outcomes?.length || Math.abs(sum - 1) > 1e-6) errs.push(`event ${e.id}/${c.id}: outcome chances must add up to 1 (got ${sum})`);
       for (const o of c.outcomes ?? []) {
         for (const l of textKeys) if (!o.text?.[l]) errs.push(`event ${e.id}/${c.id}: outcome text missing "${l}"`);
-        for (const k of Object.keys(o.effects ?? {})) if (!["cash", "cargoLossPct", "days"].includes(k)) errs.push(`event ${e.id}/${c.id}: unknown effect "${k}"`);
+        for (const k of Object.keys(o.effects ?? {})) if (!["cash", "cargoLossPct", "days", "salvage"].includes(k)) errs.push(`event ${e.id}/${c.id}: unknown effect "${k}"`);
       }
     }
   }
   return errs;
+}
+const worth = (c) => c.outcomes.reduce((a, o) => a + o.p * ((o.effects?.cash ?? 0) - (o.effects?.days ?? 0) * 50 - (o.effects?.cargoLossPct ?? 0) * 10), 0); // rough ranking only: picks the best of equally risk-free choices
+/** The choice to take when an event has no risk at all (every outcome of every choice is a gain or nothing), else null. Such events do not pause the game. */
+export function autoChoice(ev) {
+  const safe = (o) => (o.effects?.cash ?? 0) >= 0 && (o.effects?.cargoLossPct ?? 0) <= 0 && (o.effects?.days ?? 0) <= 0;
+  if (!ev?.choices?.length || !ev.choices.every((c) => c.outcomes.every(safe))) return null;
+  return ev.choices.reduce((best, c) => (worth(c) > worth(best) ? c : best)).id;
 }
 /** Maybe start an event for a player ship at sea. Sets g.pending and returns it, or null. */
 export function rollEvent(g) {
@@ -41,6 +49,8 @@ export function rollEvent(g) {
     let x = r() * total, pick = ok[ok.length - 1];
     for (const e of ok) { x -= e.weight; if (x < 0) { pick = e; break; } }
     g.pending = { event: pick.id, ship: ship.id, day: g.day };
+    const auto = autoChoice(pick);
+    if (auto) { resolveEvent(g, auto); return null; } // purely favourable: resolved at once, the result is in Messages
     return g.pending;
   }
   return null;
@@ -67,12 +77,20 @@ export function resolveEvent(g, choiceId) {
     }
     done.cargoLost = lost;
   }
+  if (fx.salvage && ship) { // drifting cargo pays by hold size: bigger ships recover more, with a luck band
+    const sr = seeded(`salvage:${g.pending.day}:${g.pending.ship}:${g.seed ?? 0}`);
+    const amt = Math.max(1, Math.round(shipCapacity(ship) * (fx.salvage.perCap ?? 2) * (1 - (fx.salvage.jitter ?? 0) + 2 * (fx.salvage.jitter ?? 0) * sr())));
+    g.cash += amt; done.cash = amt;
+  }
   if (fx.days && ship?.voyage) {
     const v = ship.voyage, old = v.ticksLeft, nd = clamp(v.ticksLeft + fx.days * TICKS_PER_DAY, 1, 99 * TICKS_PER_DAY);
     done.days = (nd - old) / TICKS_PER_DAY; v.ticksLeft = nd; if (v.totalTicks != null) v.totalTicks = Math.max(v.totalTicks + nd - old, nd);
   }
-  g.log.unshift({ day: g.day, key: "event", txt: out.text, ship: g.pending.ship }); if (g.log.length > 30) g.log.pop();
-  post(g, "event", { txt: out.text, ship: g.pending.ship });
+  const text = done.cash != null && out.text
+    ? Object.fromEntries(Object.entries(out.text).map(([k, v]) => [k, String(v).replaceAll("{amt}", String(done.cash))]))
+    : out.text; // salvage (and any cash effect) fills {amt} in the text
+  g.log.unshift({ day: g.day, key: "event", txt: text, ship: g.pending.ship }); if (g.log.length > 30) g.log.pop();
+  post(g, "event", { txt: text, ship: g.pending.ship });
   g.pending = null;
-  return { ok: true, text: out.text, effects: done };
+  return { ok: true, text, effects: done };
 }

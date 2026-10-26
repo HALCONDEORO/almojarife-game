@@ -1,5 +1,7 @@
 # Almojarife - design document (draft 2)
 
+> Historical planning document. Port/goods counts and implementation status below describe earlier scope, not the current build. See [CURRENT-STATE.md](CURRENT-STATE.md) for the current checkpoint and [RELEASE.md](RELEASE.md) for the proposed early pre-release. Existing milestone dates have not been silently changed.
+
 Status: draft for review. Name: Almojarife (final for now, owner decision 19 Oct 2026). Everything here is original. Ideas and genre conventions are used; no data tables, texts, names, art or maps are taken from any other game.
 
 ## 0. Name, languages, pronunciation
