@@ -109,7 +109,7 @@ test("view: days to the next settlement", () => {
   assert.equal(daysToSettle(0), 7); assert.equal(daysToSettle(3), 4); assert.equal(daysToSettle(6), 1); assert.equal(daysToSettle(7), 7);
 });
 test("view: inbox lists messages, marks unread, and escapes text", () => {
-  const g = idle(); post(g, "info", { txt: "<b>x</b> & \"y\"" }); post(g, "arrival", { ship: 1, city: "lisboa" });
+  const g = idle(); post(g, "info", { txt: "<b>x</b> & \"y\"" }); post(g, "respect", { city: "lisboa" });
   const h = inboxHtml(g, "en", fmt, (c) => c.toUpperCase());
   assert.ok(h.includes("LISBOA")); assert.ok(h.includes("unread")); assert.ok(!h.includes("<b>x</b>")); assert.ok(h.includes("&lt;b&gt;x&lt;/b&gt; &amp; &quot;y&quot;"));
   markAllRead(g); assert.ok(!inboxHtml(g, "en", fmt).includes('class="msg unread"'));

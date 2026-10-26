@@ -1,6 +1,7 @@
 // Reports and messages as HTML strings (no DOM access), so they can be tested. Text is escaped.
 import { SHIP_TYPES } from "../sim/trade.mjs";
 import { rankName, RESPECT_NAMES } from "./rankview.mjs";
+import { msgClass, groupNotices } from "./msgclass.mjs";
 import { dueNow, SETTLE_EVERY, OVERDRAFT_LIMIT, OVERDRAFT_RATE } from "../game/ledger.mjs";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export const LT = {
@@ -45,11 +46,24 @@ export function messageText(m, lang, fmt, cityName = (x) => x, goodName = (x) =>
     k === "city" ? cityName(m.city) : k === "good" ? goodName(m.good) : k === "profit" ? fmt(m.profit ?? 0) : k === "type" ? typeName(lang, m.type) : k === "paid" ? fmt(m.paid ?? 0) : k === "due" ? fmt(m.due ?? 0) : k === "cash" ? fmt(m.cash ?? 0) : k === "amt" ? fmt(m.amt ?? 0) : k === "owed" ? fmt(m.owed ?? 0) : k === "limit" ? fmt(m.limit ?? OVERDRAFT_LIMIT) : k === "rate" ? String(m.rate ?? Math.round(OVERDRAFT_RATE * 100)) : k === "rank" ? rankName(lang, m.rank) : k === "loanCap" ? fmt(m.loanCap ?? 0) : k === "txt" ? txt : (m[k] ?? ""));
 }
 export function inboxHtml(g, lang, fmt, cityName, goodName) {
-  const t = LT[lang], box = g.inbox ?? [];
+  const t = LT[lang], en = lang === "en", box = g.inbox ?? [];
+  const text = (m) => messageText(m, lang, fmt, cityName, goodName);
+  const acts = box.filter((m) => msgClass(m) === "action"), notices = box.filter((m) => msgClass(m) === "notice");
   let h = `<h2>${t.messages}</h2>`;
-  if (!box.length) return h + `<p>${t.noMsg}</p>`;
-  h += `<p><button id="l-all">${t.markAll}</button></p>` + box.map((m) => `<div class="msg${m.read ? "" : " unread"}" data-msg="${m.id}">${m.read ? "" : "● "}<small>${t.day} ${m.day}</small> ${esc(messageText(m, lang, fmt, cityName, goodName))}</div>`).join("");
-  return h;
+  if (!acts.length && !notices.length) return h + `<p>${t.noMsg}</p>`;
+  h += `<p><button id="l-all">${t.markAll}</button></p>`;
+  const line = (m) => `<div class="msg${m.read ? "" : " unread"}" data-msg="${m.id}">${m.read ? "" : "● "}<small>${t.day} ${m.day}</small> ${esc(text(m))}</div>`;
+  h += `<h3>${en ? "For you" : "Para ti"}</h3>` + (acts.length ? acts.map(line).join("") : `<p><small>${en ? "Nothing needs your attention." : "Nada requiere tu atención."}</small></p>`);
+  if (notices.length) {
+    const groups = groupNotices(notices, text);
+    const row = (e) => {
+      const unread = e.unread ? "● " : "", days = e.oldest === e.day ? `${t.day} ${e.day}` : `${t.day} ${e.oldest}-${e.day}`;
+      if (e.kind === "routeLeg") return `<div class="msg${e.unread ? " unread" : ""}">${unread}<small>${days}</small> ${en ? `Ship ${e.first.ship}: ${e.n} route sale${e.n > 1 ? "s" : ""}, profit ${fmt(e.profit)}` : `Barco ${e.first.ship}: ${e.n} venta${e.n > 1 ? "s" : ""} de ruta, ganancia ${fmt(e.profit)}`}</div>`;
+      return `<div class="msg${e.unread ? " unread" : ""}" data-msg="${e.ids[0]}">${unread}<small>${days}</small> ${esc(text(e.first))}${e.n > 1 ? ` <b>×${e.n}</b>` : ""}</div>`;
+    };
+    h += `<details class="msg-notices"><summary><b>${en ? "Notices" : "Avisos"} (${notices.length})</b> <small>${en ? "grouped, nothing to do" : "agrupados, sin nada que hacer"}</small></summary>${groups.map(row).join("")}</details>`;
+  }
+  return h + `<p><small>${en ? "Weekly reports are in Reports." : "Los informes semanales están en Informes."}</small></p>`;
 }
 export const badge = (label, n) => n > 0 ? `${label} (${n})` : label;
 
