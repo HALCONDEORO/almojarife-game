@@ -16,3 +16,8 @@ test("a purely favourable event does not pause the game and leaves a message", (
   for (let s = 0; s < 300 && !got; s++) { g.seed = s; g.pending = null; const cash = g.cash, n = (g.inbox ?? []).length; for (let d = 0; d < 6 && !got; d++) { rollEvent(g); assert.equal(g.pending, null); if (g.cash > cash) got = true; g.day++; } if (got) assert.ok(g.inbox.length > n && g.inbox[0].kind === "event"); }
   assert.ok(got, "an event fired and paid out");
 });
+test("fair wind has no risk: crowding on sail always gains time, so it resolves on its own", () => {
+  const fw = ev("fair_wind"); assert.equal(autoChoice(fw), "sail");
+  const sail = fw.choices.find((c) => c.id === "sail");
+  assert.equal(sail.outcomes.length, 1); assert.equal(sail.outcomes[0].p, 1); assert.ok(sail.outcomes[0].effects.days < 0 && sail.outcomes[0].effects.days >= -1);
+});
