@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
   const files = walk(dist);
   const exe = process.platform === 'win32' ? files.find(p => p.includes('win-unpacked') && p.endsWith('El Almojarife.exe'))
     : process.platform === 'darwin' ? files.find(p => p.includes('.app/Contents/MacOS/') && path.basename(p) === 'El Almojarife')
-    : files.find(p => p.includes('linux-unpacked') && path.basename(p) === 'almojarife-desktop');
+    : files.find(p => path.basename(path.dirname(p)) === 'linux-unpacked' && /almojarife/i.test(path.basename(p)) && !path.extname(p));
   assert.ok(exe, 'packaged executable exists');
   const profile = fs.mkdtempSync(path.join(os.tmpdir(),'almojarife-smoke-'));
   const args = ['--remote-debugging-port=9223', '--remote-debugging-address=127.0.0.1', '--user-data-dir='+profile, '--disable-gpu'];
