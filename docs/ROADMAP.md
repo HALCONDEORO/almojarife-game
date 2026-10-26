@@ -1,5 +1,7 @@
 # Almojarife - Roadmap (official reference), v5.3
 
+> Historical planning document. Port/goods counts and implementation status below describe earlier scope, not the current build. See [CURRENT-STATE.md](CURRENT-STATE.md) for the current checkpoint and [RELEASE.md](RELEASE.md) for the proposed early pre-release. Existing milestone dates have not been silently changed.
+
 Language: Spanish is the main language, English second. Today: 19 Oct 2026.
 Map: the Spanish coast and its surroundings first. Name: Almojarife is the top rank.
 Rule from two audits: shorten the plan by cutting scope, not by squeezing dates or buffers.

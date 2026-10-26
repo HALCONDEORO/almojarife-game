@@ -374,6 +374,8 @@ export const cityAllowsProducer = (world, cityId, type) => producerCities(world,
 export const producerRate = (type, level) => { const p = PRODUCERS[type]?.pattern?.[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
 /** Average batches a workshop level produces per day when the margin holds. */
 export const workshopRate = (level) => producerRate("workshop", level);
+/** Days of negative margin before the game warns (feed + weekly report + red card mark). */
+export const MARGIN_WARN_DAYS = 3;
 /** One production day of a port's active producers, run inside that port's (staggered) market tick so
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
@@ -390,7 +392,7 @@ export function workshopTick(g, cityId) {
   // (staff = 1) this is exactly pattern[day % length], the pre-jobs behaviour.
   const staffed = (pattern, d) => { const P = pattern.length; let t = Math.floor(d / P) * pattern.reduce((a, x) => a + x, 0); for (let i = 0; i < d % P; i++) t += pattern[i]; return t; };
   const batchesFor = (pattern, level) => Math.min(level, Math.floor(staff * staffed(pattern, day + 1)) - Math.floor(staff * staffed(pattern, day)));
-  for (const b of Object.values(plots)) {
+  for (const [plotId, b] of Object.entries(plots)) {
     if (b.state !== "active" || b.halted) continue; // halted: no workers, no production
     const def = PRODUCERS[b.type];
     if (!def) continue;
@@ -414,6 +416,12 @@ export function workshopTick(g, cityId) {
       }
       continue;
     }
+    const mq = quoteRecipe(g.world, g.market, cityId, def.recipe, 1);
+    const marginNow = mq.ok ? sellQuote(g.world, g.market, cityId, def.output, mq.outputs[def.output]) - mq.cost : null; // same quote the Buildings tab shows
+    if (marginNow !== null && marginNow <= 0) { // unquotable (no input stock) is not a margin signal
+      b.negDays = (b.negDays ?? 0) + 1;
+      if (b.negDays >= MARGIN_WARN_DAYS && !b.negWarned) { b.negWarned = 1; post(g, "bldMargin", { city: cityId, plot: plotId, type: b.type, margin: Math.round(marginNow) }); }
+    } else if (marginNow !== null) { b.negDays = 0; b.negWarned = 0; } // one profitable day clears the streak and re-arms the warning; an unquotable day (no stock) keeps the state
     const pattern = def.pattern[b.level] ?? def.pattern[3];
     for (let batches = batchesFor(pattern, b.level); batches >= 1; batches--) {
       const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);

@@ -29,6 +29,7 @@ export function buildingsRows(g, cityId) {
       if (!def.primary) {
         const q = quoteRecipe(g.world, g.market, cityId, def.recipe, 1);
         row.margin = q.ok ? sellQuote(g.world, g.market, cityId, def.output, q.outputs[def.output]) - q.cost : null; // coins per batch right now
+        row.negDays = b.negDays ?? 0; // consecutive negative-margin days (the game warns at 3)
       }
     }
     if (b.state === "active" && !halted && b.type) {
@@ -141,14 +142,14 @@ export function bldOfferLocked(t, o, lang, art) {
  * buildingsRows row, nothing else. Own strings (BW) so the shared i18n sweep lines
  * stay untouched; building names and state words reuse the caller's T table. */
 export const BW = {
-  es: { rate: "{r} lotes/día", margin: "margen {m}/lote", produced: "{n} producidos", upkeep: "mantenimiento {u}/día", jobs: "{j} trabajadores", wages: "salarios {w}/día", pop: "+{n} habitantes", cap: "+{n} de depósito", toll: "-{n}% de peaje" },
-  en: { rate: "{r} batches/day", margin: "margin {m}/batch", produced: "{n} produced", upkeep: "upkeep {u}/day", jobs: "{j} workers", wages: "wages {w}/day", pop: "+{n} citizens", cap: "+{n} storage", toll: "-{n}% toll" },
+  es: { rate: "{r} lotes/día", margin: "margen {m}/lote", marginWarn: "margen negativo {n} días seguidos", produced: "{n} producidos", upkeep: "mantenimiento {u}/día", jobs: "{j} trabajadores", wages: "salarios {w}/día", pop: "+{n} habitantes", cap: "+{n} de depósito", toll: "-{n}% de peaje" },
+  en: { rate: "{r} batches/day", margin: "margin {m}/batch", marginWarn: "negative margin {n} days in a row", produced: "{n} produced", upkeep: "upkeep {u}/day", jobs: "{j} workers", wages: "wages {w}/day", pop: "+{n} citizens", cap: "+{n} storage", toll: "-{n}% toll" },
 };
 // Short visible captions under each stat cell: the card must explain itself without hover
 // (the old text line spelled every figure out); the full labels above stay in title/aria-label.
 export const BWL = {
-  es: { rate: "lotes/día", margin: "margen/lote", produced: "producidos", upkeep: "mantenim./día", jobs: "trabajadores", wages: "salarios/día", pop: "habitantes", cap: "depósito", toll: "peaje" },
-  en: { rate: "batches/day", margin: "margin/batch", produced: "produced", upkeep: "upkeep/day", jobs: "workers", wages: "wages/day", pop: "citizens", cap: "storage", toll: "toll" },
+  es: { rate: "lotes/día", margin: "margen/lote", marginWarn: "racha en rojo", produced: "producidos", upkeep: "mantenim./día", jobs: "trabajadores", wages: "salarios/día", pop: "habitantes", cap: "depósito", toll: "peaje" },
+  en: { rate: "batches/day", margin: "margin/batch", marginWarn: "losing streak", produced: "produced", upkeep: "upkeep/day", jobs: "workers", wages: "wages/day", pop: "citizens", cap: "storage", toll: "toll" },
 };
 // Own flat icons (CREDITS.md style, 24x24): card icons for non-producer types and small
 // stat glyphs. Producers use their good's icon from web/icons.mjs (imported by callers).
@@ -192,6 +193,7 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
   if (r.state === "active" && !r.halted) {
     if (r.rate !== undefined) cells.push(cell(BWI.gauge, bw.rate.replace("{r}", r.rate), r.rate, bwl.rate));
     if (r.margin !== undefined) cells.push(cell(BWI.coin, bw.margin.replace("{m}", r.margin === null ? "—" : fmt(r.margin)), r.margin === null ? "—" : fmt(r.margin), bwl.margin, r.margin !== null && r.margin < 0));
+    if ((r.negDays ?? 0) >= 3) cells.push(cell(BWI.coin, bw.marginWarn.replace("{n}", r.negDays), "⚠", bwl.marginWarn, true)); // the streak mark: three losing days in a row, re-armed by one profitable day
     if (r.produced !== undefined) cells.push(cell(BWI.box, bw.produced.replace("{n}", fmt(r.produced)), fmt(r.produced), bwl.produced));
     if (r.popBonus) cells.push(cell(BWI.house, bw.pop.replace("{n}", fmt(r.popBonus)), `+${fmt(r.popBonus)}`, bwl.pop));
     if (r.capBonus) cells.push(cell(BWI.warehouse, bw.cap.replace("{n}", fmt(r.capBonus)), `+${fmt(r.capBonus)}`, bwl.cap));

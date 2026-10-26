@@ -1,3 +1,4 @@
+import { forecastData, forecastHtml } from "../src/view/forecastview.mjs";
 import { noticeData, noticeHtml } from "../src/view/noticeview.mjs";
 import { portData, portHtml, tradesHtml, nearestPorts } from "../src/view/portview.mjs";
 import { cashCardHtml, financeSummary } from "../src/view/cashcard.mjs";
@@ -81,7 +82,8 @@ import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
 import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
-import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
+import { offerOf, activeContracts, acceptContract } from "../src/game/contracts.mjs";
+import { contractMaxFor } from "../src/game/rankperks.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
 import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
@@ -484,6 +486,7 @@ function render() {
   $("route-repeat")?.addEventListener("click", () => act(() => repeatRoute(g, ship())));
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   { const nc = $("notice-card"); nc.innerHTML = noticeHtml(noticeData(g), { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k }); nc.hidden = !nc.innerHTML; }
+  { const fc = $("forecast-card"); if (fc) { fc.innerHTML = forecastHtml(forecastData(g, world, ship()), { lang, cityName }); fc.hidden = !fc.innerHTML; } }
   fitFleet();
   renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
@@ -701,7 +704,7 @@ function render() {
       }
       { const cto = offerOf(g, s.at), cta = activeContracts(g);
         h += `<h3>${t.ctTitle}</h3><p>${t.ctInfo}</p>`;
-        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= CONTRACT_MAX_ACTIVE ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= CONTRACT_MAX_ACTIVE ? ` <small>${t.ctFull.replace("{n}", CONTRACT_MAX_ACTIVE)}</small>` : ""}</div>`;
+        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= contractMaxFor(g) ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= contractMaxFor(g) ? ` <small>${t.ctFull.replace("{n}", contractMaxFor(g))}</small>` : ""}</div>`;
         else if (!cta.some((x) => x.city === s.at)) h += `<p><i>${t.ctNone}</i></p>`;
         if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay)).join("<br>") + `</p>`; }
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
@@ -841,13 +844,22 @@ function render() {
           [1, 5].map((n) => `<button data-hire="${n}" ${s.voyage || c >= L.max || g.cash < n * HIRE_FEE ? "disabled" : ""}>${t.crewHire.replace("{n}", n).replace("{p}", fmt(n * HIRE_FEE))}</button>`).join(" ") + " " +
           [1, 5].map((n) => `<button data-dismiss="${n}" ${s.voyage || c <= 0 ? "disabled" : ""}>${t.crewDismiss.replace("{n}", n)}</button>`).join(" ") + `</div>`; }
     } else if (tab === "yard") {
-      h += `<p>${t.yardInfo}</p>`;
-      h += `<div class="yardcards">` + Object.entries(SHIP_TYPES).map(([k, v]) => `<div class="card yc">${shipIconSvg(k)}<b>${t.types[k]}</b><small>${t.yc.replace("{c}", v.capacity).replace("{d}", v.buildDays).replace("{u}", v.upkeepPerDay)}</small><button data-order="${k}" ${g.cash < v.price ? "disabled" : ""}>${t.orderShort.replace("{p}", fmt(v.price))}</button></div>`).join("") + `</div>`;
-      h += `<div><button data-repair="1" ${repairPrice(g, s) <= 0 || g.cash < repairPrice(g, s) ? "disabled" : ""}>${t.repair.replace("{h}", Math.round(s.hull ?? 100)).replace("{p}", fmt(repairPrice(g, s)))}</button> <button data-gunrepair="1" ${gunRepairCost(s) <= 0 || s.voyage || g.cash < gunRepairCost(s) ? "disabled" : ""}>${cannonsOf(s) ? t.gunRepair.replace("{c}", Math.round(gunCond(s))).replace("{p}", fmt(gunRepairCost(s))) : t.gunNone}</button> </div><div><small>${t.weaponInfo.replace("{n}", weaponCount(s)).replace("{m}", maxCannons(s))}${weaponCount(s) ? " · " + Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : ""}</small><br>${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join(" ")}</div>`;
-      { const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
-        if (cvr) h += `<div><small>${t.cvIn.replace("{name}", cvr.name).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small> <button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`;
-        else if (!s.voyage && free.length >= 2) h += `<div><button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button> <small>${t.cvSailNote}</small></div>`; }
-      if (g.orders?.length) h += `<div><b>${t.orders}</b>` + g.orders.map((o) => `<div>${t.ready.replace("{type}", t.types[o.type]).replace("{city}", cityName(o.at)).replace("{day}", o.readyDay).replace("{pct}", Math.round(orderProgress(o, g.day) * 100))}</div>`).join("") + `</div>`;
+      { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
+        const hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
+        // 1. what needs doing to this ship, with the numbers that matter
+        h += sec(`${en ? "Your ship" : "Tu barco"}: ${t.types[s.type]} ${s.id}`,
+          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
+          `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
+          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
+        // 2. convoy, only when it applies
+        const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
+        if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", cvr.name).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
+        else if (!s.voyage && free.length >= 2) h += sec("Convoy", `<div class="yd-row"><small>${t.cvSailNote}</small><button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button></div>`);
+        // 3. orders in progress
+        if (g.orders?.length) h += sec(t.orders, g.orders.map((o) => { const pct = Math.round(orderProgress(o, g.day) * 100); return `<div class="yd-row"><span>${t.types[o.type]} · ${cityName(o.at)}</span><progress max="100" value="${pct}"></progress><small>${en ? "ready day" : "listo el día"} ${o.readyDay} (${pct}%)</small></div>`; }).join(""));
+        // 4. new ships last: a compact grid
+        h += sec(en ? "Build a new ship" : "Encargar un barco nuevo", `<div class="yardcards">` + Object.entries(SHIP_TYPES).map(([k, v]) => `<div class="card yc">${shipIconSvg(k)}<b>${t.types[k]}</b><small>${t.yc.replace("{c}", v.capacity).replace("{d}", v.buildDays).replace("{u}", v.upkeepPerDay)}</small><button data-order="${k}" ${g.cash < v.price ? "disabled" : ""}>${t.orderShort.replace("{p}", fmt(v.price))}</button></div>`).join("") + `</div><p><small>${t.yardInfo}</small></p>`, "yd-new");
+      }
     } else if (tab === "lonja") {
       h += `<h4>${t.tabLonja}</h4>` + lonjaHtml(g, s.at, { lang, fmt, goodLabel: (gd) => `${goodIcon(gd)}${t.goods[gd] ?? gd}` });
     } else {
@@ -981,14 +993,14 @@ function render() {
     if (!r.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });
   P.querySelector("#adm-resset")?.addEventListener("click", () => act(() => setStewardReserve(g, s.at, Number($("adm-res").value) || 0)));
   P.querySelectorAll("[data-order]").forEach((e) => e.onclick = () => act(() => orderShip(g, e.dataset.order, s.at)));
-  P.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s)));
+  P.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   P.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   P.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id))));
   P.querySelectorAll("[data-cvleave]").forEach((e) => e.onclick = () => act(() => leaveConvoy(g, s.id)));
-  P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s)));
+  P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
   P.querySelectorAll("[data-sellship-id]").forEach((e) => e.onclick = () => act(() => { const x = g.ships.find((y) => y.id === Number(e.dataset.sellshipId)); const r = x && sellShip(g, x); if (r && r.ok) sel = 0; }));
   P.querySelectorAll("[data-caravel]").forEach((e) => e.onclick = () => act(() => { const r = buyCaravel(g, s.at); if (r.ok) sel = g.ships.length - 1; }));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
@@ -1058,10 +1070,10 @@ function renderShipWin() {
   d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
-  d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s)));
+  d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
-  d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s)));
+  d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
   d.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
 }
 
@@ -1429,7 +1441,7 @@ function showTitle() {
   el.hidden = false;
   fitTitleBook();
   $("t-start").onclick = () => showCreate(t.defCo);
-  $("t-cont").onclick = () => { if (!saved) return; music.leaveTitle(); g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
     if (!getBackup() && !getTmp()) return;
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
