@@ -3,15 +3,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
 const main = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-test("fleet list stays open on wide screens and the same breakpoint is used in CSS and JS", () => {
-  const css = html.match(/@media\(min-width:(\d+)px\)\{#fleet summary\{pointer-events:none/);
-  const js = main.match(/FLEET_WIDE = matchMedia\("\(min-width: (\d+)px\)"\)/);
-  assert.ok(css && js);
-  assert.equal(css[1], js[1]);
-  assert.match(main, /if \(FLEET_WIDE\.matches\) \$\("fleet"\)\.open = true/);
+test("fleet list is pinned open by the chart-area width, not the window width", () => {
+  assert.match(main, /area\.clientWidth >= FLEET_PIN_MIN/);
+  assert.match(main, /new ResizeObserver\(fitFleet\)\.observe\(\$\("maparea"\)\)/);
+  assert.match(main, /else if \(was\) f\.open = false/);
+  assert.doesNotMatch(main, /FLEET_WIDE/);
+  assert.match(html, /#fleet\.fleet-pinned summary\{pointer-events:none/);
+  assert.match(html, /#fleet\.fleet-pinned summary::before\{display:none\}/);
 });
-test('wide fleet rule is not nested inside the narrow-screen rule',()=>{
- assert.match(html, /@media\(max-width:600px\)\{#maparea>#fleet\{bottom:auto\}\}@media\(min-width:1280px\)/);
+test('the pin rule is not nested inside the narrow-screen rule',()=>{
+ assert.match(html, /@media\(max-width:600px\)\{#maparea>#fleet\{bottom:auto\}\}[^@]*#fleet\.fleet-pinned summary/);
 });
 
 test('fleet panel is bounded by its map area, not the viewport',()=>{
