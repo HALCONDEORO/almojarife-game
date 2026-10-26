@@ -85,3 +85,12 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .route-editor td:last-child{white-space:nowrap}
 
 .pregon-badge{flex:none;font-size:10px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;color:#fff0cd;background:#7a1f1f;border:1px solid #5e1414;border-radius:3px;padding:0 4px;margin-left:5px;line-height:14px;cursor:help}
+.al-box{margin-top:8px;border-top:1px solid #c9b78f;padding-top:6px}
+.al-title{margin:0 0 2px;font-size:14px}
+.al-info{margin:0 0 6px;font-size:12px;color:#6b6355}
+.al-list{margin:0 0 4px;padding-left:18px;font-size:13px}
+.al-del{border:none;background:none;color:#7a1f1f;cursor:pointer;font-weight:bold}
+.al-none,.al-else{margin:0 0 4px;font-size:13px;color:#6b6355}
+.al-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.al-form input{width:80px}
+.al-err{margin:4px 0 0;color:#7a1f1f;font-size:13px}

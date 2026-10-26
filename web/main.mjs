@@ -67,6 +67,7 @@ import { stormsAt, windAt, inStorm, legWindFactor } from "../src/sim/weather.mjs
 import { pregonMissing } from "../src/game/pregon.mjs";
 // Pregón badge strings live outside the T.es/T.en lines, which other patches edit (same pattern as TW).
 const PRG = { es: { badge: "Pregón", tip: "Pregón vigente: el concejo pide este bien en la plaza. Faltan ≈{n} para volver al nivel normal; el pregón sigue mientras dure la escasez." }, en: { badge: "Notice", tip: "Town-crier notice in force: the council calls for this good. ≈{n} short of the normal level; the notice stands while the shortage lasts." } };
+import { setPriceAlert, clearPriceAlert, alertsOf } from "../src/game/alerts.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
@@ -635,6 +636,15 @@ function render() {
           `<div class="mkt-act mkt-act-sell" style="padding-left:6px"><button class="mkt-pill mkt-sell mkt-sell-btn" style="${ps.qty ? "background:#8a5a17;color:#fff0cd;border-color:#5e3c0e;" : ""}border-left:4px solid #8a5a17" aria-label="${esc(t.sell)}" data-s="${gd}:${sq}" data-tip="${esc(sellTip)}" title="${esc(sellTip)}" ${ps.qty ? "" : "disabled"}>${ps.qty ? `−${ps.qty} → ${fmtM(sellPay)}` : t.sell}</button></div></div>`;
       }
       h += `</div></div><div class="mkt-qtybar"><span>${esc(t.qtyAll)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
+      { // Price alerts: the engine (src/game/alerts.mjs) existed with no UI; this block is it.
+        const als = alertsOf(g, s.at), alOthers = alertsOf(g).length - als.length;
+        h += `<div class="al-box"><h3 class="al-title">${t.alTitle}</h3><p class="al-info">${t.alInfo}</p>`;
+        h += als.length
+          ? `<ul class="al-list">` + als.map((a) => `<li>${t.goods[a.good] ?? a.good} · ${a.dir === "below" ? t.alBelow : t.alAbove} ${fmt(a.price)} <button class="al-del" data-al-del="${a.good}" aria-label="${esc(t.close)}" title="${esc(t.close)}">✕</button></li>`).join("") + `</ul>`
+          : `<p class="al-none">${t.alNone}</p>`;
+        if (alOthers > 0) h += `<p class="al-else">${t.alElse.replace("{n}", alOthers)}</p>`;
+        h += `<div class="al-form"><select data-al-good>${Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang)).map((gd) => `<option value="${gd}">${t.goods[gd]}</option>`).join("")}</select> <select data-al-dir><option value="below">${t.alBelow}</option><option value="above">${t.alAbove}</option></select> <input data-al-price type="number" min="1" step="1" inputmode="numeric" placeholder="${esc(t.alPrice)}"> <button data-al-set>${t.alSet}</button></div><p class="al-err" role="alert" hidden></p></div>`;
+      }
     } else if (tab === "route") {
       const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
       h += `<p>${t.routeInfo}</p>`;
@@ -862,6 +872,12 @@ function render() {
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
   P.querySelectorAll("[data-market-qty]").forEach((e) => e.onclick = () => { marketQty = e.dataset.marketQty === "max" ? "max" : +e.dataset.marketQty; render(); });
+  P.querySelector("[data-al-set]")?.addEventListener("click", () => {
+    const gd = P.querySelector("[data-al-good]")?.value, dir = P.querySelector("[data-al-dir]")?.value, v = Number(P.querySelector("[data-al-price]")?.value);
+    let r; act(() => { r = setPriceAlert(g, s.at, gd, dir, v); return r; });
+    if (!r?.ok) { const ee = $("panel").querySelector(".al-err"); if (ee) { ee.textContent = t.alErr; ee.hidden = false; } sfx("error"); }
+  });
+  P.querySelectorAll("[data-al-del]").forEach((e) => e.onclick = () => act(() => clearPriceAlert(g, s.at, e.dataset.alDel)));
   { const pv = P.querySelector("[data-market-preview]"); if (pv) P.querySelectorAll(".mkt-pill").forEach((e) => { const show = () => { pv.textContent = e.dataset.tip || ""; }, hide = () => { pv.textContent = ""; }; e.addEventListener("mouseenter", show); e.addEventListener("focus", show); e.addEventListener("mouseleave", hide); e.addEventListener("blur", hide); }); }
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastBought.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "buy:" + gd, q: dq, c: dc, render }); } });
   P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v); sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - (s.cargo[gd] ?? 0), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastSold.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "sell:" + gd, q: dq, c: dc, render }); } });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
