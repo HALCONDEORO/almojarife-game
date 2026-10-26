@@ -90,6 +90,7 @@ body.text-large{zoom:1.12}body.reduce-motion *,body.reduce-motion *::before,body
 #v3d .city-loading{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(244,234,208,.55);color:#3a2c14;font-weight:bold;font-size:20px;letter-spacing:.02em}
 #voyage-card .vc-head{margin-bottom:4px}#voyage-card .vc-row{margin:2px 0}#voyage-card .vc-open{margin-top:6px;font:inherit;font-weight:bold;cursor:pointer;color:#fff7e3;background:#7d5f2c;border:1px solid #4d3a17;border-radius:5px;padding:4px 12px;min-height:30px}#voyage-card .vc-sail{display:block;background:#8d301f;border-color:#4d1a10}#voyage-card .vc-open:hover{filter:brightness(1.1)}
 #cash-card{background:linear-gradient(165deg,rgba(255,250,235,.55),rgba(206,174,112,.30) 60%,rgba(146,106,50,.32)),#f4ead0;color:#302719;border:2px solid #7d5f2c;border-radius:8px;padding:8px 12px;box-shadow:0 3px 12px #0005;font-size:14px}#cash-card .cc-head{margin-bottom:3px}#cash-card .cc-row{margin:2px 0}@media(max-width:1279px){#cash-card{display:none}}
+body.has-event #panel-home>#panel .event{background:linear-gradient(#fde3dd,#f6c9c0);border:2px solid #a5281b;color:#4a110b;box-shadow:0 3px 12px rgba(120,20,10,.35)}body.has-event #panel-home>#panel .event>b::before{content:"⚠ ";color:#a5281b}body.has-event #panel-home>#panel .event button{border-color:#a5281b}
 </style><link rel="stylesheet" href="pwin.css"><link rel="stylesheet" href="ui2d.css"><style>
 #title .tbroot{position:fixed;inset:0;overflow:auto;z-index:31}
 #title .tbroot button{all:unset;box-sizing:border-box}
@@ -336,6 +337,8 @@ body:not(.in-city-3d):not(.has-event) #panel{display:none}
 body.has-event #panel-home>#panel{order:-5}
 /* Finance summary is the fixed header of the right-hand card; fleet follows, then the selected ship and map tools. */
 #panel-home>#rt-fleet>#mapside>#mapleft{display:contents}
+/* Priority order: pending event (red) > mission > tabs > selected ship > finances > notices > fleet > the rest */
+#panel-home>#rt-fleet>#mapside>#mapleft>#voyage-card{order:-3}
 #panel-home>#rt-fleet>#mapside>#mapleft>#cash-card{order:-3}
 #panel-home>#rt-fleet>#mapside>#mapleft>#notice-card{order:-2}
 #panel-home>#rt-fleet>#mapside>#fleet{order:-1}
