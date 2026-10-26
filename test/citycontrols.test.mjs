@@ -148,7 +148,7 @@ test('mission stays visible while the tutorial runs: stacked, mission first (Mar
 test('map hint also minimises and restores the mission, and stacks it under sail (Marco 25/10)', () => {
   assert.ok(js.includes('id="hint-mission-toggle"') || html.includes('id="hint-mission-toggle"'), 'map toggle exists');
   assert.ok(js.includes('$("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin"'), 'map toggle wired');
-  assert.ok(js.includes('(s.voyage.anchored ? t.hintAnchored : t.hintSea) + (objLine && !objMin ?'), 'mission stacks onto the voyage hint');
+  assert.ok(js.includes('(s.voyage.anchored ? t.hintAnchored : pendingEvent(g) ? t.hintEvent : t.hintSea) + (objLine && !objMin ?'), 'mission stacks onto the voyage hint');
   assert.ok(js.includes('objMin && objLine ? "" : objLine ||'), 'minimised docked map collapses to the flag button');
   assert.ok(js.includes('ht.hidden = !!g.over || !objLine'), 'toggle only with a live objective');
   assert.ok(html.includes('<div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div>'), 'toggle is a sibling so setLiveText cannot wipe it');
