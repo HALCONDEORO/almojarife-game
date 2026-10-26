@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
-const main = readFileSync("web/main.mjs", "utf8"), mod = readFileSync("web/audio.mjs", "utf8"), credits = readFileSync("CREDITS.md", "utf8");
+const main = readFileSync("web/main.mjs", "utf8") + readFileSync("src/view/settingsview.mjs", "utf8"), mod = readFileSync("web/audio.mjs", "utf8"), credits = readFileSync("CREDITS.md", "utf8");
 test("the five effect files ship with their CC0 license copies", () => {
   for (const f of ["buy", "sell", "click", "confirm", "error", "sail", "arrive", "open", "close", "storm", "pirates", "mission", "council", "festival", "build", "alert"]) assert.ok(existsSync(`web/audio/${f}.ogg`), f);
   for (const l of ["LICENSE-casino-audio.txt", "LICENSE-interface-sounds.txt", "LICENSE-100-cc0-sfx.txt", "LICENSE-opengameart-sources.txt"]) assert.match(readFileSync(`web/audio/${l}`, "utf8"), /CC0/i);
