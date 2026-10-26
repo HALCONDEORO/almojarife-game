@@ -1423,7 +1423,7 @@ function showTitle() {
   el.hidden = false;
   fitTitleBook();
   $("t-start").onclick = () => showCreate(t.defCo);
-  $("t-cont").onclick = () => { if (!saved) return; music.leaveTitle(); g = saved.g; company = saved.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
     if (!getBackup() && !getTmp()) return;
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
