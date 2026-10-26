@@ -1,3 +1,4 @@
+import { noticeData, noticeHtml } from "../src/view/noticeview.mjs";
 import { portData, portHtml, tradesHtml, nearestPorts } from "../src/view/portview.mjs";
 import { cashCardHtml, financeSummary } from "../src/view/cashcard.mjs";
 import { mergeTrade } from "../src/view/toastmerge.mjs";
@@ -446,6 +447,7 @@ function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }) });
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  { const nc = $("notice-card"); nc.innerHTML = noticeHtml(noticeData(g), { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k }); nc.hidden = !nc.innerHTML; }
   fitFleet();
   renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
