@@ -7,6 +7,7 @@ Esqueleto más las decisiones ya tomadas. Fuentes existentes: `docs/design/econo
 ## Establecido (en main)
 - El suelo de precios y los topes no se tocan (decisión del proyecto, 22 oct).
 - La demanda se reparte por clase (pobres, artesanos y mercaderes, ricos); ver [classes.md](classes.md).
+- Estaciones de producción y ritmo de la demanda diaria: [generated/es/seasons.md](../generated/es/seasons.md), a partir de `SEASON_PEAK`, `SEASON_AMPLITUDE`, `seasonMul`, `seasonOf`, `DEMAND_SCALE`, `NEEDS_MUL` y `MAKES_MUL` en `src/sim/market.mjs`.
 
 ## En revisión o en espera (no en main)
 - Rediseño de la saturación del mercado, fase 1: infraestructura contable (bolsa mayorista por puerto, bolsa doméstica por clase). Abierta en la PR #229. No resuelve la seda y no es el rediseño terminado.

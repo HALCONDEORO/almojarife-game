@@ -7,6 +7,7 @@ Skeleton plus the decisions already taken. Existing sources: `docs/design/econom
 ## Established (on main)
 - Price floor and caps are not changed (project decision, 22 Oct).
 - Demand is split by class (poor, middle, rich); see [classes.md](classes.md).
+- Production seasons and the daily demand rhythm: [generated/seasons.md](generated/seasons.md), from `SEASON_PEAK`, `SEASON_AMPLITUDE`, `seasonMul`, `seasonOf`, `DEMAND_SCALE`, `NEEDS_MUL` and `MAKES_MUL` in `src/sim/market.mjs`.
 
 ## In review or held (not on main)
 - Market saturation redesign, phase 1: accounting infrastructure (wholesale purse per port, household purse per class). Open in PR #229. It does not solve silk and is not the finished redesign.
