@@ -76,7 +76,9 @@ export function settleWeek(g) {
   const principal = r2((processLoans(g, post) || 0) + (g.weekLoanPrincipal ?? 0)); g.weekLoanPrincipal = 0; g.weekLoanInterest = 0; // loans collected daily this week, plus any due today
   const debt = g.cash < 0 ? r2(-g.cash) : 0;
   const blines = Object.entries(a.buildings ?? {}).map(([plot, cost]) => ({ plot, cost: r2(cost) }));
-  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, buildings: blines, upkeep: r2(week), tolls, interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
+  const negMargin = []; // processor buildings whose margin has been negative for days (the daily tick counts; the report repeats it)
+  for (const [cityId, plots] of Object.entries(g.buildings ?? {})) for (const [plot, b] of Object.entries(plots)) if (b.state === "active" && !b.halted && (b.negDays ?? 0) >= 3) negMargin.push(plot); // plot ids already carry the city ("cadiz:7")
+  const r = { week: g.day / SETTLE_EVERY, day: g.day, lines, buildings: blines, negMargin, upkeep: r2(week), tolls, interest, loanInterest: lint, loanPrincipal: principal, trades: takeWeekTrades(g), carried, paid: r2(owed + principal), debt, cashAfter: g.cash };
   a.ships = {}; a.cannons = {}; a.tolls = 0; a.wages = {}; a.captains = {}; a.buildings = {};
   (g.reports ??= []).unshift(r);
   if (g.reports.length > MAX_REPORTS) g.reports.pop();
