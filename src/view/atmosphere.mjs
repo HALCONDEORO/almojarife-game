@@ -52,15 +52,24 @@ export function clearSpot(cx, cy, w, W, H, avoid) {
  * Which weather appears depends on the season, and positions come from the day, so a saved game looks the same on reload.
  * Summer: a few light clouds. Spring: light clouds. Autumn: clouds, fog and wind. Winter: clouds, storms and wind.
  */
-export function atmosphereSvg(W, H, day, motion = true, avoid = []) {
+export function atmosphereSvg(W, H, day, motion = true, avoid = [], storms = null) {
   const t = seasonTint(day), season = t.season;
-  const plan = { summer: ["cloud", "cloud"], spring: ["cloud", "cloud", "cloud"], autumn: ["cloud", "cloud", "fog", "wind"], winter: ["cloud", "storm", "storm", "wind", "cloud"] }[season];
+  // `storms` (optional) are the real cells of the weather field, projected to chart pixels as
+  // {x, y, w}; when given, they replace the decorative storms of the seasonal plan, so the chart
+  // and the sea encounters show the same weather. An empty array means a calm day.
+  const plan0 = { summer: ["cloud", "cloud"], spring: ["cloud", "cloud", "cloud"], autumn: ["cloud", "cloud", "fog", "wind"], winter: ["cloud", "storm", "storm", "wind", "cloud"] }[season];
+  const plan = storms ? plan0.filter((k) => k !== "storm") : plan0;
   let s = `<g id="atmo" pointer-events="none"><clipPath id="atmo-clip"><rect width="${W}" height="${H}"/></clipPath><rect width="${W}" height="${H}" fill="${t.color}" opacity="${t.opacity}"/><g clip-path="url(#atmo-clip)">`;
   plan.forEach((kind, i) => {
     let cy = ((i * 0.37 + day * 0.013) % 1) * H * 0.85 + 40, cx = ((i * 0.61 + day * 0.007) % 1) * W; const w = 130 + (i * 23) % 60;
     if (kind === "storm" && avoid.length) [cx, cy] = clearSpot(cx, cy, w, W, H, avoid);
     const body = kind === "fog" ? fog(cx, cy, w * 2, day + i) : kind === "wind" ? wind(cx, cy, w * 0.8) : cloud(cx, cy, w, day * 1.7 + i * 5.3, kind);
     s += motion ? `<g>${body}<animateTransform attributeName="transform" type="translate" values="-24 0;24 0;-24 0" dur="${90 + i * 17}s" repeatCount="indefinite"/></g>` : body;
+  });
+  (storms ?? []).forEach((c, i) => {
+    const [cx, cy] = avoid.length ? clearSpot(c.x, c.y, c.w, W, H, avoid) : [c.x, c.y];
+    const body = cloud(cx, cy, c.w, day * 1.7 + 90 + i * 5.3, "storm");
+    s += motion ? `<g>${body}<animateTransform attributeName="transform" type="translate" values="-24 0;24 0;-24 0" dur="97s" repeatCount="indefinite"/></g>` : body;
   });
   return s + `</g></g>`;
 }

@@ -61,6 +61,7 @@ import { unread, markAllRead, markRead } from "../src/game/ledger.mjs";
 import { shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { shipDescriptor } from "../src/view/shipvisual.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
+import { stormsAt, windAt, inStorm, legWindFactor } from "../src/sim/weather.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
@@ -144,6 +145,19 @@ mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercanc
 // a drag must not count as a click on a port
 mapEl.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
 const X = (lon) => (lon - x0) * sc, Y = (lat) => (y1 - lat) * sc * 1.25;
+// Weather on the chart: one degree of latitude is sc*1.25 px and 111 km, so cells keep their real size.
+const PX_PER_KM = (sc * 1.25) / 111;
+const DIRS8 = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+const WX = { es: { wind: "viento", storm: "tormenta en ruta", dirs: { N: "norte", NE: "noreste", E: "levante", SE: "sueste", S: "sur", SW: "sudoeste", W: "poniente", NW: "noroeste" } }, en: { wind: "wind", storm: "storm on the route", dirs: { N: "north", NE: "northeast", E: "east", SE: "southeast", S: "south", SW: "southwest", W: "west", NW: "northwest" } } };
+// Wind and storm for a port-to-port leg on the current day, from the same field the sim sails with.
+const legWeather = (fromId, toId) => {
+  const a = world.cities.find((c) => c.id === fromId), b = world.cities.find((c) => c.id === toId);
+  if (!a || !b) return null;
+  const mid = { lat: (a.lat + b.lat) / 2, lon: (a.lon + b.lon) / 2 }, w = windAt(mid.lat, mid.lon, g.day, g.seed ?? 0);
+  return { factor: legWindFactor(a, b, g.day, g.seed ?? 0), name: WX[lang].dirs[DIRS8[Math.round(w.dir / 45) % 8]], storm: inStorm(mid.lat, mid.lon, g.day, g.seed ?? 0) };
+};
+const legWindEst = (fromId, toId) => legWeather(fromId, toId)?.factor ?? 1;
+const wxNote = (lw) => (lw ? ` · ${WX[lang].wind}: ${lw.name}${lw.storm ? ` · ⛈ ${WX[lang].storm}` : ""}` : "");
 // Click targets never straddle two ports: each marker's hit radius is capped at half the
 // distance to its nearest neighbour (dense clusters like Ceuta/Tetuan stay unambiguous).
 const cityPx = new Map(world.cities.map((c) => [c.id, { x: X(c.lon), y: Y(c.lat) }]));
@@ -407,7 +421,7 @@ const FLEET_PIN_MIN = 500; // px of chart-area width; the fleet sits in the righ
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
 function render() {
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM });
@@ -477,7 +491,7 @@ function render() {
     const last = ids.at(-1);
     if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(nd(last).lon) + 10}" y="${Y(nd(last).lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${cityName(s.voyage.to)} · ${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)}</text>`;
   }
-  const est = target && !s.voyage ? travelEstimate(world, s, target) : null;
+  const est = target && !s.voyage ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null;
   if (est?.ok) {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
     m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(last.lon) + 10}" y="${Y(last.lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">≈ ${hoursOf(est.ticks)} h</text>`;
@@ -486,7 +500,7 @@ function render() {
   m += historical.underlay ?? ""; // realm washes sit behind ports and labels
   for (const c of world.cities) {
     const explored = isDiscovered(g, c.id); // chart shows every port, discovery still gates interactions
-    const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (!explored ? (lang === "es" ? " · Puerto no explorado" : " · Unexplored port") : "") + (explored && e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
+    const e = !s.voyage ? travelEstimate(world, s, c.id, legWindEst(s.at, c.id)) : null, lw = !s.voyage && e?.ok ? legWeather(s.at, c.id) : null, tip = c.name + (!explored ? (lang === "es" ? " · Puerto no explorado" : " · Unexplored port") : "") + (explored && e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km${wxNote(lw)}` : "");
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
     m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? "#c0392b" : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
   }
@@ -499,7 +513,7 @@ function render() {
   { // rebuild the map around the ships layer instead of replacing it: removing the layer mid-gesture cancels the browser's click dispatch on ship icons
     const map = $("map"), shipsKeep = $("shipsLayer");
     for (const ch of [...map.childNodes]) if (ch !== shipsKeep) ch.remove();
-    map.insertAdjacentHTML("afterbegin", `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches, [...cityPx.values()])}<g id="static">${m}</g>`);
+    map.insertAdjacentHTML("afterbegin", `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches, [...cityPx.values()], stormsAt(g.day, g.seed ?? 0).map((c) => ({ x: X(c.lon), y: Y(c.lat), w: Math.min(260, Math.max(60, Math.round(2 * c.rKm * PX_PER_KM))) })))}<g id="static">${m}</g>`);
     if (!shipsKeep) map.insertAdjacentHTML("beforeend", `<g id="shipsLayer" pointer-events="none"></g>`);
   }
   drawShips(); scaleMarkers();
@@ -789,8 +803,8 @@ function render() {
         : bankHeader2d(lang, { city, room: bankRoom(g, s.at), owed: loansOwed(g), ratePct: +(LOAN_RATE * termsFor(g, s.at).rate * 100).toFixed(2), loans: (g.loans ?? []).length }, fmtM);
       h = h.slice(0, ui2dMark) + store2dWrap(tab === "store" ? "warehouse" : "bank", head, inner);
     }
-    if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target) : null;
-      h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
+    if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null, tlw = te?.ok ? legWeather(s.at, target) : null;
+      h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km${wxNote(tlw)} <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
@@ -1140,7 +1154,7 @@ mapEl.addEventListener("contextmenu", (ev) => {
 }, true);
 function closeMenu() { document.getElementById("ctx")?.remove(); }
 function openMenu(city, x, y) {
-  closeMenu(); target = city; const s0 = ship(), items = cityMenu(world, s0, city), est = travelEstimate(world, s0, city);
+  closeMenu(); target = city; const s0 = ship(), items = cityMenu(world, s0, city), est = travelEstimate(world, s0, city, legWindEst(s0.at, city));
   const d = document.createElement("div"); d.id = "ctx"; d.setAttribute("role", "menu"); d.style.cssText = `left:${Math.min(x, innerWidth - 230)}px;top:${Math.min(y, innerHeight - 90)}px`;
   d.innerHTML = items.map((it) => `<button role="menuitem" data-m="${it.id}" ${it.enabled ? "" : "disabled"}>${(it.id === "sail" ? t.ctxSail.replace("{d}", est.ok ? "≈ " + hoursOf(est.ticks) + " h" : "-") : t.ctxSelect).replace("{city}", cityName(city))}</button>`).join("");
   document.body.appendChild(d);
