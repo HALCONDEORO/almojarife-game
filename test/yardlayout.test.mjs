@@ -16,3 +16,7 @@ test("yard keeps every action the handlers bind", () => {
 test("yard explains the way to sell a ship and stays bilingual", () => {
   assert.ok(yard.includes("t.yardInfo")); assert.ok(yard.includes("Build a new ship") && yard.includes("Your ship"));
 });
+test("a ship that is not docked here gets a one-line explanation, in both languages", () => {
+  assert.ok(yard.includes("Dock this ship here to repair or arm it.") && yard.includes("Atraca este barco aquí para repararlo o armarlo."));
+  assert.ok(yard.includes("s.voyage || s.at !== city3dId"));
+});

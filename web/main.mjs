@@ -838,6 +838,7 @@ function render() {
           [1, 5].map((n) => `<button data-hire="${n}" ${s.voyage || c >= L.max || g.cash < n * HIRE_FEE ? "disabled" : ""}>${t.crewHire.replace("{n}", n).replace("{p}", fmt(n * HIRE_FEE))}</button>`).join(" ") + " " +
           [1, 5].map((n) => `<button data-dismiss="${n}" ${s.voyage || c <= 0 ? "disabled" : ""}>${t.crewDismiss.replace("{n}", n)}</button>`).join(" ") + `</div>`; }
     } else if (tab === "yard") {
+      if (inCity && city3dId && (s.voyage || s.at !== city3dId)) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
       { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
         const hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
         // 1. what needs doing to this ship, with the numbers that matter
