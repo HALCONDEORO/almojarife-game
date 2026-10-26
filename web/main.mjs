@@ -295,6 +295,11 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
+
+// Floating windows scale with the screen (Marco 26/10: on a big screen or at 80% zoom they looked tiny). CSS zoom on .city-window and #shipwin follows --win-zoom; drag maths below uses local (unzoomed) units.
+const winZoom = () => parseFloat(document.documentElement.style.getPropertyValue("--win-zoom")) || 1;
+function updateWinZoom() { const z = Math.min(1.75, Math.max(1, Math.min(innerWidth / 1500, innerHeight / 820))); document.documentElement.style.setProperty("--win-zoom", z.toFixed(3)); }
+updateWinZoom(); addEventListener("resize", updateWinZoom);
 let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours' house card opened from the city map (read only)
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
 let tab = "market"; let rumorNote = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
@@ -406,11 +411,11 @@ function syncMissionEcho() {
     for (const el of [chip, cbar]) {
       if (!el || el.hidden) continue;
       const cr = el.getBoundingClientRect();
-      if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, cr.bottom - vt + 6);
+      if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, (cr.bottom - vt + 6) / winZoom());
     }
     if (need) {
-      win.style.left = win.offsetLeft + "px"; win.style.right = "auto";
-      win.style.top = Math.min(need, Math.max(0, innerHeight - 70 - Math.min(win.offsetHeight, 80))) + "px";
+      /* keep the right anchor: locking left here used a width that was not final yet */
+      win.style.top = Math.min(need, Math.max(0, (innerHeight - 70) / winZoom() - Math.min(win.offsetHeight, 80))) + "px";
     }
   }
 }
@@ -1073,9 +1078,9 @@ function renderShipWin() {
   if (!swWasOpen) sfx("open"); // only when the window appears, not on every re-render
   document.body.appendChild(d);
   const handle = d.querySelector(".pwin-handle"); let drag = null;
-  const move = (x, y) => { const q = clampWindow(x, y, d.offsetWidth, d.offsetHeight, innerWidth, innerHeight - 70); d.style.left = q.left + "px"; d.style.top = q.top + "px"; d.style.right = "auto"; };
-  handle.onpointerdown = (e) => { if (e.target.closest("button")) return; drag = [e.clientX - d.offsetLeft, e.clientY - d.offsetTop]; handle.setPointerCapture(e.pointerId); };
-  handle.onpointermove = (e) => { if (drag) move(e.clientX - drag[0], e.clientY - drag[1]); };
+  const move = (x, y) => { const q = clampWindow(x, y, d.offsetWidth, d.offsetHeight, innerWidth / winZoom(), (innerHeight - 70) / winZoom()); d.style.left = q.left + "px"; d.style.top = q.top + "px"; d.style.right = "auto"; };
+  handle.onpointerdown = (e) => { if (e.target.closest("button")) return; drag = [e.clientX / winZoom() - d.offsetLeft, e.clientY / winZoom() - d.offsetTop]; handle.setPointerCapture(e.pointerId); };
+  handle.onpointermove = (e) => { if (drag) move(e.clientX / winZoom() - drag[0], e.clientY / winZoom() - drag[1]); };
   handle.onpointerup = handle.onpointercancel = () => drag = null;
   handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
@@ -1224,13 +1229,13 @@ function open3d(s0) {
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
-  const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);
+  const move=(x,y)=>{const wz=winZoom(),p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth/wz,(innerHeight-70)/wz);
   for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")]){ // the bar and the mission chip (expanded or minimised flag) never cover the title/close row (Marco 25/10)
     if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight;
-      if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,innerHeight-70-Math.min(win.offsetHeight,80)));}}
+      if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,(innerHeight-70)/wz-Math.min(win.offsetHeight,80)));}}
   win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
-  handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX-win.offsetLeft,e.clientY-win.offsetTop];handle.setPointerCapture(e.pointerId);};
-  handle.onpointermove=e=>{if(drag)move(e.clientX-drag[0],e.clientY-drag[1]);};
+  handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX/winZoom()-win.offsetLeft,e.clientY/winZoom()-win.offsetTop];handle.setPointerCapture(e.pointerId);};
+  handle.onpointermove=e=>{if(drag)move(e.clientX/winZoom()-drag[0],e.clientY/winZoom()-drag[1]);};
   handle.onpointerup=handle.onpointercancel=()=>drag=null;
   handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
   d.querySelector("[data-city-tab]").focus();
