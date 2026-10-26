@@ -22,7 +22,7 @@ One place for how the game works and every statistic behind it. It lives in the 
 ## Pages
 | Page | Content | Status |
 |---|---|---|
-| [rules.md](rules.md) | Core rules and mechanics: time, trade, voyages, fees | skeleton, links to existing docs |
+| [rules.md](rules.md) | Core rules and mechanics: time, trade, voyages, fees | core rules written; buildings and missions to fill |
 | [economy.md](economy.md) | Prices, market saturation, class demand, imports, balance gates | skeleton + established decisions |
 | [classes.md](classes.md) | Poor, middle, rich: shares, tolerance, baskets | skeleton, table generated |
 | [ships-and-weapons.md](ships-and-weapons.md) | Ships, weapons, hold weight, armory | skeleton, table generated |

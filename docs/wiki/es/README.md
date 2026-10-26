@@ -22,7 +22,7 @@ Un solo lugar para saber cómo funciona el juego y cada estadística que lo sust
 ## Páginas
 | Página | Contenido | Estado |
 |---|---|---|
-| [rules.md](rules.md) | Reglas y mecánicas básicas: tiempo, comercio, viajes, tasas | esqueleto, enlaza a la documentación existente |
+| [rules.md](rules.md) | Reglas y mecánicas básicas: tiempo, comercio, viajes, tasas | reglas básicas escritas; edificios y misiones por rellenar |
 | [economy.md](economy.md) | Precios, saturación del mercado, demanda por clase, importaciones, puertas de equilibrio | esqueleto + decisiones establecidas |
 | [classes.md](classes.md) | Pobres, artesanos y mercaderes, ricos: reparto, tolerancia, cestas | esqueleto, tabla generada |
 | [ships-and-weapons.md](ships-and-weapons.md) | Barcos, armas, peso de bodega, armería | esqueleto, tabla generada |
