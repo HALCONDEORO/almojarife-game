@@ -10,3 +10,6 @@ test("fleet list stays open on wide screens and the same breakpoint is used in C
   assert.equal(css[1], js[1]);
   assert.match(main, /if \(FLEET_WIDE\.matches\) \$\("fleet"\)\.open = true/);
 });
+test('wide fleet rule is not nested inside the narrow-screen rule',()=>{
+ assert.match(html, /@media\(max-width:600px\)\{#maparea>#fleet\{bottom:auto\}\}@media\(min-width:1280px\)/);
+});
