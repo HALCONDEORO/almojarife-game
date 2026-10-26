@@ -1180,16 +1180,13 @@ $("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", lo
 $("hint-tut-skip").onclick = () => act(() => skipTutorial(g));
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
-  el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-exp">${t.exportS}</button> <span id="m-msg"></span></p>` +
-    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><label><input id="m-auto-time" type="checkbox" ${automaticTime ? "checked" : ""}> ${lang === "es" ? "Avance automático" : "Automatic time"}</label></p><p><small>${lang === "es" ? "El puerto se pausa para planificar. Las rutas automáticas siguen sin detenerse al llegar." : "The port pauses for planning. Automatic routes keep running on routine arrivals."}</small></p><p><small>${t.keys}</small></p><p><button id="m-slots">${SLOT_TEXT[lang].title}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-set">${t.stTitle}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
+  // One place per control: language, speed, automatic time, sound, shortcuts and export live in Ajustes, not here.
+  el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-slots">${SLOT_TEXT[lang].title}</button> <span id="m-msg" role="status"></span></p>` +
+    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p><button id="m-set">${t.stTitle}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
   el.hidden = false;
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
-  $("m-auto-time").onchange = e => { automaticTime = e.target.checked; localStorage.setItem('automatic-time', String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) { speed = 4; localStorage.setItem("speed", "4"); } $("m-spd").textContent = speed + 'x'; };
   $("m-res").onclick = close;
   $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
-  $("m-exp").onclick = () => { exportSave(JSON.stringify(packGame(g, company)), g.day); $("m-msg").textContent = t.expDone; };
-  $("m-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showMenu(); };
-  $("m-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); localStorage.setItem("speed", String(speed)); $("m-spd").textContent = speed + "x"; };
   $("m-slots").onclick = () => showSlots();
   $("m-cred").onclick = () => showCredits();
   $("m-set").onclick = () => showSettings();
@@ -1238,9 +1235,7 @@ function showSettings() {
   t = T[lang]; const el = $("title");
   const ts = localStorage.getItem("text-size") === "large", rm = localStorage.getItem("reduce-motion") === "1";
   el.innerHTML = settingsHtml(t, { lang, speed, automaticTime, large: ts, reduceMotion: rm, sound: soundOn(), vol: { sfx: Math.round(volOf("sfx") * 100), music: Math.round(volOf("music") * 100), amb: Math.round(volOf("amb") * 100) }, inGame: !inTitle });
-  $("st-save")?.addEventListener("click", () => { autosave(); $("st-msg").textContent = t.saved; });
   $("st-exp")?.addEventListener("click", () => { exportSave(JSON.stringify(packGame(g, company)), g.day); $("st-msg").textContent = t.expDone; });
-  $("st-cred").onclick = () => showCredits();
   $("st-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showSettings(); };
   $("st-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); localStorage.setItem("speed", String(speed)); $("st-spd").textContent = speed + "x"; };
   $("st-auto").onchange = e => { automaticTime = e.target.checked; localStorage.setItem("automatic-time", String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) { speed = 4; localStorage.setItem("speed", "4"); } $("st-spd").textContent = speed + "x"; };
