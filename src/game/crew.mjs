@@ -16,9 +16,10 @@ export const wearGunsBy = (ship, pct) => { if (cannonsOf(ship) > 0) { const c = 
 export const wearGuns = (ship) => wearGunsBy(ship, GUN_WEAR_PER_DAY);
 /** Cost to bring the armament back to 100%: proportional to the damage and to the number of cannons. */
 export const gunRepairCost = (ship) => Math.round(Object.entries(weaponsOf(ship)).reduce((s, [t, n]) => s + WEAPON_TYPES[t].price * n, 0) * GUN_REPAIR_SHARE * (100 - gunCond(ship)) / 100 * 100) / 100;
-export function repairGuns(g, ship) {
+export function repairGuns(g, ship, at) { // `at`: port the player acts from (optional); guns are repaired where the ship is docked
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (at !== undefined && ship.at !== at) return { ok: false, reason: "not in this port" };
   const c = gunRepairCost(ship);
   if (!(c > 0)) return { ok: false, reason: "no damage" };
   if (g.cash < c) return { ok: false, reason: "no cash" };
