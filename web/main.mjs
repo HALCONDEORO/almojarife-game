@@ -1249,7 +1249,7 @@ addEventListener("message",e=>{
   if(e.data.id==="hall"||e.data.id==="lonja"){openCityPanel(e.data.id);return;}
   const tb=tabForBuilding(e.data.id);if(tb)openCityPanel(tb);
 });
-// Free navigation (only in games with g.freeNav): right click proposes a course (port or open sea) and a small menu asks to confirm.
+// Free navigation (only in games with g.freeNav): right click sends the selected ship there, port or open sea, no menu and no Zarpar button.
 mapEl.addEventListener("contextmenu", (ev) => {
   if (g?.freeNav !== true) return; // flag off: the port menu works as before
   ev.preventDefault(); ev.stopPropagation(); closeMenu();
@@ -1258,15 +1258,9 @@ mapEl.addEventListener("contextmenu", (ev) => {
   let lat, lon;
   if (cityEl && world.nodes[cityEl.dataset.c]) ({ lat, lon } = world.nodes[cityEl.dataset.c]);
   else { const p = mapEl.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const ctm = mapEl.getScreenCTM(), q = p.matrixTransform(ctm.inverse()); const tol = 48 / (ctm.a || 1); let snap = null, snapD = tol; mapEl.querySelectorAll('g.city[data-explored="true"]').forEach((el) => { const d = Math.hypot(Number(el.dataset.mx) - q.x, Number(el.dataset.my) - q.y); if (d < snapD) { snapD = d; snap = el.dataset.c; } }); if (snap && world.nodes[snap]) ({ lat, lon } = world.nodes[snap]); else { lon = q.x / sc + x0; lat = y1 - q.y / (sc * 1.25); } } // missing the small port dot by a few screen px must not send the ship to open sea (24/10 human playtest: 3 near-port clicks missed, one routed 759 km away); snap within 48 screen px, zoom-independent via the CTM
-  // A right click only proposes the course: the ship leaves after the player confirms in a small menu (a stray right click used to send it off at once).
-  const sailNow = () => { let r; act(() => { r = doGoTo(g, s0, lat, lon); });
-    if (r && !r.ok && r.reason !== "already there") { const h = $("hint"); h.textContent = r.reason === "no sea there" ? t.navNoSea : t.navCannot; setTimeout(() => render(), 2500); }
-    else target = null, render(); };
-  const es = lang === "es", d = document.createElement("div"); d.id = "ctx"; d.setAttribute("role", "menu"); d.style.cssText = `left:${Math.min(ev.clientX, innerWidth - 230)}px;top:${Math.min(ev.clientY, innerHeight - 90)}px`;
-  d.innerHTML = `<button role="menuitem" data-m="go">${es ? "Zarpar aquí" : "Sail here"}</button><button role="menuitem" data-m="no">${es ? "Cancelar" : "Cancel"}</button>`;
-  document.body.appendChild(d);
-  const guard = createMenuGuard(); document.addEventListener("pointerdown", guard.arm, { capture: true, once: true }); // the click that ends the right-click gesture must not confirm
-  d.querySelectorAll("button").forEach((b) => b.onclick = (e) => { if (!guard.accepts(e.detail)) return; closeMenu(); if (b.dataset.m === "go") sailNow(); });
+  let r; act(() => { r = doGoTo(g, s0, lat, lon); });
+  if (r && !r.ok && r.reason !== "already there") { const h = $("hint"); h.textContent = r.reason === "no sea there" ? t.navNoSea : t.navCannot; setTimeout(() => render(), 2500); }
+  else target = null, render();
 }, true);
 function closeMenu() { document.getElementById("ctx")?.remove(); }
 function openMenu(city, x, y) {
