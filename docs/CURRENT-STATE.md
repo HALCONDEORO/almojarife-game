@@ -6,7 +6,7 @@ Updated 26 October 2026. This is not a release announcement.
 
 The integrated source checkpoint is main commit `e96ab3a2e9c24974d699e29835b79d4a08e9af34` (tree `b192bb3d7ef880d035b07aa5c9dd271222e0c191`). This identifies source contents, not a final release candidate or a verified deployment. Refresh the record if more changes enter the batch.
 
-The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the intended audience is public and the owner approved publication on 26 October after polishing the notes, subject to all release gates. The release date is not decided. No deployment or public-beta readiness is certified here.
+The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the intended audience is public and publication remains on hold pending an explicit final go/no-go and all release gates. The release date is not decided. No deployment or public-beta readiness is certified here.
 
 ## Implemented in the checkpoint
 
@@ -28,7 +28,7 @@ The repository is public. No GitHub release existed when this record was prepare
 - Full simulation gates, exact-commit CI, deployment verification and ES desktop playtest must be recorded on the final batch commit.
 - Screenshots in README are an older source set. They are not screenshots of an approved release candidate.
 - Campaign completion, balance, save migration, accessibility and browser coverage are not declared complete.
-- The intended audience is public; the owner approved publication on 26 October after polishing the notes, subject to all release gates. Final documentation, integrated-code links, polish and Playtest approval remain required.
+- The intended audience is public; publication remains on hold pending an explicit final go/no-go and all release gates. Final documentation, integrated-code links, polish and Playtest approval remain required.
 
 ## Documentation map
 
