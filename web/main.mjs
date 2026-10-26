@@ -253,6 +253,7 @@ function stepTicks(n) {
   render();
 }
 function frame(now) {
+  if (!g) { lastFrame = now; requestAnimationFrame(frame); return; } // the title is already up; the background game is still warming up
   const dt = lastFrame ? Math.min(250, now - lastFrame) : 0; lastFrame = now;
   if (playing && !g.over) {
     tickAcc += dt * speed;
@@ -1246,7 +1247,7 @@ document.addEventListener("keydown", (e) => { // M mutes or unmutes all sound, a
   if (e.defaultPrevented || e.repeat || e.key.toLowerCase() !== "m" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.("select,input,textarea,[contenteditable]")) return;
   const on = toggleSound(); const box = $("st-sound"); if (box) box.checked = on; if (on) sfx("confirm"); render();
 });
-document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
+document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (inTitle && e.key === "Enter") { const tg = e.target; if (tg && tg.closest && tg.closest("input,select,textarea,button")) return; const c = $("t-cont"), b = c && !c.disabled ? c : $("t-start"); if (b) { e.preventDefault(); b.click(); } return; } if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
 // freeNav defaults ON for new games (Marco 23/10: all flags on); existing saves keep their own flag.
 function showCreate(name) {
   t = T[lang]; let freeNav = true; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
@@ -1332,9 +1333,9 @@ function showTitle() {
     try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
-start(null, false); // background game behind the title screen; it never overwrites a save
-showTitle();
+showTitle(); // title first: it must paint instantly
 requestAnimationFrame(frame);
+setTimeout(() => start(null, false), 0); // background game behind the title screen; it never overwrites a save (deferred: the warmup sim must not delay the title)
 
 // Keep keyboard actions within the encounter window, including when another key handler exists.
 document.addEventListener('keydown',e=>{
