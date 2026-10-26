@@ -56,3 +56,34 @@ test("the in-game rotation stops at the title menu and resumes after", async () 
     assert.ok(!made.at(-1).paused, "rotation resumes when the game starts again");
   } finally { delete globalThis.Audio; }
 });
+
+test("menu music follows the music volume slider and the M key at once", async () => {
+  const store = {};
+  globalThis.localStorage = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
+  const made = [];
+  globalThis.Audio = class { constructor(src) { this.src = src; this.paused = true; this.volume = 1; made.push(this); } play() { this.paused = false; return Promise.resolve(); } pause() { this.paused = true; } };
+  try {
+    const { setVolume, toggleSound } = await import("../web/audio.mjs");
+    const m = menuMusic({ auto: false, document: null });
+    m.showTitle();
+    const el = made.at(-1);
+    assert.ok(el && !el.paused, "plays on the title");
+    assert.ok(Math.abs(el.volume - 0.22) < 1e-9, "base volume 0.22 at slider 100");
+    setVolume("music", 0);
+    assert.equal(el.volume, 0, "slider to 0 applies at once");
+    setVolume("music", 50);
+    assert.ok(Math.abs(el.volume - 0.11) < 1e-9, "slider to 50 halves it at once");
+    toggleSound();
+    assert.ok(el.paused, "M mutes at once");
+    toggleSound();
+    assert.ok(!el.paused, "M unmutes at once");
+  } finally { delete globalThis.Audio; }
+});
+
+test("the wiring uses volOf and reacts through onSoundChange", () => {
+  const audio = readFileSync("web/audio.mjs", "utf8");
+  assert.match(mod, /VOLUME \* volOf\("music"\)/);
+  assert.match(mod, /onSoundChange\(/);
+  assert.match(audio, /export function onSoundChange\(fn\)/);
+  assert.ok((audio.match(/fireSoundChange\(\);/g) ?? []).length >= 2, "setVolume and toggleSound both fire");
+});

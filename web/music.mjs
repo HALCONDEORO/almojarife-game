@@ -2,14 +2,15 @@
 // Of Far Different Nature, CC0 - see web/audio/MUSIC-dowland.md). Loops softly on the
 // title screen, respects the Ajustes sound switch (soundOn) and never throws: browsers
 // that block audio before the first gesture simply stay silent until one.
-import { soundOn, setMenuMode } from "./audio.mjs";
+import { soundOn, setMenuMode, volOf, onSoundChange } from "./audio.mjs";
 
 const SRC = "audio/menu-dowland.ogg", VOLUME = 0.22;
 
 export function menuMusic(env = {}) {
   const doc = env.document ?? (typeof document !== "undefined" ? document : null);
   let el = null, wanted = false;
-  const ensure = () => { if (!el && typeof Audio !== "undefined") { el = new Audio(SRC); el.loop = true; el.volume = VOLUME; } return el; };
+  const applyVol = () => { if (el) el.volume = VOLUME * volOf("music"); };
+  const ensure = () => { if (!el && typeof Audio !== "undefined") { el = new Audio(SRC); el.loop = true; applyVol(); } return el; };
   const sync = () => {
     const on = wanted && soundOn();
     const a = on ? ensure() : el;
@@ -22,6 +23,7 @@ export function menuMusic(env = {}) {
     doc?.addEventListener?.("pointerdown", sync, { passive: true }); // a gesture unlocks autoplay: start at once
     doc?.addEventListener?.("keydown", sync);
   }
+  onSoundChange(() => { applyVol(); sync(); }); // slider and M key apply at once, not on the next 1.5 s sync
   return {
     showTitle() { setMenuMode(true); wanted = true; sync(); }, // the title screen wants music; the game rotation stops
     leaveTitle() { setMenuMode(false); wanted = false; sync(); },
