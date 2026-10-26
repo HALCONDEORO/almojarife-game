@@ -12,6 +12,12 @@
   },
   "devDependencies": {
     "electron": "^45.0.0",
-    "electron-builder": "^26.18.0"
+    "electron-builder": "^26.18.0",
+    "js-yaml": "^4.3.2"
+  },
+  "homepage": "https://github.com/HALCONDEORO/almojarife-game",
+  "author": {
+    "name": "Marco Tevar",
+    "email": "HALCONDEORO@users.noreply.github.com"
   }
 }

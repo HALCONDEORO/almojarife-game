@@ -10,5 +10,7 @@ export function logText(entry,t,lang,cityName=x=>x){
 }
 export function logHtml(entries,t,lang,cityName){
  const esc=s=>String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- return entries.map(e=>`<div>${esc(logText(e,t,lang,cityName))}</div>`).join('');
+ const rows=[];
+ for(const e of entries){const x=logText(e,t,lang,cityName);const l=rows[rows.length-1];if(l&&l.x===x)l.n++;else rows.push({x,n:1});}
+ return rows.map(r=>`<div>${esc(r.x)}${r.n>1?` ×${r.n}`:''}</div>`).join('');
 }
