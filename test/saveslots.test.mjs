@@ -8,14 +8,15 @@ const mem = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.
 const unpack = (raw) => { const o = JSON.parse(raw); if (!o.g) throw new Error("bad"); return { company: o.company, g: o.g }; };
 
 test("three slots, distinct from the autosave key", () => {
-  assert.equal(SLOT_COUNT, 3);
+  assert.equal(SLOT_COUNT, 9);
   assert.notEqual(slotKey(1), "almojarife.save.v1");
-  assert.equal(new Set([1, 2, 3].map(slotKey)).size, 3);
+  assert.equal(slotKey(1), "almojarife.save.slot.1"); // keys of the three-slot version stay valid
+  assert.equal(new Set(Array.from({ length: 9 }, (_, i) => slotKey(i + 1))).size, 9);
 });
 
 test("write, list, overwrite and clear a slot", () => {
   const s = mem(), raw = JSON.stringify({ company: "Casa A", g: { day: 12, cash: 3400 } });
-  assert.deepEqual(listSlots(s, unpack).map((x) => x.state), ["empty", "empty", "empty"]);
+  assert.deepEqual(listSlots(s, unpack).map((x) => x.state), Array(9).fill("empty"));
   writeSlot(s, 2, raw, (r) => { unpack(r); return true; });
   const l = listSlots(s, unpack);
   assert.deepEqual(l[1], { n: 2, state: "ok", house: "Casa A", day: 12, cash: 3400 });
@@ -31,9 +32,9 @@ test("an invalid save or bad slot number never touches storage", () => {
   assert.throws(() => writeSlot(s, 1, "nope", (r) => { unpack(r); return true; }) , /Unexpected|bad/);
   assert.throws(() => writeSlot(s, 1, "x", () => false), /invalid save/);
   assert.equal(readSlot(s, 1), good);
-  assert.throws(() => writeSlot(s, 4, good), /bad slot/);
+  assert.throws(() => writeSlot(s, 10, good), /bad slot/);
   assert.throws(() => writeSlot(s, 0, good), /bad slot/);
-  assert.equal(readSlot(s, 9), null); assert.equal(clearSlot(s, 9), false);
+  assert.equal(readSlot(s, 10), null); assert.equal(clearSlot(s, 10), false); assert.equal(readSlot(s, 9), null); // 9 is the last valid slot, 10 is not
 });
 
 test("a failing store leaves the old slot and reports it", () => {
@@ -52,8 +53,9 @@ test("the window shows each slot, disables save outside a game and load on empty
   const s = mem(); writeSlot(s, 1, JSON.stringify({ company: "Casa A", g: { day: 3, cash: 99 } }));
   const sl = listSlots(s, unpack);
   const inGame = slotsHtml(sl, { lang: "es", inGame: true, defCo: "X" });
-  assert.equal((inGame.match(/class="sl-row"/g) || []).length, 3);
-  assert.match(inGame, /Casa A · Día 3 · 99 monedas/);
+  assert.equal((inGame.match(/class="sl-row /g) || []).length, 9);
+  assert.match(inGame, /<div class="sl-grid">/); assert.match(inGame, /Hasta nueve ranuras/);
+  assert.match(inGame, /Casa A<\/span><span class="sl-meta">Día 3 · 99 monedas/);
   assert.match(inGame, /data-sl-load="1" >/); assert.match(inGame, /data-sl-load="2" disabled/);
   assert.match(inGame, /data-sl-save="1" >/);
   const title = slotsHtml(sl, { lang: "en", inGame: false });

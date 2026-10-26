@@ -1,6 +1,6 @@
 // Manual save slots. The autosave (almojarife.save.v1) is untouched; slots hold named copies the
 // player writes and loads on purpose. Pure: the store (localStorage-like) and the validator are passed in.
-export const SLOT_COUNT = 3;
+export const SLOT_COUNT = 9; // slots 1-3 keep their old keys, so saves from the three-slot version stay put
 export const slotKey = (n) => `almojarife.save.slot.${n}`;
 const okSlot = (n) => Number.isInteger(n) && n >= 1 && n <= SLOT_COUNT;
 
