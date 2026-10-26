@@ -15,6 +15,16 @@ No GitHub release or tag is announced by this section. The first public beta pre
 - Sea-event probabilities and effects, including sampled pirate-fight estimates (#555).
 - Generated reference/wiki updates including seasonal rules.
 
+- Seven-day weather forecast (#540), workshop margin warnings (#548) and route-rumour purchase feedback (#557).
+- Variable salvage rewards (#547) and automatic risk-free events, including fair wind (#559, #560).
+- Persistent rejected-course feedback (#549), dock-local repair and arming (#569, #570).
+- Shipyard sections and away-port feedback (#565, #567), Office rank progress (#566), City services tab (#568) and more accurate repair discount wording (#558).
+- Trader rank council order perk (#561), current-save Continue (#562), actionable unread tags (#563), title test polling (#571) and UI style guidance (#564).
+- Reliable panel clicks during clock repaint (#582), extra lifecycle/three-minute autosave (#584).
+- Centred Market columns (#585), warehouse-only cargo filter (#586), no Market alert-management block (#589). Existing saved alerts still run.
+- Immediate free-navigation right-click sailing (#587, reverting the confirmation menu from #583).
+- Integer aggregate money displays in the top bar and finance card (#588, #590), without changing stored cents.
+
 These entries describe merged source, not a verified deployment. PRs still open at the final release checkpoint must not be promoted into this list without integration checks.
 
 ### Earlier unreleased work
