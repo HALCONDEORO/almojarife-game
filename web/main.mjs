@@ -299,7 +299,7 @@ let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
 let tab = "market"; let rumorNote = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
-let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
+let bldAction = null, bldError = null, bldJustBought = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
@@ -806,7 +806,7 @@ function render() {
         const pv = plotViewState(plotsCache, world, g, s.at, bldSelPlot), o = pv.kind === "offer" ? pv.offer : null;
         if (pv.kind === "loading") h += `<p><i>${t.bldLoading}</i></p>`;
         else if (pv.kind === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
-        else if (o && hasOffice(g, s.at)) { const pnl = g.almonedaPermits?.[s.at] ?? 0; h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); if (pnl > 0) h += `<p><i>${({ es: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar este solar.", en: "Building permits from the town auction: {n}. Redeem one when buying this plot." }[lang] ?? "Permisos de obra de la almoneda: {n}.").replace("{n}", pnl)}</i></p>`; h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmtM(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
+        else if (o && hasOffice(g, s.at)) { const pnl = g.almonedaPermits?.[s.at] ?? 0, pend = bldAction && (bldAction.kind === "buy" || bldAction.kind === "buypermit") && bldAction.plotId === o.id; if (!pend) h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); if (pnl > 0) h += `<p><i>${({ es: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar este solar.", en: "Building permits from the town auction: {n}. Redeem one when buying this plot." }[lang] ?? "Permisos de obra de la almoneda: {n}.").replace("{n}", pnl)}</i></p>`; if (!pend) /* the confirm card above is already the buy step: no second Comprar */ h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmtM(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {
@@ -816,6 +816,7 @@ function render() {
         h += bldCard();
         const up = r.state === "active" ? upgradeOffer(g, s.at, r.plotId) : null;
         if (up) h += up.ok ? `<p><button data-bldact="upgrade|${r.plotId}|${r.type}" ${up.affordable ? "" : "disabled"}>${t.bldUpgrade.replace("{l}", up.level).replace("{p}", fmt(up.cost))}</button></p>` : `<p><small>${up.reason === "max level" ? t.bldMax : whyText(t, up.reason, lang)}</small></p>`;
+        if (r.state === "plot" && bldJustBought === r.plotId) h += `<p class="bld-guide"><b>${lang === "es" ? "Solar comprado. Ahora elige qué construir:" : "Plot bought. Now choose what to build:"}</b></p>`;
         if (r.state === "plot") { // P3 build menu: one card per type - drawing, investment, running costs, production; grouped like the classic Hansa build menu
           const offers = buildOffers(g, s.at, r.plotId).filter((o) => o.ok || OFFER_LOCKED_SHOW.has(o.reason)), bo2 = BO[lang] ?? BO.es; // only types this city's resources allow; refused-but-unlockable ones stay visible, disabled, with their reason
           for (const grp of ["primary", "workshop", "own", "civic"]) { // Marco 25/10: fields and factories first, civic buildings last so they stay out of the way
@@ -966,6 +967,7 @@ function render() {
       else r = startConstruction(g, s.at, a0.plotId, a0.type);
     });
     if (r && !r.ok) { bldError = r.reason ?? "error"; render(); return; } // keep the card armed and say why
+    bldJustBought = (a0.kind === "buy" || a0.kind === "buypermit") ? a0.plotId : null; /* guide line after buying a plot */
     bldAction = null; bldError = null; render(); });
   if ($("rt-set")) $("rt-set").onclick = () => act(() => setRoute(g, s, s.at, $("rt-to").value, $("rt-out").value, $("rt-back").value));
   if ($("rt-cancel")) $("rt-cancel").onclick = () => act(() => clearRoute(s));
