@@ -62,6 +62,12 @@ export const coveredBy = (g, realm) => g.marque === true && !!realm && !!activeL
 export function validateRealms(data, portIds) {
   const e = [], seen = new Map();
   for (const [id, r] of Object.entries(data.realms ?? {})) { if (!/^https:\/\//.test(r.source ?? "")) e.push(`realm ${id}: missing https source`); if (!r.name?.es || !r.name?.en) e.push(`realm ${id}: name needs es and en`); }
+  // Map-only realms may label zones, never gameplay holdings or unions.
+  for (const [id, r] of Object.entries(data.mapRealms ?? {})) {
+    if (data.realms?.[id]) e.push(`map realm ${id}: duplicates gameplay realm`);
+    if (!/^https:\/\//.test(r.source ?? "")) e.push(`map realm ${id}: missing https source`);
+    if (!r.name?.es || !r.name?.en) e.push(`map realm ${id}: name needs es and en`);
+  }
   for (const [i, u] of (data.unions ?? []).entries()) {
     if (!/^https:\/\//.test(u.source ?? "")) e.push(`union ${i}: missing https source`);
     if (!Array.isArray(u.realms) || u.realms.length < 2 || u.realms.some((r) => !data.realms?.[r])) e.push(`union ${i}: unknown realm`);
@@ -80,7 +86,7 @@ export function validateRealms(data, portIds) {
     if ((a.from ?? -Infinity) < (b.until ?? Infinity) && (b.from ?? -Infinity) < (a.until ?? Infinity)) e.push(`${port}: overlapping holders`);
   }
   for (const [i, z] of (data.zones ?? []).entries()) {
-    if (!data.realms?.[z.realm]) e.push(`zone ${i}: unknown realm`);
+    if (!data.realms?.[z.realm] && !data.mapRealms?.[z.realm]) e.push(`zone ${i}: unknown realm`);
     if (!/^https:\/\//.test(z.source ?? "")) e.push(`zone ${i}: missing https source`);
     for (const f of ["from", "until"]) if (z[f] != null && !(Number.isInteger(z[f]) && z[f] >= 1400 && z[f] <= 1800)) e.push(`zone ${i}: bad ${f}`);
     if (!Array.isArray(z.polygon) || z.polygon.length < 3 || !z.polygon.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))) e.push(`zone ${i}: bad polygon`);
