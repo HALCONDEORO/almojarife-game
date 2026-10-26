@@ -6,6 +6,7 @@
 import { seeded } from "../view/cityscene.mjs";
 import { post } from "./ledger.mjs";
 import { addRespect } from "./rank.mjs";
+import { contractMaxFor } from "./rankperks.mjs";
 import { addRep, scarcityOf } from "./reputation.mjs";
 
 export const CONTRACT_MAX_ACTIVE = 3; // how many promises a house can keep at once
@@ -42,7 +43,7 @@ export function acceptContract(g, city) {
   if (!offer) return { ok: false, reason: "no offer" };
   if (offer.dueDay < g.day) { delete b.offers[city]; return { ok: false, reason: "offer expired" }; } // a lapsed order cannot be taken
   if (!g.ships.some((s) => !s.voyage && s.at === city)) return { ok: false, reason: "no ship here" };
-  if (b.active.length >= CONTRACT_MAX_ACTIVE) return { ok: false, reason: "too many" };
+  if (b.active.length >= contractMaxFor(g)) return { ok: false, reason: "too many" };
   b.active.push({ ...offer, city, delivered: 0 });
   delete b.offers[city];
   post(g, "contractAccept", { city, good: offer.good, qty: offer.qty, dueDay: offer.dueDay });
