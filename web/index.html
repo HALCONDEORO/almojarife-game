@@ -323,12 +323,20 @@ body>header button:focus-visible{outline:2px solid #f0d88a;outline-offset:2px;bo
 #ctx button:focus-visible{outline:2px solid #8d301f;outline-offset:1px}
 .sea-dialog{background:linear-gradient(165deg,rgba(255,250,235,.55),rgba(206,174,112,.30) 60%,rgba(146,106,50,.32)),#f4ead0;color:#302719;border:2px solid #7d5f2c;border-radius:8px;box-shadow:inset 0 0 0 5px #f4ead0,inset 0 0 0 6px #8e6f3880,0 20px 70px rgba(14,10,8,.65)}
 @media (prefers-reduced-motion:reduce){#mapleft>#historical-map-tools summary::before{transition:none}}
+
+/* Map panels live on the right, in one column: fleet fold first, then the selected-ship card and map tools. */
+#maparea>#mapside{position:absolute;right:10px;top:8px;bottom:8px;z-index:14;width:min(330px,46%);display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none;overflow:auto;scrollbar-width:thin}
+#mapside>*{pointer-events:auto}
+#mapside>#fleet{position:static;flex:none;width:100%;max-height:none;overflow:visible;right:auto;top:auto;box-sizing:border-box}
+#maparea>#mapside>#mapleft{position:static;flex:none;width:100%;max-width:100%;bottom:auto;overflow:visible;align-items:stretch}
+#mapside #voyage-card{width:100%;box-sizing:border-box}
+@media(min-width:1101px){#maparea>#map{right:346px;width:auto;margin:0 auto}#maparea>#mapside{width:330px}}
 </style>
 </head><body>
 <header><b>El Almojarife</b><span id="co"></span><span id="day"></span><span id="todbar" role="img" title="time of day"><i></i></span><span id="cash"></span><span id="goal"></span><span id="ships"></span>
 <span id="ctl"><span id="timectl" role="group"><button id="play"></button><button id="spd"></button></span> <span id="pausenote" role="status"></span> <button id="rep"></button> <button id="msg"></button></span><span id="hdr-right" style="margin-left:auto"><button id="fs" hidden aria-label="Fullscreen" title="Fullscreen">⛶</button> <button id="lang">EN</button> <button id="new">Menú</button></span></header>
 <main>
-<section class="card" id="mapcard"><div id="maparea"><div id="mapleft"><div id="voyage-card" role="status"></div><div id="cash-card"></div></div><details id="fleet"><summary>Flota</summary><div id="fleet-body"></div></details><svg id="map" viewBox="0 0 800 600"></svg></div><div id="hint-wrap"><div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div><button type="button" id="hint-tut-skip" hidden></button></div><div id="log"></div></section>
+<section class="card" id="mapcard"><div id="maparea"><div id="mapside"><details id="fleet"><summary>Flota</summary><div id="fleet-body"></div></details><div id="mapleft"><div id="voyage-card" role="status"></div><div id="cash-card"></div></div></div><svg id="map" viewBox="0 0 800 600"></svg></div><div id="hint-wrap"><div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div><button type="button" id="hint-tut-skip" hidden></button></div><div id="log"></div></section>
 <section class="card" id="panel-home"><div id="panel"></div></section>
 </main>
 <div id="title" hidden></div>
