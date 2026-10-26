@@ -6,6 +6,8 @@ import { newGame, advanceDay, advanceTick, doSail, TICKS_PER_DAY } from "../src/
 import { TICKS_PER_HOUR, tickParts } from "../src/sim/clock.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
+import { windAt, inStorm } from "../src/sim/weather.mjs";
+import { WEAR_BASE_PER_DAY, WEAR_WIND_PER_DAY, WEAR_STORM_PER_DAY } from "../src/game/seawear.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 
@@ -13,10 +15,12 @@ test("a voyage arrives on the exact tick, mid-day, not at a day boundary", () =>
   const g = newGame(world);
   const r = doSail(g, g.ships[0], "barcelona");
   assert.equal(r.ok, true);
-  const arrivalTick = g.tick + g.ships[0].voyage.ticksLeft;
+  // hull-wear rebalance (26/10, declared): a damaged hull drags the voyage, so ticksLeft grows at
+  // the day boundaries; the contract is that the CURRENT prediction always holds to the exact tick.
+  let predicted = g.tick + g.ships[0].voyage.ticksLeft;
   let n = 0;
-  while (g.ships[0].voyage && n++ < 400 * TICKS_PER_DAY) advanceTick(g);
-  assert.equal(g.tick, arrivalTick, "arrival lands on the predicted tick");
+  while (g.ships[0].voyage && n++ < 400 * TICKS_PER_DAY) { predicted = g.tick + g.ships[0].voyage.ticksLeft; advanceTick(g); }
+  assert.equal(g.tick, predicted, "arrival lands on the last predicted tick");
   assert.equal(g.ships[0].at, "barcelona");
   assert.equal(g.day, Math.floor(g.tick / TICKS_PER_DAY));
 });
@@ -76,17 +80,30 @@ test("the departure log line carries whole hours, never an undefined field", () 
 });
 
 test("the arrival day pays its sea wear, same count as the day model", () => {
+  // DECLARED CHANGE (hull-wear rebalance 26/10, docs/design/hull-wear-rebalance.md): the flat
+  // 0.5/day becomes base 0.4 + 0.2 x wind force + 3.5 in a storm cell, sampled per charge; the
+  // arrival day still counts as a day at sea. This test recomputes each charge through the public
+  // weather functions at the same moments the game charges them.
   const g = newGame(world), s = g.ships[0];
   doSail(g, s, "huelva");
   const hull0 = s.hull, days = Math.ceil(s.voyage.totalTicks / TICKS_PER_DAY);
-  while (s.voyage) advanceTick(g);
-  assert.equal(s.hull, hull0 - 0.5 * days, "one wear charge per started day at sea, including the arrival day");
+  let expected = 0, lastDay = g.day, charges = 0;
+  const charge = () => { const p = shipPosition(world, s, 0); expected += WEAR_BASE_PER_DAY + WEAR_WIND_PER_DAY * windAt(p.lat, p.lon, g.day, g.seed ?? 0).force + (inStorm(p.lat, p.lon, g.day, g.seed ?? 0) ? WEAR_STORM_PER_DAY : 0); charges++; };
+  while (s.voyage) {
+    advanceTick(g);
+    if (g.day !== lastDay) { lastDay = g.day; charge(); } // day-boundary charge
+  }
+  charge(); // the arrival-day charge, on the arrival tick at the destination
+  assert.equal(charges, days, "one wear charge per started day at sea, including the arrival day");
+  assert.ok(Math.abs(s.hull - (hull0 - expected)) < 1e-9, `weather-coupled wear: got ${s.hull}, expected ${hull0 - expected}`);
 });
 
 test("advanceDay stops on the arrival tick instead of running to the day boundary", () => {
   const g = newGame(world), s = g.ships[0];
   doSail(g, s, "barcelona");
-  const arrivalTick = g.tick + s.voyage.ticksLeft;
-  while (s.voyage) advanceDay(g);
-  assert.equal(g.tick, arrivalTick, "no extra hours after the arrival");
+  // hull-wear rebalance (26/10, declared): hull drag grows ticksLeft at day boundaries, so track
+  // the CURRENT prediction; arrival still stops the day instead of running to the boundary.
+  let predicted = g.tick + s.voyage.ticksLeft;
+  while (s.voyage) { predicted = g.tick + s.voyage.ticksLeft; advanceDay(g); }
+  assert.equal(g.tick, predicted, "no extra hours after the arrival");
 });
