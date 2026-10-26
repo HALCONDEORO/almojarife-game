@@ -63,6 +63,9 @@ import { shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { shipDescriptor } from "../src/view/shipvisual.mjs";
 import { atmosphereSvg } from "../src/view/atmosphere.mjs";
 import { stormsAt, windAt, inStorm, legWindFactor } from "../src/sim/weather.mjs";
+import { pregonMissing } from "../src/game/pregon.mjs";
+// Pregón badge strings live outside the T.es/T.en lines, which other patches edit (same pattern as TW).
+const PRG = { es: { badge: "Pregón", tip: "Pregón vigente: el concejo pide este bien en la plaza. Faltan ≈{n} para volver al nivel normal; el pregón sigue mientras dure la escasez." }, en: { badge: "Notice", tip: "Town-crier notice in force: the council calls for this good. ≈{n} short of the normal level; the notice stands while the shortage lasts." } };
 import { seasonOf } from "../src/sim/market.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
@@ -619,7 +622,8 @@ function render() {
         const buyCost = Math.round(pb.cost), sellPay = Math.round(ps.revenue); // whole-coin display only: the trade itself still settles with cents
         const buyTip = pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmtM(buyCost)).replace("{a}", Math.round(pb.avg)).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : "", sellTip = ps.qty ? t.dealSell.replace("{q}", ps.qty).replace("{c}", fmtM(sellPay)).replace("{a}", Math.round(ps.avg)).replace("{n}", ps.next) + (ps.hasBasis ? ` (${fmtM(Math.round(Math.abs(ps.profit)))} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : "";
         const lv = stockLevel(g.market[s.at][gd]), lvc = { scarce: "#b3261e", short: "#b26a00", normal: "#6b6355", plenty: "#1e7a34" }[lv];
-        h += `<div class="mkt-row"><div class="mkt-ico">${goodIcon(gd)}</div><div class="mkt-good"><span>${t.goods[gd]}</span></div>` +
+        const preg = pregonMissing(g.market[s.at][gd]); // live pregón: same scarcity the concejo cries, no state of its own
+        h += `<div class="mkt-row"><div class="mkt-ico">${goodIcon(gd)}</div><div class="mkt-good"><span>${t.goods[gd]}</span>${preg ? ` <span class="pregon-badge" title="${esc(PRG[lang].tip.replace("{n}", fmt(preg)))}">${PRG[lang].badge}</span>` : ""}</div>` +
           `<div class="mkt-price" style="color:${col}" title="${col === "inherit" ? "" : col === "#161" ? t.cheap : t.dear}">${p}</div>` +
           `<div class="mkt-stock" style="color:${lvc}" title="${t.lvlInfo[lv]}">${g.market[s.at][gd].stock}</div>` +
           `<div class="mkt-hold">${have}${stored ? ` <small title="${t.warehouse}">+${stored}</small>` : ""}</div><div class="mkt-avg">${avg === null ? "—" : avg}</div>` +
