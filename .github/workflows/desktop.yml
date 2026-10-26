@@ -37,7 +37,11 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npm run dist
+      - name: Launch packaged app and verify title menu
+        working-directory: desktop
+        run: node smoke-packaged.cjs
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: almojarife-${{ matrix.os }}
           path: |
@@ -46,4 +50,5 @@ jobs:
             desktop/dist/*.dmg
             desktop/dist/*.zip
             desktop/dist/*.exe
+            desktop/dist/smoke/*
           if-no-files-found: error
