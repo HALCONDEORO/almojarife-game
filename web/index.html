@@ -336,7 +336,8 @@ body:not(.in-city-3d):not(.has-event) #panel{display:none}
 body.has-event #panel-home>#panel{order:-5}
 /* Finance summary is the fixed header of the right-hand card; fleet follows, then the selected ship and map tools. */
 #panel-home>#rt-fleet>#mapside>#mapleft{display:contents}
-#panel-home>#rt-fleet>#mapside>#mapleft>#cash-card{order:-2}
+#panel-home>#rt-fleet>#mapside>#mapleft>#cash-card{order:-3}
+#panel-home>#rt-fleet>#mapside>#mapleft>#notice-card{order:-2}
 #panel-home>#rt-fleet>#mapside>#fleet{order:-1}
 /* Tutorial and current mission: a card at the top of the right-hand card instead of a bar under the chart. */
 #panel-home>#hint-wrap{order:-4;flex:none}
@@ -350,13 +351,14 @@ body.has-event #panel-home>#panel{order:-5}
 #panel-home>#rt-ledger{flex:1 1 auto;min-height:0;overflow:auto;background:#fff5d9;border:1px solid #a08451;border-radius:4px;padding:8px 10px}
 .port-prices{width:100%;border-collapse:collapse;font-size:14px}.port-prices th,.port-prices td{text-align:right;padding:3px 6px;border-bottom:1px solid #d6c392}.port-prices th:first-child,.port-prices td:first-child{text-align:left}.port-prices small{color:#6b5a38}
 .port-trades{padding-left:20px;line-height:1.55}.port-note{color:#6b5a38;font-size:13px}
+#notice-card{padding:8px 12px;border:2px solid #7d5f2c;border-radius:8px;color:#302719;background:linear-gradient(165deg,rgba(255,250,235,.55),rgba(206,174,112,.30) 60%,rgba(146,106,50,.32)),#f4ead0;box-shadow:0 3px 10px rgba(50,32,8,.3)}#notice-card[hidden]{display:none}#notice-card .nc-row{margin:2px 0;line-height:1.45}
 </style>
 </head><body>
 <header><b>El Almojarife</b><span id="co"></span><span id="day"></span><span id="todbar" role="img" title="time of day"><i></i></span><span id="cash"></span><span id="goal"></span><span id="ships"></span>
 <span id="ctl"><span id="timectl" role="group"><button id="play"></button><button id="spd"></button></span> <span id="pausenote" role="status"></span> <button id="rep"></button> <button id="msg"></button></span><span id="hdr-right" style="margin-left:auto"><button id="fs" hidden aria-label="Fullscreen" title="Fullscreen">⛶</button> <button id="lang">EN</button> <button id="new">Menú</button></span></header>
 <main>
 <section class="card" id="mapcard"><div id="maparea"><svg id="map" viewBox="0 0 800 600"></svg></div><div id="log"></div></section>
-<section class="card" id="panel-home"><div id="hint-wrap"><div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div><button type="button" id="hint-tut-skip" hidden></button></div><div id="rtabs" role="tablist"></div><div id="rt-fleet" role="tabpanel"><div id="mapside"><details id="fleet"><summary>Flota</summary><div id="fleet-body"></div></details><div id="mapleft"><div id="voyage-card" role="status"></div><div id="cash-card"></div></div></div></div><div id="rt-ledger" role="tabpanel" hidden></div><div id="panel"></div></section>
+<section class="card" id="panel-home"><div id="hint-wrap"><div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div><button type="button" id="hint-tut-skip" hidden></button></div><div id="rtabs" role="tablist"></div><div id="rt-fleet" role="tabpanel"><div id="mapside"><details id="fleet"><summary>Flota</summary><div id="fleet-body"></div></details><div id="mapleft"><div id="voyage-card" role="status"></div><div id="cash-card"></div><div id="notice-card" hidden></div></div></div></div><div id="rt-ledger" role="tabpanel" hidden></div><div id="panel"></div></section>
 </main>
 <div id="title" hidden></div>
 <script type="module" src="main.mjs"></script></body></html>
