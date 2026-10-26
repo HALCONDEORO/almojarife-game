@@ -1,3 +1,4 @@
+import { portData, portHtml, tradesHtml, nearestPorts } from "../src/view/portview.mjs";
 import { cashCardHtml, financeSummary } from "../src/view/cashcard.mjs";
 import { mergeTrade } from "../src/view/toastmerge.mjs";
 import { marketQuantity } from '../src/view/marketdesk.mjs';
@@ -421,7 +422,8 @@ const FLEET_PIN_MIN = 500; // px of chart-area width; the fleet sits in the righ
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
 let rightTab = "fleet", rtSig = "";
-const RT_TABS = [["fleet", "Flota", "Fleet"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
+const RT_TABS = [["fleet", "Flota", "Fleet"], ["port", "Puerto", "Port"], ["mkt", "Mercado", "Market"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
+const nearCache = new Map();
 function selectRightTab(tab) {
   if (rightTab === tab) return;
   rightTab = tab; rtSig = "";
@@ -439,9 +441,17 @@ function renderRightTabs() {
   }
   fleetPane.hidden = rightTab !== "fleet"; led.hidden = rightTab === "fleet";
   if (rightTab === "fleet") return;
-  const sig = `${rightTab}|${lang}|${g.day}|${g.log?.length ?? 0}|${(g.inbox ?? []).length}|${n}|${g.reports?.length ?? 0}`;
+  const s = ship(), at = s && !s.voyage ? s.at : null;
+  const sig = `${rightTab}|${lang}|${g.day}|${g.log?.length ?? 0}|${(g.inbox ?? []).length}|${n}|${g.reports?.length ?? 0}|${at}|${Object.keys(g.intel ?? {}).length}`;
   if (sig === rtSig) return; rtSig = sig;
-  const top = led.scrollTop; led.innerHTML = ledgerBodyHtml(rightTab); led.scrollTop = top;
+  const top = led.scrollTop;
+  if (rightTab === "port" || rightTab === "mkt") {
+    let d = null;
+    if (at) { if (!nearCache.has(at)) nearCache.set(at, nearestPorts(world, at)); d = portData(g, at, { feeMul: feeMul(g, at), neighbours: nearCache.get(at) }); }
+    const o = { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k };
+    led.innerHTML = rightTab === "port" ? portHtml(d, o) : tradesHtml(d, o);
+  } else led.innerHTML = ledgerBodyHtml(rightTab);
+  led.scrollTop = top;
   led.querySelectorAll("[data-report-target]").forEach((b) => b.onclick = () => led.querySelector(`#${b.dataset.reportTarget}`)?.scrollIntoView({ block: "start" }));
   if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); rtSig = ""; render(); };
   led.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); rtSig = ""; render(); });
