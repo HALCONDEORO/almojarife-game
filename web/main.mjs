@@ -489,7 +489,7 @@ function render() {
   { // rebuild the map around the ships layer instead of replacing it: removing the layer mid-gesture cancels the browser's click dispatch on ship icons
     const map = $("map"), shipsKeep = $("shipsLayer");
     for (const ch of [...map.childNodes]) if (ch !== shipsKeep) ch.remove();
-    map.insertAdjacentHTML("afterbegin", `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/><g id="static">${m}</g>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches)}`);
+    map.insertAdjacentHTML("afterbegin", `<image href="../assets/map/background.webp" x="0" y="0" width="800" height="${VH}" preserveAspectRatio="none" pointer-events="none"/>${atmosphereSvg(800, VH, g.day, !matchMedia("(prefers-reduced-motion: reduce)").matches, [...cityPx.values()])}<g id="static">${m}</g>`);
     if (!shipsKeep) map.insertAdjacentHTML("beforeend", `<g id="shipsLayer" pointer-events="none"></g>`);
   }
   drawShips(); scaleMarkers();
