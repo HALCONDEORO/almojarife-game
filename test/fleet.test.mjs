@@ -14,3 +14,10 @@ test('search folds diacritics both ways and matches display names (issue #26)',(
  assert.equal(fleetRows(shipsAcc,{search:'Málaga',cityName}).length,1,'accented id matches accented query');
  assert.equal(fleetRows(shipsAcc,{search:'malaga',cityName}).length,1,'accented display name matches unaccented query');
 });
+test('search and filter appear only with more than 5 ships, and stale filters are ignored below that',async()=>{
+  const {fleetHtml,showFleetSearch,FLEET_SEARCH_MIN}=await import('../src/view/fleet.mjs');
+  const mk=n=>({ships:Array.from({length:n},(_,i)=>({id:i+1,type:'barca',at:'cadiz',hull:100,cargo:{}}))});
+  assert.equal(FLEET_SEARCH_MIN,5);assert.ok(!showFleetSearch(5));assert.ok(showFleetSearch(6));
+  for(const n of [1,5]){const h=fleetHtml(mk(n),0,{filter:'sea',search:'zzz'});assert.ok(!h.includes('fleet-search')&&!h.includes('fleet-filter'));assert.equal((h.match(/fleet-row"/g)||[]).length,n);}
+  const h6=fleetHtml(mk(6),0,{});assert.ok(h6.includes('id="fleet-search"')&&h6.includes('id="fleet-filter"'));
+});
