@@ -29,7 +29,7 @@ These entries describe merged source, not a verified deployment. PRs still open 
 
 ### Additional integrated city polish
 - Visible construction confirmation and missing-coin feedback (#592); centre confirmation below the sticky header (#594).
-- Separate free plots from neighbours' read-only municipal houses; town hall and exchange sprites (#593).
+- Separate free plots from buildings, with town hall and exchange sprites (#593). Decorative neighbours are removed by the current #600 candidate.
 - Bounded city zoom-out and staged sprite loading (#596). Higher-level art can arrive after the first frame.
 
 ### Earlier unreleased work

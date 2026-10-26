@@ -9,7 +9,7 @@ This is a beta, not the finished campaign. Balance, interface details and saves 
 - Trade across 33 ports with 20 goods, manage storage and workshops, and grow your standing as a merchant.
 - Set automatic routes, repeat the last voyage and see profit per trip. Automatic hull repairs respect your route's cash limit.
 - Read a seven-day weather forecast and make choices during voyage events. Where pirate-fighting odds are marked approximate, they are estimates rather than exact predictions.
-- Use city services, buy plots and build. Neighbours' houses have read-only municipal cards and are separate from plots for sale.
+- Use city services, buy plots and build. Free lots are visually separate from buildings and fill their street blocks. Decorative neighbours' houses are not drawn.
 
 ## What is clearer in this beta
 
@@ -24,6 +24,10 @@ This is a beta, not the finished campaign. Balance, interface details and saves 
 **A more useful city view.** Bounded zoom-out keeps the town readable. The first city frame waits for currently needed sprites, with other levels loading in the background. A newly built higher-level building may briefly use level 1 art while its sprite arrives.
 
 **Extra save opportunities.** The game attempts an autosave every three minutes and when the page becomes hidden or is left, skipping identical campaign data. Browser lifecycle saves are best effort, not protection against every crash or shutdown.
+
+**Larger windows and lighter city rendering.** Floating windows scale with the desktop viewport. Static terrain is cached between frames and existing sprites are compressed to reduce transfer size. These are rendering changes, not a promise of a particular frame rate or loading time.
+
+**A clearer building flow.** Purchase confirmation has one Buy step. After purchase, a short guide points to the building choices. Empty owned plots are labelled "Your plot". City lot drawings fit their street blocks; Cádiz uses a fixed, historically inspired presentation, not a certified reconstruction.
 
 ## Before you play
 
@@ -41,8 +45,8 @@ PRE-PUBLICATION RECORD. Remove this pending record only after the final checks a
 - Exact-head independent review and CI: pending for the release candidate.
 - Independent documentation review: pending for this polished text.
 - Deployment of the candidate and Spanish desktop new-game Playtest: pending.
-- Window scaling, terrain caching, sprite recompression and the plot-purchase guide are still pending. They are excluded from these release claims until integrated and tested.
+- Window scaling, terrain caching, sprite recompression and the plot-purchase guide are integrated through #599. This candidate also adds textured ground, block-filling lot drawings, a fixed Cádiz layout and removes decorative neighbour buildings; final review and Playtest remain pending.
 
 ## Change references
 
-The detailed source history is in [CHANGELOG.md](CHANGELOG.md). This text is grounded in the integrated batch through #594 and #596, including route feedback (#536, #546), event access and choices (#550, #551, #555), messages (#552, #563), dock-local repairs and arming (#569, #570), reliable panel clicks (#582), autosave (#584), Market changes (#585, #586, #589), direct sailing (#587), integer money displays (#588, #590), build confirmation (#592) city plots and neighbours (#593), centred confirmation (#594), and bounded zoom/staged loading (#596). Final publication must replace relative document links with verified release-specific links and reconcile later merged changes.
+The detailed source history is in [CHANGELOG.md](CHANGELOG.md). This text is grounded in the integrated batch through #599, plus the city presentation changes in this candidate, including route feedback (#536, #546), event access and choices (#550, #551, #555), messages (#552, #563), dock-local repairs and arming (#569, #570), reliable panel clicks (#582), autosave (#584), Market changes (#585, #586, #589), direct sailing (#587), integer money displays (#588, #590), build confirmation (#592) city plots (#593, with decorative neighbours subsequently removed by this candidate), centred confirmation (#594), and bounded zoom/staged loading (#596). Final publication must replace relative document links with verified release-specific links and reconcile later merged changes.

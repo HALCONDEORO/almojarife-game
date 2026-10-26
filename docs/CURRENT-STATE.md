@@ -44,6 +44,6 @@ No proposed launch date in these files overrides a later owner decision. No depe
 
 ## Beta preparation after the source batch
 
-- Integrated #592, #593, #594 and #596: visible construction confirmation, real free plots with read-only neighbours, centred confirmation and bounded zoom/staged sprite loading.
-- #595, #597, #598 and #599 are pending proposals, not release contents. Reconcile these entries before final review.
+- Integrated #592, #593, #594 and #596: visible construction confirmation, real free plots (decorative neighbours removed by the current candidate), centred confirmation and bounded zoom/staged sprite loading.
+- #595, #597, #598 and #599 are integrated at 4afd05024bf879820483a57e850a37b436e97cf8. The #600 candidate adds painterly ground, clearer own-plot text, block-filling lot drawings, fixed Cádiz presentation and no decorative neighbour buildings. Final exact-candidate review and Playtest remain pending.
 - VERSION names the proposed beta candidate, not a published tag. Exact final CI, independent review, deployment and new-game Playtest remain required.

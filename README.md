@@ -137,8 +137,9 @@ an approved release of this repository.
 | macOS (Apple Silicon) | DMG/ZIP builds completed; packaged app reached the title menu on a macOS CI runner. | DMG installation, Gatekeeper, Intel Macs, a full play session and final release assets. |
 | Linux x64 | AppImage/deb builds completed. An extracted diagnostic AppImage ran under Xvfb: title, new game, manual save, return to title and Continue; campaign data matched after reload. | FUSE launch, deb installation, ordinary desktop sandbox setup and final release assets. |
 
-The Linux interaction check above used diagnostic build `dd8c166` (package
-version `0.1.0`), with `--disable-setuid-sandbox` for the test container. It is
-not certification of the final beta. The current candidate aligns the package
-version to `0.5.0-beta.1` and adds native-runner title-menu smoke checks. Final
+The Linux interaction check above used candidate `d9299e97ff9d14b75fb53cba93bd660b81dcc64d` (package
+version `0.5.0-beta.1`), with `--disable-setuid-sandbox` for the test container. It is
+not certification of the final beta. Native-runner title-menu smoke checks passed on Windows, macOS and Linux for
+that candidate in workflow run `40398516752`. New presentation changes require
+a fresh final-candidate build and Playtest. Final
 release records must name the tested candidate and retain these limitations.
