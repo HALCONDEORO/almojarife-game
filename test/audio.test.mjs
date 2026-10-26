@@ -65,3 +65,9 @@ test("English sound labels are present exactly once", () => {
  assert.equal((en.match(/\bcredKenney\s*:/g)||[]).length,1);
  assert.match(en,/stSound:\s*"Sound"/);
 });
+
+test("rejected orders play the error effect and tab strips click", () => {
+  assert.match(main, /const r = fn\(\);\n  if \(r && r\.ok === false\) sfx\("error"\)/); // every {ok:false} action answers, centrally
+  assert.match(main, /if \(tab !== e\.dataset\.tab\) sfx\("click"\)/); // city panel tabs, silent on the active one
+  assert.match(main, /if \(shipWin\.tab !== e\.dataset\.swtab\) sfx\("click"\)/); // ship window tabs, same guard
+});
