@@ -23,5 +23,14 @@ Core rules as implemented on main. Each statement names its constant or source f
 - The moneylender lends in steps of 100 up to half of net worth (max 5,000), at 1% a week, due in 56 days (`LOAN_STEP`, `LOAN_MAX`, `LOAN_RATE`, `LOAN_TERM_DAYS` in `src/game/bank.mjs`); borrowed money does not count toward the goal. Design and sources: `docs/design/weekly-settlement.md`.
 - Each settlement writes a weekly report and posts a message; the inbox keeps the last 60 messages and 52 reports (`MAX_INBOX`, `MAX_REPORTS`).
 
+## Port information: charts, rumours and informants
+- The tavern sells navigation charts: one chart puts every port of a coast on the map, without prices, for 120 coins plus 70 per port on that coast (`CHART_BASE`, `CHART_PER_PORT`, `COASTS` in `src/game/charts.mjs`; eight coasts cover every city exactly once). A tavern offers charts for every coast but its own that still hides an unknown port.
+- A route rumour (60, `ROUTE_RUMOR_PRICE` in `src/game/charts.mjs`) reveals the nearest unknown port with an inexact snapshot. A market rumour (40, `RUMOR_PRICE` in `src/game/intel.mjs`) gives today's stock of a known port with up to ±25% error (`RUMOR_ERROR`).
+- An informant (150, `CONTACT_PRICE` in `src/game/contacts.mjs`) sends his port's prices every 7 days (`CONTACT_EVERY`), 4 reports in all (`CONTACT_REPORTS`); at most 4 informants at once (`CONTACT_MAX`). Reports are inexact (±15%, `CONTACT_ERROR`) and one in ten comes out plain wrong (±45%, `CONTACT_FALSE_CHANCE`, `CONTACT_FALSE_ERROR`) without the inbox saying which. Your own eyes always win: a port with your ship or warehouse ends every day with exact figures (`refreshIntel` in `src/game/intel.mjs`).
+
+## Council commissions
+- Each week a port may post a commission (50% odds, `CONTRACT_CHANCE` in `src/game/contracts.mjs`) for a good it is short of (`CONTRACT_SCARCITY_MIN`), with a deadline of 30 to 60 days (`CONTRACT_DAYS_MIN`, `CONTRACT_DAYS_SPAN`) and a premium of 20-35% over base value paid on completion (`CONTRACT_BONUS_MIN`, `CONTRACT_BONUS_SPAN`).
+- A house keeps at most 3 active commissions (`CONTRACT_MAX_ACTIVE`). Completing one moves reputation +6 and counts toward the port's respect like a 1,500-coin sale (`CONTRACT_REP`, `CONTRACT_RESPECT_COINS`); letting it lapse moves reputation -4 (`CONTRACT_FAIL_REP`).
+
 ## Still to fill
-Buildings (`docs/design/construction.md`, `dock-building.md`), missions (`docs/design/missions.md`), charts and informants.
+Buildings (`docs/design/construction.md`, `dock-building.md`), missions (`docs/design/missions.md`).
