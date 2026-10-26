@@ -119,7 +119,16 @@ Sheet panels named in brackets.
   disabled = dashed border plus the reason in italics, never a bare fade.
 - **Tables** [Table]: header `--green` 11-13 px over a `--line-strong`
   rule; rows `--paper-raised` with `--paper-alt` zebra; hairline `--line`
-  separators; numbers right-aligned. Real table: `window-market.png`.
+  separators. Numeric and action columns are centred; the label
+  column (first) stays left. Rows stay dense ledger lines: market
+  rows 13 px min-height at 12 px type, header stack (ship summary,
+  intro, tools) collapsed to single lines with 0-1 px margins.
+  Tables size to their content (width: max-content), never elastic
+  fr columns; the market window is 640 px and centred in the map
+  area, market columns fixed (110/58/66/40/44/86/86 px). Market
+  exception: its goods column (icon + name) is centred too.
+  Real table: `window-market.png`; column centring and density,
+  before/after: `table-columns.png`. **[applied]**
 - **Cards** [Card]: `--paper-raised`, 1 px `--line`, optional 4 px left
   accent in `--green` for state. Real cards: `window-hall.png`.
 - **Chips** [Card and chip]: pill, `--paper-sunken`, `--line` border, 13 px.
@@ -147,8 +156,8 @@ Sheet panels named in brackets.
 
 | Window | Today | Remaining (target) |
 |---|---|---|
-| Mercado | ledger style | fluid width + inner scroll under ~1200 px; rail clearance rule shared |
-| Banco, Almacén, Informes, Mensajes | ledger style | rail clearance |
+| Mercado | ledger style, centred columns, dense rows | fluid width + inner scroll under ~1200 px; rail clearance rule shared |
+| Banco, Almacén, Informes, Mensajes | ledger style, centred columns via the shared table rule | rail clearance |
 | Ayuntamiento | chrome + cards | rail clearance |
 | Astillero, Taberna, Ruta, Casa, Construir | old flat style | full migration to this manual |
 | Barco (ship window) | old flat style | full migration |
