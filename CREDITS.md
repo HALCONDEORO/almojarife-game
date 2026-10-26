@@ -25,3 +25,8 @@
 - Council stinger (`web/audio/council.ogg`): "Applause in a Large Hall or Church" by eXpl0it3r (opengameart.org), CC0 (https://opengameart.org/content/applause-in-a-large-hall-or-church). Added 25 Oct 2026.
 - Festival crowd (`web/audio/festival.ogg`): "Crowd shouting/speaking ambience" by StarNinjas (opengameart.org), CC0 (https://opengameart.org/content/crowd-shoutingspeaking-ambience). Added 25 Oct 2026.
 - Works and alert sounds (`web/audio/{build,alert}.ogg`): "100 CC0 SFX" by rubberduck (opengameart.org), CC0 (https://opengameart.org/content/100-cc0-sfx). Added 25 Oct 2026.
+- Sea ambience (`web/audio/amb-sea.ogg`): "Sea and River Wave Sounds" (Vistula) by randommind (opengameart.org), CC0 (https://opengameart.org/content/sea-and-river-wave-sounds). Added 25 Oct 2026.
+- Harbour ambience (`web/audio/amb-port.ogg`): "Crowded Pub" by bobjt (opengameart.org), CC0 (https://opengameart.org/content/crowded-pub). Added 25 Oct 2026.
+- Music, sailing (`web/audio/music-water.ogg`): "A Tale of Water" from "A Tale of Wind and Water" by InspectorJ (opengameart.org), CC BY 3.0 (https://opengameart.org/content/a-tale-of-wind-and-water-rpg-orchestral-essentials-peace-music). Added 25 Oct 2026.
+- Music (`web/audio/music-village.ogg`): "Peaceful Village Loop" by elerya (opengameart.org), CC BY 3.0 (https://opengameart.org/content/peaceful-village-loop). Added 25 Oct 2026.
+- Music, tavern (`web/audio/music-tavern.ogg`): "Dragon Tail Tavern" by jan125 (opengameart.org), CC BY 4.0 (https://opengameart.org/content/dragon-tail-tavern). Added 25 Oct 2026.
