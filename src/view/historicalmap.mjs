@@ -39,7 +39,7 @@ export function politicalZoneLayer({year,data,x,y,lang='es',enabled=false}){
  if(!enabled)return{svg:'',legend:''};
  if(!data||!Number.isInteger(year)||year<1480||year>1600)return{svg:'',legend:''};
  if(typeof x!=='function'||typeof y!=='function')return{svg:'',legend:''};
- const ids=Object.keys(data.realms??{}).sort();let svg='';
+ const ids=Object.keys(data.realms??{}).sort(),labels=new Map();let svg='';
  for(const z of data.zones??[]){
   const r=data.realms?.[z.realm];
   if(!r?.name||!/^https:\/\//.test(z.source??''))continue;
@@ -47,13 +47,20 @@ export function politicalZoneLayer({year,data,x,y,lang='es',enabled=false}){
   if((z.from!=null&&year<z.from)||(z.until!=null&&year>=z.until))continue;
   const pts=z.polygon;
   if(!Array.isArray(pts)||pts.length<3||!pts.every(pt=>Array.isArray(pt)&&pt.length===2&&pt.every(Number.isFinite)))continue;
+  labels.set(z.realm,r);
   const color=COLORS[ids.indexOf(z.realm)%COLORS.length];
   const d=pts.map((pt,i)=>`${i===0?'M':'L'}${x(pt[0])} ${y(pt[1])}`).join(' ')+' Z';
-  svg+=`<path d="${d}" fill="${color}" fill-opacity="0.16" stroke="none" pointer-events="none"><title>${esc(r.name[lang]??z.realm)}</title></path>`;
+  svg+=`<path d="${d}" fill="${color}" fill-opacity="0.38" stroke="none" pointer-events="none"><title>${esc(r.name[lang]??z.realm)}</title></path>`;
  }
- return{svg,legend:''};
+ const anchors={castile:[-4.4,40.6],portugal:[-8.05,40.4],aragon:[0.5,41.5],granada:[-3.5,37.15],tlemcen:[-0.8,34.6],algiers:[2.5,35.8]};
+ for(const [id,r] of labels){
+  const zone=data.zones.find(z=>z.realm===id),pt=anchors[id]??zone.polygon.reduce((a,p)=>[a[0]+p[0]/zone.polygon.length,a[1]+p[1]/zone.polygon.length],[0,0]);
+  const name=r.name[lang]??r.name.es??id,color=COLORS[ids.indexOf(id)%COLORS.length];
+  svg+=`<g class="realm-label" data-realm="${esc(id)}" data-mx="${x(pt[0])}" data-my="${y(pt[1])}" pointer-events="none"><text text-anchor="middle" font-size="22" font-weight="bold" fill="${color}" stroke="#fff4d5" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${esc(name)}</text></g>`;
+ }
+ return{svg,legend:[...labels].map(([id,r])=>`<span style="display:inline-block;border-left:8px solid ${COLORS[ids.indexOf(id)%COLORS.length]};padding-left:4px">${esc(r.name[lang]??r.name.es??id)}</span>`).join(' · ')};
 }
-export function historicalLayer({mode,...args}){if(!args.enabled)return {svg:'',legend:''};if(mode==='political'){const zones=politicalZoneLayer(args),ports=politicalPortLayer(args),t=TEXT[args.lang]??TEXT.es;return{underlay:zones.svg,svg:ports.svg,legend:ports.legend?`${ports.legend}<br><span style="font-size:12px;opacity:.75">${t.zones} ${t.ports}</span>`:''};}if(mode==='trade')return tradePortLayer(args);if(mode==='leagues')return leaguePortLayer({...args,data:args.leagues});return{svg:'',legend:mode==='leagues'?(TEXT[args.lang]??TEXT.es).pending:''};}
+export function historicalLayer({mode,...args}){if(!args.enabled)return {svg:'',legend:''};if(mode==='political'){const zones=politicalZoneLayer(args),ports=politicalPortLayer(args),t=TEXT[args.lang]??TEXT.es;return{underlay:zones.svg,svg:ports.svg,legend:ports.legend?`${zones.legend}<br><span style="font-size:12px;opacity:.75">${t.zones} ${t.ports}</span>`:''};}if(mode==='trade')return tradePortLayer(args);if(mode==='leagues')return leaguePortLayer({...args,data:args.leagues});return{svg:'',legend:mode==='leagues'?(TEXT[args.lang]??TEXT.es).pending:''};}
 /** Declared game specialisations only. No inferred historical trade volumes. */
 export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id,x,y,bounds={width:800,height:850},zoom=1}){
  if(!enabled)return{svg:'',legend:''};const es=lang==='es';
