@@ -41,7 +41,7 @@ This is a beta, not the finished campaign. Balance, interface details and saves 
 PRE-PUBLICATION RECORD. Remove this pending record only after the final checks are complete.
 
 - Final version: `v0.5.0-beta.1`, GitHub pre-release.
-- Integrated source checkpoint: `70c8479e720a295a76f4f43cb102698ff7fadecd`, tree `53c8a97d9e93a7553d509ac4e920f778ca847434`. This is not yet the final tested release candidate.
+- Integrated source checkpoint: `4afd05024bf879820483a57e850a37b436e97cf8`, tree `3b6ad446161fa3c407ae782fd7a2e4faa503ac44`. This is not yet the final tested release candidate.
 - Exact-head independent review and CI: pending for the release candidate.
 - Independent documentation review: pending for this polished text.
 - Deployment of the candidate and Spanish desktop new-game Playtest: pending.
@@ -49,4 +49,4 @@ PRE-PUBLICATION RECORD. Remove this pending record only after the final checks a
 
 ## Change references
 
-The detailed source history is in [CHANGELOG.md](CHANGELOG.md). This text is grounded in the integrated batch through #599, plus the city presentation changes in this candidate, including route feedback (#536, #546), event access and choices (#550, #551, #555), messages (#552, #563), dock-local repairs and arming (#569, #570), reliable panel clicks (#582), autosave (#584), Market changes (#585, #586, #589), direct sailing (#587), integer money displays (#588, #590), build confirmation (#592) city plots (#593, with decorative neighbours subsequently removed by this candidate), centred confirmation (#594), and bounded zoom/staged loading (#596). Final publication must replace relative document links with verified release-specific links and reconcile later merged changes.
+The detailed source history is in [CHANGELOG.md](CHANGELOG.md). This text is grounded in the integrated batch through #599, plus the city presentation changes in this candidate, including route feedback (#536, #546), event access and choices (#550, #551, #555), messages (#552, #563), dock-local repairs and arming (#569, #570), reliable panel clicks (#582), autosave (#584), Market changes (#585, #586, #589), direct sailing (#587), integer money displays (#588, #590), build confirmation (#592), city plots (#593, with decorative neighbours subsequently removed by this candidate), centred confirmation (#594), and bounded zoom/staged loading (#596). Final publication must replace relative document links with verified release-specific links and reconcile later merged changes.
