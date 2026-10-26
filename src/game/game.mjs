@@ -386,8 +386,10 @@ export function deliverOrders(g) {
 }
 export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
 export const repairPrice = (g, ship) => Math.ceil(repairCost(ship) * repairMul(g, ship.at)); // reputation discounts the shipyard bill
-export function repairShip(g, ship) {
+/** `at` (optional) is the port the player is acting from: a ship can only be repaired where it is docked. Omitted by automatic routes, which act on their own docked ship. */
+export function repairShip(g, ship, at) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (at !== undefined && ship.at !== at) return { ok: false, reason: "not in this port" };
   const c = repairPrice(g, ship);
   if (c <= 0) return { ok: false, reason: "no damage" };
   if (g.cash < c) return { ok: false, reason: "no cash" };
