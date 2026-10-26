@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Builds assets/map/background.webp: a period portolan sea-chart from public-domain
 Natural Earth 50m land polygons (tools/fetch_data.sh downloads data/ne_50m_land.geojson).
-Style: aged vellum, hand-inked coasts with stipple, a 32-wind rhumb-line network and
-ornate compass roses. No raster input: every texture is procedural (own work).
+Style: aged vellum and hand-inked coasts with stipple. No raster input: every texture is procedural (own work).
 The map frame (extent, projection) matches web/main.mjs: x = (lon-x0)*sc, y = (y1-lat)*sc*1.25.
 Usage: python3 tools/build_background.py"""
-import json, math
+import json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 W = 2400
@@ -59,21 +58,6 @@ base = base + seacast * (1 - soft[..., None]) + landcast * soft[..., None]
 img = Image.fromarray((np.clip(base, 0, 1) * 255).astype(np.uint8))
 dr = ImageDraw.Draw(img, "RGBA")
 
-# --- rhumb-line network (drawn under the coast ink) ----------------------------
-# classic 32-wind system radiating from two roses; cardinal/ordinal brown, half-winds red, quarter-winds green
-ROSES = [P(-9.2, 36.2) + (150,), P(1.5, 37.8) + (185,)]  # open water: Gulf of Cadiz, Balearic basin
-def rhumbs(cx, cy):
-    for i in range(32):
-        ang = math.radians(i * 11.25)
-        dx, dy = math.sin(ang), -math.cos(ang)
-        p1 = (cx + dx * 2000, cy + dy * 2000); p2 = (cx - dx * 2000, cy - dy * 2000)
-        if i % 8 == 0: col, wd = (74, 48, 24, 105), 3        # cardinal
-        elif i % 4 == 0: col, wd = (74, 48, 24, 85), 2       # ordinal
-        elif i % 2 == 0: col, wd = (140, 44, 30, 62), 2      # half-winds
-        else: col, wd = (52, 84, 48, 50), 1                  # quarter-winds
-        dr.line([p1, p2], fill=col, width=wd)
-for cx, cy, _r in ROSES: rhumbs(int(cx), int(cy))
-
 # --- coasts: dark ink line, inner hatch stipple, sea-side shadow ---------------
 edge = mask.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.GaussianBlur(1.1))
 e = np.asarray(edge).astype(np.float32) / 255
@@ -94,29 +78,6 @@ dots = (rng.random((H, W)) < st * 0.16)
 a = np.asarray(img).astype(np.float32) / 255
 a[dots] *= 0.78
 img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)); dr = ImageDraw.Draw(img, "RGBA")
-
-# --- compass roses --------------------------------------------------------------
-def rose(cx, cy, R, small=False):
-    dr.ellipse([cx - R, cy - R, cx + R, cy + R], outline=(74, 48, 24, 220), width=3)
-    dr.ellipse([cx - R * 0.80, cy - R * 0.80, cx + R * 0.80, cy + R * 0.80], outline=(74, 48, 24, 160), width=2)
-    dr.ellipse([cx - R * 0.16, cy - R * 0.16, cx + R * 0.16, cy + R * 0.16], fill=(74, 48, 24, 235))
-    for i in range(32):
-        ang = math.radians(i * 11.25)
-        major, mid = i % 8 == 0, i % 4 == 0
-        L = R * (0.96 if major else 0.72 if mid else 0.42)
-        wdt = R * (0.085 if major else 0.05 if mid else 0.028)
-        tip = (cx + L * math.sin(ang), cy - L * math.cos(ang))
-        l = (cx + wdt * math.sin(ang - 1.5708), cy - wdt * math.cos(ang - 1.5708))
-        r = (cx + wdt * math.sin(ang + 1.5708), cy + wdt * math.cos(ang + 1.5708))
-        c1 = (141, 44, 30, 255) if major else (74, 48, 24, 235)  # red primary winds
-        dr.polygon([tip, l, (cx, cy)], fill=c1)
-        dr.polygon([tip, r, (cx, cy)], fill=(46, 30, 16, 235))
-    if not small:
-        # fleur-de-lis north
-        fy = cy - R * 1.10
-        dr.polygon([(cx, fy - R * 0.34), (cx - R * 0.10, fy), (cx + R * 0.10, fy)], fill=(74, 48, 24, 255))
-        dr.ellipse([cx - R * 0.13, fy - R * 0.02, cx + R * 0.13, fy + R * 0.12], outline=(74, 48, 24, 255), width=3)
-for cx, cy, R in ROSES: rose(int(cx), int(cy), R, small=R < 170)
 
 # --- frame and vignette ---------------------------------------------------------
 for off, wd, col in ((16, 7, (95, 66, 36, 255)), (34, 2, (95, 66, 36, 220)), (44, 1, (95, 66, 36, 140))):

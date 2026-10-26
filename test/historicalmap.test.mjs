@@ -23,7 +23,7 @@ test('overview has at most five major known-port cards, never reveals absent por
 import{politicalZoneLayer}from'../src/view/historicalmap.mjs';
 const realmsData=JSON.parse(fs.readFileSync(new URL('../data/realms.json',import.meta.url)));
 test('political washes render one soft path per cited zone active in the year, never borders',()=>{const z=y=>politicalZoneLayer({enabled:true,year:y,data:realmsData,x:n=>n,y:n=>n});
- const p1480=z(1480);assert.equal((p1480.svg.match(/<path/g)??[]).length,7);assert.match(p1480.svg,/fill-opacity="0\.16"/);assert.doesNotMatch(p1480.svg,/stroke="#/);assert.match(p1480.svg,/Emirato de Granada/);assert.doesNotMatch(p1480.svg,/Regencia de Argel/);
+ const p1480=z(1480);assert.equal((p1480.svg.match(/<path/g)??[]).length,7);assert.match(p1480.svg,/fill-opacity="0\.38"/);assert.doesNotMatch(p1480.svg,/<path[^>]*stroke="#/);assert.match(p1480.svg,/Emirato de Granada/);assert.doesNotMatch(p1480.svg,/Regencia de Argel/);
  const p1520=z(1520);assert.equal((p1520.svg.match(/<path/g)??[]).length,8);assert.doesNotMatch(p1520.svg,/Emirato de Granada/);assert.match(p1520.svg,/Regencia de Argel/);assert.match(p1520.svg,/Reino de Tlemecén/);
  const p1560=z(1560);assert.equal((p1560.svg.match(/<path/g)??[]).length,7);assert.doesNotMatch(p1560.svg,/Tlemecén/);});
 test('zone rows need a cited source, a known realm and a real polygon',()=>{const base=realmsData.zones[0];
@@ -36,3 +36,18 @@ test('zone rows need a cited source, a known realm and a real polygon',()=>{cons
 test('political mode composes washes under rings and keeps the no-borders notice in both languages',()=>{const args={enabled:true,mode:'political',ports:[],year:1480,data:realmsData,x:n=>n,y:n=>n};
  const es=historicalLayer(args);assert.match(es.underlay,/<path/);assert.match(es.legend,/Veladuras aproximadas/);assert.match(es.legend,/no fronteras territoriales/);
  const en=historicalLayer({...args,lang:'en'});assert.match(en.legend,/Approximate washes/);assert.match(en.legend,/not territorial boundaries/);});
+
+test('all active realms have one visible name even without discovered ports, in ES and EN',()=>{
+ for(const year of [1480,1520,1560])for(const lang of ['es','en']){
+  const a=historicalLayer({enabled:true,mode:'political',ports:[],year,data:realmsData,x:n=>n,y:n=>n,lang});
+  const ids=[...new Set(realmsData.zones.filter(z=>(z.from==null||year>=z.from)&&(z.until==null||year<z.until)).map(z=>z.realm))];
+  assert.equal((a.underlay.match(/class="realm-label"/g)??[]).length,ids.length);
+  for(const id of ids){assert.ok(a.underlay.includes(realmsData.realms[id].name[lang]));assert.ok(a.legend.includes(realmsData.realms[id].name[lang]));}
+ }
+});
+test('chart generator and title artwork contain no decorative compass roses or radiating lines',()=>{
+ const generator=fs.readFileSync(new URL('../tools/build_background.py',import.meta.url),'utf8');
+ assert.doesNotMatch(generator,/def rhumbs|def rose|ROSES/);
+ const title=fs.readFileSync(new URL('../web/titlebook.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(title,/id="rose"|href="#rose"|class="chart-rose"/);
+});
