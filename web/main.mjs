@@ -1,3 +1,4 @@
+import { cashCardHtml } from "../src/view/cashcard.mjs";
 import { mergeTrade } from "../src/view/toastmerge.mjs";
 import { marketQuantity } from '../src/view/marketdesk.mjs';
 import { shipCapacity } from '../src/sim/trade.mjs';
@@ -406,6 +407,8 @@ if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fi
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM });
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   fitFleet();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
