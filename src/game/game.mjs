@@ -21,6 +21,7 @@ import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from
 import { captainSpeed } from "./captains.mjs";
 import { gainXp } from "./captainxp.mjs";
 import { seeded } from "../view/cityscene.mjs";
+import { legWindFactor } from "../sim/weather.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
@@ -251,7 +252,7 @@ export function advanceTick(g) {
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
   for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // AI traders act (and pay the arrival day's wear) on their own arrival tick
-  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
+  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s, g.world); // one seeded roll per tick at sea; a pirate decision stops time; the weather field turns a roll inside a storm cell into that storm
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
   tickWalls(g); // wall works finish on their exact tick (flag off: nothing)
@@ -286,6 +287,14 @@ export function doSell(g, ship, good, qty) {
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
+/** Wind for a fresh leg: the regional weather field when both ends have a fix (ports and chart clicks), else the old flat roll. Same 0.8-1.2 range either way. */
+function legWind(g, ship, from, toId, lat, lon) {
+  const a = g.world.cities.find((c) => c.id === from);
+  const b = Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : g.world.cities.find((c) => c.id === toId);
+  if (a && b) return legWindFactor(a, b, g.day, g.seed ?? 0);
+  return 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${toId}`)();
+}
+
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
@@ -301,7 +310,7 @@ export function doGoTo(g, ship, lat, lon) {
   const pos = docked ? null : locate(g.world, ship);
   const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
   // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
-  const wind = docked ? 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)() : (ship.voyage.wind ?? 1);
+  const wind = docked ? legWind(g, ship, from, plan.to, lat, lon) : (ship.voyage.wind ?? 1);
   const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
   const ticks = Math.max(1, Math.round(ticksForKm(plan.km, spec.kmPerDay) / (mul * wind)));
   const prevSailLogged = ship.voyage?.sailLogged === true;
@@ -326,8 +335,8 @@ export function doSail(g, ship, to) {
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
   const from = ship.at;
-  // Per-leg wind, seeded by departure tick and leg, so replays and save/load keep the same weather.
-  const wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${to}`)();
+  // Per-leg wind from the regional field (seeded by day and leg ends), so replays and save/load keep the same weather.
+  const wind = legWind(g, ship, from, to);
   const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship), wind });
   if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
