@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them. 'zones' holds approximate hand-drawn realm washes (lon/lat polygons) for the political map mode: each row enters only with a cited source, follows the same from/until convention, and is a soft period wash by design, never an exact border. Ports with no verified holding (e.g. the Moroccan coast) belong to no realm and get no wash. Map-only realm definitions in mapRealms are not holdings, letters-of-marque targets or unions.",
+  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them. 'zones' holds approximate hand-drawn realm washes (lon/lat polygons) for the political map mode: each row enters only with a cited source, follows the same from/until convention, and is a soft period wash by design, never an exact border. Ports with no verified holding (e.g. the Moroccan coast) belong to no realm and get no wash. Map-only realm definitions in mapRealms are not holdings, letters-of-marque targets or unions. Political fills are clipped to the public-domain Natural Earth land mask matching background.webp. Unverified land has a labelled neutral wash, not an invented owner. Moroccan map-only dynasties do not add or change port holdings.",
   "realms": {
     "castile": {
       "name": {
@@ -276,20 +276,20 @@
           37.18
         ],
         [
-          -6.29,
-          36.53
+          -7.4,
+          36.8
         ],
         [
-          -6.1,
-          36.3
+          -6.6,
+          36.1
         ],
         [
-          -5.81,
-          36.0
+          -5.7,
+          35.8
         ],
         [
-          -5.35,
-          36.02
+          -5.1,
+          35.9
         ],
         [
           -4.97,
@@ -377,63 +377,27 @@
         ],
         [
           -1.7,
-          43.4
+          43.7
         ],
         [
           -2.0,
-          43.48
+          43.85
         ],
         [
-          -2.7,
-          43.5
+          -4,
+          44.2
         ],
         [
-          -3.3,
-          43.55
+          -8.8,
+          44.2
         ],
         [
-          -3.8,
-          43.58
+          -10,
+          43
         ],
         [
-          -4.6,
-          43.55
-        ],
-        [
-          -5.3,
-          43.72
-        ],
-        [
-          -6.0,
-          43.72
-        ],
-        [
-          -6.9,
-          43.68
-        ],
-        [
-          -7.6,
-          43.8
-        ],
-        [
-          -8.2,
-          43.8
-        ],
-        [
-          -8.6,
-          43.65
-        ],
-        [
-          -9.2,
-          43.25
-        ],
-        [
-          -9.3,
-          42.85
-        ],
-        [
-          -9.05,
-          42.2
+          -10,
+          41.9
         ],
         [
           -8.85,
@@ -488,23 +452,23 @@
       "source": "https://en.wikipedia.org/wiki/Emirate_of_Granada",
       "polygon": [
         [
-          -4.97,
-          36.72
+          -5.15,
+          36.25
         ],
         [
           -4.44,
-          36.76
+          36.25
         ],
         [
           -3.55,
-          36.72
+          36.25
         ],
         [
-          -2.7,
-          36.72
+          -2.3,
+          36.25
         ],
         [
-          -2.15,
+          -1.95,
           36.95
         ],
         [
@@ -536,23 +500,23 @@
       "source": "https://en.wikipedia.org/wiki/Emirate_of_Granada",
       "polygon": [
         [
-          -4.97,
-          36.72
+          -5.15,
+          36.25
         ],
         [
           -4.44,
-          36.76
+          36.25
         ],
         [
           -3.55,
-          36.72
+          36.25
         ],
         [
-          -2.7,
-          36.72
+          -2.3,
+          36.25
         ],
         [
-          -2.15,
+          -1.95,
           36.95
         ],
         [
@@ -588,40 +552,16 @@
           37.18
         ],
         [
-          -7.94,
-          36.97
+          -7.5,
+          36.5
         ],
         [
-          -8.99,
-          37.02
+          -10,
+          36.5
         ],
         [
-          -8.78,
-          37.4
-        ],
-        [
-          -8.86,
-          37.94
-        ],
-        [
-          -8.89,
-          38.52
-        ],
-        [
-          -9.14,
-          38.71
-        ],
-        [
-          -8.79,
-          39.35
-        ],
-        [
-          -8.85,
-          40.15
-        ],
-        [
-          -8.61,
-          41.15
+          -10,
+          42
         ],
         [
           -8.85,
@@ -692,51 +632,51 @@
           42.65
         ],
         [
-          1.3,
+          1.75,
           42.45
         ],
         [
-          2.0,
+          2.45,
           42.3
         ],
         [
-          2.6,
+          3.0500000000000003,
           42.4
         ],
         [
-          3.1,
+          3.5500000000000003,
           42.45
         ],
         [
-          3.2,
+          3.6500000000000004,
           42.2
         ],
         [
-          2.95,
+          3.4000000000000004,
           41.85
         ],
         [
-          2.55,
+          3.0,
           41.6
         ],
         [
-          2.17,
+          2.62,
           41.38
         ],
         [
-          1.6,
+          2.0500000000000003,
           41.25
         ],
         [
-          1.25,
+          1.7,
           41.12
         ],
         [
-          0.85,
+          1.3,
           40.72
         ],
         [
-          0.3,
+          0.75,
           40.1
         ],
         [
@@ -744,15 +684,15 @@
           39.98
         ],
         [
-          -0.2,
+          0.14999999999999997,
           38.75
         ],
         [
-          -0.49,
+          -0.14,
           38.34
         ],
         [
-          -0.7,
+          -0.35,
           37.9
         ],
         [
@@ -788,28 +728,28 @@
       "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon",
       "polygon": [
         [
-          2.3,
-          39.5
+          1.9733333333333327,
+          39.382666666666665
         ],
         [
-          2.7,
-          39.3
+          2.6933333333333334,
+          39.02266666666666
         ],
         [
-          3.2,
-          39.6
+          3.5933333333333337,
+          39.562666666666665
         ],
         [
-          3.15,
-          39.9
+          3.503333333333333,
+          40.102666666666664
         ],
         [
-          2.6,
-          39.88
+          2.513333333333333,
+          40.06666666666667
         ],
         [
-          2.3,
-          39.7
+          1.9733333333333327,
+          39.74266666666667
         ]
       ]
     },
@@ -820,24 +760,24 @@
       "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon",
       "polygon": [
         [
-          1.2,
-          38.88
+          1.0335999999999999,
+          38.816
         ],
         [
-          1.44,
-          38.8
+          1.4656,
+          38.672
         ],
         [
-          1.68,
-          39.0
+          1.8976,
+          39.032
         ],
         [
-          1.5,
-          39.1
+          1.5736,
+          39.212
         ],
         [
-          1.22,
-          39.02
+          1.0695999999999999,
+          39.068000000000005
         ]
       ]
     },
@@ -848,44 +788,28 @@
       "source": "https://en.wikipedia.org/wiki/Kingdom_of_Tlemcen",
       "polygon": [
         [
-          -2.2,
-          35.35
+          -2.5,
+          35.8
         ],
         [
           -1.5,
-          35.3
+          36.1
         ],
         [
-          -0.65,
-          35.75
-        ],
-        [
-          0.09,
-          35.98
-        ],
-        [
-          0.65,
-          35.95
+          -0.4,
+          36.5
         ],
         [
           0.7,
-          35.3
+          36.6
         ],
         [
-          0.2,
-          34.4
+          0.7,
+          32
         ],
         [
-          -0.6,
-          34.0
-        ],
-        [
-          -1.4,
-          34.1
-        ],
-        [
-          -2.1,
-          34.6
+          -2.5,
+          32
         ]
       ]
     },
@@ -897,43 +821,23 @@
       "polygon": [
         [
           0.7,
-          35.9
+          36.6
         ],
         [
-          2.0,
-          36.55
+          2,
+          37.3
         ],
         [
-          3.06,
-          36.77
+          4.8,
+          37.6
         ],
         [
-          3.8,
-          36.85
-        ],
-        [
-          4.3,
-          36.65
-        ],
-        [
-          4.05,
-          36.0
-        ],
-        [
-          3.0,
-          35.2
-        ],
-        [
-          2.0,
-          34.9
-        ],
-        [
-          1.0,
-          35.1
+          4.8,
+          33
         ],
         [
           0.7,
-          35.45
+          33
         ]
       ]
     },
@@ -1033,6 +937,72 @@
           42.85
         ]
       ]
+    },
+    {
+      "realm": "wattasid",
+      "from": null,
+      "until": 1549,
+      "source": "https://en.wikipedia.org/wiki/Wattasid_dynasty",
+      "polygon": [
+        [
+          -12,
+          33.6
+        ],
+        [
+          -12,
+          36.05
+        ],
+        [
+          -5.6,
+          36.05
+        ],
+        [
+          -4.5,
+          35.65
+        ],
+        [
+          -2.5,
+          35.8
+        ],
+        [
+          -2.5,
+          33.6
+        ]
+      ],
+      "note": "Approximate northern Morocco/Fez hinterland only, not southern principalities. Control contested1549-1554 is neutral. No exact coastal enclave control asserted."
+    },
+    {
+      "realm": "saadi",
+      "from": 1554,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Saadi_Sultanate",
+      "polygon": [
+        [
+          -12,
+          32
+        ],
+        [
+          -12,
+          36.05
+        ],
+        [
+          -5.6,
+          36.05
+        ],
+        [
+          -4.5,
+          35.65
+        ],
+        [
+          -2.5,
+          35.8
+        ],
+        [
+          -2.5,
+          32
+        ]
+      ],
+      "note": "Broad map-only context after1554 consolidation. Contested1549-1554 left neutral, no exact coastal enclave control asserted."
     }
   ],
   "mapRealms": {
@@ -1043,6 +1013,22 @@
       },
       "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
       "note": "Map-only territorial context. No port holding, marque target or union is added."
+    },
+    "wattasid": {
+      "name": {
+        "es": "Sultanato wattásida",
+        "en": "Wattasid Sultanate"
+      },
+      "source": "https://en.wikipedia.org/wiki/Wattasid_dynasty",
+      "note": "Map-only broad Moroccan context, not precise control of individual coastal enclaves."
+    },
+    "saadi": {
+      "name": {
+        "es": "Sultanato saadí",
+        "en": "Saadi Sultanate"
+      },
+      "source": "https://en.wikipedia.org/wiki/Saadi_Sultanate",
+      "note": "Map-only broad context after1554 consolidation.1549-1554contestedneutral. No port holdings."
     }
   }
 }
