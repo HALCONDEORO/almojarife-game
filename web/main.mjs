@@ -295,7 +295,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
-let marketCargoOnly = false, marketQty = 10;
+let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours' house card opened from the city map (read only)
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
 let tab = "market"; let rumorNote = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
@@ -792,6 +792,12 @@ function render() {
           else h += offers.length ? `<p><b>${t.bldFree}</b></p><div class="yardcards">` + offers.map((o) => `<div class="card"><b>${o.id}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmtM(o.price))}</button>${permits ? ` <button data-bldact="buypermit|${o.id}">${pb.usePermit}</button>` : ""}</div>`).join("") + `</div>` : "";
         }
       }
+    } else if (tab === "neighbors") { // read-only: who lives in a drawn house. No purchase, no rule, no save.
+      const nb = nbSel, en = lang !== "es", ppl = nb?.people ?? 0, nm = cityName(s.at), idx = nb ? ((Number(String(nb.id).split("-").pop()) || 0) + 1) : 0;
+      h += nb ? `<h3>${en ? "Neighbours' homes" : "Viviendas de vecinos"} <small>${esc(nm)} · ${idx}</small></h3>` +
+        `<p>${en ? "About" : "Unas"} <b>${fmt(ppl)}</b> ${en ? "people live around this house of the drawing (each drawn house stands for a group of households)." : "personas viven en torno a esta casa del dibujo (cada casa dibujada representa un grupo de hogares)."}</p>` +
+        `<p>${en ? "Owner" : "Propietario"}: <b>${en ? "Town council" : "Ayuntamiento"}</b> <small>(${en ? "the people rent from the council" : "los vecinos alquilan al concejo"})</small></p>` +
+        `<p><small>${en ? "Not for sale. Free lots are the green dashed plots." : "No está en venta. Los solares libres son las parcelas verdes de contorno discontinuo."}</small></p>` : "";
     } else if (tab === "plot") { // one building or plot, opened by clicking it in the 3D view
       ensurePlots(s.at); // a 3D click can land here before the Construir tab ever loaded the plots
       if (bldAction && (bldAction.plotId !== bldSelPlot || !bldAction.plotId.startsWith(s.at + ":"))) { bldAction = null; bldError = null; } // plot switched: never confirm on the old plot
@@ -1169,7 +1175,7 @@ function syncCityControls() {
   const s0 = ship(); if (s0 && !s0.voyage) updateCityHeader(s0.at);
 }
 function cityPanelTitle(tb) {
-  return ({ market: t.tabMarket, yard: t.tabYard, tavern: t.tabTavern, bank: t.tabBank, city: t.tabCity, hall: t.tabHall, buildings: t.bldBuild, route: t.tabRoute, house: premises(g, ship().at, lang).label, lonja: t.tabLonja, store: t.tabStore, plot: (() => { const r = buildingsRows(g, ship().at).find((x) => x.plotId === bldSelPlot); return r ? buildingLabel(t, r) : t.tabBuildings; })(), town: t.townTypes[townSel] ?? t.tabCity })[tb] || t.tabCity;
+  return ({ market: t.tabMarket, yard: t.tabYard, tavern: t.tabTavern, bank: t.tabBank, city: t.tabCity, hall: t.tabHall, buildings: t.bldBuild, route: t.tabRoute, house: premises(g, ship().at, lang).label, lonja: t.tabLonja, store: t.tabStore, neighbors: lang === "es" ? "Viviendas de vecinos" : "Neighbours' homes", plot: (() => { const r = buildingsRows(g, ship().at).find((x) => x.plotId === bldSelPlot); return r ? buildingLabel(t, r) : t.tabBuildings; })(), town: t.townTypes[townSel] ?? t.tabCity })[tb] || t.tabCity;
 }
 function updateCityHeader(cityId) {
   const d = $("v3d"); if (!d || !cityId || !world.nodes[cityId]) return;
@@ -1234,6 +1240,7 @@ addEventListener("message",e=>{
   const d=$("v3d");
   if(!d||e.origin!==location.origin||e.source!==d.querySelector("iframe").contentWindow)return;
   if(e.data?.kind==="city2d-view"){const m=d.querySelector('[data-corner="motion"]'),cn=d.querySelector('[data-corner="construct"]');m?.setAttribute("aria-pressed",String(!!e.data.motion));cn?.setAttribute("aria-pressed",String(!!e.data.construct));return;}
+  if(e.data?.kind==="neighbors"){nbSel={id:String(e.data.id),people:Number(e.data.people)||0,level:Number(e.data.level)||1};openCityPanel("neighbors");return;} // read-only card for a neighbours' house
   if(e.data?.kind==="plot"){if(bldSelPlot!==e.data.id){bldAction=null;bldError=null;}bldSelPlot=e.data.id;openCityPanel("plot");return;} // switching plots drops an armed action so confirm cannot hit the old plot
   if(e.data?.kind!=="building")return;
   if(String(e.data.id).startsWith("town:")){townSel=e.data.id.slice(5);openCityPanel("town");return;}

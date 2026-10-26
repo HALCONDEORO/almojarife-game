@@ -31,7 +31,7 @@ export function urbanLayout(canonical,pop) {
   road(plaza.x+5,cy-1,plaza.x+5,cy+16);
   // Fixed, bounded residential quarter south of civic square; counts, density and levels follow population.
   const existing=plots.filter(p=>p.type==='house').length;
-  const count=Math.max(0,housing.groups-existing);
+  const count=housing.groups; /* house-type parcels are lots for sale (drawn empty), so every residential group is its own drawn neighbour house */
   housing.groups=Math.max(existing,housing.groups);housing.peoplePerGroup=housing.groups?Math.round(pop/housing.groups):0;
   const residential=[],houseCols=Math.max(1,Math.min(cols,Math.ceil(Math.sqrt(count)*1.3)));
   const houseY=cy+18,houseRows=Math.ceil(count/houseCols);
