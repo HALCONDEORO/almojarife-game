@@ -404,6 +404,32 @@ function toast(msg, agg) {
 const FLEET_PIN_MIN = 500; // px of chart-area width; the fleet sits in the right-hand card now, so it stays open on every desktop width. The pin is the .fleet-pinned class
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
+let rightTab = "fleet", rtSig = "";
+const RT_TABS = [["fleet", "Flota", "Fleet"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
+function selectRightTab(tab) {
+  if (rightTab === tab) return;
+  rightTab = tab; rtSig = "";
+  if (tab === "rep") campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); // reading the weekly report is a mission step
+  render();
+}
+function openLedger(kind) { if (document.getElementById("v3d")) showLedger(kind); else selectRightTab(kind); }
+function renderRightTabs() {
+  const bar = $("rtabs"), fleetPane = $("rt-fleet"), led = $("rt-ledger"); if (!bar || !led) return;
+  const n = unread(g), key = `${lang}|${rightTab}|${n}`;
+  if (bar.dataset.key !== key) {
+    bar.dataset.key = key;
+    bar.innerHTML = RT_TABS.map(([id, es, en]) => `<button type="button" role="tab" data-rt="${id}" aria-selected="${rightTab === id}">${lang === "en" ? en : es}${id === "msg" && n ? ` (${n})` : ""}</button>`).join("");
+    bar.querySelectorAll("button").forEach((b) => b.onclick = () => selectRightTab(b.dataset.rt));
+  }
+  fleetPane.hidden = rightTab !== "fleet"; led.hidden = rightTab === "fleet";
+  if (rightTab === "fleet") return;
+  const sig = `${rightTab}|${lang}|${g.day}|${g.log?.length ?? 0}|${(g.inbox ?? []).length}|${n}|${g.reports?.length ?? 0}`;
+  if (sig === rtSig) return; rtSig = sig;
+  const top = led.scrollTop; led.innerHTML = ledgerBodyHtml(rightTab); led.scrollTop = top;
+  led.querySelectorAll("[data-report-target]").forEach((b) => b.onclick = () => led.querySelector(`#${b.dataset.reportTarget}`)?.scrollIntoView({ block: "start" }));
+  if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); rtSig = ""; render(); };
+  led.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); rtSig = ""; render(); });
+}
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
@@ -411,6 +437,7 @@ function render() {
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }) });
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   fitFleet();
+  renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
   $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
@@ -820,7 +847,7 @@ function render() {
   P.querySelectorAll("[data-contract-accept]").forEach((e) => e.onclick = () => act(() => acceptContract(g, e.dataset.contractAccept)));
   const rrb = P.querySelector("#rrumbtn"); if (rrb) rrb.onclick = () => act(() => buyRouteRumor(g, s.at));
   P.querySelector("[data-local-store]")?.addEventListener("click",()=>{if($("v3d"))openCityPanel("store");else{tab="store";render();}});
-  P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
+  P.querySelector("[data-local-reports]")?.addEventListener("click",()=>openLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
   P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
@@ -1170,12 +1197,17 @@ $("new").onclick = () => showMenu();
     fsb.onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else de.requestFullscreen().catch(() => {}); };
   }
 }
+function ledgerBodyHtml(kind) {
+  const styled = ui2dEnabled(location.search);
+  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
+  const body = () => kind === "rep" ? reportBody() : styled ? inbox2dHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k) : inboxHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k);
+  return body();
+}
 function showLedger(kind) {
   const el = $("title"), wasPlaying = playing; playing = false;
   if (kind === "rep") { campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); render(); } // reading the weekly report is a mission step
   const styled = ui2dEnabled(location.search);
-  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
-  const body = () => kind === "rep" ? reportBody() : styled ? inbox2dHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k) : inboxHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k);
+  const body = () => ledgerBodyHtml(kind);
   const draw = () => { el.innerHTML = styled ? `<section class="box wide ui2d-window${kind==='rep'?' ui2d-reports':''}" role="dialog" aria-modal="true" aria-labelledby="ui2d-title"><header class="ui2d-heading"><span aria-hidden="true">${kind==='rep'?'▤':'✉'}</span><h2 id="ui2d-title">${kind==='rep'?LT[lang].reports:LT[lang].messages}</h2><button id="l-close" class="pwin-close" aria-label="${LT[lang].close}" title="${LT[lang].close}">${CLOSE_ICON}</button></header><div class="ui2d-content">${body()}</div></section>` : `<div class="box wide ledgerdlg"><div class="ledger-body">${body()}</div><p class="ledger-close"><button id="l-close" class="pwin-close" aria-label="${LT[lang].close}" title="${LT[lang].close}">${CLOSE_ICON}</button></p></div>`; el.hidden = false;
     $("l-close").onclick = () => { el.hidden = true; playing = wasPlaying; autosave(); render(); if(styled)$(kind).focus(); };
     if(styled)el.querySelector(".ui2d-window").onkeydown=e=>{
@@ -1188,8 +1220,8 @@ function showLedger(kind) {
   draw();
   if(styled)$("l-close").focus();
 }
-$("rep").onclick = () => showLedger("rep");
-$("msg").onclick = () => showLedger("msg");
+$("rep").onclick = () => openLedger("rep");
+$("msg").onclick = () => openLedger("msg");
 $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); render(); };
 $("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", localStorage.getItem("missionMin") === "1" ? "0" : "1"); render(); };
 $("hint-tut-skip").onclick = () => act(() => skipTutorial(g));
