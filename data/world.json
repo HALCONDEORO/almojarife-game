@@ -1429,23 +1429,13 @@
      },
      "outcomes": [
       {
-       "p": 0.8,
+       "p": 1,
        "effects": {
-        "days": -1
+        "days": -0.8
        },
        "text": {
-        "es": "Ganas un día de viaje.",
-        "en": "You gain a day."
-       }
-      },
-      {
-       "p": 0.2,
-       "effects": {
-        "cash": -40
-       },
-       "text": {
-        "es": "El mástil cruje y toca repararlo (40 monedas).",
-        "en": "The mast cracks; repairs cost 40 coins."
+        "es": "Ganas casi un día de viaje.",
+        "en": "You gain almost a day."
        }
       }
      ]
@@ -1490,13 +1480,29 @@
      },
      "outcomes": [
       {
-       "p": 1,
+       "p": 0.85,
        "effects": {
-        "cash": 120
+        "salvage": {
+         "perCap": 2,
+         "jitter": 0.25
+        }
        },
        "text": {
-        "es": "Vendes lo recuperado por 120 monedas.",
-        "en": "You sell the salvage for 120 coins."
+        "es": "Vendes lo recuperado por {amt} monedas.",
+        "en": "You sell the salvage for {amt} coins."
+       }
+      },
+      {
+       "p": 0.15,
+       "effects": {
+        "salvage": {
+         "perCap": 1,
+         "jitter": 0.25
+        }
+       },
+       "text": {
+        "es": "Parte viene estropeada: solo sacas {amt} monedas.",
+        "en": "Part of it is spoiled: you only get {amt} coins."
        }
       }
      ]

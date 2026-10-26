@@ -64,6 +64,51 @@ export const BUILDING_TYPES = Object.freeze({
   corral: Object.freeze({ recipe: "corral", fee: 400, buildDays: 22, upkeep: 4, maxLevel: 3, minPop: 15000 }),
 });
 
+/** Display names for each building type, for game-layer text (auction and purchase messages) so no
+ *  message shows a raw type key. Spanish entries carry their article ("la granja") because every
+ *  current sentence wants it ("se lleva la granja", "compras la granja"); English entries are bare
+ *  and each sentence adds "the"/"a" as it needs. The web panel keeps its own bare table (T.bldTypes). */
+export const BUILDING_NAMES = Object.freeze({
+  house: Object.freeze({ es: "la casa", en: "house" }),
+  workshop: Object.freeze({ es: "el taller", en: "workshop" }),
+  warehouse: Object.freeze({ es: "el almacén", en: "warehouse" }),
+  farm: Object.freeze({ es: "la granja", en: "farm" }),
+  pasture: Object.freeze({ es: "la dehesa", en: "pasture" }),
+  sawmill: Object.freeze({ es: "el aserradero", en: "sawmill" }),
+  mine: Object.freeze({ es: "la mina", en: "mine" }),
+  house_poor: Object.freeze({ es: "la casa pobre", en: "poor house" }),
+  house_comfortable: Object.freeze({ es: "la casa acomodada", en: "well-off house" }),
+  house_rich: Object.freeze({ es: "la casa rica", en: "rich house" }),
+  oil_mill: Object.freeze({ es: "la almazara", en: "oil mill" }),
+  vineyard: Object.freeze({ es: "el viñedo", en: "vineyard" }),
+  saltworks: Object.freeze({ es: "la salina", en: "saltworks" }),
+  brewery: Object.freeze({ es: "la cervecería", en: "brewery" }),
+  soapworks: Object.freeze({ es: "la jabonería", en: "soapworks" }),
+  pottery: Object.freeze({ es: "la alfarería", en: "pottery works" }),
+  brickworks: Object.freeze({ es: "la ladrillería", en: "brickworks" }),
+  esparto_field: Object.freeze({ es: "el espartizal", en: "esparto field" }),
+  ranch: Object.freeze({ es: "la ganadería", en: "ranch" }),
+  armory: Object.freeze({ es: "la armería", en: "armory" }),
+  dock: Object.freeze({ es: "el muelle", en: "dock" }),
+  fishery: Object.freeze({ es: "la pesca", en: "fishery" }),
+  ironworks: Object.freeze({ es: "la fragua", en: "ironworks" }),
+  posito: Object.freeze({ es: "el pósito", en: "granary" }),
+  hospital: Object.freeze({ es: "el hospital", en: "hospital" }),
+  alhondiga: Object.freeze({ es: "la alhóndiga", en: "corn exchange" }),
+  caminos: Object.freeze({ es: "los caminos", en: "streets" }),
+  pozo: Object.freeze({ es: "el pozo", en: "well" }),
+  capilla: Object.freeze({ es: "la capilla", en: "chapel" }),
+  carniceria: Object.freeze({ es: "la carnicería", en: "butcher's" }),
+  molino: Object.freeze({ es: "el molino", en: "mill" }),
+  corral: Object.freeze({ es: "el corral de comedias", en: "playhouse" }),
+});
+
+/** The display name of a building type in one language, raw key as fallback (never throws). */
+export function buildingName(type, lang) {
+  const n = BUILDING_NAMES[type];
+  return (n && (lang === "en" ? n.en : n.es)) || type;
+}
+
 /** Types owned by the city-life and plague modules: offered to build only while g.citylife exists. */
 export const CIVIC_BUILDINGS = Object.freeze(["posito", "hospital", "alhondiga", "caminos", "pozo", "capilla", "carniceria", "molino", "corral"]);
 
@@ -329,6 +374,8 @@ export const cityAllowsProducer = (world, cityId, type) => producerCities(world,
 export const producerRate = (type, level) => { const p = PRODUCERS[type]?.pattern?.[level]; return p ? p.reduce((a, b) => a + b, 0) / p.length : 0; };
 /** Average batches a workshop level produces per day when the margin holds. */
 export const workshopRate = (level) => producerRate("workshop", level);
+/** Days of negative margin before the game warns (feed + weekly report + red card mark). */
+export const MARGIN_WARN_DAYS = 3;
 /** One production day of a port's active producers, run inside that port's (staggered) market tick so
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
@@ -345,7 +392,7 @@ export function workshopTick(g, cityId) {
   // (staff = 1) this is exactly pattern[day % length], the pre-jobs behaviour.
   const staffed = (pattern, d) => { const P = pattern.length; let t = Math.floor(d / P) * pattern.reduce((a, x) => a + x, 0); for (let i = 0; i < d % P; i++) t += pattern[i]; return t; };
   const batchesFor = (pattern, level) => Math.min(level, Math.floor(staff * staffed(pattern, day + 1)) - Math.floor(staff * staffed(pattern, day)));
-  for (const b of Object.values(plots)) {
+  for (const [plotId, b] of Object.entries(plots)) {
     if (b.state !== "active" || b.halted) continue; // halted: no workers, no production
     const def = PRODUCERS[b.type];
     if (!def) continue;
@@ -369,6 +416,12 @@ export function workshopTick(g, cityId) {
       }
       continue;
     }
+    const mq = quoteRecipe(g.world, g.market, cityId, def.recipe, 1);
+    const marginNow = mq.ok ? sellQuote(g.world, g.market, cityId, def.output, mq.outputs[def.output]) - mq.cost : null; // same quote the Buildings tab shows
+    if (marginNow !== null && marginNow <= 0) { // unquotable (no input stock) is not a margin signal
+      b.negDays = (b.negDays ?? 0) + 1;
+      if (b.negDays >= MARGIN_WARN_DAYS && !b.negWarned) { b.negWarned = 1; post(g, "bldMargin", { city: cityId, plot: plotId, type: b.type, margin: Math.round(marginNow) }); }
+    } else if (marginNow !== null) { b.negDays = 0; b.negWarned = 0; } // one profitable day clears the streak and re-arms the warning; an unquotable day (no stock) keeps the state
     const pattern = def.pattern[b.level] ?? def.pattern[3];
     for (let batches = batchesFor(pattern, b.level); batches >= 1; batches--) {
       const q = quoteRecipe(g.world, g.market, cityId, def.recipe, batches);

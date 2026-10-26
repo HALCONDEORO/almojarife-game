@@ -85,7 +85,9 @@ test('language toggle re-translates the whole city chrome live (Boat #427 catch)
   assert.ok(js.includes('function cityPanelTitle(tb)'), 'title fn');
   assert.ok(js.includes('d.querySelector(".city-window-title").textContent=cityPanelTitle(tb)'), 'open uses fn');
   assert.ok(js.includes('ttl.textContent = cityPanelTitle(w.dataset.cityPanel)'), 'sync refreshes title');
-  assert.ok(js.includes('cb.textContent = `${t.close} (Esc)`'), 'close label live');
+  assert.ok(js.includes('cb.setAttribute("aria-label", `${t.close} (Esc)`)'), 'close accessible label live');
+  assert.ok(js.includes('cb.title = `${t.close} (Esc)`'), 'close tooltip live');
+  assert.ok(!js.includes('cb.textContent = `${t.close} (Esc)`'), 'language switch preserves the drawn X');
   assert.ok(js.includes('"Mover ventana con las flechas" : "Move window with arrow keys"'), 'handle aria live');
 });
 
@@ -146,7 +148,7 @@ test('mission stays visible while the tutorial runs: stacked, mission first (Mar
 test('map hint also minimises and restores the mission, and stacks it under sail (Marco 25/10)', () => {
   assert.ok(js.includes('id="hint-mission-toggle"') || html.includes('id="hint-mission-toggle"'), 'map toggle exists');
   assert.ok(js.includes('$("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin"'), 'map toggle wired');
-  assert.ok(js.includes('(s.voyage.anchored ? t.hintAnchored : t.hintSea) + (objLine && !objMin ?'), 'mission stacks onto the voyage hint');
+  assert.ok(js.includes('(s.voyage.anchored ? t.hintAnchored : pendingEvent(g) ? t.hintEvent : t.hintSea) + (objLine && !objMin ?'), 'mission stacks onto the voyage hint');
   assert.ok(js.includes('objMin && objLine ? "" : objLine ||'), 'minimised docked map collapses to the flag button');
   assert.ok(js.includes('ht.hidden = !!g.over || !objLine'), 'toggle only with a live objective');
   assert.ok(html.includes('<div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div>'), 'toggle is a sibling so setLiveText cannot wipe it');
@@ -165,9 +167,9 @@ test('mission stays visible with a window open and minimises to a restorable chi
   assert.ok(!js.includes('handle-mission'), 'redundant window-handle echo removed (no duplicate controls)');
 });
 
-test('city windows show the ship card only where the ship operates (Marco 25/10)', () => {
-  assert.ok(js.includes('const shipCtx = !inCity || tab === "market" || tab === "store" || tab === "route" || tab === "yard"'), 'ship card gated per tab');
+test('city windows show the ship card only where the ship operates', () => {
+  assert.ok(js.includes('const shipCtx = !inCity || tab === "store" || tab === "route" || tab === "yard"'), 'ship card gated per tab (not in the market)');
   assert.ok(js.includes('if (shipCtx) {'), 'summary wrapped');
-  assert.ok(js.includes('if (!inCity || tab === "market") h += `<div title="${t.holdValue}">${t.holdValue}: '), 'hold value stays with the market');
+  assert.ok(js.includes('if (!inCity) h += `<div title="${t.holdValue}">${t.holdValue}: '), 'hold value stays out of city windows');
   assert.ok(js.includes('if (!inCity || tab === "market" || tab === "route") {'), 'best-ports box stays with market and route');
 });

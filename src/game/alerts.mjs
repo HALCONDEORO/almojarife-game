@@ -3,6 +3,7 @@
 // checked once a day against the real market. Plain data on g; save/load keeps them. No DOM here.
 import { price } from "../sim/market.mjs";
 import { post } from "./ledger.mjs";
+import { GOOD_ES, GOOD_EN } from "./news.mjs";
 
 export const ALERT_MAX = 8;
 
@@ -38,9 +39,10 @@ export function tickAlerts(g) {
     if ((a.dir === "below" && p > a.price) || (a.dir === "above" && p < a.price)) continue;
     g.priceAlerts.splice(g.priceAlerts.indexOf(a), 1);
     fired.push({ ...a, now: p });
+    const cName = g.world.nodes[a.city]?.name ?? a.city; // names the player reads, not raw keys
     post(g, "alert", { txt: a.dir === "below"
-      ? { es: `Alerta: ${a.good} en ${a.city} bajó a ${p} (tu marca: ${a.price}).`, en: `Alert: ${a.good} at ${a.city} fell to ${p} (your mark: ${a.price}).` }
-      : { es: `Alerta: ${a.good} en ${a.city} subió a ${p} (tu marca: ${a.price}).`, en: `Alert: ${a.good} at ${a.city} rose to ${p} (your mark: ${a.price}).` } });
+      ? { es: `Alerta: ${GOOD_ES[a.good] ?? a.good} en ${cName} bajó a ${p} (tu marca: ${a.price}).`, en: `Alert: ${GOOD_EN[a.good] ?? a.good} at ${cName} fell to ${p} (your mark: ${a.price}).` }
+      : { es: `Alerta: ${GOOD_ES[a.good] ?? a.good} en ${cName} subió a ${p} (tu marca: ${a.price}).`, en: `Alert: ${GOOD_EN[a.good] ?? a.good} at ${cName} rose to ${p} (your mark: ${a.price}).` } });
   }
   return fired;
 }

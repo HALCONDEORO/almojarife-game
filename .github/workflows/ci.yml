@@ -3,13 +3,21 @@ on:
   pull_request:
   push:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
+      - name: Cache the Natural Earth download
+        uses: actions/cache@v6
+        with:
+          path: data/ne_50m_land.geojson
+          key: ne50m-${{ hashFiles('tools/fetch_data.sh') }}
       - run: sh tools/fetch_data.sh
       - run: npm test

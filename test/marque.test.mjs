@@ -61,3 +61,18 @@ test("the validator rejects a union without a source or with an unknown realm", 
   const bad = { ...data, unions: [{ realms: ["castile", "atlantis"], from: 1580, until: 1640 }] };
   const p = validateRealms(bad, ids).join("|"); assert.match(p, /union 0: missing https source/); assert.match(p, /union 0: unknown realm/);
 });
+
+test("map-only realms validate zones but cannot enter gameplay holdings or unions", () => {
+  assert.ok(data.mapRealms.navarre);
+  assert.equal(namableRealms(data, 1480).includes("navarre"), false);
+  const bad = structuredClone(data);
+  bad.holdings.push({ port: "cadiz", realm: "navarre", from: 1480, until: 1481, source: data.mapRealms.navarre.source });
+  bad.unions.push({ realms: ["castile", "navarre"], from: 1480, until: 1481, source: data.mapRealms.navarre.source });
+  const errors = validateRealms(bad, ids).join("|");
+  assert.match(errors, /cadiz\/navarre\/1480: unknown realm/);
+  assert.match(errors, /union \d+: unknown realm/);
+  const unknown = structuredClone(data); unknown.zones.at(-1).realm = "atlantis";
+  assert.match(validateRealms(unknown, ids).join("|"), /zone \d+: unknown realm/);
+  const duplicate = structuredClone(data); duplicate.mapRealms.castile = duplicate.realms.castile;
+  assert.match(validateRealms(duplicate, ids).join("|"), /duplicates gameplay realm/);
+});

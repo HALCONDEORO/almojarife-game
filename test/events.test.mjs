@@ -16,13 +16,13 @@ test("the validator catches bad chances, unknown effects and missing languages",
 });
 test("events happen at sea at a sensible rate, never in port", () => {
   let hits = 0, days = 0;
-  for (let seed = 0; seed < 60; seed++) { const g = sailing(seed); for (let i = 0; i < 6; i++) { if (g.pending) break; days++; advanceDay(g); } if (g.pending) hits++; }
+  for (let seed = 0; seed < 60; seed++) { const g = sailing(seed); const fired = () => g.pending || (g.inbox ?? []).some((m) => m.kind === "event"); for (let i = 0; i < 6; i++) { if (fired()) break; days++; advanceDay(g); } if (fired()) hits++; }
   assert.ok(hits > 3 && hits < days * 0.3, `hits ${hits} in ${days} days`);
   const g = newGame(world, "cadiz", { events: true }); g.day = 30; for (let i = 0; i < 100; i++) advanceDay(g);
   assert.equal(g.pending, null);
 });
 test("a pending event stops the clock until the player chooses", () => {
-  let g; for (let s = 0; s < 400 && !(g = sailing(s)).pending; s++) { for (let i = 0; i < 6 && !g.pending; i++) advanceDay(g); if (g.pending) break; }
+  const g = sailing(1); g.pending = { event: "storm", ship: 1, day: g.day }; // fair wind and drifting cargo resolve on their own; a risky event pauses
   assert.ok(g.pending);
   const day = g.day; advanceDay(g); waitUntilArrival(g, g.ships[0]);
   assert.equal(g.day, day);

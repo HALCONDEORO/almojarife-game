@@ -9,6 +9,13 @@ import { GOOD_ES, GOOD_EN } from "./news.mjs";
 export const PREGON_CRIT = 2; // scarcity ratio (target/stock) that makes a good pregón-worthy, same as REP_CRIT_RATIO
 export const PREGON_COOLDOWN = 20; // days between pregones of the same city
 /** Maybe post one pregón on arrival at `at`. Returns { city, good, mayor } or null. */
+/** Units a market lacks to be back at its normal level while the pregón condition holds
+ * (scarcity ratio >= PREGON_CRIT), else 0. The badge's vigencia is the live shortage itself:
+ * it stands while the stores stay critical and lapses the day the market recovers. */
+export function pregonMissing(entry) {
+  if (!entry) return 0;
+  return scarcityOf(entry) >= PREGON_CRIT ? Math.max(1, Math.round(entry.target - entry.stock)) : 0;
+}
 export function arrivalPregon(g, at) {
   if (g.over) return null;
   const ent = g.market?.[at];
@@ -21,7 +28,7 @@ export function arrivalPregon(g, at) {
   (g.hallPregon ??= {})[at] = g.day;
   const cName = g.world.cities.find((c) => c.id === at)?.name ?? at;
   const mayor = townCouncil(g.world, at).mayor, gEs = GOOD_ES[good] ?? good, gEn = GOOD_EN[good] ?? good;
-  post(g, "pregon", { txt: {
+  post(g, "pregon", { city: at, good, txt: {
     es: `Pregón en ${cName}: el concejo del alcalde ${mayor} pide ${gEs}; las bodegas están casi vacías y se paga bien.`,
     en: `Proclamation at ${cName}: the council of mayor ${mayor} calls for ${gEn}; the stores are nearly empty and it pays well.`,
   } });

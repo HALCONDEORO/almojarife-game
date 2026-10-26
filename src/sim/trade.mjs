@@ -12,6 +12,21 @@ export const SHIP_TYPES = {
   caravel: { capacity: 40, kmPerDay: 140, upkeepPerDay: 3, price: 3000, buildDays: 12 },
   nao: { capacity: 110, kmPerDay: 80, upkeepPerDay: 5, price: 5200, buildDays: 25 },
 };
+
+/** Display names for each ship type, es/en, so game-layer messages never show a raw type key
+ *  ("una coca", not "una cog"). Bare names: each sentence adds its own article. */
+export const SHIP_TYPE_NAMES = Object.freeze({
+  barca: Object.freeze({ es: "barca", en: "barca" }),
+  cog: Object.freeze({ es: "coca", en: "cog" }),
+  caravel: Object.freeze({ es: "carabela", en: "caravel" }),
+  nao: Object.freeze({ es: "nao", en: "nao" }),
+});
+
+/** The display name of a ship type in one language, raw key as fallback (never throws). */
+export function shipTypeName(type, lang) {
+  const n = SHIP_TYPE_NAMES[type];
+  return (n && (lang === "en" ? n.en : n.es)) || type;
+}
 /** Hold space of a ship: its type capacity minus the weight of mounted weapons and sailors' gear. Never negative. */
 export const shipCapacity = (ship) => Math.max(0, SHIP_TYPES[ship.type].capacity - loadWeight(ship));
 export const FEE = 0.02; // market fee on every deal, both sides

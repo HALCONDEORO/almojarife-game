@@ -1,6 +1,6 @@
 import {regionalHousePlan,regionalRivalStep} from "./rivalhouses.mjs";
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
-import { setRoute, setRouteAdv, clearRoute, processRoutes } from "./routes.mjs";
+import { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf, repOf } from "./rank.mjs";
 import { RANKS } from "./rank.mjs";
@@ -17,10 +17,12 @@ import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { seaWearDay, hullSpeedFactor, hullWarning } from "./seawear.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
 import { gainXp } from "./captainxp.mjs";
 import { seeded } from "../view/cityscene.mjs";
+import { legWindFactor } from "../sim/weather.mjs";
 import { rollEvent } from "./events.mjs";
 import { tickShocks, portClosed } from "./shocks.mjs";
 import { tickAlerts } from "./alerts.mjs";
@@ -157,7 +159,12 @@ function dayTick(g) {
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
-    if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
+    if (s.voyage) { // armament and hull wear at sea, once per day; hull wear is weather-coupled for player ships (docs/design/hull-wear-rebalance.md)
+      wearGuns(s);
+      const before = s.hull ?? 100;
+      if (seaWearDay(g, s)) { const w = hullWarning(before, s); if (w) { g.log.unshift({ day: g.day, key: "event", txt: w, ship: s.id }); if (g.log.length > 30) g.log.pop(); post(g, "event", { txt: w, ship: s.id }); } }
+      else tickShip(s); // anchored or voyage-less edge: keep the old charge model
+    }
     accrueDay(g, s);
   }
   const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
@@ -170,7 +177,7 @@ function dayTick(g) {
   if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
-  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)) }); // ships with a standing route act on the day they are docked
+  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => repairShip(g, s)), repairQuote: (s) => repairPrice(g, s) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
   dailyJustice(g); // flag off: nothing
@@ -198,7 +205,7 @@ function dayTick(g) {
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
-  wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
+  wearGuns(s); seaWearDay(g, s, true); // the arrival day counts as a day at sea (weather at the arrival position), charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
   arrivalJustice(g, s); // flag off or no data: nothing
   gainXp(g, s, "navigation"); // flag off: nothing
@@ -251,7 +258,7 @@ export function advanceTick(g) {
   for (const s of g.ships) if (sailTick(s)) arrive(g, s);
   for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
   for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // AI traders act (and pay the arrival day's wear) on their own arrival tick
-  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
+  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s, g.world); // one seeded roll per tick at sea; a pirate decision stops time; the weather field turns a roll inside a storm cell into that storm
   marketTick(g);
   tickBuildings(g); // construction finishes on its exact tick
   tickWalls(g); // wall works finish on their exact tick (flag off: nothing)
@@ -286,22 +293,33 @@ export function doSell(g, ship, good, qty) {
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
+/** Wind for a fresh leg: the regional weather field when both ends have a fix (ports and chart clicks), else the old flat roll. Same 0.8-1.2 range either way. */
+function legWind(g, ship, from, toId, lat, lon) {
+  const a = g.world.cities.find((c) => c.id === from);
+  const b = Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : g.world.cities.find((c) => c.id === toId);
+  if (a && b) return legWindFactor(a, b, g.day, g.seed ?? 0);
+  return 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${toId}`)();
+}
+
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
-  if (ship.convoy && g.convoys?.[ship.convoy]) return { ok: false, reason: "convoy" }; // a convoy sails together to a port
-  if (speedFactor(ship) <= 0) return { ok: false, reason: "crew" };
+  // A refused course change leaves its reason on the ship (the voyage card shows it until a new order succeeds).
+  const refuse = (reason) => { ship.navError = reason; return { ok: false, reason }; };
+  if (ship.convoy && g.convoys?.[ship.convoy]) return refuse("convoy"); // a convoy sails together to a port
+  if (speedFactor(ship) <= 0) return refuse("crew");
   const docked = !ship.voyage;
-  if (docked && heldNow(g, ship)) return { ok: false, reason: "held" };
+  if (docked && heldNow(g, ship)) return refuse("held");
   const plan = planTrip(g.world, ship, lat, lon);
-  if (!plan.ok) return plan;
+  if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
+  delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
   // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
   const pos = docked ? null : locate(g.world, ship);
   const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
   // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
-  const wind = docked ? 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)() : (ship.voyage.wind ?? 1);
+  const wind = docked ? legWind(g, ship, from, plan.to, lat, lon) : (ship.voyage.wind ?? 1);
   const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
   const ticks = Math.max(1, Math.round(ticksForKm(plan.km, spec.kmPerDay) / (mul * wind)));
   const prevSailLogged = ship.voyage?.sailLogged === true;
@@ -326,9 +344,9 @@ export function doSail(g, ship, to) {
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
   const from = ship.at;
-  // Per-leg wind, seeded by departure tick and leg, so replays and save/load keep the same weather.
-  const wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${to}`)();
-  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship), wind });
+  // Per-leg wind from the regional field (seeded by day and leg ends), so replays and save/load keep the same weather.
+  const wind = legWind(g, ship, from, to);
+  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship) * hullSpeedFactor(ship.hull), wind }); // a damaged hull sails slower from the first tick
   if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
   if (r.ok) campaignEvent(g, { kind: "sail", to }, MISSION);
@@ -368,8 +386,10 @@ export function deliverOrders(g) {
 }
 export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
 export const repairPrice = (g, ship) => Math.ceil(repairCost(ship) * repairMul(g, ship.at)); // reputation discounts the shipyard bill
-export function repairShip(g, ship) {
+/** `at` (optional) is the port the player is acting from: a ship can only be repaired where it is docked. Omitted by automatic routes, which act on their own docked ship. */
+export function repairShip(g, ship, at) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (at !== undefined && ship.at !== at) return { ok: false, reason: "not in this port" };
   const c = repairPrice(g, ship);
   if (c <= 0) return { ok: false, reason: "no damage" };
   if (g.cash < c) return { ok: false, reason: "no cash" };
@@ -469,6 +489,6 @@ export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g)
 export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g, city) => loanRoom(g, netWorth(g), city); // pass the port: the lender of that port sets the terms
 export { loansOwed };
-export { setRoute, setRouteAdv, clearRoute };
+export { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats };
 import { removeFromConvoy } from "./convoys.mjs";
 export { formConvoy, leaveConvoy, disbandConvoy, sailConvoy, escortOf, convoyOf, removeFromConvoy } from "./convoys.mjs";

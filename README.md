@@ -10,7 +10,7 @@
 
 You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
 
-**Status: early alpha.** It is playable and free, but rough. The honest list of what is still missing for the alpha is below.
+**Status: experimental development build.** A first public beta pre-release is being prepared, not published. The game is playable and free, but rough.
 
 **Platform: desktop only.** El Almojarife is a desktop game: it is played in a Windows, Mac or Linux browser with keyboard and mouse. It is not designed for or tested on phones or tablets.
 
@@ -30,9 +30,13 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 - **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your desktop browser.
 - **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
 
+## Documentation and release status
+
+This README describes merged source at the documentation checkpoint, not a deployment guarantee. [Current state](docs/CURRENT-STATE.md) separates integrated work from the release candidate. Generated wiki tables come from the game; update them through their generator.
+
 ## Screenshots
 
-_The city plan (`city2d.png`) and sea chart (`map.png`) were refreshed on 25 Oct 2026 from the playable build at `main` 2bca84349d37f49e839aafae2710fdfe89bf2ba0 (English). The remaining screenshots are earlier captures and were not refreshed in that update. Refresh screenshots when the UI changes so they never show unmerged work._
+_Historical screenshot set, not release-candidate evidence. All eight screenshots were refreshed on 26 Oct 2026 (English). The city plan (`city2d.png`) was captured from the playable build at `main` d8a7383bf9713fd0d4f980363685cc1d06a1a22b and the sea chart (`map.png`) from `main` 8165918820eadd41ef7580c64b973a9f426dbcc6; the remaining six were captured from `main` c4ef80d84bdc1f500809eb4c7e163b0894a5fd2e. Refresh screenshots when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
@@ -47,7 +51,7 @@ _The city plan (`city2d.png`) and sea chart (`map.png`) were refreshed on 25 Oct
 ## How to play
 
 1. Pick a name and a home port, then **Start**.
-2. A new game starts in the three-step tutorial, then the mission campaign. There is no fixed coin goal or deadline (games started before this change keep their 50,000 coins / 365 days goal). Going bankrupt still ends the game.
+2. A new game starts with the tutorial and mission campaign. There is no fixed coin goal or deadline (games started before this change keep their 50,000 coins / 365 days goal). Going bankrupt still ends the game.
 3. In the **Market** tab, look for the green ▼ (cheap: buy) and red ▲ (dear: sell) arrows.
 4. Click a port on the map, or a **Sail to** button, then press **Sail** to move time. Your ship takes days to arrive.
 5. Sell where the price is high. Build a second ship in the **Shipyard**. Press **Esc** for the menu.
@@ -55,28 +59,28 @@ _The city plan (`city2d.png`) and sea chart (`map.png`) were refreshed on 25 Oct
 
 Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to reset.
 
-## What is missing for the alpha
+## What remains before the first beta release
 
-The game is being built in public, in small pull requests with tests and review. This is the honest state:
+Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.5.0-beta.1`, not yet published. The intended audience is public; publication remains pending final owner approval, integrated documentation, polish and Playtest approval. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
 
 **Still missing or in progress:**
 
 - **The campaign.** The mission engine and the first missions (an opening main chain and two side missions) are playable. The full arc - varied requirements, narrative, more side missions and rewards - is being added mission by mission.
 - **A richer city-centred interface.** Clicking a port already opens a city view with market, buildings, council and office tabs; more of the interface is moving city-side, piece by piece.
 - **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs) and fixes keep landing: loans now carry real risk (foreclosure), the bankruptcy flow is kinder, and production respects staffing. The opening goal is still easier than intended for optimal play; tuning continues behind the harness.
-- **Importing building materials** for construction is written and in review, not merged yet.
-- **Sound, tutorial, full 3D for every city, world map by historical milestones.** Not started.
+- **Release readiness.** The current batch, documentation review, exact-commit deployment and desktop playtest are still being checked. Open PRs are not shipped features.
+- **Presentation and content.** Sound, campaign coverage, historical map presentation and city polish still need a release-readiness review. The tutorial exists; it is not an unstarted feature.
 - **The name** "Almojarife" is provisional.
 
-Dates are a plan, not a promise: alpha is targeted for 14 Jul 2027 and 1.0 for 28 Feb 2028. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
+The historical milestone plan records an alpha target of 14 Jul 2027 and 1.0 of 28 Feb 2028. Those milestones are not a date announcement for the proposed early `0.x` pre-release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
 
 ## Run it yourself
 
 You need Node 20 or newer and any static web server:
 
     npm run serve        # then open http://localhost:8080/web/index.html
-    npm test             # simulation, AI traders, game logic, saves, ledger, 3D scene
-    sh tools/fetch_data.sh   # downloads the coastline data (not stored in the repo)
+    sh tools/fetch_data.sh   # first: download coastline data needed by world tests
+    npm test             # simulation, AI traders, game logic, saves, ledger, scenes
 
 The sea-chart background is rebuilt by `tools/build_background.py` from the Natural Earth raster; the finished image is in `assets/map/`.
 

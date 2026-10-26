@@ -81,3 +81,9 @@ test('summary card: short crew flagged, at-sea state shows the route and eta',()
  const sea=shipWindowHtml(g,s,'en','data',hpEn);
  assert.ok(sea.includes('At sea: cadiz → malaga'),'sea state line');
 });
+test('data tab: an advanced route lists its stops, never "undefined"',()=>{
+ const{g,s}=mk();
+ s.route={v:2,legs:3,stops:[{city:'cadiz',buy:[],sell:[]},{city:'malaga',buy:[],sell:[]}]};
+ for(const [lang,h] of [['es',hp],['en',hpEn]]){const t=shipWindowHtml(g,s,lang,'data',h);
+  assert.ok(!t.includes('undefined'),lang+' no undefined');assert.ok(t.includes('cadiz → malaga'),lang+' stops');}
+});

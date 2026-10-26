@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them.",
+  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them. 'zones' holds approximate hand-drawn realm washes (lon/lat polygons) for the political map mode: each row enters only with a cited source, follows the same from/until convention, and is a soft period wash by design, never an exact border. Ports with no verified holding (e.g. the Moroccan coast) belong to no realm and get no wash. Map-only realm definitions in mapRealms are not holdings, letters-of-marque targets or unions. Political fills are clipped to the public-domain Natural Earth land mask matching background.webp. Unverified land has a labelled neutral wash, not an invented owner. Moroccan map-only dynasties do not add or change port holdings.",
   "realms": {
     "castile": {
       "name": {
@@ -263,5 +263,772 @@
       "source": "https://en.wikipedia.org/wiki/Iberian_Union",
       "note": "Iberian Union (Hispanic Monarchy): Portugal in personal union with the Spanish crowns, 1580 to 1640. Realms stay distinct for holdings, but share a monarch."
     }
-  ]
+  ],
+  "zones": [
+    {
+      "realm": "castile",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Castile",
+      "polygon": [
+        [
+          -7.4,
+          37.18
+        ],
+        [
+          -7.4,
+          36.8
+        ],
+        [
+          -6.6,
+          36.1
+        ],
+        [
+          -5.7,
+          35.8
+        ],
+        [
+          -5.1,
+          35.9
+        ],
+        [
+          -4.97,
+          36.72
+        ],
+        [
+          -4.85,
+          36.95
+        ],
+        [
+          -4.35,
+          37.3
+        ],
+        [
+          -3.6,
+          37.45
+        ],
+        [
+          -2.9,
+          37.55
+        ],
+        [
+          -2.15,
+          37.3
+        ],
+        [
+          -2.15,
+          36.95
+        ],
+        [
+          -0.98,
+          37.6
+        ],
+        [
+          -0.85,
+          37.95
+        ],
+        [
+          -0.95,
+          38.4
+        ],
+        [
+          -1.0,
+          39.3
+        ],
+        [
+          -1.25,
+          40.0
+        ],
+        [
+          -1.55,
+          40.6
+        ],
+        [
+          -1.6,
+          41.3
+        ],
+        [
+          -1.5,
+          41.9
+        ],
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.75,
+          42.0
+        ],
+        [
+          -2.2,
+          42.1
+        ],
+        [
+          -2.45,
+          42.55
+        ],
+        [
+          -2.5,
+          42.85
+        ],
+        [
+          -1.9,
+          43.15
+        ],
+        [
+          -1.7,
+          43.7
+        ],
+        [
+          -2.0,
+          43.85
+        ],
+        [
+          -4,
+          44.2
+        ],
+        [
+          -8.8,
+          44.2
+        ],
+        [
+          -10,
+          43
+        ],
+        [
+          -10,
+          41.9
+        ],
+        [
+          -8.85,
+          41.9
+        ],
+        [
+          -8.15,
+          41.9
+        ],
+        [
+          -7.5,
+          41.9
+        ],
+        [
+          -7.0,
+          41.9
+        ],
+        [
+          -6.19,
+          41.8
+        ],
+        [
+          -6.62,
+          41.45
+        ],
+        [
+          -6.8,
+          40.75
+        ],
+        [
+          -6.95,
+          40.05
+        ],
+        [
+          -6.95,
+          39.25
+        ],
+        [
+          -7.1,
+          38.35
+        ],
+        [
+          -7.05,
+          37.55
+        ]
+      ]
+    },
+    {
+      "realm": "granada",
+      "from": null,
+      "until": 1492,
+      "source": "https://en.wikipedia.org/wiki/Emirate_of_Granada",
+      "polygon": [
+        [
+          -5.15,
+          36.25
+        ],
+        [
+          -4.44,
+          36.25
+        ],
+        [
+          -3.55,
+          36.25
+        ],
+        [
+          -2.3,
+          36.25
+        ],
+        [
+          -1.95,
+          36.95
+        ],
+        [
+          -2.15,
+          37.3
+        ],
+        [
+          -2.9,
+          37.55
+        ],
+        [
+          -3.6,
+          37.45
+        ],
+        [
+          -4.35,
+          37.3
+        ],
+        [
+          -4.85,
+          36.95
+        ]
+      ]
+    },
+    {
+      "realm": "castile",
+      "from": 1492,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Emirate_of_Granada",
+      "polygon": [
+        [
+          -5.15,
+          36.25
+        ],
+        [
+          -4.44,
+          36.25
+        ],
+        [
+          -3.55,
+          36.25
+        ],
+        [
+          -2.3,
+          36.25
+        ],
+        [
+          -1.95,
+          36.95
+        ],
+        [
+          -2.15,
+          37.3
+        ],
+        [
+          -2.9,
+          37.55
+        ],
+        [
+          -3.6,
+          37.45
+        ],
+        [
+          -4.35,
+          37.3
+        ],
+        [
+          -4.85,
+          36.95
+        ]
+      ]
+    },
+    {
+      "realm": "portugal",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Portugal",
+      "polygon": [
+        [
+          -7.4,
+          37.18
+        ],
+        [
+          -7.5,
+          36.5
+        ],
+        [
+          -10,
+          36.5
+        ],
+        [
+          -10,
+          42
+        ],
+        [
+          -8.85,
+          41.9
+        ],
+        [
+          -8.15,
+          41.9
+        ],
+        [
+          -7.5,
+          41.9
+        ],
+        [
+          -7.0,
+          41.9
+        ],
+        [
+          -6.19,
+          41.8
+        ],
+        [
+          -6.62,
+          41.45
+        ],
+        [
+          -6.8,
+          40.75
+        ],
+        [
+          -6.95,
+          40.05
+        ],
+        [
+          -6.95,
+          39.25
+        ],
+        [
+          -7.1,
+          38.35
+        ],
+        [
+          -7.05,
+          37.55
+        ]
+      ]
+    },
+    {
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon",
+      "polygon": [
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.3,
+          42.7
+        ],
+        [
+          -0.6,
+          42.75
+        ],
+        [
+          0.3,
+          42.65
+        ],
+        [
+          1.75,
+          42.45
+        ],
+        [
+          2.45,
+          42.3
+        ],
+        [
+          3.0500000000000003,
+          42.4
+        ],
+        [
+          3.5500000000000003,
+          42.45
+        ],
+        [
+          3.6500000000000004,
+          42.2
+        ],
+        [
+          3.4000000000000004,
+          41.85
+        ],
+        [
+          3.0,
+          41.6
+        ],
+        [
+          2.62,
+          41.38
+        ],
+        [
+          2.0500000000000003,
+          41.25
+        ],
+        [
+          1.7,
+          41.12
+        ],
+        [
+          1.3,
+          40.72
+        ],
+        [
+          0.75,
+          40.1
+        ],
+        [
+          -0.05,
+          39.98
+        ],
+        [
+          0.14999999999999997,
+          38.75
+        ],
+        [
+          -0.14,
+          38.34
+        ],
+        [
+          -0.35,
+          37.9
+        ],
+        [
+          -0.95,
+          38.4
+        ],
+        [
+          -1.0,
+          39.3
+        ],
+        [
+          -1.25,
+          40.0
+        ],
+        [
+          -1.55,
+          40.6
+        ],
+        [
+          -1.6,
+          41.3
+        ],
+        [
+          -1.5,
+          41.9
+        ]
+      ]
+    },
+    {
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon",
+      "polygon": [
+        [
+          1.9733333333333327,
+          39.382666666666665
+        ],
+        [
+          2.6933333333333334,
+          39.02266666666666
+        ],
+        [
+          3.5933333333333337,
+          39.562666666666665
+        ],
+        [
+          3.503333333333333,
+          40.102666666666664
+        ],
+        [
+          2.513333333333333,
+          40.06666666666667
+        ],
+        [
+          1.9733333333333327,
+          39.74266666666667
+        ]
+      ]
+    },
+    {
+      "realm": "aragon",
+      "from": null,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Crown_of_Aragon",
+      "polygon": [
+        [
+          1.0335999999999999,
+          38.816
+        ],
+        [
+          1.4656,
+          38.672
+        ],
+        [
+          1.8976,
+          39.032
+        ],
+        [
+          1.5736,
+          39.212
+        ],
+        [
+          1.0695999999999999,
+          39.068000000000005
+        ]
+      ]
+    },
+    {
+      "realm": "tlemcen",
+      "from": null,
+      "until": 1556,
+      "source": "https://en.wikipedia.org/wiki/Kingdom_of_Tlemcen",
+      "polygon": [
+        [
+          -2.5,
+          35.8
+        ],
+        [
+          -1.5,
+          36.1
+        ],
+        [
+          -0.4,
+          36.5
+        ],
+        [
+          0.7,
+          36.6
+        ],
+        [
+          0.7,
+          32
+        ],
+        [
+          -2.5,
+          32
+        ]
+      ]
+    },
+    {
+      "realm": "algiers",
+      "from": 1516,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/History_of_the_Regency_of_Algiers",
+      "polygon": [
+        [
+          0.7,
+          36.6
+        ],
+        [
+          2,
+          37.3
+        ],
+        [
+          4.8,
+          37.6
+        ],
+        [
+          4.8,
+          33
+        ],
+        [
+          0.7,
+          33
+        ]
+      ]
+    },
+    {
+      "realm": "navarre",
+      "from": null,
+      "until": 1515,
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "polygon": [
+        [
+          -2.45,
+          42.55
+        ],
+        [
+          -2.2,
+          42.1
+        ],
+        [
+          -1.75,
+          42.0
+        ],
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.3,
+          42.7
+        ],
+        [
+          -0.85,
+          42.95
+        ],
+        [
+          -1.15,
+          43.15
+        ],
+        [
+          -1.7,
+          43.4
+        ],
+        [
+          -1.9,
+          43.15
+        ],
+        [
+          -2.5,
+          42.85
+        ]
+      ],
+      "note": "Approximate southern Navarre wash; conquest 1512, formal incorporation in Castile 1515. Northern Navarre outside this chart is not claimed."
+    },
+    {
+      "realm": "castile",
+      "from": 1515,
+      "until": null,
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "polygon": [
+        [
+          -2.45,
+          42.55
+        ],
+        [
+          -2.2,
+          42.1
+        ],
+        [
+          -1.75,
+          42.0
+        ],
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.3,
+          42.7
+        ],
+        [
+          -0.85,
+          42.95
+        ],
+        [
+          -1.15,
+          43.15
+        ],
+        [
+          -1.7,
+          43.4
+        ],
+        [
+          -1.9,
+          43.15
+        ],
+        [
+          -2.5,
+          42.85
+        ]
+      ]
+    },
+    {
+      "realm": "wattasid",
+      "from": null,
+      "until": 1549,
+      "source": "https://en.wikipedia.org/wiki/Wattasid_dynasty",
+      "polygon": [
+        [
+          -12,
+          33.6
+        ],
+        [
+          -12,
+          36.05
+        ],
+        [
+          -5.6,
+          36.05
+        ],
+        [
+          -4.5,
+          35.65
+        ],
+        [
+          -2.5,
+          35.8
+        ],
+        [
+          -2.5,
+          33.6
+        ]
+      ],
+      "note": "Approximate northern Morocco/Fez hinterland only, not southern principalities. Control contested1549-1554 is neutral. No exact coastal enclave control asserted."
+    },
+    {
+      "realm": "saadi",
+      "from": 1554,
+      "until": null,
+      "source": "https://en.wikipedia.org/wiki/Saadi_Sultanate",
+      "polygon": [
+        [
+          -12,
+          32
+        ],
+        [
+          -12,
+          36.05
+        ],
+        [
+          -5.6,
+          36.05
+        ],
+        [
+          -4.5,
+          35.65
+        ],
+        [
+          -2.5,
+          35.8
+        ],
+        [
+          -2.5,
+          32
+        ]
+      ],
+      "note": "Broad map-only context after1554 consolidation. Contested1549-1554 left neutral, no exact coastal enclave control asserted."
+    }
+  ],
+  "mapRealms": {
+    "navarre": {
+      "name": {
+        "es": "Navarra",
+        "en": "Navarre"
+      },
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "note": "Map-only territorial context. No port holding, marque target or union is added."
+    },
+    "wattasid": {
+      "name": {
+        "es": "Sultanato wattásida",
+        "en": "Wattasid Sultanate"
+      },
+      "source": "https://en.wikipedia.org/wiki/Wattasid_dynasty",
+      "note": "Map-only broad Moroccan context, not precise control of individual coastal enclaves."
+    },
+    "saadi": {
+      "name": {
+        "es": "Sultanato saadí",
+        "en": "Saadi Sultanate"
+      },
+      "source": "https://en.wikipedia.org/wiki/Saadi_Sultanate",
+      "note": "Map-only broad context after1554 consolidation.1549-1554contestedneutral. No port holdings."
+    }
+  }
 }

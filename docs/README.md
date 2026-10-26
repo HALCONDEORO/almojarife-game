@@ -11,3 +11,12 @@ Platform: the game is desktop-only (Windows, Mac and Linux browsers, keyboard an
 - `PROCESS.md`: rules, models used, PR log, where things are, next step.
 - `design/`: era and goods, glossary, i18n, missions, licences, content stance.
 - `port-sources.md`: one historical source per port, with a note on why it matters around 1500.
+
+## Current build and releases
+
+- [CURRENT-STATE.md](CURRENT-STATE.md): source checkpoint, implemented changes and known gaps.
+- [RELEASE.md](RELEASE.md): proposed versions, batch workflow, audience and release gates.
+- [RELEASE-NOTES-DRAFT.md](RELEASE-NOTES-DRAFT.md): unapproved notes, not a published release.
+- [wiki/README.md](wiki/README.md): game reference. Keep generated tables tied to game data.
+
+ROADMAP and DESIGN retain historical planning decisions. Their original scope tables are not a live feature inventory.

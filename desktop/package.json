@@ -1,0 +1,23 @@
+{
+  "name": "almojarife-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Desktop shell for El Almojarife (Electron). The game itself lives at the repository root.",
+  "main": "main.cjs",
+  "scripts": {
+    "sync": "node sync.mjs",
+    "start": "node sync.mjs && electron .",
+    "dist": "node sync.mjs && electron-builder --publish never",
+    "test": "node --test test/*.test.cjs"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "js-yaml": "^5.5.0"
+  },
+  "homepage": "https://github.com/HALCONDEORO/almojarife-game",
+  "author": {
+    "name": "Marco Tevar",
+    "email": "HALCONDEORO@users.noreply.github.com"
+  }
+}

@@ -35,6 +35,7 @@ export const TB = {
   "archive": "El archivo de la casa",
   "import": "Importar",
   "export": "Exportar",
+  "slots": "Ranuras de guardado",
   "restore": "Restaurar copia previa",
   "restoreEmpty": "No hay copia previa disponible.",
   "restoreHint": "Copia del día {day} · {house}",
@@ -72,6 +73,7 @@ export const TB = {
   "archive": "The house archives",
   "import": "Import",
   "export": "Export",
+  "slots": "Save slots",
   "restore": "Restore previous copy",
   "restoreEmpty": "No previous copy is available.",
   "restoreHint": "Copy from day {day} · {house}",
@@ -92,14 +94,6 @@ const DEFS = `<svg class="definitions" aria-hidden="true">
         <circle cx="20" cy="12" r="2" fill="currentColor"/>
       </symbol>
       <symbol id="flourish" viewBox="0 0 30 18"><path d="M1 9h24m-7-5 7 5-7 5M4 6l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="28" cy="9" r="1" fill="currentColor"/></symbol>
-      <symbol id="rose" viewBox="0 0 100 100">
-        <g fill="none" stroke="currentColor"><circle cx="50" cy="50" r="34" stroke-width=".6"/><circle cx="50" cy="50" r="30" stroke-width=".4"/><path d="M50 10v80M10 50h80M21 21l58 58m0-58L21 79" stroke-width=".5"/></g>
-        <path d="m50 13 6 31 31 6-31 6-6 31-6-31-31-6 31-6Z" fill="#eee1b5" stroke="currentColor" stroke-width=".7"/>
-        <path d="m50 13 6 31-6 6Zm37 37-31 6-6-6ZM50 87l-6-31 6-6ZM13 50l31-6 6 6Z" fill="#8c2a1c"/>
-        <path d="m27 27 23 15 23-15-15 23 15 23-23-15-23 15 15-23Z" fill="none" stroke="currentColor" stroke-width=".7"/>
-        <circle cx="50" cy="50" r="3" fill="currentColor"/>
-        <path d="m47 6 3-5 3 5-3-1Z" fill="currentColor"/>
-      </symbol>
     </defs>
   </svg>
   `;
@@ -113,11 +107,6 @@ const OBJ1 = `<div class="desk-object candle" aria-hidden="true">
           <ellipse cx="42" cy="146" rx="17" ry="3" fill="#b29156" opacity=".6"/>
         </svg>
       </div>
-      <svg class="desk-object compass" viewBox="0 0 180 180" aria-hidden="true">
-        <circle cx="90" cy="90" r="79" fill="#30251a" stroke="url(#brass)" stroke-width="7"/><circle cx="90" cy="90" r="71" fill="#d5c18c" stroke="#5d4828" stroke-width="2"/>
-        <circle cx="90" cy="90" r="65" fill="none" stroke="#937a43" stroke-width="5" stroke-dasharray="1 5"/><use href="#rose" x="30" y="30" width="120" height="120" style="color:#59462c"/>
-        <circle cx="90" cy="90" r="71" fill="#e9d9a312"/><path d="M38 56q36-41 77-20" fill="none" stroke="#fff0ae" opacity=".23" stroke-width="4"/>
-      </svg>
 
       `;
 const OBJ2 = `<svg class="desk-object quill" viewBox="0 0 146 318" aria-hidden="true">
@@ -144,6 +133,7 @@ export function titleBookHtml({ lang, saved, backup, dayLabel, coinsLabel }) {
   const first = saved ? [cont, start] : [start, cont];
   const menu = first.map((h) => h.replace(/@[SC]/, idx())).join("") + `<div class="menu-divider">${esc(x.archive)}</div>` +
     entry("t-imp", idx(), x.import, null, " utility") + entry("t-exp", idx(), x.export, { dis: !saved }, " utility") +
+    entry("t-slots", idx(), x.slots, null, " utility") +
     entry("t-rest", idx(), x.restore, { text: backup ? x.restoreHint.replace("{day}", backup.day).replace("{house}", backup.house) : x.restoreEmpty, dis: !backup }, " utility") +
     entry("t-cred", idx(), x.credits, null, " utility");
   const card = saved
@@ -175,7 +165,6 @@ export function titleBookHtml({ lang, saved, backup, dayLabel, coinsLabel }) {
                 <img class="ship" src="city2d/assets/barco.webp" alt="" width="512" height="512">
               </div>
               <span class="plate-label" aria-hidden="true" data-i18n="plateLabel">La bahía de Cádiz</span>
-              <svg class="chart-rose" viewBox="0 0 100 100" aria-hidden="true"><use href="#rose"/></svg>
               <span class="plate-number" aria-hidden="true">I · ${YR}</span>
             </div>
             <figcaption data-i18n="caption">Carta de una ambición · Cádiz, 1475</figcaption>

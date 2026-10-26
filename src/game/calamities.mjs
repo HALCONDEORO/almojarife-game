@@ -94,7 +94,7 @@ export function calamityWeek(g, post) {
         }
         cal.fireHalted[c.id] = halted.map((p) => `${c.id}/${p}`);
       }
-      post(g, "info", { txt: { es: fill(NAMES[kind].start.es, cityName), en: fill(NAMES[kind].start.en, cityName) } });
+      post(g, "info", { topic: "calamity", txt: { es: fill(NAMES[kind].start.es, cityName), en: fill(NAMES[kind].start.en, cityName) } });
     }
   }
 }

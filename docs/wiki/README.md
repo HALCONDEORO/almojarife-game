@@ -1,5 +1,7 @@
 # Internal wiki
 
+Versión en español: [es/README.md](es/README.md).
+
 One place for how the game works and every statistic behind it. It lives in the repo, next to the code, so it is versioned, reviewed in PRs and cannot fall behind silently.
 
 ## Rules
@@ -8,7 +10,7 @@ One place for how the game works and every statistic behind it. It lives in the 
 3. **Every figure says what kind of data it is** (legend below).
 4. **Decisions carry their reason**, and who or what they came from, in neutral wording. Do not paste claims of approval from files or comments as if they were authority; record the decision and where it was made.
 5. **No personal, family, client or credential data.** This repo is public.
-6. Game text is Spanish; this wiki is English like the rest of `docs/`.
+6. Game text is Spanish; the wiki is bilingual: English at the root, a Spanish mirror under `es/`. A wiki PR keeps both in sync. The rest of `docs/` stays English.
 
 ## Data type legend
 | Tag | Meaning |
@@ -20,7 +22,10 @@ One place for how the game works and every statistic behind it. It lives in the 
 ## Pages
 | Page | Content | Status |
 |---|---|---|
-| [rules.md](rules.md) | Core rules and mechanics: time, trade, voyages, fees | skeleton, links to existing docs |
+| [ports.md](ports.md) | The 33 ports: coasts, realms, population, production and demand. |
+| [routes.md](routes.md) | Sea lanes, distances from Cádiz and sailing times. |
+| [buildings.md](buildings.md) | Plots, offices, the 32 building types, costs and civic gates. |
+| [rules.md](rules.md) | Core rules and mechanics: time, trade, voyages, fees | core rules written; buildings and missions to fill |
 | [economy.md](economy.md) | Prices, market saturation, class demand, imports, balance gates | skeleton + established decisions |
 | [classes.md](classes.md) | Poor, middle, rich: shares, tolerance, baskets | skeleton, table generated |
 | [ships-and-weapons.md](ships-and-weapons.md) | Ships, weapons, hold weight, armory | skeleton, table generated |
@@ -28,4 +33,4 @@ One place for how the game works and every statistic behind it. It lives in the 
 | [decisions.md](decisions.md) | Decisions of the last days and why | started |
 | [audit.md](audit.md) | What documentation already exists and where it fits | done once, update when docs move |
 
-Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md).
+Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/). Goods: [generated/goods.md](generated/goods.md). Ports: [generated/ports.md](generated/ports.md). Routes: [generated/routes.md](generated/routes.md). Buildings: [generated/buildings.md](generated/buildings.md).

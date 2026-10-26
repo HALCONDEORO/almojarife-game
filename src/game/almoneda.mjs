@@ -12,14 +12,14 @@
 // rolls at runtime, no purses the player does not have, no bidding the player up for fun.
 // Own design and own numbers throughout. Off unless the game has the town-industry flag.
 import { seeded } from "../view/cityscene.mjs"; // same FNV-style hash the concejo uses (council.mjs precedent)
-import { BUILDING_TYPES } from "./buildings.mjs";
+import { BUILDING_TYPES, buildingName } from "./buildings.mjs";
 import { RECIPES } from "../sim/recipes.mjs";
-import { townIndustry, buyEstablishment, salesOf } from "./townindustry.mjs";
+import { townIndustry, buyEstablishment, salesOf, estDisplayName } from "./townindustry.mjs";
 import { creditCaja } from "./council.mjs";
 import { townCouncil } from "./townhall.mjs";
 import { post } from "./ledger.mjs";
 import { isDiscovered } from "./fog.mjs";
-import { makeShip, SHIP_TYPES } from "../sim/trade.mjs";
+import { makeShip, SHIP_TYPES, shipTypeName } from "../sim/trade.mjs";
 import { hasOffice, warehouseCapBonus } from "./buildings.mjs";
 import { price } from "../sim/market.mjs";
 
@@ -162,12 +162,15 @@ export function lotsOfDay(g, cityId) {
 }
 export const sellerOf = (lot) => lot.seller ?? lot.est?.owner ?? { kind: "council" }; // the UI reads the seller the same way the engine does
 /** Short lot description for the hammer notices. */
+/** Display name of a port for player-facing text: the world name, raw id as fallback (towers.mjs convention). */
+const cityName = (g, cityId) => g.world.cities.find((c) => c.id === cityId)?.name ?? cityId;
+
 function lotDesc(lot, lang) {
-  if (lot.kind === "ship") return lang === "en" ? `the ${lot.ship.type} (hull ${lot.ship.hull}%)` : `la ${lot.ship.type} (casco ${lot.ship.hull}%)`;
+  if (lot.kind === "ship") return lang === "en" ? `the ${shipTypeName(lot.ship.type, "en")} (hull ${lot.ship.hull}%)` : `la ${shipTypeName(lot.ship.type, "es")} (casco ${lot.ship.hull}%)`;
   if (lot.kind === "house") return lang === "en" ? `the house (level ${lot.house.level})` : `la casa (nivel ${lot.house.level})`;
   if (lot.kind === "goods") return lang === "en" ? `the goods lot (${lot.name.en})` : `el lote de mercanc\u00edas (${lot.name.es})`;
   if (lot.kind === "permit") return lang === "en" ? "the building permit" : "el permiso de obra";
-  return lang === "en" ? `the ${lot.est.type} (level ${lot.est.level})` : `${lot.est.type} (nivel ${lot.est.level})`;
+  return lang === "en" ? `the ${estDisplayName(lot.est.type, "en")} (level ${lot.est.level})` : `${estDisplayName(lot.est.type, "es")} (nivel ${lot.est.level})`;
 }
 
 /** The named neighbours bidding today, each with his maximum. Deterministic from city, day and
@@ -204,8 +207,8 @@ function settle(g, cityId, lot, price) {
     g.ships.push(s);
     if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
     post(g, "info", { city: cityId, txt: {
-      es: `Ganas la almoneda de ${cityId}: una ${lot.ship.type} (casco ${lot.ship.hull}%) por ${price} monedas. Ya es tuya y amarra en este puerto.`,
-      en: `You win the ${cityId} auction: a ${lot.ship.type} (hull ${lot.ship.hull}%) for ${price} coins. She is yours, moored in this port.`,
+      es: `Ganas la almoneda de ${cityName(g, cityId)}: una ${shipTypeName(lot.ship.type, "es")} (casco ${lot.ship.hull}%) por ${price} monedas. Ya es tuya y amarra en este puerto.`,
+      en: `You win the ${cityName(g, cityId)} auction: a ${shipTypeName(lot.ship.type, "en")} (hull ${lot.ship.hull}%) for ${price} coins. She is yours, moored in this port.`,
     } });
     return { ok: true };
   }
@@ -215,8 +218,8 @@ function settle(g, cityId, lot, price) {
     ((g.buildings ??= {})[cityId] ??= {})[lot.id] = { type: "house", level: lot.house.level, state: "active", plotType: "house", paidPlot: 0, fromTown: lot.id, produced: 0 }; // plain object: save round-trip fidelity (walls.mjs convention)
     if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
     post(g, "info", { city: cityId, txt: {
-      es: `Ganas la almoneda de ${cityId}: una casa de vecinos (nivel ${lot.house.level}) por ${price} monedas. Sus inquilinos engordan la demanda del puerto.`,
-      en: `You win the ${cityId} auction: a town house (level ${lot.house.level}) for ${price} coins. Its tenants add to the port's demand.`,
+      es: `Ganas la almoneda de ${cityName(g, cityId)}: una casa de vecinos (nivel ${lot.house.level}) por ${price} monedas. Sus inquilinos engordan la demanda del puerto.`,
+      en: `You win the ${cityName(g, cityId)} auction: a town house (level ${lot.house.level}) for ${price} coins. Its tenants add to the port's demand.`,
     } });
     return { ok: true };
   }
@@ -229,8 +232,8 @@ function settle(g, cityId, lot, price) {
     (w.basis ??= {})[lot.goods.good] = (w.basis[lot.goods.good] ?? 0) + price; // what these units cost, so the ledger's profit math stays honest
     if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
     post(g, "info", { city: cityId, txt: {
-      es: `Ganas la almoneda de ${cityId}: ${lot.name.es} por ${price} monedas. Ya esta en tu almacen de este puerto.`,
-      en: `You win the ${cityId} auction: ${lot.name.en} for ${price} coins. It is in your warehouse in this port.`,
+      es: `Ganas la almoneda de ${cityName(g, cityId)}: ${lot.name.es} por ${price} monedas. Ya esta en tu almacen de este puerto.`,
+      en: `You win the ${cityName(g, cityId)} auction: ${lot.name.en} for ${price} coins. It is in your warehouse in this port.`,
     } });
     return { ok: true };
   }
@@ -239,8 +242,8 @@ function settle(g, cityId, lot, price) {
     (g.almonedaPermits ??= {})[cityId] = (g.almonedaPermits[cityId] ?? 0) + 1; // plain object: save round-trip fidelity
     if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }
     post(g, "info", { city: cityId, txt: {
-      es: `Ganas la almoneda de ${cityId}: un permiso de obra por ${price} monedas. Paga el solar de tu proxima construccion en este puerto.`,
-      en: `You win the ${cityId} auction: a building permit for ${price} coins. It pays the plot of your next building in this port.`,
+      es: `Ganas la almoneda de ${cityName(g, cityId)}: un permiso de obra por ${price} monedas. Paga el solar de tu proxima construccion en este puerto.`,
+      en: `You win the ${cityName(g, cityId)} auction: a building permit for ${price} coins. It pays the plot of your next building in this port.`,
     } });
     return { ok: true };
   }
@@ -275,22 +278,22 @@ export function bidAuction(g, cityId, playerMax, lotId) {
       } // generated lots won by a neighbour move no chest money: neighbour coins are not simulated, so crediting the concejo would mint phantom income (only the player's real coins count, in settle)
       const tell = lot.kind === "establishment" ? (isDiscovered(g, cityId) || playerMax > 0) : playerMax > 0; // generated lots cry their result only at a table the player joined: the weekly ship and house would double the home port's inbox noise for an idle player (MAX_INBOX eviction is a real failure mode)
       if (tell) post(g, "info", { city: cityId, txt: { // you hear the hammer where you know the town or sat at the table; a far port you have never charted stays silent
-        es: `Almoneda en ${cityId}: ${top.who} se lleva ${lotDesc(lot, "es")} por ${price} monedas.`,
-        en: `Auction in ${cityId}: ${top.who} takes ${lotDesc(lot, "en")} for ${price} coins.`,
+        es: `Almoneda en ${cityName(g, cityId)}: ${top.who} se lleva ${lotDesc(lot, "es")} por ${price} monedas.`,
+        en: `Auction in ${cityName(g, cityId)}: ${top.who} takes ${lotDesc(lot, "en")} for ${price} coins.`,
       } });
       return { ok: true, outcome: "lost", winner: top.who, price, lot };
     }
     const r = settle(g, cityId, lot, price);
     if (r.ok) return { ok: true, outcome: "won", price, lot };
     post(g, "info", { city: cityId, txt: r.reason === "office required" ? { // his max was a promise he cannot keep: the bid leaves the table and the next bidder comes up
-      es: `Tu puja en la almoneda de ${cityId} queda sin efecto: necesitas una oficina comercial en este puerto.`,
-      en: `Your bid at the ${cityId} auction is void: you need a trading office in this port.`,
+      es: `Tu puja en la almoneda de ${cityName(g, cityId)} queda sin efecto: necesitas una oficina comercial en este puerto.`,
+      en: `Your bid at the ${cityName(g, cityId)} auction is void: you need a trading office in this port.`,
     } : r.reason === "no warehouse room" ? {
-      es: `Tu puja en la almoneda de ${cityId} queda sin efecto: no tienes un almacen con sitio en este puerto.`,
-      en: `Your bid at the ${cityId} auction is void: you have no warehouse room in this port.`,
+      es: `Tu puja en la almoneda de ${cityName(g, cityId)} queda sin efecto: no tienes un almacen con sitio en este puerto.`,
+      en: `Your bid at the ${cityName(g, cityId)} auction is void: you have no warehouse room in this port.`,
     } : {
-      es: `Tu puja en la almoneda de ${cityId} queda sin efecto: no tienes ${price} monedas.`,
-      en: `Your bid at the ${cityId} auction is void: you do not have ${price} coins.`,
+      es: `Tu puja en la almoneda de ${cityName(g, cityId)} queda sin efecto: no tienes ${price} monedas.`,
+      en: `Your bid at the ${cityName(g, cityId)} auction is void: you do not have ${price} coins.`,
     } });
   }
   return { ok: true, outcome: "withdrawn", lot };

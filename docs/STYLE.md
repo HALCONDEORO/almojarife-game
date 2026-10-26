@@ -25,6 +25,7 @@ Status tags: **[applied]** ships today, **[target]** the window PRs migrate to i
 7. Content rules
 8. Status by window
 9. Per-window PR checklist
+10. Progress bars, steps, height and accessibility
 
 ## 1. Principles
 
@@ -119,7 +120,16 @@ Sheet panels named in brackets.
   disabled = dashed border plus the reason in italics, never a bare fade.
 - **Tables** [Table]: header `--green` 11-13 px over a `--line-strong`
   rule; rows `--paper-raised` with `--paper-alt` zebra; hairline `--line`
-  separators; numbers right-aligned. Real table: `window-market.png`.
+  separators. Numeric and action columns are centred; the label
+  column (first) stays left. Rows stay dense ledger lines: market
+  rows 13 px min-height at 12 px type, header stack (ship summary,
+  intro, tools) collapsed to single lines with 0-1 px margins.
+  Tables size to their content (width: max-content), never elastic
+  fr columns; the market window is 640 px and centred in the map
+  area, market columns fixed (110/58/66/40/44/86/86 px). Market
+  exception: its goods column (icon + name) is centred too.
+  Real table: `window-market.png`; column centring and density,
+  before/after: `table-columns.png`. **[applied]**
 - **Cards** [Card]: `--paper-raised`, 1 px `--line`, optional 4 px left
   accent in `--green` for state. Real cards: `window-hall.png`.
 - **Chips** [Card and chip]: pill, `--paper-sunken`, `--line` border, 13 px.
@@ -147,8 +157,8 @@ Sheet panels named in brackets.
 
 | Window | Today | Remaining (target) |
 |---|---|---|
-| Mercado | ledger style | fluid width + inner scroll under ~1200 px; rail clearance rule shared |
-| Banco, Almacén, Informes, Mensajes | ledger style | rail clearance |
+| Mercado | ledger style, centred columns, dense rows | fluid width + inner scroll under ~1200 px; rail clearance rule shared |
+| Banco, Almacén, Informes, Mensajes | ledger style, centred columns via the shared table rule | rail clearance |
 | Ayuntamiento | chrome + cards | rail clearance |
 | Astillero, Taberna, Ruta, Casa, Construir | old flat style | full migration to this manual |
 | Barco (ship window) | old flat style | full migration |
@@ -163,3 +173,34 @@ Sheet panels named in brackets.
 4. Tables, buttons, forms and empty states match section 6.
 5. Before/after screenshots in ES at 1366x860 attached to the PR.
 6. `npm test` plus the window's UI suite green.
+
+## 10. Progress bars, steps, height and accessibility
+
+Added after the Oficina redesign (reference implementation: `.of-*` in
+`web/index.html`, view in `src/view/rankview.mjs`).
+
+- **Progress bar**: 10 px high, 1 px `--line` border, 6 px radius, track
+  `--paper-sunken`, fill a `--green` to `--green-deep` gradient. Always
+  shows a caption with the value next to or under it. Markup uses
+  `role="progressbar"` with `aria-valuemin`, `aria-valuemax`,
+  `aria-valuenow` and an `aria-label` that says what it measures.
+- **Steps** (ladders, tiers): one row of equal cells, 4 px gap. Reached
+  steps are `--paper-raised` with `--ink-soft` text, the current step is
+  `--green` with `--gold-cream` text and `aria-current="step"`, steps
+  ahead are `--paper-sunken` with `--ink-faint` text. Each cell holds
+  the name (12 px bold) and its threshold (11 px).
+- **Hero card**: the one thing the player came for (rank and net worth,
+  hull and repair) goes first in a `--paper-raised` card with a 4 px
+  `--green` left accent. Perk and fact cards use a 4 px `--brass` accent.
+- **Help text**: no paragraph walls. Explanations fold into a `<details>`
+  with a "?" summary; the first screen carries only the numbers.
+- **Height**: a window never needs a scroll bar at 1280x900 for its main
+  task. Body max-height is `calc(100dvh - header - 180px)`; content past
+  that scrolls inside the body, never the page. Sticky header stays.
+- **Accessibility**: text contrast at least 4.5:1 on its card (`--ink`
+  and `--ink-soft` on paper pass; `--ink-faint` only for captions of
+  13 px or more); every control reachable by keyboard with a visible
+  `:focus-visible` outline; state is never colour alone (current step
+  also has the `aria-current` marker and the heavier fill).
+- **Examples**: Oficina (this section's reference), Mercado (tables),
+  Astillero (sections, [target] tokens migration).

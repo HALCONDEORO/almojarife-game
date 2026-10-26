@@ -14,7 +14,7 @@
 //
 // Pure and deterministic: same world data, same roster in every save, like the town council.
 // Own design and own numbers throughout; nothing taken from any other game.
-import { PRODUCERS, JOBS_PER_LEVEL, producerRate } from "./buildings.mjs";
+import { PRODUCERS, JOBS_PER_LEVEL, producerRate, buildingName } from "./buildings.mjs";
 import { townCouncil } from "./townhall.mjs";
 
 /** Processor outputs per batch (src/sim/recipes.mjs OUTPUTS: every production recipe yields 2). */
@@ -38,6 +38,14 @@ export const GOOD_TO_REP_TYPE = Object.freeze({
   leather: "tannery",
   sugar: "trading_post", pepper: "trading_post", silk: "trading_post", saffron: "trading_post",
 });
+
+/** Display name of an establishment type (buildable or representation-only), es with article and
+ *  en bare, for auction and purchase messages - never a raw key. */
+export function estDisplayName(type, lang) {
+  const rep = REP_TYPES[type];
+  if (rep) return lang === "en" ? rep.en : "la " + rep.es.charAt(0).toLowerCase() + rep.es.slice(1);
+  return buildingName(type, lang);
+}
 
 /** The industry type behind a made good: a buildable type, a representation-only type, or null. */
 export function industryTypeOf(good) {
@@ -206,9 +214,10 @@ export function buyEstablishment(g, cityId, estId, price) {
   const sales = ((g.townSales ??= {})[cityId] ??= { jobs: 0, ids: [] });
   sales.jobs += est.jobs;
   sales.ids.push(estId);
+  const cname = g.world.cities.find((c) => c.id === cityId)?.name ?? cityId;
   post(g, "info", { city: cityId, txt: {
-    es: `Compras ${est.type} (nivel ${est.level}) en ${cityId} por ${price} monedas: sus manos y su parte de la producción del puerto pasan a tu casa.`,
-    en: `You buy a ${est.type} (level ${est.level}) in ${cityId} for ${price} coins: its hands and its share of the port's production move to your house.`,
+    es: `Compras ${estDisplayName(est.type, "es")} (nivel ${est.level}) en ${cname} por ${price} monedas: sus manos y su parte de la producción del puerto pasan a tu casa.`,
+    en: `You buy a ${estDisplayName(est.type, "en")} (level ${est.level}) in ${cname} for ${price} coins: its hands and its share of the port's production move to your house.`,
   } });
   return { ok: true, price, est };
 }

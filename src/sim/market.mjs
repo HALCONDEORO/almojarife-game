@@ -1,7 +1,8 @@
 import { NEEDS_LEDGER_ENABLED, recordLegacyConsumption } from "./needs-telemetry.mjs";
 import { totalDemand, demandBy, demandOf, CLASSES } from "./classes.mjs";
 import { COMMERCE_LEDGER_ENABLED, openCommerce, openMarketLedgers, recordLocalSupply, recordRetailSale } from "./procurement.mjs";
-import { settleHouseholdDay } from "./households.mjs";
+import { settleHouseholdDay, capRetailByPurses, HOUSEHOLD_INCOME, PURSE_UNCAPPED } from "./households.mjs";
+import { classCounts } from "./classes.mjs";
 // Own price model: price moves with stock relative to a target stock (supply/demand ratio).
 // Written from first principles; not derived from any other game's data.
 export function makeMarket(world) {
@@ -80,7 +81,14 @@ export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABL
   const commerce = commerceLedger && world?.goods && city?.grain ? openCommerce(world, city) : null; // lazy open: an account-less market (old save, bare fixture) gets its account on its first tick
   const actual={},desired={},retailValues={};
   const track = needsLedger || commerce;
-  for (const [good, e] of Object.entries(city)) {
+  // Purses limit discretionary spending, never food (docs/design/household-purses-limit.md): food is
+  // processed first and measured as before; every other good is then capped by what each class purse
+  // can still pay after its food bill. Without a commerce account nothing changes.
+  const entries = Object.entries(city);
+  const isFood = (g) => PURSE_UNCAPPED.has(g);
+  const budget = Object.fromEntries(CLASSES.map((c) => [c, 0]));
+  let purseCap = null;
+  const processGood = (good, e) => {
     const beforeSupply = e.stock;
     if (e.makes) e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 2 * (e.townShare ?? 1) * seasonMul(good, day))); // warehouses are finite; townShare: share of the town's industry still in town hands (docs/design/town-industry-and-auctions.md piece 2), absent = 1
     e.stock = Math.min(e.target * 4, e.stock + Math.round(e.rate * 0.4)); // local trickle
@@ -96,8 +104,28 @@ export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABL
     }
     const shelfBefore = e.stock, priced = commerce && actual[good] > 0 && world.goods[good]; // a partial world (fixture) records no retail for goods it does not know
     const retailPrice = priced ? price(world, e, good) : 0; // households face the day's price after production, before their own consumption depletes the shelf
-    e.stock = Math.max(0, e.stock - used);
-    if (priced) retailValues[good] = recordRetailSale(city, good, actual[good], retailPrice, shelfBefore);
+    let take = actual[good];
+    if (priced && purseCap) {
+      const cap = capRetailByPurses(budget, desired[good], actual[good], retailPrice);
+      take = cap.units; // the units the class purses can pay for; the rest stays on the shelf
+      for (const c of CLASSES) budget[c] = Math.max(0, budget[c] - (cap.spend[c] ?? 0));
+      actual[good] = take;
+    }
+    e.stock = Math.max(0, e.stock - (purseCap && priced ? take : used));
+    if (priced && take > 0) retailValues[good] = recordRetailSale(city, good, take, retailPrice, shelfBefore);
+  };
+  for (const [good, e] of entries) if (!commerce || isFood(good)) processGood(good, e); // essentials first: food is measured, never capped
+  if (commerce) {
+    const counts = classCounts(city.grain?.pop ?? 0), households = commerce.households ?? {};
+    for (const c of CLASSES) budget[c] = (households[c]?.cash ?? 0) + (counts[c] ?? 0) * (HOUSEHOLD_INCOME[c] ?? 0); // yesterday's purse plus today's income
+    for (const [good, value] of Object.entries(retailValues)) { // food is paid first, exactly as settleHouseholdDay would pay it
+      if (!(value > 0)) continue;
+      const by = desired[good], total = CLASSES.reduce((a, c) => a + (by?.[c] ?? 0), 0);
+      if (!total) continue;
+      for (const c of CLASSES) budget[c] = Math.max(0, budget[c] - (value * (by?.[c] ?? 0)) / total);
+    }
+    purseCap = true;
+    for (const [good, e] of entries) if (!isFood(good)) processGood(good, e); // discretionary goods, in catalogue order, capped by the remaining purses
   }
   if(needsLedger)recordLegacyConsumption(city,day,actual,desired,g=>{const e=city[g];return DEMAND_SCALE*(e.needs?NEEDS_MUL:1)*(e.makes?MAKES_MUL:1);});
   if (commerce) { // attribute the day's ACTUAL retail spend to the classes, proportional to their desire (estimate, like needsLedger)

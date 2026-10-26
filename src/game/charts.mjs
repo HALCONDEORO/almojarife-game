@@ -2,6 +2,7 @@
 // (fog.discover, same as sailing there) without giving away prices, plus a cheap route rumour that
 // reveals the nearest unknown port with an inexact snapshot. Deterministic; no new randomness.
 import { discover, isDiscovered } from "./fog.mjs";
+import { post } from "./ledger.mjs";
 import { haversineKm } from "../../tools/geo.mjs";
 import { seeded } from "../view/cityscene.mjs";
 
@@ -61,5 +62,7 @@ export function buyRouteRumor(g, at) {
   const rnd = seeded(`route:${target}:${g.day}`), cells = {};
   for (const [k, e] of Object.entries(g.market[target])) cells[k] = { ...e, stock: Math.max(0, Math.round(e.stock * (1 + (rnd() * 2 - 1) * 0.25))) };
   (g.intel ??= {})[target] = { day: g.day, exact: false, cells };
+  const nm = g.world.nodes[target]?.name ?? target;
+  post(g, "info", { city: target, txt: { es: `Un rumor de ruta te descubre ${nm}: ya está en la carta (mercado aproximado). Coste ${ROUTE_RUMOR_PRICE}.`, en: `A route rumour reveals ${nm}: it is on your chart now (approximate market). Cost ${ROUTE_RUMOR_PRICE}.` } });
   return { ok: true, cost: ROUTE_RUMOR_PRICE, city: target };
 }

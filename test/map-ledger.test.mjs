@@ -19,15 +19,15 @@ test("map ledger frame uses the same viewBox height as the map (VH in main.mjs)"
 test("map ledger keeps the header ids and order, and the hint row DOM", () => {
   const header = html.match(/<header>[\s\S]*?<\/header>/)[0];
   const ids = [...header.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(ids, ["co", "day", "todbar", "cash", "goal", "ships", "ctl", "play", "pausenote", "spd", "rep", "msg", "hdr-right", "fs", "lang", "new"]);
+  assert.deepEqual(ids, ["co", "day", "todbar", "cash", "goal", "ships", "ctl", "timectl", "play", "spd", "pausenote", "rep", "msg", "hdr-right", "fs", "lang", "new"]);
   assert.match(header, /id="todbar" role="img"/);
   assert.ok(html.includes('<div id="hint-row"><div class="hint" id="hint" role="status" aria-live="polite"></div><button type="button" id="hint-mission-toggle" hidden></button></div>'));
 });
 
 test("map ledger restyles keep a visible keyboard focus", () => {
-  for (const sel of ["body>header button", "#mapcard>#hint-row>#hint-mission-toggle", "#ctx button", "#mapleft>#historical-map-tools summary"]) {
+  for (const sel of ["body>header button", "#panel-home>#hint-wrap>#hint-row>#hint-mission-toggle", "#ctx button", "#mapleft>#historical-map-tools summary"]) {
     assert.ok(html.includes(`${sel}:focus-visible{outline:2px solid`), sel);
   }
   // The seal must not force a display value, or the [hidden] toggle would show.
-  assert.doesNotMatch(html.match(/#mapcard>#hint-row>#hint-mission-toggle\{[^}]*\}/g).join(""), /display:/);
+  assert.doesNotMatch(html.match(/#panel-home>#hint-wrap>#hint-row>#hint-mission-toggle\{[^}]*\}/g).join(""), /display:/);
 });

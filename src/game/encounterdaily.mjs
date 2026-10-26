@@ -9,16 +9,22 @@ import {encounterOutcome,applyEncounter,encounterText} from './encounters.mjs';
 import {fightPirates} from './piratefight.mjs';
 import {post} from './ledger.mjs';
 import {escortOf} from './convoys.mjs';
+import {locate} from './freenav.mjs';
+import {inStorm} from '../sim/weather.mjs';
 export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
 // Per tick: P(at least one encounter in a full day at sea) = 1-(1-p_tick)^240 = SEA_ENCOUNTER_CHANCE exactly.
 export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS_PER_DAY);
-export function automaticEncounter(g,ship){
+export function automaticEncounter(g,ship,world){
  if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored)return null;
  const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
  (g.encounterTicks??={})[key]=g.tick;
  const r=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);
  if(r()>=SEA_ENCOUNTER_CHANCE_TICK)return null;
- const kind=r()<0.5?'pirates':'storm';
+ const roll=r();
+ let kind=roll<0.5?'pirates':'storm';
+ // Real weather: inside a storm cell of the chart the encounter is always that storm. The daily
+ // encounter rate is untouched; outside a cell the old 50/50 roll decides (a squall can still catch you).
+ if(world&&ship.voyage&&Number.isFinite(g.day)){const pos=locate(world,ship);if(pos&&Number.isFinite(pos.lat)&&Number.isFinite(pos.lon)&&inStorm(pos.lat,pos.lon,g.day,g.seed??0))kind='storm';}
  if(kind==='pirates'){
   g.pending={event:'sea-pirates',ship:ship.id,day:g.day,hour:hourOf(g.tick),id:`sea-v2:${g.tick}:${ship.id}`,escapeChance:escapeChance(ship)};
   return g.pending;
@@ -77,7 +83,7 @@ export function claimPrize(g,keep){
  if(keep){
   prize=makeShip(g.nextId++,e.prize.type,winner.at);
   prize.hull=e.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
-  if(winner.voyage)prize.voyage={...winner.voyage}; // it keeps station with the winner and arrives with it
+  if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
   g.ships.push(prize);
  }
  const txt=keep

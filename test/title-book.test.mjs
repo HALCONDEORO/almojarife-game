@@ -52,7 +52,15 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     // run a function in the page with a data argument, without building code from the data
     const call = async (fn, arg) => { const w = (await send("Runtime.evaluate", { expression: "window" })).result.result.objectId; const r = (await send("Runtime.callFunctionOn", { objectId: w, functionDeclaration: fn, arguments: [{ value: arg }], returnByValue: true, awaitPromise: true })).result; if (r.exceptionDetails) throw new Error(r.exceptionDetails.text); return r.result?.value; };
     await send("Page.enable");
-    const nav = async () => { await send("Page.navigate", { url: `http://127.0.0.1:${port}/web/index.html` }); await sleep(3500); };
+    const nav = async () => {
+      await send("Page.navigate", { url: `http://127.0.0.1:${port}/web/index.html` });
+      const deadline = Date.now() + 20000;
+      while (Date.now() < deadline) {
+        if (await ev("document.readyState === 'complete' && !!document.querySelector('#t-start')")) return;
+        await sleep(100);
+      }
+      assert.fail("title book did not expose #t-start within 20 seconds after navigation");
+    };
     const K = "almojarife.save.v1", B = "almojarife.save.backup", get = k => ev(`localStorage.getItem(${JSON.stringify(k)})`), click = i => ev(`document.getElementById('${i}').click()`);
     await nav(); await ev("localStorage.clear()"); await nav();
     // no save: the book starts a game without any dialog
@@ -60,8 +68,11 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     await click("t-start"); await sleep(300);
     await ev("document.getElementById('p-co').value='Casa Uno';document.getElementById('p-go').click()"); await sleep(2000);
     assert.equal(await ev("document.getElementById('title').hidden"), true);
-    const save1 = await get(K); assert.ok(save1);
+    let save1 = await get(K); assert.ok(save1);
     await nav();
+    // pagehide may refresh savedAt, but it must not change campaign data.
+    const afterHide = await get(K), payload = raw => { const { savedAt, ...rest } = JSON.parse(raw); /* render lazily initializes empty reputation v2; normalize only these two known defaults, retaining every other field */ if (rest.state.rep === undefined && rest.state.repV === undefined) { rest.state.rep = {}; rest.state.repV = 2; } return rest; };
+    assert.deepEqual(payload(afterHide), payload(save1)); save1 = afterHide;
     assert.equal(await ev("document.getElementById('t-cont').classList.contains('primary') && !document.getElementById('t-cont').disabled"), true);
     // a save exists: Start asks first, nothing is written yet
     await click("t-start"); await sleep(300);
@@ -83,10 +94,11 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     await ev("Storage.prototype.setItem = window.__setItem");
     // confirm: new game is live and the previous save is byte-equal in the backup slot
     await click("r-go"); await sleep(2500);
-    const live = await get(K); assert.notEqual(live, save1); assert.equal(await get(B), save1); assert.equal(JSON.parse(live).company, "Casa Dos");
+    let live = await get(K); assert.notEqual(live, save1); assert.equal(await get(B), save1); assert.equal(JSON.parse(live).company, "Casa Dos");
     assert.equal(await get("almojarife.save.tmp"), null);
     // title book: restore brings the backup back and parks the current one; language toggle and export keep saves
     await nav();
+    const liveAfterHide = await get(K); assert.deepEqual(payload(liveAfterHide), payload(live)); live = liveAfterHide;
     assert.equal(await ev("!document.getElementById('t-rest').disabled && /Casa Dos/.test(document.querySelector('.save-card').textContent)"), true);
     await ev("localStorage.setItem('lang','es')"); await nav();
     await click("t-lang"); await sleep(300);
