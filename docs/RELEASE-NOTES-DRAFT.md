@@ -1,6 +1,6 @@
 # Release notes draft: v0.5.0-beta.1
 
-DRAFT ONLY. The intended audience is public; publication is pending final owner approval; no tag, release date or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
+DRAFT ONLY. The intended audience is public; publication is pending final owner approval; no tag, release date or final commit has been approved. The integrated source checkpoint is recorded below; the final release gates remain open. This is a proposal for review, not a published release.
 
 ## El Almojarife: first beta batch
 
@@ -18,9 +18,20 @@ A desktop browser trading game set around Iberia and North Africa. Build a merch
 - A fleet search that appears only when there are more than five ships ([PR #554](https://github.com/HALCONDEORO/almojarife-game/pull/554)).
 - Live-data reference pages in the wiki, including seasons ([PR #527](https://github.com/HALCONDEORO/almojarife-game/pull/527)).
 
-## Pending batch candidates, not release claims
+## Later integrated changes in this batch
 
-Forecasts, variable salvage rewards, workshop margin warnings, persistent course feedback, shipyard and office layouts, city services, rank benefits, risk-free events and other fixes remain under review or integration. The final notes must replace this section with only changes present in the approved release commit. Do not announce these as available yet.
+- Seven-day wind and storm forecast ([PR #540](https://github.com/HALCONDEORO/almojarife-game/pull/540)), three-day negative workshop margin warning ([PR #548](https://github.com/HALCONDEORO/almojarife-game/pull/548)) and route-rumour purchase feedback ([PR #557](https://github.com/HALCONDEORO/almojarife-game/pull/557)).
+- Variable drifting cargo rewards ([PR #547](https://github.com/HALCONDEORO/almojarife-game/pull/547)); risk-free sea events resolve without pausing ([PR #559](https://github.com/HALCONDEORO/almojarife-game/pull/559)), including fair wind ([PR #560](https://github.com/HALCONDEORO/almojarife-game/pull/560)).
+- Persistent rejected-course feedback ([PR #549](https://github.com/HALCONDEORO/almojarife-game/pull/549)); repairs and arming limited to the ship's dock ([PR #569](https://github.com/HALCONDEORO/almojarife-game/pull/569), [PR #570](https://github.com/HALCONDEORO/almojarife-game/pull/570)).
+- Cleaner shipyard sections and away-port explanation ([PR #565](https://github.com/HALCONDEORO/almojarife-game/pull/565), [PR #567](https://github.com/HALCONDEORO/almojarife-game/pull/567)), Office rank progress ([PR #566](https://github.com/HALCONDEORO/almojarife-game/pull/566)) and City services tab ([PR #568](https://github.com/HALCONDEORO/almojarife-game/pull/568)).
+- One more council order from Trader rank ([PR #561](https://github.com/HALCONDEORO/almojarife-game/pull/561)); Continue reloads the current save ([PR #562](https://github.com/HALCONDEORO/almojarife-game/pull/562)); unread tags only on actionable messages ([PR #563](https://github.com/HALCONDEORO/almojarife-game/pull/563)).
+- Panel buttons no longer disappear during an active pointer press when the clock repaints ([PR #582](https://github.com/HALCONDEORO/almojarife-game/pull/582)).
+- Extra autosave every three minutes and on hidden/pagehide, skipping identical campaign data ([PR #584](https://github.com/HALCONDEORO/almojarife-game/pull/584)). This is best effort, not a guarantee against every crash or shutdown.
+- Centred Market columns ([PR #585](https://github.com/HALCONDEORO/almojarife-game/pull/585)); cargo filter only with a local warehouse, including stored goods ([PR #586](https://github.com/HALCONDEORO/almojarife-game/pull/586)); price-alert block removed ([PR #589](https://github.com/HALCONDEORO/almojarife-game/pull/589)). Existing saved alerts may still fire, without management UI in the Market window.
+- Free-navigation right click sails immediately ([PR #587](https://github.com/HALCONDEORO/almojarife-game/pull/587), which reverts the confirmation menu from #583). Rejected-course feedback remains.
+- Whole-number aggregate money display in the top bar and finance card ([PR #588](https://github.com/HALCONDEORO/almojarife-game/pull/588), [PR #590](https://github.com/HALCONDEORO/almojarife-game/pull/590)); calculations and saved cents are unchanged. Reputation copy says repairs, not all shipyard purchases ([PR #558](https://github.com/HALCONDEORO/almojarife-game/pull/558)).
+
+Source checkpoint: `e96ab3a2e9c24974d699e29835b79d4a08e9af34`, tree `b192bb3d7ef880d035b07aa5c9dd271222e0c191`. This is merged source, not a certification of deployment or release readiness. Later open proposals and historical archived drafts are not release contents.
 
 ## Before you play
 
