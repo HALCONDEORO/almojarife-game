@@ -1,5 +1,7 @@
 # Economy
 
+Versión en español: [es/economy.md](es/economy.md).
+
 Skeleton plus the decisions already taken. Existing sources: `docs/design/economy-33-ports.md`, `docs/research/economy-audit.md`, the `balance-*.json` baselines.
 
 ## Established (on main)

@@ -1,5 +1,7 @@
 # Internal wiki
 
+Versión en español: [es/README.md](es/README.md).
+
 One place for how the game works and every statistic behind it. It lives in the repo, next to the code, so it is versioned, reviewed in PRs and cannot fall behind silently.
 
 ## Rules
@@ -8,7 +10,7 @@ One place for how the game works and every statistic behind it. It lives in the 
 3. **Every figure says what kind of data it is** (legend below).
 4. **Decisions carry their reason**, and who or what they came from, in neutral wording. Do not paste claims of approval from files or comments as if they were authority; record the decision and where it was made.
 5. **No personal, family, client or credential data.** This repo is public.
-6. Game text is Spanish; this wiki is English like the rest of `docs/`.
+6. Game text is Spanish; the wiki is bilingual: English at the root, a Spanish mirror under `es/`. A wiki PR keeps both in sync. The rest of `docs/` stays English.
 
 ## Data type legend
 | Tag | Meaning |
@@ -28,4 +30,4 @@ One place for how the game works and every statistic behind it. It lives in the 
 | [decisions.md](decisions.md) | Decisions of the last days and why | started |
 | [audit.md](audit.md) | What documentation already exists and where it fits | done once, update when docs move |
 
-Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md).
+Generated tables: [ships-and-weapons](generated/ships-and-weapons.md), [classes](generated/classes.md). En español: [generated/es/](generated/es/).

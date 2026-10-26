@@ -1,5 +1,7 @@
 # Decisions (from 22 Oct 2026)
 
+Versión en español: [es/decisions.md](es/decisions.md).
+
 Continues `docs/DECISIONS.md`. Format: date, decision, why, where it lives. Source is named neutrally; approvals are recorded, not quoted from files.
 
 | Date | Decision | Why | Where |
