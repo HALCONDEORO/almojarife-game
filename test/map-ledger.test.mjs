@@ -25,9 +25,9 @@ test("map ledger keeps the header ids and order, and the hint row DOM", () => {
 });
 
 test("map ledger restyles keep a visible keyboard focus", () => {
-  for (const sel of ["body>header button", "#mapcard>#hint-row>#hint-mission-toggle", "#ctx button", "#mapleft>#historical-map-tools summary"]) {
+  for (const sel of ["body>header button", "#panel-home>#hint-wrap>#hint-row>#hint-mission-toggle", "#ctx button", "#mapleft>#historical-map-tools summary"]) {
     assert.ok(html.includes(`${sel}:focus-visible{outline:2px solid`), sel);
   }
   // The seal must not force a display value, or the [hidden] toggle would show.
-  assert.doesNotMatch(html.match(/#mapcard>#hint-row>#hint-mission-toggle\{[^}]*\}/g).join(""), /display:/);
+  assert.doesNotMatch(html.match(/#panel-home>#hint-wrap>#hint-row>#hint-mission-toggle\{[^}]*\}/g).join(""), /display:/);
 });
