@@ -435,7 +435,7 @@ const FLEET_PIN_MIN = 500; // px of chart-area width; the fleet sits in the righ
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
 let rightTab = "fleet", rtSig = "";
-const RT_TABS = [["fleet", "Flota", "Fleet"], ["port", "Puerto", "Port"], ["mkt", "Mercado", "Market"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
+const RT_TABS = [["fleet", "Flota", "Fleet"], ["city", "Ciudad", "City"], ["port", "Puerto", "Port"], ["mkt", "Mercado", "Market"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
 const nearCache = new Map();
 function selectRightTab(tab) {
   if (rightTab === tab) return;
@@ -446,10 +446,11 @@ function selectRightTab(tab) {
 function openLedger(kind) { if (document.getElementById("v3d")) showLedger(kind); else selectRightTab(kind); }
 function renderRightTabs() {
   const bar = $("rtabs"), fleetPane = $("rt-fleet"), led = $("rt-ledger"); if (!bar || !led) return;
-  const n = actionUnread(g), key = `${lang}|${rightTab}|${n}|${unread(g)}`;
+  const docked = !!(ship() && !ship().voyage), n = actionUnread(g), key = `${lang}|${rightTab}|${n}|${unread(g)}|${docked}`;
+  if (!docked && rightTab === "city") rightTab = "fleet"; // the city list needs a ship in port
   if (bar.dataset.key !== key) {
     bar.dataset.key = key;
-    bar.innerHTML = RT_TABS.map(([id, es, en]) => `<button type="button" role="tab" data-rt="${id}" aria-selected="${rightTab === id}">${lang === "en" ? en : es}${id === "msg" && n ? ` (${n})` : ""}</button>`).join("");
+    bar.innerHTML = RT_TABS.filter(([id]) => id !== "city" || docked).map(([id, es, en]) => `<button type="button" role="tab" data-rt="${id}" aria-selected="${rightTab === id}">${lang === "en" ? en : es}${id === "msg" && n ? ` (${n})` : ""}</button>`).join("");
     bar.querySelectorAll("button").forEach((b) => b.onclick = () => selectRightTab(b.dataset.rt));
   }
   fleetPane.hidden = rightTab !== "fleet"; led.hidden = rightTab === "fleet";
@@ -463,6 +464,11 @@ function renderRightTabs() {
     if (at) { if (!nearCache.has(at)) nearCache.set(at, nearestPorts(world, at)); d = portData(g, at, { feeMul: feeMul(g, at), neighbours: nearCache.get(at) }); }
     const o = { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k };
     led.innerHTML = rightTab === "port" ? portHtml(d, o) : tradesHtml(d, o);
+  } else if (rightTab === "city") {
+    const sh = ship(), here = sh && !sh.voyage ? sh.at : null, en = lang === "en";
+    const items = here ? [["market", t.tabMarket], ["city", t.tabCity], ["hall", t.tabHall], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["bank", t.tabBank], ["store", t.tabStore], ...(lonjaEnabled(location.search) ? [["lonja", t.tabLonja]] : [])] : [];
+    led.innerHTML = `<h3>${here ? cityName(here) : ""}</h3>` + items.map(([k, l]) => `<button type="button" class="city-act" data-city-open="${k}">${l}</button>`).join("") + `<p><small>${en ? "Opens the port services for the docked ship." : "Abre los servicios del puerto para el barco atracado."}</small></p>`;
+    led.querySelectorAll("[data-city-open]").forEach((b) => b.onclick = () => { const k = b.dataset.cityOpen; if (!$("v3d")) open3d(ship()); openCityPanel(k); });
   } else led.innerHTML = ledgerBodyHtml(rightTab);
   led.scrollTop = top;
   led.querySelectorAll("[data-report-target]").forEach((b) => b.onclick = () => led.querySelector(`#${b.dataset.reportTarget}`)?.scrollIntoView({ block: "start" }));
