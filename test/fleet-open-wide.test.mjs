@@ -13,3 +13,7 @@ test("fleet list stays open on wide screens and the same breakpoint is used in C
 test('wide fleet rule is not nested inside the narrow-screen rule',()=>{
  assert.match(html, /@media\(max-width:600px\)\{#maparea>#fleet\{bottom:auto\}\}@media\(min-width:1280px\)/);
 });
+
+test('fleet panel is bounded by its map area, not the viewport',()=>{
+ assert.match(html, /#maparea>#fleet\{top:8px;right:12px;max-height:calc\(100% - 16px\);overflow:auto\}/);
+});
