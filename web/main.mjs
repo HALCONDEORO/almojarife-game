@@ -401,7 +401,7 @@ function toast(msg, agg) {
   el._t = setTimeout(() => el.remove(), 2600);
 }
 // The fleet list stays open (pinned) only while the chart area is wide enough to leave a free side band; with the event panel open or a narrow window it folds back into its toggle.
-const FLEET_PIN_MIN = 1100; // px of chart-area width; keep in step with nothing in CSS, the pin is the .fleet-pinned class
+const FLEET_PIN_MIN = 500; // px of chart-area width; the fleet sits in the right-hand card now, so it stays open on every desktop width. The pin is the .fleet-pinned class
 function fitFleet() { const area = $("maparea"), f = $("fleet"); if (!area || !f) return; const wide = area.clientWidth >= FLEET_PIN_MIN, was = f.classList.contains("fleet-pinned"); f.classList.toggle("fleet-pinned", wide); if (wide) f.open = true; else if (was) f.open = false; }
 if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fitFleet).observe($("maparea"));
 function render() {
