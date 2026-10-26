@@ -457,10 +457,11 @@ function renderRightTabs() {
   led.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); rtSig = ""; render(); });
 }
 function render() {
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }) });
+  $("voyage-event")?.addEventListener("click", () => { shipWin = null; document.getElementById("shipwin")?.remove(); render(); const b = document.querySelector("#panel [data-ev]"); b?.scrollIntoView({ block: "center" }); b?.focus(); });
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   fitFleet();
   renderRightTabs();
@@ -571,6 +572,7 @@ function render() {
   const pe = pendingEvent(g), inCity = !!document.getElementById("v3d");
   if (inCity) postCity2dState();
   document.body.classList.toggle("has-event", !!pe && !inCity);
+  if (pe && shipWin && !inCity) { shipWin = null; document.getElementById("shipwin")?.remove(); } // a pending event must not hide behind the ship window
   if (pe) { playing = false; if (!autoPause) autoPause = "event"; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; } // recording the cause here also covers a game loaded with the event already pending
   if (inCity || pe) {
   // The ship card is not wallpaper for every window - it shows only where the
