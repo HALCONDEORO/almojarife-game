@@ -96,3 +96,4 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 .al-err{margin:4px 0 0;color:#7a1f1f;font-size:13px}
 /* Market window: every column centred (names, numbers, icons, headers) and the filter row centred over the table. */
 .mkt-good{justify-content:center;text-align:center}.mkt-hold,.mkt-avg,.mkt-head .mkt-hold,.mkt-head .mkt-avg{text-align:center}.mkt-head>div,.mkt-head>span{text-align:center}.mkt-tools{justify-content:center}.mkt-qtybar{justify-content:center}
+.bldoffer-short{display:block;margin-top:4px;font-size:11px;font-weight:bold;color:#8a2a1a}
