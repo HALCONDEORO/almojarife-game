@@ -304,7 +304,8 @@ function start(prof, save = true, opts = {}) {
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const day = g.day, voyagesBefore = g.ships.map(s => !!s.voyage), routesBefore = g.ships.map(s => s.route);
-  fn();
+  const r = fn();
+  if (r && r.ok === false) sfx("error"); // a rejected order says so: silent failures hide mistakes
   const newOrder = g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]));
   if (newOrder) pauseNote = null; // a fresh departure or route order always retires the arrival note
   if (newOrder && automaticTime) { manualPause = false; if ($("v3d")) planningResume = true; else playing = true; } // new orders resume the clock only when automatic time is enabled
@@ -463,13 +464,14 @@ function render() {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
     m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(last.lon) + 10}" y="${Y(last.lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">≈ ${hoursOf(est.ticks)} h</text>`;
   }
+  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
+  m += historical.underlay ?? ""; // realm washes sit behind ports and labels
   for (const c of world.cities) {
     if (!isDiscovered(g, c.id)) continue; // fog of war
     const e = !s.voyage ? travelEstimate(world, s, c.id) : null, tip = c.name + (e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km` : "");
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
     m += `<g class="city" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${c.id === target ? "#c0392b" : "none"}" stroke-width="3" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:pointer">${c.name}</text></g>`;
   }
-  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
     if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("mapleft").append(key); }
@@ -805,7 +807,7 @@ function render() {
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
@@ -938,7 +940,7 @@ function renderShipWin() {
   handle.onpointerup = handle.onpointercancel = () => drag = null;
   handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
-  d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { shipWin.tab = e.dataset.swtab; render(); });
+  d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { if (shipWin.tab !== e.dataset.swtab) sfx("click"); shipWin.tab = e.dataset.swtab; render(); });
   d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
   d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
@@ -1174,16 +1176,13 @@ $("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", lo
 $("hint-tut-skip").onclick = () => act(() => skipTutorial(g));
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
-  el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-exp">${t.exportS}</button> <span id="m-msg"></span></p>` +
-    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><label><input id="m-auto-time" type="checkbox" ${automaticTime ? "checked" : ""}> ${lang === "es" ? "Avance automático" : "Automatic time"}</label></p><p><small>${lang === "es" ? "El puerto se pausa para planificar. Las rutas automáticas siguen sin detenerse al llegar." : "The port pauses for planning. Automatic routes keep running on routine arrivals."}</small></p><p><small>${t.keys}</small></p><p><button id="m-slots">${SLOT_TEXT[lang].title}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-set">${t.stTitle}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
+  // One place per control: language, speed, automatic time, sound, shortcuts and export live in Ajustes, not here.
+  el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-slots">${SLOT_TEXT[lang].title}</button> <span id="m-msg" role="status"></span></p>` +
+    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p><button id="m-set">${t.stTitle}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
   el.hidden = false;
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
-  $("m-auto-time").onchange = e => { automaticTime = e.target.checked; localStorage.setItem('automatic-time', String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) { speed = 4; localStorage.setItem("speed", "4"); } $("m-spd").textContent = speed + 'x'; };
   $("m-res").onclick = close;
   $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
-  $("m-exp").onclick = () => { exportSave(JSON.stringify(packGame(g, company)), g.day); $("m-msg").textContent = t.expDone; };
-  $("m-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showMenu(); };
-  $("m-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); localStorage.setItem("speed", String(speed)); $("m-spd").textContent = speed + "x"; };
   $("m-slots").onclick = () => showSlots();
   $("m-cred").onclick = () => showCredits();
   $("m-set").onclick = () => showSettings();
@@ -1232,9 +1231,7 @@ function showSettings() {
   t = T[lang]; const el = $("title");
   const ts = localStorage.getItem("text-size") === "large", rm = localStorage.getItem("reduce-motion") === "1";
   el.innerHTML = settingsHtml(t, { lang, speed, automaticTime, large: ts, reduceMotion: rm, sound: soundOn(), vol: { sfx: Math.round(volOf("sfx") * 100), music: Math.round(volOf("music") * 100), amb: Math.round(volOf("amb") * 100) }, inGame: !inTitle, tutReplay: !inTitle && !g.over && tutorialStep(g) === "done" });
-  $("st-save")?.addEventListener("click", () => { autosave(); $("st-msg").textContent = t.saved; });
   $("st-exp")?.addEventListener("click", () => { exportSave(JSON.stringify(packGame(g, company)), g.day); $("st-msg").textContent = t.expDone; });
-  $("st-cred").onclick = () => showCredits();
   $("st-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showSettings(); };
   $("st-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); localStorage.setItem("speed", String(speed)); $("st-spd").textContent = speed + "x"; };
   $("st-auto").onchange = e => { automaticTime = e.target.checked; localStorage.setItem("automatic-time", String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) { speed = 4; localStorage.setItem("speed", "4"); } $("st-spd").textContent = speed + "x"; };
