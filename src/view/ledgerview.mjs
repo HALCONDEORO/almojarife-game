@@ -57,9 +57,9 @@ export function inboxHtml(g, lang, fmt, cityName, goodName) {
   if (notices.length) {
     const groups = groupNotices(notices, text);
     const row = (e) => {
-      const unread = e.unread ? "● " : "", days = e.oldest === e.day ? `${t.day} ${e.day}` : `${t.day} ${e.oldest}-${e.day}`;
-      if (e.kind === "routeLeg") return `<div class="msg${e.unread ? " unread" : ""}">${unread}<small>${days}</small> ${en ? `Ship ${e.first.ship}: ${e.n} route sale${e.n > 1 ? "s" : ""}, profit ${fmt(e.profit)}` : `Barco ${e.first.ship}: ${e.n} venta${e.n > 1 ? "s" : ""} de ruta, ganancia ${fmt(e.profit)}`}</div>`;
-      return `<div class="msg${e.unread ? " unread" : ""}" data-msg="${e.ids[0]}">${unread}<small>${days}</small> ${esc(text(e.first))}${e.n > 1 ? ` <b>×${e.n}</b>` : ""}</div>`;
+      const unread = "", days = e.oldest === e.day ? `${t.day} ${e.day}` : `${t.day} ${e.oldest}-${e.day}`;
+      if (e.kind === "routeLeg") return `<div class="msg">${unread}<small>${days}</small> ${en ? `Ship ${e.first.ship}: ${e.n} route sale${e.n > 1 ? "s" : ""}, profit ${fmt(e.profit)}` : `Barco ${e.first.ship}: ${e.n} venta${e.n > 1 ? "s" : ""} de ruta, ganancia ${fmt(e.profit)}`}</div>`;
+      return `<div class="msg" data-msg="${e.ids[0]}">${unread}<small>${days}</small> ${esc(text(e.first))}${e.n > 1 ? ` <b>×${e.n}</b>` : ""}</div>`;
     };
     h += `<details class="msg-notices"><summary><b>${en ? "Notices" : "Avisos"} (${notices.length})</b> <small>${en ? "grouped, nothing to do" : "agrupados, sin nada que hacer"}</small></summary>${groups.map(row).join("")}</details>`;
   }
