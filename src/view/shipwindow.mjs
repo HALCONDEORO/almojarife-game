@@ -26,7 +26,7 @@ export const SW = {
     hull: "Casco {h}%", repair: "Reparar casco ({p})",
     upkeep: "Mantenimiento: {u}/día", value: "Valor: {v}",
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
-    route: "Ruta activa: {a} ⇄ {b}, lleva {out}{back}. Viajes completados: {n}.", noRoute: "Sin ruta.",
+    route: "Ruta activa: {a} ⇄ {b}, lleva {out}{back}. Viajes completados: {n}.", routeAdv: "Ruta activa: {stops}. Paradas hechas: {n}.", noRoute: "Sin ruta.",
     backGoods: " y trae {g}",
     prize: "Presa capturada: el astillero paga menos por ella.",
     sellShip: "Vender barco ({p})",
@@ -46,7 +46,7 @@ export const SW = {
     hull: "Hull {h}%", repair: "Repair hull ({p})",
     upkeep: "Upkeep: {u}/day", value: "Value: {v}",
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
-    route: "Active route: {a} ⇄ {b}, carries {out}{back}. Trips completed: {n}.", noRoute: "No route.",
+    route: "Active route: {a} ⇄ {b}, carries {out}{back}. Trips completed: {n}.", routeAdv: "Active route: {stops}. Stops made: {n}.", noRoute: "No route.",
     backGoods: " and brings back {g}",
     prize: "Captured prize: the shipyard pays less for it.",
     sellShip: "Sell ship ({p})",
@@ -143,6 +143,8 @@ function dataTab(g, s, t, hp) {
     : `<p>${t.atPort.replace("{city}", cn(s.at))}</p>`;
   if (s.route) {
     const r = s.route, goodsName = (k) => goodIcon(k, 16) + (hp.goods[k] ?? k);
+    if (Array.isArray(r.stops)) h += `<p>${t.routeAdv.replace("{stops}", r.stops.map((x) => cn(x.city)).join(" → ")).replace("{n}", r.legs ?? 0)}</p>`;
+    else
     h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;
   if (s.prize) h += `<p><i>${t.prize}</i></p>`;
