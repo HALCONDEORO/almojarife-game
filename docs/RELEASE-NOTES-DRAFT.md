@@ -32,7 +32,7 @@ Forecasts, variable salvage rewards, workshop margin warnings, persistent course
 ## Release record to complete
 
 - Final commit and tree: PENDING.
-- Version: proposed v0.1.0-alpha.1. Intended audience: PUBLIC, approved conditionally on26 October18:20.
+- Version: v0.1.0-alpha.1 under the delegated alpha.N policy; beta uses v0.5.0-beta.N, full release v1.0.0. Intended audience: PUBLIC, approved conditionally on26 October18:20.
 - Independent documentation review: PENDING.
 - Exact-head CI and simulation gates for the full batch: PENDING.
 - Deployment and ES desktop post-merge playtest: PENDING.

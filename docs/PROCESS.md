@@ -19,7 +19,7 @@
 
 ## Releases
 
-Use focused PRs for review and larger batches for releases. The proposed first tag is `v0.1.0-alpha.1`, not yet created. Follow [RELEASE.md](RELEASE.md), including owner review of the notes, the audience decision, independent documentation review, exact-commit deployment and desktop playtest.
+Use focused PRs for review and larger batches for releases. Version policy: `v0.1.0-alpha.N` for alpha, `v0.5.0-beta.N` for beta, and `v1.0.0` for the full release. Increase the middle number according to batch size. The first tag is `v0.1.0-alpha.1`, not yet created. Follow [RELEASE.md](RELEASE.md), including owner review of the notes, the audience decision, independent documentation review, exact-commit deployment and desktop playtest.
 
 ## History
 

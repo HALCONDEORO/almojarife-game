@@ -8,7 +8,7 @@ No GitHub release exists at this checkpoint. Source merged into `main` is not pr
 
 ## Proposed versions, not tags
 
-Start with `v0.1.0-alpha.1` for the first reviewed release candidate. Further candidates for that batch use `alpha.2`, `alpha.3`, and so on. Use `v0.2.0-alpha.1` for the next larger feature batch. The `0.x` series is experimental: no save compatibility is promised unless a release explicitly documents and tests it. No tag has been created by this proposal.
+The owner delegated version numbering on26 October2026. Use `v0.1.0-alpha.N` for alpha candidates, `v0.5.0-beta.N` for beta candidates, and `v1.0.0` for the full release. Start with `v0.1.0-alpha.1`; increment N for another candidate in the same batch. Increase the middle number according to the size of a later feature batch, rather than tagging every small PR. The `0.x` series is experimental: no save compatibility is promised unless a release explicitly documents and tests it. No tag has been created by this policy.
 
 ## Batch releases, focused pull requests
 
