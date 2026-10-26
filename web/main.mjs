@@ -304,11 +304,12 @@ const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 let inTitle = true; // boot lands on the title screen over a throwaway background game
 function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
-// Besides the daily save: every few minutes, and whenever the tab is hidden or closed, so a crash or a closed tab loses little. Same save format; autosave() skips the title.
+// Besides the daily save: every few minutes and when hidden or closed. Skip the title and byte-identical campaign payloads (savedAt is metadata).
 const AUTOSAVE_EVERY_MS = 3 * 60 * 1000;
-setInterval(() => { if (g && !inTitle) autosave(); }, AUTOSAVE_EVERY_MS);
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && g && !inTitle) autosave(); });
-addEventListener("pagehide", () => { if (g && !inTitle) autosave(); });
+function autosaveIfChanged() { try { if (!g || inTitle) return; const stored = localStorage.getItem(SAVE_KEY); const strip = (o) => JSON.stringify({ ...o, savedAt: 0 }); if (stored && strip(JSON.parse(stored)) === strip(packGame(g, company))) return; } catch {} autosave(); }
+setInterval(autosaveIfChanged, AUTOSAVE_EVERY_MS);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") autosaveIfChanged(); });
+addEventListener("pagehide", autosaveIfChanged);
 function loadSaved() { try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null; return unpackGame(JSON.parse(raw), world); } catch { return null; } }
 function getBackup() { try { return localStorage.getItem(BACKUP_KEY); } catch { return null; } }
 function getTmp() { try { return localStorage.getItem(TMP_KEY); } catch { return null; } }
