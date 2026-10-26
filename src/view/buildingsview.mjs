@@ -186,7 +186,7 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
   const cardIcon = def ? (iconForGood ? iconForGood(def.output, 40) : "") : bwSvg(BWI[r.type] ?? BWI.building, 40);
   const state = r.state === "construction"
     ? `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`
-    : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : (t.bldState[r.state] ?? r.state);
+    : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : r.state === "plot" ? (lang === "es" ? "tuyo, sin construir" : "yours, nothing built") /* not "solar" again under the name and the window title */ : (t.bldState[r.state] ?? r.state);
   const cell = (glyph, label, val, short, bad = false) =>
     `<span class="bwc-stat${bad ? " bwc-bad" : ""}" role="img" aria-label="${escBw(label)}" title="${escBw(label)}"><span class="bwc-val">${bwSvg(glyph, 16)}<b>${val}</b></span><span class="bwc-lab">${escBw(short)}</span></span>`;
   const cells = [];
