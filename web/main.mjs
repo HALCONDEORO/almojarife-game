@@ -1,3 +1,4 @@
+import { mergeTrade } from "../src/view/toastmerge.mjs";
 import { marketQuantity } from '../src/view/marketdesk.mjs';
 import { shipCapacity } from '../src/sim/trade.mjs';
 import { sfx, soundOn, syncAmbience, syncMusic, volOf, setVolume, toggleSound } from "./audio.mjs";
@@ -387,11 +388,14 @@ function postCity2dState() {
   frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), industry, civic: [{ id: "hall", label: t.tabHall }, ...(lonjaEnabled(location.search) ? [{ id: "lonja", label: t.tabLonja }] : [])] }, location.origin);
 }
 addEventListener("message", (e) => { const frame = document.getElementById("v3d")?.querySelector("iframe"); if (frame && e.origin === location.origin && e.source === frame.contentWindow && e.data?.kind === "city2d-ready" && e.data.city === g.ships[sel]?.at) postCity2dState(); });
-function toast(msg) {
+// Repeated trades of the same good within the toast's life merge into one toast with the summed amount.
+function toast(msg, agg) {
   let box = $("toasts"); if (!box) { box = document.createElement("div"); box.id = "toasts"; box.setAttribute("role", "status"); document.body.appendChild(box); }
-  const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; box.appendChild(el);
+  const last = box.lastElementChild;
+  if (agg && last && last.dataset.key === agg.key) { const m = mergeTrade(last._agg, agg); last._agg = m; last.textContent = agg.render(m.q, m.c); clearTimeout(last._t); last._t = setTimeout(() => last.remove(), 2600); return; }
+  const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; if (agg) { el.dataset.key = agg.key; el._agg = agg; } box.appendChild(el);
   while (box.childElementCount > 3) box.firstChild.remove();
-  setTimeout(() => el.remove(), 2600);
+  el._t = setTimeout(() => el.remove(), 2600);
 }
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
@@ -785,8 +789,8 @@ function render() {
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
   P.querySelectorAll("[data-market-qty]").forEach((e) => e.onclick = () => { marketQty = e.dataset.marketQty === "max" ? "max" : +e.dataset.marketQty; render(); });
   { const pv = P.querySelector("[data-market-preview]"); if (pv) P.querySelectorAll(".mkt-pill").forEach((e) => { const show = () => { pv.textContent = e.dataset.tip || ""; }, hide = () => { pv.textContent = ""; }; e.addEventListener("mouseenter", show); e.addEventListener("focus", show); e.addEventListener("mouseleave", hide); e.addEventListener("blur", hide); }); }
-  P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) toast(t.toastBought.replace("{q}", dq).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(dc))); });
-  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v); sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - (s.cargo[gd] ?? 0), dc = g.cash - cash0; if (dq > 0 && dc > 0) toast(t.toastSold.replace("{q}", dq).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(dc))); });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
+  P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastBought.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "buy:" + gd, q: dq, c: dc, render }); } });
+  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doSell(g, s, gd, v === "all" ? s.cargo[gd] ?? 0 : +v); sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - (s.cargo[gd] ?? 0), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastSold.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "sell:" + gd, q: dq, c: dc, render }); } });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
     const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
     el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
