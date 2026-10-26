@@ -44,12 +44,29 @@ function grainTable(){
  return grainCache=t;
 }
 const grainColors=zone=>GROUND_TYPES[zone].layers.filter(l=>l.kind==='grain').flatMap(l=>l.colors);
+/* Painterly ground (Marco 26/10: the ground must match the buildings). A tileable fBm noise is baked once into two tinted layers, a warm shadow and a cream light, and laid over the land with the view so it pans and zooms with the map. */
+let groundTex=null;
+function groundTexture(){
+ if(groundTex)return groundTex;
+ const N=256,mk=(r,g,b,amax)=>{const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),im=x.createImageData(N,N);
+  const val=(ix,iy,o)=>hash01(((ix%(N>>o)+(N>>o))%(N>>o))*131+((iy%(N>>o)+(N>>o))%(N>>o))*7919+o*104729,11+o);
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){let v=0,amp=.5,tot=0;for(let o=3;o<=6;o++){const cell=N>>(o-1)||1,gx=xx/cell,gy=y/cell,x0=Math.floor(gx),y0=Math.floor(gy),fx=gx-x0,fy=gy-y0,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy),n=(N/cell)|0,w=(a,b)=>hash01(((a%n+n)%n)*131+((b%n+n)%n)*7919+o*104729,17+o);
+    const t=w(x0,y0)*(1-sx)+w(x0+1,y0)*sx,bt=w(x0,y0+1)*(1-sx)+w(x0+1,y0+1)*sx;v+=(t*(1-sy)+bt*sy)*amp;tot+=amp;amp*=.55}
+   v=v/tot;const k=(y*N+xx)*4;im.data[k]=r;im.data[k+1]=g;im.data[k+2]=b;im.data[k+3]=Math.max(0,Math.min(1,(v-.5)*3.2+.5))*amax}
+  x.putImageData(im,0,0);return c};
+ return groundTex={dark:mk(96,66,34,56),light:mk(255,240,200,46)};
+}
+function paintGround(){
+ const t=groundTexture(),o=xy(0,0),sc=zoom*1.4;
+ for(const k of ['dark','light']){const pat=ctx.createPattern(t[k],'repeat');if(pat.setTransform)pat.setTransform(new DOMMatrix().translate(o.x,o.y).scale(sc));ctx.fillStyle=pat;ctx.fillRect(0,0,canvas.width,canvas.height)}
+ const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height); /* same light as the sprites: from the top left */
+ g.addColorStop(0,'rgba(255,238,190,.16)');g.addColorStop(.5,'rgba(255,238,190,0)');g.addColorStop(1,'rgba(70,45,20,.14)');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height)}
 function drawLandmass(){
  const pts=mainland(bounds).map(([x,y])=>xy(x,y));
  ctx.beginPath();ctx.moveTo((pts[0].x+pts[pts.length-1].x)/2,(pts[0].y+pts[pts.length-1].y)/2);pts.forEach((p,i)=>{const n=pts[(i+1)%pts.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();
  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
  ctx.fillStyle=GROUND_TYPES.pradera.base;ctx.fill(); // the whole landmass starts as grassland
- ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();
+ ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();ctx.globalAlpha=.5;ctx.strokeStyle='#fffbea';ctx.lineWidth=2.4*zoom;ctx.stroke();ctx.globalAlpha=1;
  ctx.save();ctx.clip();
  const G=GROUND_TYPES,{minX,minY,maxX,maxY}=bounds;
  // Sand band along the curved south coast; the straight working quay keeps its stone.
@@ -70,11 +87,11 @@ function drawLandmass(){
   const rip=GROUND_TYPES[s.zone].layers.find(l=>l.kind==='ripples');
   if(rip&&hash01(s.i,7)<rip.chance){ctx.globalAlpha=rip.alpha;ctx.strokeStyle=rip.colors[0];ctx.lineWidth=1*zoom;ctx.beginPath();ctx.arc(p.x,p.y,3.2*zoom,.25,Math.PI-.25);ctx.stroke()}
  }
- ctx.globalAlpha=1;ctx.restore();
+ ctx.globalAlpha=1;paintGround();ctx.restore();
 }
 function drawStreets(){
  const G=GROUND_TYPES.camino,wear=G.layers.find(l=>l.kind==='wear');
- ctx.lineCap='round';ctx.strokeStyle=G.base;ctx.lineWidth=10*zoom;
+ ctx.lineCap='round';ctx.globalAlpha=.34;ctx.strokeStyle='#6f5630';ctx.lineWidth=13.5*zoom;for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1; /* soft edge so the roads sit in the ground */ctx.strokeStyle=G.base;ctx.lineWidth=10*zoom;
  for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
  if(wear){ctx.globalAlpha=wear.alpha;ctx.strokeStyle=wear.colors[0];ctx.lineWidth=wear.width*zoom;for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1}
 }
@@ -250,7 +267,7 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  drawHarbour(t);
  for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const c of civic){const cp={x:layout.plaza.x+(c.id==='hall'?1:6),y:layout.plaza.y+4,w:3,d:3};sprite(cp,images[c.id==='hall'?'house_rich:2':'alhondiga:2'])} /* town hall and exchange on the plaza: own sprites already in the set (rich house with garden, arcaded trading house) */for(const p of [...layout.plots,...layout.residential].sort((a,b)=>placement(a).depth-placement(b).depth)){
  const owned=bld[p.id],service=['market','shipyard','tavern','bank','office','warehouse'].includes(p.type)&&+p.id.split(':')[1]<6;
- let b=owned||{type:p.type,level:p.level||(p.type==='house'?layout.housing.level:1),state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d),free=lotSet().has(p)&&!owned&&!service&&!p.type.startsWith('town:'); /* free = an unbuilt lot for sale: drawn as an empty marked lot, never as a finished building */polygon(p);if(free){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#d8e2b8';ctx.fill();ctx.setLineDash([6,4]);ctx.strokeStyle=p===selected?'#fff2b4':'#5f8a4a';ctx.lineWidth=p===selected?3:2;ctx.stroke();ctx.setLineDash([])}else if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
+ let b=owned||{type:p.type,level:p.level||(p.type==='house'?layout.housing.level:1),state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d),free=lotSet().has(p)&&!owned&&!service&&!p.type.startsWith('town:'); /* free = an unbuilt lot for sale: drawn as an empty marked lot, never as a finished building */polygon(p);if(free){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#b7bf7c';ctx.globalAlpha=p===selected||p===hover?.9:.62;ctx.fill();ctx.globalAlpha=1;ctx.setLineDash(p===selected?[6,4]:[]);ctx.strokeStyle=p===selected?'#fff2b4':'#6f7c3e';ctx.lineWidth=p===selected?3:1.5;ctx.stroke();ctx.setLineDash([])}else if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
  const focusAlpha=obscuresSelection(p,selected)?.45:1;
  const isPreview=preview&&p===hover&&!owned&&!service;if(!free&&v.state!=='plot'&&v.state!=='construction'&&!isPreview){groundContact(p);const key=assetKey(p,b);sprite(p,images[key]||images[p.type+':1'],focusAlpha,v.state==='halted'?'saturate(.15) brightness(.8)':'');}
  if(v.state==='construction'){groundContact(p);sprite(p,images['construction:'+Math.max(1,Math.min(3,b.nextLevel||1))],.9*focusAlpha);}
