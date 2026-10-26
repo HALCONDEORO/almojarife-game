@@ -59,6 +59,7 @@ import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
 import { citylifeExtra } from "../src/game/citylife.mjs";
 import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
+import { actionUnread } from "../src/view/msgclass.mjs";
 import { unread, markAllRead, markRead, SETTLE_EVERY, dueNow } from "../src/game/ledger.mjs";
 import { shipIconSvg, orderProgress } from "../src/view/yardscene.mjs";
 import { shipDescriptor } from "../src/view/shipvisual.mjs";
@@ -438,7 +439,7 @@ function selectRightTab(tab) {
 function openLedger(kind) { if (document.getElementById("v3d")) showLedger(kind); else selectRightTab(kind); }
 function renderRightTabs() {
   const bar = $("rtabs"), fleetPane = $("rt-fleet"), led = $("rt-ledger"); if (!bar || !led) return;
-  const n = unread(g), key = `${lang}|${rightTab}|${n}`;
+  const n = actionUnread(g), key = `${lang}|${rightTab}|${n}|${unread(g)}`;
   if (bar.dataset.key !== key) {
     bar.dataset.key = key;
     bar.innerHTML = RT_TABS.map(([id, es, en]) => `<button type="button" role="tab" data-rt="${id}" aria-selected="${rightTab === id}">${lang === "en" ? en : es}${id === "msg" && n ? ` (${n})` : ""}</button>`).join("");
@@ -494,7 +495,7 @@ function render() {
   $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.noGoal || g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
   $("cash").textContent = `${t.cash}: ${fmtM(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
-  $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, unread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
+  $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, actionUnread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
   $("goal").textContent = g.noGoal || g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${speed}x`; $("play").title = t.tipHdrPlay; $("spd").title = t.tipHdrSpeed;
@@ -1102,7 +1103,7 @@ function syncCityControls() {
   set("ships", lang === "es" ? "Barcos" : "Ships");
   set("reports", LT[lang].reports);
   set("msgs", LT[lang].messages);
-  const ub = d.querySelector('[data-cc-badge="msgs"]'); if (ub) { const n = unread(g); if (ub.textContent !== String(n)) ub.textContent = n; ub.hidden = n <= 0; }
+  const ub = d.querySelector('[data-cc-badge="msgs"]'); if (ub) { const n = actionUnread(g); if (ub.textContent !== String(n)) ub.textContent = n; ub.hidden = n <= 0; }
   const sb = d.querySelector('[data-cc-badge="ships"]'); if (sb) { const n = g.ships.filter((x) => x.at === city3dId && !x.voyage).length; if (sb.textContent !== String(n)) sb.textContent = n; sb.hidden = n <= 0; }
   const cp = d.querySelector('[data-corner="play"]');
   if (cp) { cp.textContent = playing ? "⏸" : "▶"; cp.title = playing ? t.pause : t.play; cp.setAttribute("aria-label", playing ? t.pause : t.play); }
