@@ -4,6 +4,8 @@
 // Step kinds: events (buy/sell/sail/arrive/readReport, fired by the game) and conditions
 // (respect/worth/fleet/build/warehouse, checked every day). Historical context is separate
 // from fictional gameplay goals.
+import { tutorialActive } from "./tutorial.mjs"; // the tutorial gates the mission arc (see below)
+
 export const MISSIONS = Object.freeze([
   Object.freeze({ id: 'm1-oficio', chain: 'main', requires: [], optional: false, deadline: 60,
     title: { es: 'La prueba del oficio', en: 'The test of the trade' },
@@ -83,6 +85,7 @@ function complete(g, m, h) {
 /** Explicit successful player-action events only; no parsing translated logs. No general game side effects. */
 export function campaignEvent(g, event, h = NO_HELPERS) {
   const c = g.campaign; if (!campaignShapeOk(c) || !event || typeof event.kind !== 'string') return false;
+  if (tutorialActive(g)) return false; // missions stay frozen until the tutorial is done or skipped (owner decision, 25 Oct 2026)
   let changed = false;
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
@@ -115,6 +118,7 @@ function portsWithRespect(g, step, h) {
 /** Daily: deadlines fail missions, condition steps complete themselves, new missions activate. */
 export function campaignTick(g, h = NO_HELPERS) {
   const c = g.campaign; if (!campaignShapeOk(c)) return;
+  if (tutorialActive(g)) return; // no activation, progress or deadlines while the tutorial runs
   activate(g, h.post);
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
@@ -133,6 +137,7 @@ export function campaignSteps(g, id = g.campaign?.active?.[0]) {
 /** What the UI shows: active missions with their current step and deadline countdown. */
 export function missionView(g, lang, h = NO_HELPERS) {
   const c = g.campaign; if (!c) return [];
+  if (tutorialActive(g)) return []; // the arc appears once the tutorial is done or skipped
   return c.active.map((id) => {
     const m = campaignById(id), st = c.missions[id];
     const step = m.steps[Math.min(st.step, m.steps.length - 1)];

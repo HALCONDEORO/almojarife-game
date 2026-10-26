@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { initTutorial, tutorialNote, tutorialStep, tutorialHint, TUT_TEXT } from "../src/game/tutorial.mjs";
+import { initTutorial, tutorialNote, tutorialStep, tutorialHint, tutorialLine, tutorialActive, skipTutorial, TUT_TEXT } from "../src/game/tutorial.mjs";
 
 test("tutorial off: no key, no step, no hint", () => {
   const g = {};
@@ -9,22 +9,54 @@ test("tutorial off: no key, no step, no hint", () => {
   assert.equal(tutorialNote(g, "buy"), false);
   assert.deepEqual(g, {});
 });
-test("steps go buy -> sell -> sail -> done, in order only", () => {
+test("steps go buy -> sell -> sail -> route -> hall -> done, in order only", () => {
   const g = {}; initTutorial(g);
   assert.equal(tutorialStep(g), "buy");
   assert.equal(tutorialNote(g, "sell"), false); // too early
   assert.equal(tutorialNote(g, "sail"), false);
+  assert.equal(tutorialNote(g, "route"), false);
+  assert.equal(tutorialNote(g, "hall"), false);
   assert.equal(tutorialStep(g), "buy");
   assert.equal(tutorialNote(g, "buy"), true);
   assert.equal(tutorialStep(g), "sell");
   assert.equal(tutorialNote(g, "sail"), false);
   assert.equal(tutorialNote(g, "sell"), true);
   assert.equal(tutorialStep(g), "sail");
+  assert.equal(tutorialNote(g, "hall"), false); // the council visit only counts after the route
+  assert.equal(tutorialNote(g, "route"), false);
   assert.equal(tutorialNote(g, "sail"), true);
+  assert.equal(tutorialStep(g), "route");
+  assert.equal(tutorialNote(g, "hall"), false);
+  assert.equal(tutorialNote(g, "route"), true);
+  assert.equal(tutorialStep(g), "hall");
+  assert.equal(tutorialNote(g, "hall"), true);
   assert.equal(tutorialStep(g), "done");
 });
+test("a completed v1 tutorial (bought/sold/sailed, no v field) stays complete", () => {
+  assert.equal(tutorialStep({ tut: { bought: true, sold: true, sailed: true } }), "done");
+  assert.equal(tutorialLine({ tut: { bought: true, sold: true, sailed: true } }), null);
+  // a half-done v1 tutorial keeps its progress and finishes under the original three steps
+  const part = { tut: { bought: true, sold: true } };
+  assert.equal(tutorialStep(part), "sail");
+  assert.equal(tutorialNote(part, "route"), false); // v1 never had a route step
+  assert.equal(tutorialNote(part, "sail"), true);
+  assert.equal(tutorialStep(part), "done");
+});
+test("skip: one click finishes the tutorial from any step, only while it runs", () => {
+  const g = {}; initTutorial(g);
+  assert.equal(tutorialActive(g), true);
+  assert.equal(skipTutorial(g), true);
+  assert.equal(tutorialStep(g), "done");
+  assert.equal(tutorialActive(g), false);
+  assert.equal(tutorialLine(g), null);
+  assert.equal(skipTutorial(g), false); // already skipped: nothing left to skip
+  assert.equal(tutorialNote(g, "buy"), false); // a skipped tutorial does not come back
+  assert.equal(skipTutorial({}), false); // no tutorial: nothing to skip
+  const done = {}; initTutorial(done); for (const k of ["buy", "sell", "sail", "route", "hall"]) tutorialNote(done, k);
+  assert.equal(skipTutorial(done), false); // already done on its own
+});
 test("every step has es and en text, no leftover placeholders", () => {
-  for (const l of ["es", "en"]) for (const k of ["buy", "sell", "sail", "done"]) assert.match(TUT_TEXT[l][k], /\S{3}/), assert.doesNotMatch(TUT_TEXT[l][k], /[{}]/);
+  for (const l of ["es", "en"]) for (const k of ["buy", "sell", "sail", "route", "hall", "done"]) assert.match(TUT_TEXT[l][k], /\S{3}/), assert.doesNotMatch(TUT_TEXT[l][k], /[{}]/);
   const g = {}; initTutorial(g);
   assert.equal(tutorialHint(g, "xx"), TUT_TEXT.es.buy);
 });
@@ -45,6 +77,10 @@ test("a real game: off by default, on with opts.tutorial, advances on real trade
   const to = world.cities.find((c) => c.id !== ship.at).id;
   const r = doSail(g, ship, to);
   assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(tutorialStep(g), "route");
+  assert.ok(setRoute(g, ship, to, ship.at, good).ok);
+  assert.equal(tutorialStep(g), "hall");
+  assert.equal(tutorialNote(g, "hall"), true); // the UI fires this when the player opens the Town hall tab
   assert.equal(tutorialStep(g), "done");
 });
 test("failed actions do not advance the tutorial", () => {
@@ -80,12 +116,12 @@ test("free navigation counts as sailing", () => {
   const node = world.nodes.w_cadiz_off; // a sea point next to Cadiz, not a port
   const r = doGoTo(g, ship, node.lat, node.lon);
   assert.ok(r.ok && !r.toPort, JSON.stringify(r));
-  assert.equal(tutorialStep(g), "done");
+  assert.equal(tutorialStep(g), "route"); // sailing done; the route and council steps remain
 });
 
 import { cleanProfile, startOptions } from "../src/game/profile.mjs";
 import { setRoute } from "../src/game/game.mjs";
-import { tutorialLine } from "../src/game/tutorial.mjs";
+// (tutorialLine already imported above)
 test("the real start path: every difficulty starts in the tutorial, with no 50,000 goal and no deadline", () => {
   const ids = world.cities.map((c) => c.id);
   for (const d of ["easy", "normal", "hard"]) {
