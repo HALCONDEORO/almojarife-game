@@ -28,6 +28,8 @@ export const SW = {
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
     route: "Ruta activa: {a} ⇄ {b}, lleva {out}{back}. Viajes completados: {n}.", noRoute: "Sin ruta.",
     backGoods: " y trae {g}",
+    routeAdv: "Ruta activa (circuito): {stops}. Parada actual: {cur}. Vueltas completadas: {n}.",
+    advBuy: "compra {g}", advSell: "vende {g}", advMinCash: "freno de caja {p}",
     prize: "Presa capturada: el astillero paga menos por ella.",
     sellShip: "Vender barco ({p})",
   },
@@ -48,6 +50,8 @@ export const SW = {
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
     route: "Active route: {a} ⇄ {b}, carries {out}{back}. Trips completed: {n}.", noRoute: "No route.",
     backGoods: " and brings back {g}",
+    routeAdv: "Active route (circuit): {stops}. Current stop: {cur}. Runs completed: {n}.",
+    advBuy: "buys {g}", advSell: "sells {g}", advMinCash: "cash brake {p}",
     prize: "Captured prize: the shipyard pays less for it.",
     sellShip: "Sell ship ({p})",
   },
@@ -143,7 +147,15 @@ function dataTab(g, s, t, hp) {
     : `<p>${t.atPort.replace("{city}", cn(s.at))}</p>`;
   if (s.route) {
     const r = s.route, goodsName = (k) => goodIcon(k, 16) + (hp.goods[k] ?? k);
-    h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
+    if (r.v === 2) { // advanced circuit: show the stop chain, the current stop and each stop's orders
+      const n = r.stops.length, cur = r.stops[(r.idx ?? 0) % n];
+      h += `<p>${t.routeAdv.replace("{stops}", r.stops.map((st) => cn(st.city)).join(" → ")).replace("{cur}", cn(cur.city)).replace("{n}", r.legs ?? 0)}</p>`;
+      const rule = (x, key, lim, sign) => t[key].replace("{g}", goodsName(x.good)) + (x[lim] != null ? ` ${sign}${fmt(x[lim])}` : "");
+      h += `<p><small>` + r.stops.map((st) => {
+        const parts = [...st.buy.map((x) => rule(x, "advBuy", "maxPrice", "≤")), ...st.sell.map((x) => rule(x, "advSell", "minPrice", "≥"))];
+        return `<b>${cn(st.city)}</b>: ${parts.join(", ") || "—"}`;
+      }).join(" · ") + (r.minCash > 0 ? ` · ${t.advMinCash.replace("{p}", fmt(r.minCash))}` : "") + `</small></p>`;
+    } else h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;
   if (s.prize) h += `<p><i>${t.prize}</i></p>`;
   return h;
