@@ -19,3 +19,20 @@ test('political holdings change by year and unknown stays uncoloured',()=>{const
 test('normal player views contain no sources links technical intervals or attribution notices',()=>{for(const r of [politicalPortLayer(p),leaguePortLayer({enabled:true,ports:[],year:1480,data:leagueData,lang:'en'}),tradePortLayer({enabled:true,ports:[],lang:'en'})]){assert.doesNotMatch(r.legend,/<a|https:|[Ss]ource|attribution|1296|1494|historical volumes|verified/);}});
 import{tradeBadgePorts}from'../src/view/historicalmap.mjs';
 test('overview has at most five major known-port cards, never reveals absent ports; closer zoom restores detail',()=>{const ps=Array.from({length:9},(_,i)=>({id:`p${i}`,pop:12000+i*1000}));assert.equal(tradeBadgePorts(ps,1).length,5);assert.deepEqual(tradeBadgePorts(ps,1),tradeBadgePorts([...ps].reverse(),1));assert.equal(tradeBadgePorts(ps,2).length,9);assert.equal(tradeBadgePorts([{id:'small',pop:1}],3).length,1);assert.deepEqual(tradeBadgePorts([],1),[]);});
+
+import{politicalZoneLayer}from'../src/view/historicalmap.mjs';
+const realmsData=JSON.parse(fs.readFileSync(new URL('../data/realms.json',import.meta.url)));
+test('political washes render one soft path per cited zone active in the year, never borders',()=>{const z=y=>politicalZoneLayer({enabled:true,year:y,data:realmsData,x:n=>n,y:n=>n});
+ const p1480=z(1480);assert.equal((p1480.svg.match(/<path/g)??[]).length,7);assert.match(p1480.svg,/fill-opacity="0\.16"/);assert.doesNotMatch(p1480.svg,/stroke="#/);assert.match(p1480.svg,/Emirato de Granada/);assert.doesNotMatch(p1480.svg,/Regencia de Argel/);
+ const p1520=z(1520);assert.equal((p1520.svg.match(/<path/g)??[]).length,8);assert.doesNotMatch(p1520.svg,/Emirato de Granada/);assert.match(p1520.svg,/Regencia de Argel/);assert.match(p1520.svg,/Reino de Tlemecén/);
+ const p1560=z(1560);assert.equal((p1560.svg.match(/<path/g)??[]).length,7);assert.doesNotMatch(p1560.svg,/Tlemecén/);});
+test('zone rows need a cited source, a known realm and a real polygon',()=>{const base=realmsData.zones[0];
+ assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,source:''}]},x:n=>n,y:n=>n}).svg,'');
+ assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,realm:'atlantis'}]},x:n=>n,y:n=>n}).svg,'');
+ assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,polygon:[[1,2]]}]},x:n=>n,y:n=>n}).svg,'');
+ assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,from:'siempre'}]},x:n=>n,y:n=>n}).svg,'');
+ assert.deepEqual(politicalZoneLayer({enabled:false,year:1480,data:realmsData}),{svg:'',legend:''});
+ assert.equal(politicalZoneLayer({enabled:true,year:1480,data:null}).svg,'');});
+test('political mode composes washes under rings and keeps the no-borders notice in both languages',()=>{const args={enabled:true,mode:'political',ports:[],year:1480,data:realmsData,x:n=>n,y:n=>n};
+ const es=historicalLayer(args);assert.match(es.underlay,/<path/);assert.match(es.legend,/Veladuras aproximadas/);assert.match(es.legend,/no fronteras territoriales/);
+ const en=historicalLayer({...args,lang:'en'});assert.match(en.legend,/Approximate washes/);assert.match(en.legend,/not territorial boundaries/);});
