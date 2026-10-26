@@ -105,3 +105,40 @@ Ideas, bug reports, historical corrections and translations are welcome. Start w
 - Third-party material is limited to public domain, CC0 and CC BY; every file is listed with its source in [`CREDITS.md`](CREDITS.md). Map data: Made with Natural Earth.
 - The name "Almojarife" is provisional. A free trademark search found no conflict (19 Oct 2026); this is not legal advice.
 - Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.
+
+## Desktop app beta preparation
+
+The Electron build packages the same game for Windows, macOS and Linux. The
+`Desktop builds` workflow produces unsigned NSIS and portable `.exe`, Apple
+Silicon `.dmg`/`.zip`, and Linux x64 `.AppImage`/`.deb` files. Candidate artifacts
+are not automatically published as releases. Download only assets attached to
+an approved release of this repository.
+
+### Installation of unsigned packages
+
+- **Windows:** run the installer or portable executable. If SmartScreen shows
+  an unsigned-app warning, use **More info > Run anyway** only after checking
+  that the file came from the intended release. Installation and SmartScreen
+  acceptance have not been tested by the automated smoke check.
+- **macOS:** open the DMG and copy the app to Applications. For an unsigned-app
+  warning, try **right-click > Open**. Gatekeeper may require a separate
+  confirmation in Privacy & Security. The app is not signed or notarized;
+  do not disable system-wide security. Current CI packages target Apple Silicon.
+- **Linux:** make the AppImage executable with `chmod +x <file>.AppImage`, then
+  run it. AppImage/FUSE and sandbox requirements vary by distribution. Do not
+  disable the Chromium sandbox as a general installation workaround. A `.deb`
+  is also built; installing that package has not yet been verified.
+
+### What has actually been checked
+
+| Platform | Evidence so far | Not yet verified |
+| --- | --- | --- |
+| Windows | Installer and portable builds completed; packaged app reached the title menu on a Windows CI runner. | Installer flow, SmartScreen, a full play session and final release assets. |
+| macOS (Apple Silicon) | DMG/ZIP builds completed; packaged app reached the title menu on a macOS CI runner. | DMG installation, Gatekeeper, Intel Macs, a full play session and final release assets. |
+| Linux x64 | AppImage/deb builds completed. An extracted diagnostic AppImage ran under Xvfb: title, new game, manual save, return to title and Continue; campaign data matched after reload. | FUSE launch, deb installation, ordinary desktop sandbox setup and final release assets. |
+
+The Linux interaction check above used diagnostic build `dd8c166` (package
+version `0.1.0`), with `--disable-setuid-sandbox` for the test container. It is
+not certification of the final beta. The current candidate aligns the package
+version to `0.5.0-beta.1` and adds native-runner title-menu smoke checks. Final
+release records must name the tested candidate and retain these limitations.
