@@ -79,5 +79,11 @@ export function validateRealms(data, portIds) {
     const a = rows[i], b = rows[j];
     if ((a.from ?? -Infinity) < (b.until ?? Infinity) && (b.from ?? -Infinity) < (a.until ?? Infinity)) e.push(`${port}: overlapping holders`);
   }
+  for (const [i, z] of (data.zones ?? []).entries()) {
+    if (!data.realms?.[z.realm]) e.push(`zone ${i}: unknown realm`);
+    if (!/^https:\/\//.test(z.source ?? "")) e.push(`zone ${i}: missing https source`);
+    for (const f of ["from", "until"]) if (z[f] != null && !(Number.isInteger(z[f]) && z[f] >= 1400 && z[f] <= 1800)) e.push(`zone ${i}: bad ${f}`);
+    if (!Array.isArray(z.polygon) || z.polygon.length < 3 || !z.polygon.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))) e.push(`zone ${i}: bad polygon`);
+  }
   return e;
 }
