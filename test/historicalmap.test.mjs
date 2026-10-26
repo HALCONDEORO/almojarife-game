@@ -51,3 +51,10 @@ test('chart generator and title artwork contain no decorative compass roses or r
  const title=fs.readFileSync(new URL('../web/titlebook.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(title,/id="rose"|href="#rose"|class="chart-rose"/);
 });
+
+test('political legend has aligned swatches and Granada keeps its complete accessible name in a compact two-line label',()=>{
+ const a=historicalLayer({enabled:true,mode:'political',ports:[],year:1480,data:realmsData,x:n=>n,y:n=>n});
+ assert.match(a.legend,/class="realm-key"/);assert.equal((a.legend.match(/class="realm-key-item"/g)??[]).length,5);
+ assert.match(a.underlay,/aria-label="Emirato de Granada"/);assert.match(a.underlay,/<tspan x="0" dy="-10">Emirato de<\/tspan><tspan x="0" dy="20">Granada<\/tspan>/);
+ assert.match(a.underlay,/font-size="19"/);assert.match(a.underlay,/data-realm="granada"[^>]*data-my="37.5"/);
+});
