@@ -844,13 +844,14 @@ function render() {
           [1, 5].map((n) => `<button data-hire="${n}" ${s.voyage || c >= L.max || g.cash < n * HIRE_FEE ? "disabled" : ""}>${t.crewHire.replace("{n}", n).replace("{p}", fmt(n * HIRE_FEE))}</button>`).join(" ") + " " +
           [1, 5].map((n) => `<button data-dismiss="${n}" ${s.voyage || c <= 0 ? "disabled" : ""}>${t.crewDismiss.replace("{n}", n)}</button>`).join(" ") + `</div>`; }
     } else if (tab === "yard") {
+      if (inCity && city3dId && s.at !== city3dId) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
       { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
-        const hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
+        const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
         // 1. what needs doing to this ship, with the numbers that matter
         h += sec(`${en ? "Your ship" : "Tu barco"}: ${t.types[s.type]} ${s.id}`,
-          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
-          `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
-          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
+          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
+          `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
+          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${away || s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
         if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", cvr.name).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
@@ -888,6 +889,7 @@ function render() {
     if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null, tlw = te?.ok ? legWeather(s.at, target) : null;
       h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km${wxNote(tlw)} <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
+  if (inCity && city3dId && tab === "yard" && s.voyage) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
   $("panel").innerHTML = h;
@@ -996,7 +998,7 @@ function render() {
   P.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   P.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   P.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
-  P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
+  P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id))));
   P.querySelectorAll("[data-cvleave]").forEach((e) => e.onclick = () => act(() => leaveConvoy(g, s.id)));
@@ -1071,7 +1073,7 @@ function renderShipWin() {
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
-  d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
+  d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
   d.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);

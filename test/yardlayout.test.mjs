@@ -16,3 +16,15 @@ test("yard keeps every action the handlers bind", () => {
 test("yard explains the way to sell a ship and stays bilingual", () => {
   assert.ok(yard.includes("t.yardInfo")); assert.ok(yard.includes("Build a new ship") && yard.includes("Your ship"));
 });
+test("a ship that is not docked here gets a one-line explanation, in both languages", () => {
+  assert.ok(yard.includes("Dock this ship here to repair or arm it.") && yard.includes("Atraca este barco aquí para repararlo o armarlo."));
+  assert.ok(yard.includes("s.at !== city3dId"));
+});
+test("away from this port: repair, gun repair and weapons are disabled in the shipyard", () => {
+  assert.ok(yard.includes("const away = inCity && city3dId && s.at !== city3dId"));
+  for (const a of ['data-repair="1" ${away', 'data-gunrepair="1" ${away', 'data-weapon="${k}" ${away']) assert.ok(yard.includes(a), a);
+});
+test("at sea: the note is rendered outside the docked-only block", () => {
+  const i = src.indexOf('tab === "yard" && s.voyage'); assert.ok(i > src.indexOf('tab === "lonja"'), "after the docked chain");
+  assert.ok(src.slice(i, i + 400).includes("yd-away"));
+});
