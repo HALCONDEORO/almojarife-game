@@ -71,7 +71,7 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     let save1 = await get(K); assert.ok(save1);
     await nav();
     // pagehide may refresh savedAt, but it must not change campaign data.
-    const afterHide = await get(K), payload = raw => { const { savedAt, ...rest } = JSON.parse(raw); return rest; };
+    const afterHide = await get(K), payload = raw => { const { savedAt, ...rest } = JSON.parse(raw); /* render lazily initializes empty reputation v2; normalize only these two known defaults, retaining every other field */ if (rest.state.rep === undefined && rest.state.repV === undefined) { rest.state.rep = {}; rest.state.repV = 2; } return rest; };
     assert.deepEqual(payload(afterHide), payload(save1)); save1 = afterHide;
     assert.equal(await ev("document.getElementById('t-cont').classList.contains('primary') && !document.getElementById('t-cont').disabled"), true);
     // a save exists: Start asks first, nothing is written yet
