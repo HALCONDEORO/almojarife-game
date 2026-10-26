@@ -1,6 +1,23 @@
 # Changelog
 
 ## Unreleased
+
+No GitHub release or tag is announced by this section. The first public beta pre-release is planned as v0.5.0-beta.1; publication remains pending final owner approval and the release gates in docs/RELEASE.md.
+
+### Integrated source batch, 26 October 2026
+- Route and finance cards, missions, tabs, port details and notices in the right panel.
+- Repeat the last route and see profit per trip (#536).
+- Explain blocked armory purchases (#537) and show purchased offices as owned (#538).
+- Automatic route hull repair respects the cash limit (#546).
+- Pending events stay accessible after repainting (#551) and appear in the city view (#550).
+- Actionable Messages separated from grouped notices (#552).
+- Right-panel priority and red event warning (#553); fleet search only above five ships (#554).
+- Sea-event probabilities and effects, including sampled pirate-fight estimates (#555).
+- Generated reference/wiki updates including seasonal rules.
+
+These entries describe merged source, not a verified deployment. PRs still open at the final release checkpoint must not be promoted into this list without integration checks.
+
+### Earlier unreleased work
 - Accessibility: the map hint and the city mission line (including the tutorial steps) are polite live regions, so screen readers announce them when they change. No visual change.
 - Town auction: the almoneda now sells more than establishments. Used ships (one every 4 weeks per port, hull 55-90%, below new-ship price) and town houses (one every 2 weeks, level 1-3, trading office required) come up on seeded per-port cadences, sold by the concejo or a named neighbour. Bids are placed per lot; a winning bid the player cannot settle is voided and the lot passes to the next bidder. Municipal proceeds from the player's wins are tracked apart (hallAlmonedaGen) so the council-chest invariant keeps its hard bound; a neighbour's win moves no chest money. Old saves keep their standing establishment bid.
 - First-voyage tutorial (easy difficulty): three hint steps teach one buy, one sale, then sailing; progress lives in `g.tut`, only when the game starts with the tutorial on, so other saves are unchanged. Strings in English and Spanish (src/game/tutorial.mjs).
