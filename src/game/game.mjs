@@ -1,6 +1,6 @@
 import {regionalHousePlan,regionalRivalStep} from "./rivalhouses.mjs";
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
-import { setRoute, setRouteAdv, clearRoute, processRoutes } from "./routes.mjs";
+import { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, processRoutes } from "./routes.mjs";
 import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
 import { addRespect, updateRank, rankOf, repOf } from "./rank.mjs";
 import { RANKS } from "./rank.mjs";
@@ -469,6 +469,6 @@ export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g)
 export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g, city) => loanRoom(g, netWorth(g), city); // pass the port: the lender of that port sets the terms
 export { loansOwed };
-export { setRoute, setRouteAdv, clearRoute };
+export { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats };
 import { removeFromConvoy } from "./convoys.mjs";
 export { formConvoy, leaveConvoy, disbandConvoy, sailConvoy, escortOf, convoyOf, removeFromConvoy } from "./convoys.mjs";

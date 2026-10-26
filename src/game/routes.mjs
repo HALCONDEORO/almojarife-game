@@ -17,7 +17,24 @@ export function setRoute(g, ship, a, b, out, back = "") {
   tutorialNote(g, "route");
   return { ok: true, route: ship.route };
 }
-export function clearRoute(ship) { const had = !!ship.route; delete ship.route; return had; }
+export function clearRoute(ship) {
+  const had = !!ship.route;
+  if (had) { const { legs, stuck, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
+  delete ship.route; return had;
+}
+/** Bring back the route this ship had before it was cancelled. Same checks as setting it by hand; the counters start from zero. */
+export function repeatRoute(g, ship) {
+  if (ship.route) return { ok: false, reason: "already on a route" };
+  const r = ship.lastRoute;
+  if (!r) return { ok: false, reason: "no saved route" };
+  return r.v === 2 ? setRouteAdv(g, ship, r.stops, { minCash: r.minCash }) : setRoute(g, ship, r.a, r.b, r.out, r.back ?? "");
+}
+/** Completed round trips and the profit they made, from counters the route keeps (profit starts counting when the route is set). */
+export function routeStats(route) {
+  if (!route) return null;
+  const laps = route.v === 2 ? route.legs : route.back ? Math.floor(route.legs / 2) : route.legs, profit = Math.round((route.profit ?? 0) * 10) / 10;
+  return { laps, profit, perLap: laps > 0 ? Math.round((profit / laps) * 10) / 10 : null };
+}
 
 /** Run one step for every ship that has a route and is docked. `ops` are the game's own doBuy/doSell/doSail. */
 export function processRoutes(g, ops) {
@@ -29,7 +46,7 @@ export function processRoutes(g, ops) {
     const atA = s.at === r.a, sellGood = atA ? r.back : r.out, buyGood = atA ? r.out : r.back;
     if (sellGood && (s.cargo[sellGood] ?? 0) > 0) {
       const q = s.cargo[sellGood], res = ops.doSell(g, s, sellGood, q);
-      if (res.ok) { r.legs++; post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
+      if (res.ok) { r.legs++; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     }
     if (buyGood) ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
@@ -108,7 +125,7 @@ function processRouteAdv(g, s, r, ops) {
     if (q <= 0) continue;
     if (rule.minPrice != null && quoteAt(rule.good) < rule.minPrice) continue; // below the limit: hold for a better day
     const res = ops.doSell(g, s, rule.good, q);
-    if (res.ok) { traded = true; post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
+    if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
   }
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));

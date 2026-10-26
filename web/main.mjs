@@ -72,7 +72,7 @@ import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR } from "../src
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
-import { warehouseCap, setRoute, setRouteAdv, clearRoute, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
+import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
 import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
@@ -445,7 +445,8 @@ function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
-  $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }) });
+  $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }), stats: routeStats(ship()?.route) });
+  $("route-repeat")?.addEventListener("click", () => act(() => repeatRoute(g, ship())));
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   { const nc = $("notice-card"); nc.innerHTML = noticeHtml(noticeData(g), { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k }); nc.hidden = !nc.innerHTML; }
   fitFleet();
