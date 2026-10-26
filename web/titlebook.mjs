@@ -35,6 +35,7 @@ export const TB = {
   "archive": "El archivo de la casa",
   "import": "Importar",
   "export": "Exportar",
+  "slots": "Ranuras de guardado",
   "restore": "Restaurar copia previa",
   "restoreEmpty": "No hay copia previa disponible.",
   "restoreHint": "Copia del día {day} · {house}",
@@ -72,6 +73,7 @@ export const TB = {
   "archive": "The house archives",
   "import": "Import",
   "export": "Export",
+  "slots": "Save slots",
   "restore": "Restore previous copy",
   "restoreEmpty": "No previous copy is available.",
   "restoreHint": "Copy from day {day} · {house}",
@@ -144,6 +146,7 @@ export function titleBookHtml({ lang, saved, backup, dayLabel, coinsLabel }) {
   const first = saved ? [cont, start] : [start, cont];
   const menu = first.map((h) => h.replace(/@[SC]/, idx())).join("") + `<div class="menu-divider">${esc(x.archive)}</div>` +
     entry("t-imp", idx(), x.import, null, " utility") + entry("t-exp", idx(), x.export, { dis: !saved }, " utility") +
+    entry("t-slots", idx(), x.slots, null, " utility") +
     entry("t-rest", idx(), x.restore, { text: backup ? x.restoreHint.replace("{day}", backup.day).replace("{house}", backup.house) : x.restoreEmpty, dis: !backup }, " utility") +
     entry("t-cred", idx(), x.credits, null, " utility");
   const card = saved

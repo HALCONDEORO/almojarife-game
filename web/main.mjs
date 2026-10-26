@@ -36,6 +36,8 @@ import { DIFFICULTY_IDS } from "../src/game/difficulty.mjs";
 import { defaultProfile, cleanProfile, startBonus, startOptions, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { previewBuy, previewSell, FEE } from "../src/sim/trade.mjs";
 import { stockLevel } from "../src/game/stocklevel.mjs";
+import { listSlots, readSlot, writeSlot, clearSlot } from "../src/game/saveslots.mjs";
+import { slotsHtml, SLOT_TEXT } from "../src/view/slotsview.mjs";
 import { BACKUP_KEY, TMP_KEY, finishPendingRotation, restoreRotate, saveFileName } from "./savefile.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml, RESPECT_NAMES } from "../src/view/rankview.mjs";
@@ -1165,7 +1167,7 @@ $("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", lo
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
   el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-exp">${t.exportS}</button> <span id="m-msg"></span></p>` +
-    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><label><input id="m-auto-time" type="checkbox" ${automaticTime ? "checked" : ""}> ${lang === "es" ? "Avance automático" : "Automatic time"}</label></p><p><small>${lang === "es" ? "El puerto se pausa para planificar. Las rutas automáticas siguen sin detenerse al llegar." : "The port pauses for planning. Automatic routes keep running on routine arrivals."}</small></p><p><small>${t.keys}</small></p><p><button id="m-cred">${t.cred}</button></p><p><button id="m-set">${t.stTitle}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
+    `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p>${t.lang2}: <button id="m-lang">${lang === "es" ? "EN" : "ES"}</button> ${t.speedDef}: <button id="m-spd">${speed}x</button></p><p><label><input id="m-auto-time" type="checkbox" ${automaticTime ? "checked" : ""}> ${lang === "es" ? "Avance automático" : "Automatic time"}</label></p><p><small>${lang === "es" ? "El puerto se pausa para planificar. Las rutas automáticas siguen sin detenerse al llegar." : "The port pauses for planning. Automatic routes keep running on routine arrivals."}</small></p><p><small>${t.keys}</small></p><p><button id="m-slots">${SLOT_TEXT[lang].title}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-set">${t.stTitle}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
   el.hidden = false;
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
   $("m-auto-time").onchange = e => { automaticTime = e.target.checked; localStorage.setItem('automatic-time', String(automaticTime)); tickAcc = 0; if (!automaticTime && speed === 8) { speed = 4; localStorage.setItem("speed", "4"); } $("m-spd").textContent = speed + 'x'; };
@@ -1174,9 +1176,40 @@ function showMenu() {
   $("m-exp").onclick = () => { exportSave(JSON.stringify(packGame(g, company)), g.day); $("m-msg").textContent = t.expDone; };
   $("m-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showMenu(); };
   $("m-spd").onclick = () => { speed = nextTimeSpeed(speed, automaticTime); localStorage.setItem("speed", String(speed)); $("m-spd").textContent = speed + "x"; };
+  $("m-slots").onclick = () => showSlots();
   $("m-cred").onclick = () => showCredits();
   $("m-set").onclick = () => showSettings();
   $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
+}
+
+function showSlots() {
+  t = T[lang]; const x = SLOT_TEXT[lang], el = $("title"), inGame = !inTitle;
+  const n2 = (m, n) => m.replace("{n}", n), say = (m) => { const e = $("sl-msg"); if (e) e.textContent = m; };
+  el.innerHTML = slotsHtml(listSlots(localStorage, (raw) => unpackGame(JSON.parse(raw), world)), { lang, inGame, fmt, defCo: t.defCo });
+  el.hidden = false;
+  $("sl-back").onclick = () => { if (inTitle) showTitle(); else showMenu(); };
+  el.querySelectorAll("[data-sl-save]").forEach((b) => b.onclick = () => {
+    const n = +b.dataset.slSave;
+    if (readSlot(localStorage, n) != null && !confirm(n2(x.confirmOver, n))) return;
+    try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch { say(x.err); return; }
+    showSlots(); say(n2(x.saved, n));
+  });
+  el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = () => {
+    const n = +b.dataset.slDel; if (!confirm(n2(x.confirmDel, n))) return;
+    if (!clearSlot(localStorage, n)) { say(x.err); return; }
+    showSlots(); say(n2(x.deleted, n));
+  });
+  el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = () => {
+    const n = +b.dataset.slLoad, raw = readSlot(localStorage, n); if (raw == null) return;
+    let r; try { r = unpackGame(JSON.parse(raw), world); } catch { say(x.err); return; }
+    if (inGame && !confirm(n2(x.confirmLoad, n))) return;
+    const curRaw = localStorage.getItem(SAVE_KEY), cur = curRaw && isValidSaveText(curRaw) ? curRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // same rotation as Import: the current save lands in the backup slot
+    if (!recoverRotations()) { say(x.err); return; }
+    if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch { say(x.err); return; } }
+    else try { localStorage.setItem(SAVE_KEY, packed); } catch { say(x.err); return; }
+    g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
+    try { if (!ship().voyage) open3d(ship()); } catch { close3d(); render(); }
+  });
 }
 
 function showCredits() {
@@ -1275,6 +1308,7 @@ function showTitle() {
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };
   $("t-exp").onclick = () => exportSave(); // wrap: the click event must not become the payload argument
   $("t-imp").onclick = () => $("t-file").click();
+  $("t-slots").onclick = () => showSlots();
   $("t-cred").onclick = () => showCredits();
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
