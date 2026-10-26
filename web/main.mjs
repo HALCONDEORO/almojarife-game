@@ -516,12 +516,12 @@ function render() {
     const nd = (id) => s.voyage.pts?.[id] ?? world.nodes[id], ids = s.voyage.path.filter((id) => nd(id));
     const pts = [`${X(cur.lon)},${Y(cur.lat)}`, ...ids.map((id) => `${X(nd(id).lon)},${Y(nd(id).lat)}`)].join(" ");
     const last = ids.at(-1);
-    if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(nd(last).lon) + 10}" y="${Y(nd(last).lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">${cityName(s.voyage.to)} · ${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)}</text>`;
+    if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   }
   const est = target && !s.voyage ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null;
   if (est?.ok) {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
-    m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/><text x="${X(last.lon) + 10}" y="${Y(last.lat) + 20}" font-size="13" fill="#7b241c" font-weight="bold" pointer-events="none" class="eta">≈ ${hoursOf(est.ticks)} h</text>`;
+    m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   }
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   m += historical.underlay ?? ""; // realm washes sit behind ports and labels
