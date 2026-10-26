@@ -48,7 +48,7 @@ test("data buttons only show inside a running game", () => {
 test("help link points at the in-repo wiki folder and that folder exists", () => {
   assert.equal(HELP_URL, "https://github.com/HALCONDEORO/almojarife-game/tree/main/docs/wiki");
   assert.ok(existsSync("docs/wiki/README.md"));
-  assert.match(settingsHtml(tt, state), new RegExp(`href="${HELP_URL}"`));
+  assert.match(settingsHtml(tt, state), new RegExp(`href="${HELP_URL}/es"`));
 });
 
 test("every pictogram is credited in CREDITS.md and in both Credits windows", () => {

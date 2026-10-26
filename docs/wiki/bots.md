@@ -1,5 +1,7 @@
 # Bots (NPC traders)
 
+Versión en español: [es/bots.md](es/bots.md).
+
 ## Principle
 Project design rule: bots play with the same rules as the player. No separate prices, access or purchase rules. Bots buy through the same functions (for example `buy`, `sell`, and in PR #230 `buyWeapon`, `buyGear`) and pay from their own cash.
 
