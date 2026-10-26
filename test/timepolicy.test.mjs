@@ -11,7 +11,7 @@ const step=source.slice(source.indexOf('function stepTicks(n)'),source.indexOf('
 test('a fleet route arrival consumes the full batch in automatic mode but stops in OFF',()=>{
  for(const automaticTime of [false,true]){
   const g={day:0,ships:[{voyage:{},route:{a:'a',b:'b'}},{voyage:{}}]};let tick=0,opened=0;
-  const ctx={g,automaticTime,arrivalNeedsDecision,playing:true,sel:0,autosave(){},render(){},open3d(){opened++;},advanceTick(){tick++;if(tick===3)g.ships[0].voyage=null;}};
+  const ctx={g,automaticTime,arrivalNeedsDecision,playing:true,sel:0,autosave(){},render(){},renderFromClock(){},open3d(){opened++;},advanceTick(){tick++;if(tick===3)g.ships[0].voyage=null;}};
   vm.createContext(ctx);vm.runInContext(step+';stepTicks(20);',ctx);
   assert.equal(tick,automaticTime?20:3);assert.equal(ctx.playing,automaticTime);assert.equal(opened,automaticTime?0:1);
  }
@@ -19,7 +19,7 @@ test('a fleet route arrival consumes the full batch in automatic mode but stops 
 test('automatic routes never suppress a pending decision or attack',()=>{
  for(const property of ['pending','encounterReport']){
   const g={day:0,ships:[{voyage:{},route:{}}]};let tick=0;
-  const ctx={g,automaticTime:true,arrivalNeedsDecision,playing:true,autosave(){},render(){},open3d(){},advanceTick(){tick++;if(tick===3){g.ships[0].voyage=null;g[property]={};}}};
+  const ctx={g,automaticTime:true,arrivalNeedsDecision,playing:true,autosave(){},render(){},renderFromClock(){},open3d(){},advanceTick(){tick++;if(tick===3){g.ships[0].voyage=null;g[property]={};}}};
   vm.createContext(ctx);vm.runInContext(step+';stepTicks(20);',ctx);assert.equal(tick,3);assert.equal(ctx.playing,false);
  }
 });
