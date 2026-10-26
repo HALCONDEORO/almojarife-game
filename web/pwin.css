@@ -10,16 +10,20 @@
 .pwin-close:focus-visible{outline:3px solid #ffd876;outline-offset:-2px}
 body.reduce-motion .pwin-close .x-ico{transition:none}
 .pwin-body{padding:12px}
-.needs-scroll{overflow-x:auto;max-width:100%}.needs-table{border-collapse:collapse;min-width:650px;width:100%;font-size:.88rem}.needs-table th,.needs-table td{padding:.4rem .5rem;border-bottom:1px solid #b7aa8d;text-align:right;vertical-align:top}.needs-table th:first-child,.needs-table td:last-child{text-align:left}.needs-ledger summary{cursor:pointer;font-weight:bold;margin:.7rem 0}.needs-ledger p{line-height:1.45}
+/* Table rule: numeric/action columns centred, the label column stays left. */
+.city-window th,.city-window td{text-align:center}
+.city-window th:first-child,.city-window td:first-child{text-align:left}
+.city-window .route-table th:first-child,.city-window .route-table td:first-child{text-align:center}
+.needs-scroll{overflow-x:auto;max-width:100%}.needs-table{border-collapse:collapse;min-width:650px;width:100%;font-size:.88rem}.needs-table th,.needs-table td{padding:.4rem .5rem;border-bottom:1px solid #b7aa8d;text-align:center;vertical-align:top}.needs-table th:first-child,.needs-table td:last-child{text-align:left}.needs-ledger summary{cursor:pointer;font-weight:bold;margin:.7rem 0}.needs-ledger p{line-height:1.45}
 
 .needs-table td:last-child{max-width:230px;white-space:normal}.needs-table thead th:last-child{text-align:left}.needs-scroll{border-right:2px solid #b7aa8d}.needs-ledger small{line-height:1.3}
 
 .needs-scroll-hint{display:none;font-size:.85rem;font-style:italic}@media(max-width:650px){.needs-scroll-hint{display:block}}
 /* Give trade decisions the available screen instead of a narrow decorative overlay. */
-body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:238px;width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - var(--game-header-height,96px) - 92px);box-sizing:border-box}
+body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:auto;left:max(12px,calc((100vw - 238px - 640px)/2));width:min(640px,calc(100vw - 24px));max-height:calc(100dvh - var(--game-header-height,96px) - 92px);box-sizing:border-box}
 /* 900-1180px viewports: keep the window fully on screen beside the right rail (was off-screen left, names cut) */
-@media(min-width:900px){body.in-city-3d .city-window[data-city-panel="market"]{width:min(1000px,calc(100vw - 254px))}}
-@media(max-width:600px){body.in-city-3d .city-window[data-city-panel="market"]{right:6px;width:calc(100vw - 12px);max-height:calc(100dvh - var(--game-header-height,120px) - 220px)}}
+@media(min-width:900px){body.in-city-3d .city-window[data-city-panel="market"]{width:min(640px,calc(100vw - 254px))}}
+@media(max-width:600px){body.in-city-3d .city-window[data-city-panel="market"]{left:6px;right:6px;width:calc(100vw - 12px);max-height:calc(100dvh - var(--game-header-height,120px) - 220px)}}
 /* P3 building summary card (owned-building window): icon + name + state + scannable stat cells */
 .bwcard{display:flex;gap:10px;align-items:center;background:#fff8e6;border:2px solid #b98d4f;border-radius:8px;padding:6px 8px;margin:6px 0}
 .bwcard .bwc-icon{flex:none}
