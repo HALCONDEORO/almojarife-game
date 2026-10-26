@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No GitHub release or tag is announced by this section. The early alpha version and audience remain proposals; see docs/RELEASE.md.
+No GitHub release or tag is announced by this section. The first public beta pre-release is planned as v0.5.0-beta.1; publication remains pending final owner approval and the release gates in docs/RELEASE.md.
 
 ### Integrated source batch, 26 October 2026
 - Route and finance cards, missions, tabs, port details and notices in the right panel.
