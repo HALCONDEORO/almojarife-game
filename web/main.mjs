@@ -280,7 +280,7 @@ function stepTicks(n) {
     // Stop this frame at the decision tick, not after the rest of its queued ticks.
     if (g.pending || g.encounterReport || arrivedAt >= 0 || g.over) break;
   }
-  render();
+  renderFromClock();
 }
 function frame(now) {
   if (!g) { lastFrame = now; requestAnimationFrame(frame); return; } // the title is already up; the background game is still warming up
@@ -471,6 +471,14 @@ function renderRightTabs() {
   if ($("l-all")) $("l-all").onclick = () => { markAllRead(g); rtSig = ""; render(); };
   led.querySelectorAll("[data-msg]").forEach((e) => e.onclick = () => { markRead(g, Number(e.dataset.msg)); rtSig = ""; render(); });
 }
+// A mouse press inside a game panel must finish on the same buttons it started on: while the pointer is down in a panel, the clock's per-tick repaint
+// waits (one repaint runs right after release); renders asked by handlers are not delayed. Without this a repaint between mousedown and mouseup replaced the button and the click was lost.
+let uiPressed = false, renderQueued = false, pressTimer = 0;
+const PRESS_SCOPE = "#panel, #shipwin, #rt-ledger, #fleet, .city-window, #city-event, #voyage-card";
+const renderFromClock = () => { if (uiPressed) renderQueued = true; else render(); }; // only the clock's repaint waits; a render the click handler itself asks for stays immediate
+const endPress = () => { clearTimeout(pressTimer); setTimeout(() => { uiPressed = false; if (renderQueued) { renderQueued = false; render(); } }, 0); };
+document.addEventListener("pointerdown", (e) => { if (e.target?.closest?.(PRESS_SCOPE)) { uiPressed = true; clearTimeout(pressTimer); pressTimer = setTimeout(endPress, 1500); } }, true); // 1.5 s safety if the release never arrives
+document.addEventListener("pointerup", endPress, true); document.addEventListener("pointercancel", endPress, true);
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
