@@ -397,8 +397,11 @@ function toast(msg, agg) {
   while (box.childElementCount > 3) box.firstChild.remove();
   el._t = setTimeout(() => el.remove(), 2600);
 }
+const FLEET_WIDE = matchMedia("(min-width: 1280px)"); // keep in step with the #fleet rule in index.html
+FLEET_WIDE.addEventListener?.("change", () => { if (FLEET_WIDE.matches) $("fleet").open = true; });
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  if (FLEET_WIDE.matches) $("fleet").open = true; // wide screens: the fleet list stays open in the empty side band
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
   $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
