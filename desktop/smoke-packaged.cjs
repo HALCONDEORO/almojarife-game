@@ -40,6 +40,8 @@ const assert = require('node:assert/strict');
     fs.writeFileSync(path.join(dist,'smoke',process.platform+'.json'),JSON.stringify({platform:process.platform,executable:exe,scope:'Packaged app launch and title menu only; installation and OS trust prompts not tested',...result},null,2));
     console.log('PACKAGED MENU PASS',process.platform);
   } finally {
-    if(socket)socket.close();child.kill();fs.rmSync(profile,{recursive:true,force:true});
+    if(socket)socket.close();child.kill();
+    await new Promise(r=>{if(child.exitCode!==null)return r();child.once('exit',r);setTimeout(r,5000).unref();});
+    try {fs.rmSync(profile,{recursive:true,force:true,maxRetries:10,retryDelay:300});} catch(e) {console.warn('Temporary profile cleanup deferred:',e.code);}
   }
 })().catch(e=>{console.error(e);process.exit(1)});
