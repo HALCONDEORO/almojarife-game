@@ -221,7 +221,10 @@ function drawIndustry(){
   ctx.fillStyle=s.own?'#ffe9b0':s.gone?'#c9c2ae':'#f6e9c8';ctx.fillText(s.label,lx,ly);ctx.restore();
  }
 }
-function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
+/* The ground (sea, landmass, roads, hills, fields, trees) only changes with the view, so it is drawn once into a cache and blitted while the view is still (animation frames, hover). */
+let terrainCache=null,terrainKey="";
+function drawTerrain(){const key=[canvas.width,canvas.height,zoom,dx,dy,!!images.arboles,layout.plots.length].join("|");if(terrainCache&&terrainKey===key){ctx.drawImage(terrainCache,0,0);return}
+const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);sea.addColorStop(0,'#44787f');sea.addColorStop(.55,'#6b9b98');sea.addColorStop(1,'#3d727b');ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
  drawLandmass();
  // Roads continue inland beyond the owned plot district, entirely decorative.
  for(const p of layout.paths.filter(p=>p.beg.x===p.end.x).slice(0,3)){const a=xy(p.beg.x,bounds.minY),b=xy(p.beg.x,bounds.minY-80);ctx.strokeStyle='#cebc92';ctx.lineWidth=7*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
@@ -230,6 +233,8 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  const fields=fieldPatches(bounds),furrow=GROUND_TYPES.campo.layers.find(l=>l.kind==='furrows'),tones=GROUND_TYPES.campo.tones;
  for(let i=0;i<fields.length;i++){const{x,y,w,d}=fields[i],ps=[[x,y],[x+w,y],[x+w,y+d],[x,y+d]].map(([x,y])=>xy(x,y));ctx.beginPath();ps.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=tones[i%tones.length];ctx.globalAlpha=.65;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#d4c49a';ctx.lineWidth=2*zoom;ctx.stroke();for(let j=1;j<8;j++){const a=xy(x+j,y),b=xy(x+j,y+d);ctx.globalAlpha=furrow.alpha;ctx.strokeStyle=furrow.colors[0];ctx.lineWidth=furrow.width*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1}
  for(let i=0;i<38;i++){const x=bounds.minX-7-((i*7.43)%33),y=bounds.minY-5-((i*13.7)%41);sprite({x,y,w:1.6+i%3*.4,d:1.6+i%3*.4},images.arboles,.74)}
+if(!terrainCache)terrainCache=document.createElement("canvas");terrainCache.width=canvas.width;terrainCache.height=canvas.height;terrainCache.getContext("2d").drawImage(canvas,0,0);terrainKey=key}
+function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;drawTerrain();
 
  drawWalls();
  drawStreets();
