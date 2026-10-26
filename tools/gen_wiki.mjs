@@ -14,6 +14,7 @@ import { NEED_GROUP } from "../src/sim/needs.mjs";
 import { POTTERY, LEGUMES } from "../src/sim/optional_goods.mjs";
 import { COASTS } from "../src/game/charts.mjs";
 import { realmOf } from "../src/game/marque.mjs";
+import { SEASON_PEAK, SEASON_AMPLITUDE, seasonOf, SEASONS, DEMAND_SCALE, NEEDS_MUL, MAKES_MUL } from "../src/sim/market.mjs";
 import { START_YEAR } from "../src/sim/clock.mjs";
 
 const here0 = dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,11 @@ const ES_WEAPON = { ballista: "Balista", catapult: "Catapulta", cannon: "Cañón
 const ES_CLASS = { poor: "Pobres", middle: "Artesanos y mercaderes", rich: "Ricos" };
 const ES_GOOD = { grain: "Trigo", fish: "Pescado", salt: "Sal", wool: "Lana", iron: "Hierro", ironware: "Herrajes", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta", saffron: "Azafrán", beer: "Cerveza", bricks: "Ladrillos", esparto: "Esparto", meat: "Carne", pottery: "Cerámica", legumes: "Legumbres", leather: "Cuero", soap: "Jabón" };
 const ES_GROUP = { food: "Alimento", drink: "Bebida", luxury: "Lujo", clothing: "Ropa", household: "Hogar", materials: "Materiales", other: "Otros" };
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const EN_MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const ES_MONTH = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+// Day of year (day 0 = 1 January) -> "13 August" / "13 de agosto".
+const dateOf = (day, months) => { let m = 0, d = day; while (d >= MONTH_DAYS[m]) { d -= MONTH_DAYS[m]; m++; } return months === EN_MONTH ? `${d + 1} ${months[m]}` : `${d + 1} de ${months[m]}`; };
 const OPTIONAL_GOODS = [POTTERY, LEGUMES]; // flag-gated goods (on by default): src/sim/optional_goods.mjs
 const BLD_EN = { house: "House", workshop: "Workshop", warehouse: "Warehouse", farm: "Farm", pasture: "Pasture", sawmill: "Sawmill", mine: "Mine", oil_mill: "Oil mill", vineyard: "Vineyard", saltworks: "Saltworks", brewery: "Brewery", brickworks: "Brickworks", esparto_field: "Esparto field", ranch: "Ranch", dock: "Dock", armory: "Armory", ironworks: "Ironworks", fishery: "Fishery", soapworks: "Soapworks", pottery: "Pottery", posito: "Granary", hospital: "Hospital", alhondiga: "Corn exchange", caminos: "Streets", pozo: "Well", capilla: "Chapel", carniceria: "Butcher's", molino: "Mill", corral: "Playhouse", house_poor: "Poor house", house_comfortable: "Well-off house", house_rich: "Rich house" };
 const BLD_ES = { house: "Casa", workshop: "Taller", warehouse: "Almacén", farm: "Granja", pasture: "Dehesa", sawmill: "Aserradero", mine: "Mina", oil_mill: "Almazara", vineyard: "Viñedo", saltworks: "Salina", brewery: "Cervecería", brickworks: "Ladrillería", esparto_field: "Espartizal", ranch: "Ganadería", dock: "Muelle", armory: "Armería", ironworks: "Fragua", fishery: "Pesca", soapworks: "Jabonería", pottery: "Alfarería", posito: "Pósito", hospital: "Hospital", alhondiga: "Alhóndiga", caminos: "Caminos", pozo: "Pozo", capilla: "Capilla", carniceria: "Carnicería", molino: "Molino", corral: "Corral de comedias", house_poor: "Casa pobre", house_comfortable: "Casa acomodada", house_rich: "Casa rica" };
@@ -157,6 +163,18 @@ export function render() {
   be += row("Edificio", "Tasa", "Días de obra", "Mantenimiento/día", "Trabajadores/nivel", "Materiales por nivel") + row("---", "---", "---", "---", "---", "---");
   for (const r of bldRows((k) => BLD_ES[k] ?? k, (g) => ES_GOOD[g] ?? g)) be += row(...r);
   out["es/buildings.md"] = be;
+  let sn = HEAD + "# Seasons and market rhythm (generated)\n\nSource: `SEASON_PEAK`, `SEASON_AMPLITUDE`, `seasonMul`, `SEASONS`, `seasonOf`, `DEMAND_SCALE`, `NEEDS_MUL`, `MAKES_MUL` in `src/sim/market.mjs`. Type of data: game design values (assumed).\n\n## Production seasons\n\nA listed good produces `1 + SEASON_AMPLITUDE x cos(2 pi x (day - peak) / 365)` times its normal rate (`seasonMul`): " + (1 + SEASON_AMPLITUDE).toFixed(2) + "x at its peak day, " + (1 - SEASON_AMPLITUDE).toFixed(2) + "x half a year away, 1.0 on average over the year. A good not listed produces at the same rate all year (`seasonMul` returns 1). Day 0 is 1 January.\n\n";
+  sn += row("Good", "Peak day of the year", "Peak date") + row("---", "---", "---");
+  for (const [g, p] of Object.entries(SEASON_PEAK)) sn += row(g, p, dateOf(p, EN_MONTH));
+  sn += "\n## Calendar seasons\n\n`seasonOf(day)` maps the day to one of " + SEASONS.join(", ") + " (`SEASONS`), quarter-years with an 11-day offset: day 0 (1 January) is " + seasonOf(0) + ", and winter starts again on day 354 (about 21 December).\n\n## Daily demand rhythm\n\nEach day a city wants `DEMAND_SCALE` (" + DEMAND_SCALE + ") times the per-1000 rate of the [goods table](goods.md) for every good, times `NEEDS_MUL` (" + NEEDS_MUL + ") when the city needs the good, times `MAKES_MUL` (" + MAKES_MUL + ") when it makes the good itself (local supply, no freight). Citizens buy by class and drop out above their tolerance ([classes table](classes.md)).\n";
+  out["seasons.md"] = sn;
+
+  let sq = HEAD_ES + "# Estaciones y ritmo del mercado (generado)\n\nFuente: `SEASON_PEAK`, `SEASON_AMPLITUDE`, `seasonMul`, `SEASONS`, `seasonOf`, `DEMAND_SCALE`, `NEEDS_MUL`, `MAKES_MUL` en `src/sim/market.mjs`. Tipo de dato: valores de diseño del juego (supuestos).\n\n## Estaciones de producción\n\nUna mercancía de la lista produce `1 + SEASON_AMPLITUDE x cos(2 pi x (día - pico) / 365)` veces su tasa normal (`seasonMul`): " + (1 + SEASON_AMPLITUDE).toFixed(2) + "x el día del pico, " + (1 - SEASON_AMPLITUDE).toFixed(2) + "x medio año después, 1,0 de media anual. Una mercancía que no está en la lista produce al mismo ritmo todo el año (`seasonMul` devuelve 1). El día 0 es el 1 de enero.\n\n";
+  sq += row("Mercancía", "Día pico del año", "Fecha del pico") + row("---", "---", "---");
+  for (const [g, p] of Object.entries(SEASON_PEAK)) sq += row(ES_GOOD[g] ?? g, p, dateOf(p, ES_MONTH));
+  sq += "\n## Estaciones del calendario\n\n`seasonOf(día)` asigna el día a " + SEASONS.join(", ") + " (`SEASONS`), trimestres con un desfase de 11 días: el día 0 (1 de enero) es " + seasonOf(0) + ", y el invierno vuelve a empezar el día 354 (hacia el 21 de diciembre).\n\n## Ritmo de la demanda diaria\n\nCada día una ciudad quiere `DEMAND_SCALE` (" + DEMAND_SCALE + ") veces la tasa por 1000 vecinos de la [tabla de mercancías](goods.md) para cada mercancía, por `NEEDS_MUL` (" + NEEDS_MUL + ") si la necesita, por `MAKES_MUL` (" + MAKES_MUL + ") si la produce ella misma (oferta local, sin flete). Los vecinos compran por clase y dejan de comprar por encima de su tolerancia ([tabla de clases](classes.md)).\n";
+  out["es/seasons.md"] = sq;
+
   return out;
 }
 
