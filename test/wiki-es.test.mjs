@@ -33,3 +33,10 @@ test("the settings help link no longer presents the wiki as English-only", () =>
   assert.ok(main.includes('stHelpLink: "Abrir la wiki"'), "es stHelpLink");
   assert.ok(main.includes('stHelpLink: "Open the wiki"'), "en stHelpLink");
 });
+
+
+test("Help follows the game language", async () => {
+  const { helpUrl, HELP_URL } = await import("../src/view/settingsview.mjs");
+  assert.equal(helpUrl("es"), HELP_URL + "/es");
+  assert.equal(helpUrl("en"), HELP_URL);
+});
