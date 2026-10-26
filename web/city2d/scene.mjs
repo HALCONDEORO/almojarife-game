@@ -108,13 +108,14 @@ function drawPlaza(){
 function drawWalls(){
  if(!walls)return;
  // The expansion exists only when the real simulation owns it. Rear walls occupy empty perimeter margins.
- const edges=[[[bounds.minX+1,bounds.minY+1],[bounds.maxX-1,bounds.minY+1]],[[bounds.minX+1,bounds.minY+1],[bounds.minX+1,bounds.maxY-1]]];
+ const W=layout.walled; /* a city with a fixed historical plan is enclosed on three sides (the fourth is its sea quay) with a land gate north, a gate to the arrabal south and the sea gate on the quay */
+ const edges=W?[[[W.minX,W.minY],[W.maxX,W.minY]],[[W.minX,W.minY],[W.minX,W.maxY]],[[W.minX,W.maxY],[W.maxX,W.maxY]]]:[[[bounds.minX+1,bounds.minY+1],[bounds.maxX-1,bounds.minY+1]],[[bounds.minX+1,bounds.minY+1],[bounds.minX+1,bounds.maxY-1]]];
  const lvl=walls; // art level == state level (wall:1..3/gate:1..3 exist in the manifest)
  let gx=null,bestY=1/0; // the gate stands where the main road leaves the city through the rear edge
  for(const seg of layout.paths||[])for(const pt of [seg.beg,seg.end]){if(pt&&pt.y<bestY){bestY=pt.y;gx=pt.x}}
  for(const [start,end]of edges){
   const len=Math.hypot(end[0]-start[0],end[1]-start[1]),n=Math.max(1,Math.round(len/1.7));
-  const g=start[1]===end[1]?Math.min(Math.max(gx??((start[0]+end[0])/2),start[0]+3.4),end[0]-3.4):null;
+  const g=start[1]===end[1]?Math.min(Math.max(W?(start[1]===W.minY?W.gateN:W.gateS):(gx??((start[0]+end[0])/2)),start[0]+3.4),end[0]-3.4):null;
   // Base band: the pale curtain art vanishes against the ground at fit zoom, so a solid stone face keeps the wall legible at any zoom; the sprites add crenellations and towers on top.
   const vert=start[0]===end[0],bh=30*zoom,segs=g===null?[[start,end]]:[[start,[g-3.3,start[1]]],[[g+3.3,start[1]],end]];
   for(const [s0,s1]of segs){const a=vert?xy(s0[0]+1.3,s0[1]):xy(s0[0],s0[1]+1.3),b=vert?xy(s1[0]+1.3,s1[1]):xy(s1[0],s1[1]+1.3);if(Math.hypot(b.x-a.x,b.y-a.y)<2)continue;const gr=ctx.createLinearGradient(0,a.y-bh,0,a.y);gr.addColorStop(0,'#b3a078');gr.addColorStop(1,'#8d7c5b');ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-bh);ctx.lineTo(a.x,a.y-bh);ctx.closePath();ctx.fill();ctx.strokeStyle='#7a6a4c';ctx.lineWidth=2.2*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y-bh);ctx.lineTo(b.x,b.y-bh);ctx.stroke();}
@@ -124,6 +125,7 @@ function drawWalls(){
    else sprite({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl],1,'brightness(.84) contrast(1.08)');} // art overlap: the tower end of one tile meets the wall end of the next; the filter keeps the pale curtain readable against the ground at fit zoom
   if(g!==null)sprite({x:g-3,y:start[1]-3,w:6,d:6},images['gate:'+lvl]);
  }
+ if(W)sprite({x:W.maxX-5,y:W.gateE-3,w:6,d:6},images['gate:'+lvl]); // Puerta del Mar
 }
 function boatSprite(p,t,type){
  const sh=type&&images['ship:'+type];if(sh){const g=spriteGeometry(p),w=g.width*zoom,h=w*sh.height/sh.width;ctx.drawImage(sh,canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom+g.height*zoom*.86-h,w,h);return} // per-class side art, scaled to the berth box and sitting on its bottom edge
