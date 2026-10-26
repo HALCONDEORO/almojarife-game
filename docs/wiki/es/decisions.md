@@ -14,3 +14,5 @@ Continúa `docs/DECISIONS.md`. Formato: fecha, decisión, por qué, dónde vive.
 | 22 oct | La carne es cara para los ricos; la comida se reparte entre tres clases | Coincide con el reparto histórico del consumo por clase | classes.md (aún no en el juego) |
 
 | 26 Oct | Nombres de reinos más discretos, Granada separada y leyenda alineada | Leer reinos y puertos juntos en la vista completa de escritorio; colores aproximados, no fronteras | src/view/historicalmap.mjs |
+
+| 26 Oct | Veladura castellana del norte y Navarra solo cartográfica | Cubrir la costa norte, detener Portugal en el Miño y mostrar la Navarra peninsular aparte antes de su incorporación de 1515; contexto aproximado, sin cambiar tenencias ni patentes | data/realms.json |
