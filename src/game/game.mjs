@@ -305,12 +305,15 @@ export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
-  if (ship.convoy && g.convoys?.[ship.convoy]) return { ok: false, reason: "convoy" }; // a convoy sails together to a port
-  if (speedFactor(ship) <= 0) return { ok: false, reason: "crew" };
+  // A refused course change leaves its reason on the ship (the voyage card shows it until a new order succeeds).
+  const refuse = (reason) => { ship.navError = reason; return { ok: false, reason }; };
+  if (ship.convoy && g.convoys?.[ship.convoy]) return refuse("convoy"); // a convoy sails together to a port
+  if (speedFactor(ship) <= 0) return refuse("crew");
   const docked = !ship.voyage;
-  if (docked && heldNow(g, ship)) return { ok: false, reason: "held" };
+  if (docked && heldNow(g, ship)) return refuse("held");
   const plan = planTrip(g.world, ship, lat, lon);
-  if (!plan.ok) return plan;
+  if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
+  delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
   // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
   const pos = docked ? null : locate(g.world, ship);
