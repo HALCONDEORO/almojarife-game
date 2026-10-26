@@ -1,0 +1,21 @@
+appId: io.github.halcondeoro.almojarife
+productName: El Almojarife
+copyright: Copyright (c) 2026 the El Almojarife contributors
+directories:
+  output: dist
+files:
+  - main.cjs
+  - app/**
+asar: true
+publish: null
+mac:
+  category: public.app-category.games
+  target: [dmg, zip]
+win:
+  target: [nsis, portable]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Game
+  target: [AppImage, deb]
