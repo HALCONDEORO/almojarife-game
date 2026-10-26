@@ -22,9 +22,11 @@ const ownedTypes=new Set(Object.values(bld||{}).map(x=>x&&x.type).filter(Boolean
 const essential=([k])=>{const [t,l]=k.split(':');return l==='1'||t==='wall'||t==='gate'||t==='construction'||ownedTypes.has(t)||(t.startsWith('house')&&+l===hl)||k==='house_rich:2'||k==='alhondiga:2'};
 const all=Object.entries(manifest.assets);await Promise.all(all.filter(essential).map(loadAsset));
 const deferred=all.filter(e=>!essential(e));
-for(const n of ['cobble','muelle','barco','arboles']){const im=new Image;im.src='assets/'+n+'.webp';await im.decode();images[n]=im}for(const t of['barca','cog','caravel','nao']){const im=new Image;im.src='assets/ships/'+t+'.svg';try{await im.decode();images['ship:'+t]=im}catch{}}for(const k of Object.keys(names)){if(['market','shipyard','tavern','bank','office'].includes(k))continue;const o=document.createElement('option');o.value=k;o.textContent=dispNames()[k];$('type').append(o)};const note=document.createElement('div');note.className='housing-scale';note.style.cssText='position:fixed;bottom:8px;left:8px;background:#f6e9cce8;color:#493c25;padding:6px 9px;font:12px Georgia;pointer-events:none';note.textContent=uiLangC()==='en'?`Residential groups: ${layout.housing.groups} · ≈ ${layout.housing.peoplePerGroup} people per house drawing (visual scale)`:`Conjuntos residenciales: ${layout.housing.groups} · ≈ ${layout.housing.peoplePerGroup} habitantes por casa dibujada (escala visual)`;document.body.append(note);fit();buildLabels();requestAnimationFrame(loop);window.__ready=true;Promise.all(deferred.map(e=>loadAsset(e).catch(()=>{}))).then(()=>{dirty=true});try{parent.postMessage({kind:"city2d-ready",city},location.origin);postView()}catch{}};
+for(const n of ['cobble','muelle','barco','arboles']){const im=new Image;im.src='assets/'+n+'.webp';await im.decode();images[n]=im}for(const t of['barca','cog','caravel','nao']){const im=new Image;im.src='assets/ships/'+t+'.svg';try{await im.decode();images['ship:'+t]=im}catch{}}for(const k of Object.keys(names)){if(['market','shipyard','tavern','bank','office'].includes(k))continue;const o=document.createElement('option');o.value=k;o.textContent=dispNames()[k];$('type').append(o)};fit();buildLabels();requestAnimationFrame(loop);window.__ready=true;Promise.all(deferred.map(e=>loadAsset(e).catch(()=>{}))).then(()=>{dirty=true});try{parent.postMessage({kind:"city2d-ready",city},location.origin);postView()}catch{}};
 const xy=(x,y)=>{const p=project(x,y);return{x:canvas.width/2+(p.x+dx)*zoom,y:35+(p.y+dy)*zoom}};
-function polygon(p){ctx.beginPath();placement(p).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
+/* A lot for sale fills its block (inset from the streets), whatever its w x d; a built or building lot keeps its own footprint. */
+const freeFit=p=>p&&p.cell&&lotSet().has(p)&&!bld[p.id]?{...p,x:p.cell.x+.5,y:p.cell.y+.5,w:p.cell.w-1,d:p.cell.d-1}:p;
+function polygon(p){ctx.beginPath();placement(freeFit(p)).polygon.forEach((v,i)=>{const x=canvas.width/2+(v.x+dx)*zoom,y=35+(v.y+dy)*zoom;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()}
 function fit(){dirty=true;if(!layout)return;canvas.width=innerWidth;canvas.height=innerHeight;const pts=manifestBounds,minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x)),minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));zoom=Math.min((innerWidth-30)/(maxX-minX+40),(innerHeight-180)/(maxY-minY+100));zoom=Math.max(.15,zoom);minZoom=zoom*.5;dx=-(minX+maxX)/2;dy=(innerHeight/2+25-35)/zoom-(minY+maxY)/2;draw(0)}
 let lotsOf=null,lotsLayout=null;function lotSet(){if(lotsLayout!==layout){lotsLayout=layout;lotsOf=new Set(layout?layout.plots:[])}return lotsOf} /* only layout.plots are lots for sale; layout.residential are the neighbours' houses */
 function sprite(p,im,alpha=1,filter=''){if(!im)return;const g=spriteGeometry(p);ctx.save();ctx.globalAlpha=alpha;ctx.filter=filter;ctx.drawImage(im,canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom,g.width*zoom,g.height*zoom);ctx.restore()}
@@ -44,12 +46,29 @@ function grainTable(){
  return grainCache=t;
 }
 const grainColors=zone=>GROUND_TYPES[zone].layers.filter(l=>l.kind==='grain').flatMap(l=>l.colors);
+/* Painterly ground (Marco 26/10: the ground must match the buildings). A tileable fBm noise is baked once into two tinted layers, a warm shadow and a cream light, and laid over the land with the view so it pans and zooms with the map. */
+let groundTex=null;
+function groundTexture(){
+ if(groundTex)return groundTex;
+ const N=256,mk=(r,g,b,amax)=>{const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),im=x.createImageData(N,N);
+  const val=(ix,iy,o)=>hash01(((ix%(N>>o)+(N>>o))%(N>>o))*131+((iy%(N>>o)+(N>>o))%(N>>o))*7919+o*104729,11+o);
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){let v=0,amp=.5,tot=0;for(let o=3;o<=6;o++){const cell=N>>(o-1)||1,gx=xx/cell,gy=y/cell,x0=Math.floor(gx),y0=Math.floor(gy),fx=gx-x0,fy=gy-y0,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy),n=(N/cell)|0,w=(a,b)=>hash01(((a%n+n)%n)*131+((b%n+n)%n)*7919+o*104729,17+o);
+    const t=w(x0,y0)*(1-sx)+w(x0+1,y0)*sx,bt=w(x0,y0+1)*(1-sx)+w(x0+1,y0+1)*sx;v+=(t*(1-sy)+bt*sy)*amp;tot+=amp;amp*=.55}
+   v=v/tot;const k=(y*N+xx)*4;im.data[k]=r;im.data[k+1]=g;im.data[k+2]=b;im.data[k+3]=Math.max(0,Math.min(1,(v-.5)*3.2+.5))*amax}
+  x.putImageData(im,0,0);return c};
+ return groundTex={dark:mk(96,66,34,56),light:mk(255,240,200,46)};
+}
+function paintGround(){
+ const t=groundTexture(),o=xy(0,0),sc=zoom*1.4;
+ for(const k of ['dark','light']){const pat=ctx.createPattern(t[k],'repeat');if(pat.setTransform)pat.setTransform(new DOMMatrix().translate(o.x,o.y).scale(sc));ctx.fillStyle=pat;ctx.fillRect(0,0,canvas.width,canvas.height)}
+ const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height); /* same light as the sprites: from the top left */
+ g.addColorStop(0,'rgba(255,238,190,.16)');g.addColorStop(.5,'rgba(255,238,190,0)');g.addColorStop(1,'rgba(70,45,20,.14)');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height)}
 function drawLandmass(){
  const pts=mainland(bounds).map(([x,y])=>xy(x,y));
  ctx.beginPath();ctx.moveTo((pts[0].x+pts[pts.length-1].x)/2,(pts[0].y+pts[pts.length-1].y)/2);pts.forEach((p,i)=>{const n=pts[(i+1)%pts.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2)});ctx.closePath();
  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
  ctx.fillStyle=GROUND_TYPES.pradera.base;ctx.fill(); // the whole landmass starts as grassland
- ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();
+ ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#8ab6a077';ctx.lineWidth=30*zoom;ctx.stroke();ctx.strokeStyle='#d1c194';ctx.lineWidth=10*zoom;ctx.stroke();ctx.globalAlpha=.5;ctx.strokeStyle='#fffbea';ctx.lineWidth=2.4*zoom;ctx.stroke();ctx.globalAlpha=1;
  ctx.save();ctx.clip();
  const G=GROUND_TYPES,{minX,minY,maxX,maxY}=bounds;
  // Sand band along the curved south coast; the straight working quay keeps its stone.
@@ -70,11 +89,11 @@ function drawLandmass(){
   const rip=GROUND_TYPES[s.zone].layers.find(l=>l.kind==='ripples');
   if(rip&&hash01(s.i,7)<rip.chance){ctx.globalAlpha=rip.alpha;ctx.strokeStyle=rip.colors[0];ctx.lineWidth=1*zoom;ctx.beginPath();ctx.arc(p.x,p.y,3.2*zoom,.25,Math.PI-.25);ctx.stroke()}
  }
- ctx.globalAlpha=1;ctx.restore();
+ ctx.globalAlpha=1;paintGround();ctx.restore();
 }
 function drawStreets(){
  const G=GROUND_TYPES.camino,wear=G.layers.find(l=>l.kind==='wear');
- ctx.lineCap='round';ctx.strokeStyle=G.base;ctx.lineWidth=10*zoom;
+ ctx.lineCap='round';ctx.globalAlpha=.34;ctx.strokeStyle='#6f5630';ctx.lineWidth=13.5*zoom;for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1; /* soft edge so the roads sit in the ground */ctx.strokeStyle=G.base;ctx.lineWidth=10*zoom;
  for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
  if(wear){ctx.globalAlpha=wear.alpha;ctx.strokeStyle=wear.colors[0];ctx.lineWidth=wear.width*zoom;for(const p of layout.paths){const a=xy(p.beg.x,p.beg.y),b=xy(p.end.x,p.end.y);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1}
 }
@@ -89,13 +108,14 @@ function drawPlaza(){
 function drawWalls(){
  if(!walls)return;
  // The expansion exists only when the real simulation owns it. Rear walls occupy empty perimeter margins.
- const edges=[[[bounds.minX+1,bounds.minY+1],[bounds.maxX-1,bounds.minY+1]],[[bounds.minX+1,bounds.minY+1],[bounds.minX+1,bounds.maxY-1]]];
+ const W=layout.walled; /* a city with a fixed historical plan is enclosed on three sides (the fourth is its sea quay) with a land gate north and the sea gate on the quay */
+ const edges=W?[[[W.minX,W.minY],[W.maxX,W.minY]],[[W.minX,W.minY],[W.minX,W.maxY]],[[W.minX,W.maxY],[W.maxX,W.maxY]]]:[[[bounds.minX+1,bounds.minY+1],[bounds.maxX-1,bounds.minY+1]],[[bounds.minX+1,bounds.minY+1],[bounds.minX+1,bounds.maxY-1]]];
  const lvl=walls; // art level == state level (wall:1..3/gate:1..3 exist in the manifest)
  let gx=null,bestY=1/0; // the gate stands where the main road leaves the city through the rear edge
  for(const seg of layout.paths||[])for(const pt of [seg.beg,seg.end]){if(pt&&pt.y<bestY){bestY=pt.y;gx=pt.x}}
  for(const [start,end]of edges){
   const len=Math.hypot(end[0]-start[0],end[1]-start[1]),n=Math.max(1,Math.round(len/1.7));
-  const g=start[1]===end[1]?Math.min(Math.max(gx??((start[0]+end[0])/2),start[0]+3.4),end[0]-3.4):null;
+  const g=start[1]===end[1]&&!(W&&start[1]!==W.minY)?Math.min(Math.max(W?W.gateN:(gx??((start[0]+end[0])/2)),start[0]+3.4),end[0]-3.4):null;
   // Base band: the pale curtain art vanishes against the ground at fit zoom, so a solid stone face keeps the wall legible at any zoom; the sprites add crenellations and towers on top.
   const vert=start[0]===end[0],bh=30*zoom,segs=g===null?[[start,end]]:[[start,[g-3.3,start[1]]],[[g+3.3,start[1]],end]];
   for(const [s0,s1]of segs){const a=vert?xy(s0[0]+1.3,s0[1]):xy(s0[0],s0[1]+1.3),b=vert?xy(s1[0]+1.3,s1[1]):xy(s1[0],s1[1]+1.3);if(Math.hypot(b.x-a.x,b.y-a.y)<2)continue;const gr=ctx.createLinearGradient(0,a.y-bh,0,a.y);gr.addColorStop(0,'#b3a078');gr.addColorStop(1,'#8d7c5b');ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-bh);ctx.lineTo(a.x,a.y-bh);ctx.closePath();ctx.fill();ctx.strokeStyle='#7a6a4c';ctx.lineWidth=2.2*zoom;ctx.beginPath();ctx.moveTo(a.x,a.y-bh);ctx.lineTo(b.x,b.y-bh);ctx.stroke();}
@@ -105,6 +125,7 @@ function drawWalls(){
    else sprite({x:x-1.35,y:y-.8,w:2.7,d:1.6},images['wall:'+lvl],1,'brightness(.84) contrast(1.08)');} // art overlap: the tower end of one tile meets the wall end of the next; the filter keeps the pale curtain readable against the ground at fit zoom
   if(g!==null)sprite({x:g-3,y:start[1]-3,w:6,d:6},images['gate:'+lvl]);
  }
+ if(W)sprite({x:W.maxX-5,y:W.gateE-3,w:6,d:6},images['gate:'+lvl]); // Puerta del Mar
 }
 function boatSprite(p,t,type){
  const sh=type&&images['ship:'+type];if(sh){const g=spriteGeometry(p),w=g.width*zoom,h=w*sh.height/sh.width;ctx.drawImage(sh,canvas.width/2+(g.left+dx)*zoom,35+(g.top+dy)*zoom+g.height*zoom*.86-h,w,h);return} // per-class side art, scaled to the berth box and sitting on its bottom edge
@@ -248,9 +269,9 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  drawStreets();
  drawPlaza();
  drawHarbour(t);
- for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const c of civic){const cp={x:layout.plaza.x+(c.id==='hall'?1:6),y:layout.plaza.y+4,w:3,d:3};sprite(cp,images[c.id==='hall'?'house_rich:2':'alhondiga:2'])} /* town hall and exchange on the plaza: own sprites already in the set (rich house with garden, arcaded trading house) */for(const p of [...layout.plots,...layout.residential].sort((a,b)=>placement(a).depth-placement(b).depth)){
+ for(let i=0;i<45;i++){const x=bounds.minX+2+((i*13.7)%Math.max(1,bounds.maxX-bounds.minX-4)),y=bounds.minY+2+((i*7.3)%Math.max(1,bounds.maxY-bounds.minY-4));if(layout.plots.some(p=>x>p.x-2&&x<p.x+p.w+2&&y>p.y-2&&y<p.y+p.d+2))continue;if(layout.paths.some(p=>Math.abs(p.beg.x-p.end.x)<.1?Math.abs(x-p.beg.x)<2:Math.abs(y-p.beg.y)<2))continue;sprite({x,y,w:1.6,d:1.6},images.arboles,.85)}for(const c of civic){const cp={x:layout.plaza.x+(c.id==='hall'?1:6),y:layout.plaza.y+4,w:3,d:3};sprite(cp,images[c.id==='hall'?'house_rich:2':'alhondiga:2'])} /* town hall and exchange on the plaza: own sprites already in the set (rich house with garden, arcaded trading house) */for(const p of [...layout.plots].sort((a,b)=>placement(a).depth-placement(b).depth)){
  const owned=bld[p.id],service=['market','shipyard','tavern','bank','office','warehouse'].includes(p.type)&&+p.id.split(':')[1]<6;
- let b=owned||{type:p.type,level:p.level||(p.type==='house'?layout.housing.level:1),state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d),free=lotSet().has(p)&&!owned&&!service&&!p.type.startsWith('town:'); /* free = an unbuilt lot for sale: drawn as an empty marked lot, never as a finished building */polygon(p);if(free){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#d8e2b8';ctx.fill();ctx.setLineDash([6,4]);ctx.strokeStyle=p===selected?'#fff2b4':'#5f8a4a';ctx.lineWidth=p===selected?3:2;ctx.stroke();ctx.setLineDash([])}else if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
+ let b=owned||{type:p.type,level:p.level||(p.type==='house'?layout.housing.level:1),state:'active'},v=resolveVisual(p,b),at=xy(p.x+p.w,p.y+p.d),free=lotSet().has(p)&&!owned&&!service&&!p.type.startsWith('town:'); /* free = an unbuilt lot for sale: drawn as an empty marked lot, never as a finished building */polygon(p);if(free){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#b7bf7c';ctx.globalAlpha=p===selected||p===hover?.9:.62;ctx.fill();ctx.globalAlpha=1;ctx.setLineDash(p===selected?[6,4]:[]);ctx.strokeStyle=p===selected?'#fff2b4':'#6f7c3e';ctx.lineWidth=p===selected?3:1.5;ctx.stroke();ctx.setLineDash([])}else if(grid||p===selected||p===hover||v.state==='plot'){ctx.fillStyle=p===selected?'#e9cb78':p===hover?'#e5d4a6':'#cdbd95';ctx.fill();ctx.strokeStyle=p===selected?'#fff2b4':'#8c825d';ctx.lineWidth=p===selected?3:1;ctx.stroke()}
  const focusAlpha=obscuresSelection(p,selected)?.45:1;
  const isPreview=preview&&p===hover&&!owned&&!service;if(!free&&v.state!=='plot'&&v.state!=='construction'&&!isPreview){groundContact(p);const key=assetKey(p,b);sprite(p,images[key]||images[p.type+':1'],focusAlpha,v.state==='halted'?'saturate(.15) brightness(.8)':'');}
  if(v.state==='construction'){groundContact(p);sprite(p,images['construction:'+Math.max(1,Math.min(3,b.nextLevel||1))],.9*focusAlpha);}
@@ -273,8 +294,8 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
  window.__city2d={city,walls,plots:layout.plots.length,owned:Object.keys(bld).length,selected:selected?.id||null,preview,grid,animate,frame,zoom,points:layout.plots.map(p=>({id:p.id,...xy(p.x+p.w/2,p.y+p.d/2)}))};
 }
 function loop(ms){if((animate||dirty)&&ms-last>=33){last=ms;frame++;draw(animate?ms/1000:0);dirty=false}requestAnimationFrame(loop)}
-function pick(e){const r=canvas.getBoundingClientRect();for(const p of [...layout.plots,...layout.residential].reverse()){polygon(p);if(ctx.isPointInPath(e.clientX-r.left,e.clientY-r.top))return p}return null}
-canvas.onpointerdown=e=>{dirty=true;drag={x:e.clientX,y:e.clientY};moved=0;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{dirty=true;if(drag){const x=e.clientX-drag.x,y=e.clientY-drag.y;moved+=Math.abs(x)+Math.abs(y);dx+=x/zoom;dy+=y/zoom;drag={x:e.clientX,y:e.clientY}}else hover=pick(e)};canvas.onpointerup=e=>{dirty=true;drag=null;if(moved>6)return;selected=pick(e);if(!selected)return;hover=selected;draw(0);if(preview)return;if(selected.id.startsWith('residential-')){parent.postMessage({kind:'neighbors',id:selected.id,people:layout.housing.peoplePerGroup,level:layout.housing.level},location.origin);return}const service=+selected.id.split(':')[1]<6&&!bld[selected.id];parent.postMessage({kind:service?'building':'plot',id:service?selected.type:selected.id},location.origin)};canvas.onpointercancel=()=>drag=null;canvas.addEventListener('wheel',e=>{dirty=true;e.preventDefault();const z0=zoom,z1=Math.max(minZoom,Math.min(4,z0*(e.deltaY<0?1.1:.9)));if(z1===z0)return;const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;dx+=(sx-canvas.width/2)*(1/z1-1/z0);dy+=(sy-35)*(1/z1-1/z0);zoom=z1},{passive:false}); // one registration; the world point under the cursor stays fixed
+function pick(e){const r=canvas.getBoundingClientRect();for(const p of [...layout.plots].reverse()){polygon(p);if(ctx.isPointInPath(e.clientX-r.left,e.clientY-r.top))return p}return null}
+canvas.onpointerdown=e=>{dirty=true;drag={x:e.clientX,y:e.clientY};moved=0;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{dirty=true;if(drag){const x=e.clientX-drag.x,y=e.clientY-drag.y;moved+=Math.abs(x)+Math.abs(y);dx+=x/zoom;dy+=y/zoom;drag={x:e.clientX,y:e.clientY}}else hover=pick(e)};canvas.onpointerup=e=>{dirty=true;drag=null;if(moved>6)return;selected=pick(e);if(!selected)return;hover=selected;draw(0);if(preview)return;const service=+selected.id.split(':')[1]<6&&!bld[selected.id];parent.postMessage({kind:service?'building':'plot',id:service?selected.type:selected.id},location.origin)};canvas.onpointercancel=()=>drag=null;canvas.addEventListener('wheel',e=>{dirty=true;e.preventDefault();const z0=zoom,z1=Math.max(minZoom,Math.min(4,z0*(e.deltaY<0?1.1:.9)));if(z1===z0)return;const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;dx+=(sx-canvas.width/2)*(1/z1-1/z0);dy+=(sy-35)*(1/z1-1/z0);zoom=z1},{passive:false}); // one registration; the world point under the cursor stays fixed
 document.querySelector('nav').addEventListener('click',()=>dirty=true);document.querySelector('nav').addEventListener('change',()=>dirty=true);if(q.get('chrome')==='0')document.querySelector('nav').classList.add('corner'); // chrome=0: the parent's corner bar owns the controls; the iframe keeps only the build-mode sub-panel
 const doZoomIn=()=>{zoom=Math.min(4,zoom*1.3)},doZoomOut=()=>{zoom=Math.max(minZoom,zoom/1.3)};
 const doConstruct=()=>{const on=$('construct').getAttribute('aria-pressed')!=='true';$('construct').setAttribute('aria-pressed',on);$('bm').hidden=!on;if(!on){grid=preview=false;$('grid').setAttribute('aria-pressed',false);$('build').setAttribute('aria-pressed',false);$('type').hidden=$('level').hidden=true}postView()};

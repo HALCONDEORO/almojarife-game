@@ -1,50 +1,52 @@
-# Release notes draft: v0.5.0-beta.1
+# El Almojarife v0.5.0-beta.1
 
-DRAFT ONLY. The intended audience is public; publication is pending final owner approval; no tag, release date or final commit has been approved. The integrated source checkpoint is recorded below; the final release gates remain open. This is a proposal for review, not a published release.
+The first public beta of El Almojarife, a desktop trading game set around Iberia and North Africa. Start a merchant house, trade between ports, build a fleet and plan routes through changing weather and events at sea. The game is available in English and Spanish.
 
-## El Almojarife: first beta batch
+This is a beta, not the finished campaign. Balance, interface details and saves may change as development continues.
 
-A desktop browser trading game set around Iberia and North Africa. Build a merchant house, trade between ports, manage ships and automatic routes, and respond to events at sea. English and Spanish are available in the game.
+## Trade, sail and build
 
-## Integrated at the documentation checkpoint
+- Trade across 33 ports with 20 goods, manage storage and workshops, and grow your standing as a merchant.
+- Set automatic routes, repeat the last voyage and see profit per trip. Automatic hull repairs respect your route's cash limit.
+- Read a seven-day weather forecast and make choices during voyage events. Where pirate-fighting odds are marked approximate, they are estimates rather than exact predictions.
+- Use city services, buy plots and build. Free lots are visually separate from buildings and fill their street blocks. Decorative neighbours' houses are not drawn.
 
-- A right panel ordered by priority with a red event warning ([PR #553](https://github.com/HALCONDEORO/almojarife-game/pull/553)).
-- Repeat the last route and see profit per trip ([PR #536](https://github.com/HALCONDEORO/almojarife-game/pull/536)).
-- Automatic route hull repair while respecting the cash limit ([PR #546](https://github.com/HALCONDEORO/almojarife-game/pull/546)).
-- More useful Messages: actionable messages separated from grouped notices ([PR #552](https://github.com/HALCONDEORO/almojarife-game/pull/552)).
-- Pending voyage events remain accessible after repainting ([PR #551](https://github.com/HALCONDEORO/almojarife-game/pull/551)) and also appear inside the city ([PR #550](https://github.com/HALCONDEORO/almojarife-game/pull/550)).
-- Event choices show probabilities and effects ([PR #555](https://github.com/HALCONDEORO/almojarife-game/pull/555)). Pirate fighting odds marked approximately are estimates, not exact forecasts.
-- Clearer feedback for blocked armory purchases ([PR #537](https://github.com/HALCONDEORO/almojarife-game/pull/537)) and purchased offices ([PR #538](https://github.com/HALCONDEORO/almojarife-game/pull/538)).
-- A fleet search that appears only when there are more than five ships ([PR #554](https://github.com/HALCONDEORO/almojarife-game/pull/554)).
-- Live-data reference pages in the wiki, including seasons ([PR #527](https://github.com/HALCONDEORO/almojarife-game/pull/527)).
+## What is clearer in this beta
 
-## Later integrated changes in this batch
+**Fewer missed actions.** Pending voyage events remain accessible after the interface refreshes and inside city view. Messages separate actions that need your attention from grouped notices. Panel buttons stay in place during an active mouse press.
 
-- Seven-day wind and storm forecast ([PR #540](https://github.com/HALCONDEORO/almojarife-game/pull/540)), three-day negative workshop margin warning ([PR #548](https://github.com/HALCONDEORO/almojarife-game/pull/548)) and route-rumour purchase feedback ([PR #557](https://github.com/HALCONDEORO/almojarife-game/pull/557)).
-- Variable drifting cargo rewards ([PR #547](https://github.com/HALCONDEORO/almojarife-game/pull/547)); risk-free sea events resolve without pausing ([PR #559](https://github.com/HALCONDEORO/almojarife-game/pull/559)), including fair wind ([PR #560](https://github.com/HALCONDEORO/almojarife-game/pull/560)).
-- Persistent rejected-course feedback ([PR #549](https://github.com/HALCONDEORO/almojarife-game/pull/549)); repairs and arming limited to the ship's dock ([PR #569](https://github.com/HALCONDEORO/almojarife-game/pull/569), [PR #570](https://github.com/HALCONDEORO/almojarife-game/pull/570)).
-- Cleaner shipyard sections and away-port explanation ([PR #565](https://github.com/HALCONDEORO/almojarife-game/pull/565), [PR #567](https://github.com/HALCONDEORO/almojarife-game/pull/567)), Office rank progress ([PR #566](https://github.com/HALCONDEORO/almojarife-game/pull/566)) and City services tab ([PR #568](https://github.com/HALCONDEORO/almojarife-game/pull/568)).
-- One more council order from Trader rank ([PR #561](https://github.com/HALCONDEORO/almojarife-game/pull/561)); Continue reloads the current save ([PR #562](https://github.com/HALCONDEORO/almojarife-game/pull/562)); unread tags only on actionable messages ([PR #563](https://github.com/HALCONDEORO/almojarife-game/pull/563)).
-- Panel buttons no longer disappear during an active pointer press when the clock repaints ([PR #582](https://github.com/HALCONDEORO/almojarife-game/pull/582)).
-- Extra autosave every three minutes and on hidden/pagehide, skipping identical campaign data ([PR #584](https://github.com/HALCONDEORO/almojarife-game/pull/584)). This is best effort, not a guarantee against every crash or shutdown.
-- Centred Market columns ([PR #585](https://github.com/HALCONDEORO/almojarife-game/pull/585)); cargo filter only with a local warehouse, including stored goods ([PR #586](https://github.com/HALCONDEORO/almojarife-game/pull/586)); price-alert block removed ([PR #589](https://github.com/HALCONDEORO/almojarife-game/pull/589)). Existing saved alerts may still fire, without management UI in the Market window.
-- Free-navigation right click sails immediately ([PR #587](https://github.com/HALCONDEORO/almojarife-game/pull/587), which reverts the confirmation menu from #583). Rejected-course feedback remains.
-- Whole-number aggregate money display in the top bar and finance card ([PR #588](https://github.com/HALCONDEORO/almojarife-game/pull/588), [PR #590](https://github.com/HALCONDEORO/almojarife-game/pull/590)); calculations and saved cents are unchanged. Reputation copy says repairs, not all shipyard purchases ([PR #558](https://github.com/HALCONDEORO/almojarife-game/pull/558)).
+**Better trading and ship feedback.** The shipyard explains purchases blocked by your location. Repairs and arming require the ship to be docked at that port. The Market's cargo filter appears only when you have a local warehouse and includes stored goods. Office and City panels explain rank progress and available services.
 
-Source checkpoint: `e96ab3a2e9c24974d699e29835b79d4a08e9af34`, tree `b192bb3d7ef880d035b07aa5c9dd271222e0c191`. This is merged source, not a certification of deployment or release readiness. Later open proposals and historical archived drafts are not release contents.
+**More direct navigation.** Right-clicking a free-navigation destination sails immediately. A rejected course still explains why it cannot be taken.
+
+**More readable city and finance panels.** Market columns are centred. Aggregate money values use whole numbers in the top bar and finance card, without changing stored cents or calculations. Construction feedback shows missing coins, and selecting a build action centres its confirmation below the panel header.
+
+**A more useful city view.** Bounded zoom-out keeps the town readable. The first city frame waits for currently needed sprites, with other levels loading in the background. A newly built higher-level building may briefly use level 1 art while its sprite arrives.
+
+**Extra save opportunities.** The game attempts an autosave every three minutes and when the page becomes hidden or is left, skipping identical campaign data. Browser lifecycle saves are best effort, not protection against every crash or shutdown.
+
+**Larger windows and lighter city rendering.** Floating windows scale with the desktop viewport. Static terrain is cached between frames and existing sprites are compressed to reduce transfer size. These are rendering changes, not a promise of a particular frame rate or loading time.
+
+**A clearer building flow.** Purchase confirmation has one Buy step. After purchase, a short guide points to the building choices. Empty owned plots are labelled "Your plot". City lot drawings fit their street blocks; Cádiz uses a fixed, historically inspired presentation, not a certified reconstruction.
 
 ## Before you play
 
-- Desktop browser with keyboard and mouse only. Phones and tablets are not supported.
-- Experimental software: balance, UI and saves may change. Export a backup before trying a new build. Cross-version save migration is not promised.
-- The campaign and balance remain works in progress. This is not a completed campaign or a 1.0 release.
-- No deployment is certified by these draft notes. The final notes must name the tested commit and the verified play link.
+- Use a desktop browser with a keyboard and mouse. Phones and tablets are not supported.
+- Export a backup before trying a new build. Cross-version save migration is not promised for this beta.
+- The campaign and balance are still in development. This is not a 1.0 release.
+- The Market no longer offers price-alert controls. Alerts already present in a saved game may still fire, without a management interface in that window.
 
-## Release record to complete
+## Source and verification
 
-- Final commit and tree: PENDING.
-- Version: v0.5.0-beta.1 under the beta.N policy; no alpha release, full release v1.0.0. Intended audience: public; publication pending final owner approval.
-- Independent documentation review: PENDING.
-- Exact-head CI and simulation gates for the full batch: PENDING.
-- Deployment and ES desktop post-merge playtest: PENDING.
-- Asset and privacy review: PENDING final diff review.
+PRE-PUBLICATION RECORD. Remove this pending record only after the final checks are complete.
+
+- Final version: `v0.5.0-beta.1`, GitHub pre-release.
+- Integrated source checkpoint: `4afd05024bf879820483a57e850a37b436e97cf8`, tree `3b6ad446161fa3c407ae782fd7a2e4faa503ac44`. This is not yet the final tested release candidate.
+- Exact-head independent review and CI: pending for the release candidate.
+- Independent documentation review: pending for this polished text.
+- Deployment of the candidate and Spanish desktop new-game Playtest: pending.
+- Window scaling, terrain caching, sprite recompression and the plot-purchase guide are integrated through #599. This candidate also adds textured ground, block-filling lot drawings, a fixed Cádiz layout and removes decorative neighbour buildings; final review and Playtest remain pending.
+
+## Change references
+
+The detailed source history is in [CHANGELOG.md](CHANGELOG.md). This text is grounded in the integrated batch through #599, plus the city presentation changes in this candidate, including route feedback (#536, #546), event access and choices (#550, #551, #555), messages (#552, #563), dock-local repairs and arming (#569, #570), reliable panel clicks (#582), autosave (#584), Market changes (#585, #586, #589), direct sailing (#587), integer money displays (#588, #590), build confirmation (#592), city plots (#593, with decorative neighbours subsequently removed by this candidate), centred confirmation (#594), and bounded zoom/staged loading (#596). Final publication must replace relative document links with verified release-specific links and reconcile later merged changes.

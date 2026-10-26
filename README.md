@@ -36,7 +36,7 @@ This README describes merged source at the documentation checkpoint, not a deplo
 
 ## Screenshots
 
-_Historical screenshot set, not release-candidate evidence. All eight screenshots were refreshed on 26 Oct 2026 (English). The city plan (`city2d.png`) was captured from the playable build at `main` d8a7383bf9713fd0d4f980363685cc1d06a1a22b and the sea chart (`map.png`) from `main` 8165918820eadd41ef7580c64b973a9f426dbcc6; the remaining six were captured from `main` c4ef80d84bdc1f500809eb4c7e163b0894a5fd2e. Refresh screenshots when the UI changes so they never show unmerged work._
+_Historical screenshot set, not release-candidate evidence. All eight screenshots were refreshed on 26 Oct 2026 (English). The city plan (`city2d.png`) was captured from the playable build at `main` d8a7383bf9713fd0d4f980363685cc1d06a1a22b and the sea chart (`map.png`) from `main` 4afd05024bf879820483a57e850a37b436e97cf8; the remaining six were captured from `main` c4ef80d84bdc1f500809eb4c7e163b0894a5fd2e. Refresh screenshots when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
@@ -105,3 +105,41 @@ Ideas, bug reports, historical corrections and translations are welcome. Start w
 - Third-party material is limited to public domain, CC0 and CC BY; every file is listed with its source in [`CREDITS.md`](CREDITS.md). Map data: Made with Natural Earth.
 - The name "Almojarife" is provisional. A free trademark search found no conflict (19 Oct 2026); this is not legal advice.
 - Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.
+
+## Desktop app beta preparation
+
+The Electron build packages the same game for Windows, macOS and Linux. The
+`Desktop builds` workflow produces unsigned NSIS and portable `.exe`, Apple
+Silicon `.dmg`/`.zip`, and Linux x64 `.AppImage`/`.deb` files. Candidate artifacts
+are not automatically published as releases. Download only assets attached to
+an approved release of this repository.
+
+### Installation of unsigned packages
+
+- **Windows:** run the installer or portable executable. If SmartScreen shows
+  an unsigned-app warning, use **More info > Run anyway** only after checking
+  that the file came from the intended release. Installation and SmartScreen
+  acceptance have not been tested by the automated smoke check.
+- **macOS:** open the DMG and copy the app to Applications. For an unsigned-app
+  warning, try **right-click > Open**. Gatekeeper may require a separate
+  confirmation in Privacy & Security. The app is not signed or notarized;
+  do not disable system-wide security. Current CI packages target Apple Silicon.
+- **Linux:** make the AppImage executable with `chmod +x <file>.AppImage`, then
+  run it. AppImage/FUSE and sandbox requirements vary by distribution. Do not
+  disable the Chromium sandbox as a general installation workaround. A `.deb`
+  is also built; installing that package has not yet been verified.
+
+### What has actually been checked
+
+| Platform | Evidence so far | Not yet verified |
+| --- | --- | --- |
+| Windows | Installer and portable builds completed; packaged app reached the title menu on a Windows CI runner. | Installer flow, SmartScreen, a full play session and final release assets. |
+| macOS (Apple Silicon) | DMG/ZIP builds completed; packaged app reached the title menu on a macOS CI runner. | DMG installation, Gatekeeper, Intel Macs, a full play session and final release assets. |
+| Linux x64 | AppImage/deb builds completed. An extracted diagnostic AppImage ran under Xvfb: title, new game, manual save, return to title and Continue; campaign data matched after reload. | FUSE launch, deb installation, ordinary desktop sandbox setup and final release assets. |
+
+The Linux interaction check above used candidate `d9299e97ff9d14b75fb53cba93bd660b81dcc64d` (package
+version `0.5.0-beta.1`), with `--disable-setuid-sandbox` for the test container. It is
+not certification of the final beta. Native-runner title-menu smoke checks passed on Windows, macOS and Linux for
+that candidate in workflow run `40398516752`. New presentation changes require
+a fresh final-candidate build and Playtest. Final
+release records must name the tested candidate and retain these limitations.
