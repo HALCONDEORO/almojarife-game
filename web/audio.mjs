@@ -8,13 +8,20 @@
 // that sound now and then while the port ambience is up (every 18-45 s, very low).
 const FILES = { buy: "audio/buy.ogg", sell: "audio/sell.ogg", click: "audio/click.ogg", confirm: "audio/confirm.ogg", error: "audio/error.ogg", sail: "audio/sail.ogg", arrive: "audio/arrive.ogg", open: "audio/open.ogg", close: "audio/close.ogg", storm: "audio/storm.ogg", pirates: "audio/pirates.ogg", mission: "audio/mission.ogg", council: "audio/council.ogg", festival: "audio/festival.ogg", build: "audio/build.ogg", alert: "audio/alert.ogg" };
 const cache = {};
-export const soundOn = () => localStorage.getItem("sound") !== "0"; // on by default; Ajustes can mute
+export const soundOn = () => localStorage.getItem("sound") !== "0"; // on by default; Ajustes and the M key can mute
+
+/** Per-channel volume multipliers set in Ajustes: "sfx" effects, "music", "amb" ambience and gulls. 0..100, default 100. */
+export const VOL_KINDS = ["sfx", "music", "amb"];
+export function volOf(kind) {
+  let v; try { v = parseInt(localStorage.getItem("vol-" + kind), 10); } catch { v = NaN; }
+  return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) / 100 : 1;
+}
 export function sfx(name) {
   if (!soundOn() || !FILES[name]) return;
   duckLoops();
   try {
     const a = cache[name] ?? (cache[name] = new Audio(FILES[name]));
-    a.currentTime = 0; a.volume = 0.45;
+    a.currentTime = 0; a.volume = 0.45 * volOf("sfx");
     a.play().catch(() => {}); // browsers block audio before the first user gesture: stay silent, never throw
   } catch { /* no Audio in this environment (tests) */ }
 }
@@ -31,7 +38,7 @@ function gullsStart() {
   const cry = () => {
     gullTimer = null;
     if (amb.name === "port" && soundOn()) {
-      try { const g = new Audio(`audio/gull${1 + Math.floor(Math.random() * 2)}.ogg`); g.volume = 0.10; g.play().catch(() => {}); } catch {}
+      try { const g = new Audio(`audio/gull${1 + Math.floor(Math.random() * 2)}.ogg`); g.volume = 0.10 * volOf("amb"); g.play().catch(() => {}); } catch {}
       gullTimer = setTimeout(cry, 18000 + Math.random() * 27000);
     }
   };
@@ -47,7 +54,7 @@ export function syncAmbience(name) {
   amb = { name, el: null };
   if (!name) return;
   try {
-    const el = new Audio(AMBIENCE[name]); el.loop = true; el.volume = AMB_VOL;
+    const el = new Audio(AMBIENCE[name]); el.loop = true; el.volume = AMB_VOL * volOf("amb");
     el.play().catch(() => {}); amb.el = el;
   } catch { /* no Audio here */ }
   if (name === "port") gullsStart(); else gullsStop();
@@ -59,11 +66,26 @@ export function syncMusic() {
   if (music) return;
   try {
     const el = new Audio(MUSIC[track % MUSIC.length]); track++;
-    el.volume = MUSIC_VOL;
+    el.volume = MUSIC_VOL * volOf("music");
     el.onended = () => { music = null; syncMusic(); };
     el.play().catch(() => { music = null; }); music = el;
   } catch { music = null; }
 }
 
 /** Dip ambience and music for a moment so a stinger reads clearly. */
-export function duckLoops() { duck(amb.el, AMB_VOL); duck(music, MUSIC_VOL); }
+export function duckLoops() { duck(amb.el, AMB_VOL * volOf("amb")); duck(music, MUSIC_VOL * volOf("music")); }
+
+/** Store one channel's volume (0..100) and apply it to the loops that are playing right now. */
+export function setVolume(kind, pct) {
+  if (!VOL_KINDS.includes(kind)) return;
+  const n = Math.min(100, Math.max(0, Math.round(Number(pct) || 0)));
+  try { localStorage.setItem("vol-" + kind, String(n)); } catch {}
+  try { if (amb.el) amb.el.volume = AMB_VOL * volOf("amb"); if (music) music.volume = MUSIC_VOL * volOf("music"); } catch {}
+}
+
+/** Flip the sound setting (the M key). Returns the new state; the caller re-renders so the loops follow. */
+export function toggleSound() {
+  const next = !soundOn();
+  try { localStorage.setItem("sound", next ? "1" : "0"); } catch {}
+  return next;
+}

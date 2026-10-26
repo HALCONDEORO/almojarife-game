@@ -15,10 +15,11 @@ const section = (icon, title, body) =>
 export function settingsHtml(t, s) {
   const row = (label, control) => `<div class="st-row"><span class="st-lbl">${label}</span>${control}</div>`;
   const chk = (input, label) => `<label class="st-row st-chk">${input} <span class="st-lbl">${label}</span></label>`;
+  const vol = (id, label, v = 100) => `<label class="st-row st-vol"><span class="st-lbl">${label}</span><input id="${id}" type="range" min="0" max="100" step="5" value="${v}" aria-label="${label}"></label>`;
   const ck = (on) => (on ? "checked" : "");
   const body =
     section("language", t.stSecLang, row(t.lang2, `<button id="st-lang">${s.lang === "es" ? "EN" : "ES"}</button>`) + `<p class="st-hint">${t.stLangHint}</p>`) +
-    section("game", t.stSecGame, row(t.speedDef, `<button id="st-spd">${s.speed}x</button>`) + chk(`<input id="st-auto" type="checkbox" ${ck(s.automaticTime)}>`, t.stAuto) + chk(`<input id="st-sound" type="checkbox" ${ck(s.sound)}>`, t.stSound) + `<p class="st-hint">${t.stAutoHint}</p>`) +
+    section("game", t.stSecGame, row(t.speedDef, `<button id="st-spd">${s.speed}x</button>`) + chk(`<input id="st-auto" type="checkbox" ${ck(s.automaticTime)}>`, t.stAuto) + chk(`<input id="st-sound" type="checkbox" ${ck(s.sound)}>`, t.stSound) + vol("st-vol-sfx", t.stVolSfx, s.vol?.sfx) + vol("st-vol-music", t.stVolMusic, s.vol?.music) + vol("st-vol-amb", t.stVolAmb, s.vol?.amb) + `<p class="st-hint">${t.stSoundKey}</p>` + `<p class="st-hint">${t.stAutoHint}</p>`) +
     section("access", t.stSecAccess, row(t.stText, `<button id="st-text" aria-pressed="${s.large}">${s.large ? t.stLarge : t.stNormal}</button>`) + chk(`<input id="st-motion" type="checkbox" ${ck(s.reduceMotion)}>`, t.stMotion)) +
     section("data", t.stSecData, `<p class="st-hint">${t.stNote}</p>` + (s.inGame ? `<div class="st-row"><button id="st-save">${t.saveNow}</button> <button id="st-exp">${t.exportS}</button> <span id="st-msg" role="status"></span></div>` : "")) +
     section("help", t.stSecHelp, `<p class="st-hint">${t.keys}</p><div class="st-row"><a id="st-help" href="${HELP_URL}" target="_blank" rel="noopener noreferrer">${t.stHelpLink}</a> <button id="st-cred">${t.cred}</button></div>`);
