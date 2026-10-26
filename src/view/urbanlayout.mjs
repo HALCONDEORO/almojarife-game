@@ -11,7 +11,8 @@ export function urbanLayout(canonical,pop) {
   const regular=plots.slice(6),cols=Math.max(5,Math.ceil(Math.sqrt(regular.length))),pitch=7;
   const rows=Math.ceil(regular.length/cols),width=cols*pitch+16,height=Math.max(rows*pitch+28,56);
   const plaza={x:width/2-5,y:height/2-5,w:10,d:10};
-  regular.forEach((p,i)=>{p.x=5+(i%cols)*pitch;p.y=5+Math.floor(i/cols)*pitch;});
+  /* Each lot sits centred in its own block: the streets run at 3+k*pitch, so the block interior is [3+k*pitch, 3+(k+1)*pitch] and a 3-5 wide lot never touches or crosses a street. */
+  regular.forEach((p,i)=>{p.x=3+(i%cols)*pitch+(pitch-p.w)/2;p.y=3+Math.floor(i/cols)*pitch+(pitch-p.d)/2;p.cell={x:3+(i%cols)*pitch,y:3+Math.floor(i/cols)*pitch,w:pitch,d:pitch}}); /* cell: the whole block between streets, presentation only; a lot for sale is drawn filling it */
   // Reserve a separate civic square and waterfront, away from the parcel grid.
   const gridBottom=5+rows*pitch,cy=gridBottom+6;
   plaza.x=width/2-7;plaza.y=cy-1;
