@@ -464,7 +464,7 @@ function renderRightTabs() {
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}}); // this second render is the one that sticks: keep the resolve-event button (542)
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }) });
   $("voyage-event")?.addEventListener("click", () => { shipWin = null; document.getElementById("shipwin")?.remove(); render(); const b = document.querySelector("#panel [data-ev]"); b?.scrollIntoView({ block: "center" }); b?.focus(); });
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
