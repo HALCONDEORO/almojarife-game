@@ -1,5 +1,7 @@
 # Ships and weapons
 
+Versión en español: [es/ships-and-weapons.md](es/ships-and-weapons.md).
+
 Tables: [generated/ships-and-weapons.md](generated/ships-and-weapons.md).
 
 ## In review (not on main)

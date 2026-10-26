@@ -1,5 +1,7 @@
 # Documentation audit
 
+Versión en español: [es/audit.md](es/audit.md).
+
 Taken on main b0f0361, 22 Oct 2026. "Fits" is the wiki page that should link to or absorb it.
 
 | Existing document | What it holds | Fits |

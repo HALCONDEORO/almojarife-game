@@ -1,5 +1,7 @@
 # Social classes
 
+Versión en español: [es/classes.md](es/classes.md).
+
 Three classes: poor, middle, rich. The rich share grows with city size. Tolerance is the highest price multiple a class still pays.
 
 Tables: [generated/classes.md](generated/classes.md). To fill: consumption baskets per class and the source type of each value.
