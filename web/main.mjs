@@ -304,7 +304,8 @@ function start(prof, save = true, opts = {}) {
 function ship() { return g.ships[sel] ?? g.ships[0]; }
 function act(fn) {
   const day = g.day, voyagesBefore = g.ships.map(s => !!s.voyage), routesBefore = g.ships.map(s => s.route);
-  fn();
+  const r = fn();
+  if (r && r.ok === false) sfx("error"); // a rejected order says so: silent failures hide mistakes
   const newOrder = g.ships.some((s, i) => (!voyagesBefore[i] && s.voyage) || (s.route && s.route !== routesBefore[i]));
   if (newOrder) pauseNote = null; // a fresh departure or route order always retires the arrival note
   if (newOrder && automaticTime) { manualPause = false; if ($("v3d")) planningResume = true; else playing = true; } // new orders resume the clock only when automatic time is enabled
@@ -805,7 +806,7 @@ function render() {
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>showLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
@@ -938,7 +939,7 @@ function renderShipWin() {
   handle.onpointerup = handle.onpointercancel = () => drag = null;
   handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
-  d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { shipWin.tab = e.dataset.swtab; render(); });
+  d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { if (shipWin.tab !== e.dataset.swtab) sfx("click"); shipWin.tab = e.dataset.swtab; render(); });
   d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
   d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
