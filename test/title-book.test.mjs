@@ -52,7 +52,15 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     // run a function in the page with a data argument, without building code from the data
     const call = async (fn, arg) => { const w = (await send("Runtime.evaluate", { expression: "window" })).result.result.objectId; const r = (await send("Runtime.callFunctionOn", { objectId: w, functionDeclaration: fn, arguments: [{ value: arg }], returnByValue: true, awaitPromise: true })).result; if (r.exceptionDetails) throw new Error(r.exceptionDetails.text); return r.result?.value; };
     await send("Page.enable");
-    const nav = async () => { await send("Page.navigate", { url: `http://127.0.0.1:${port}/web/index.html` }); await sleep(3500); };
+    const nav = async () => {
+      await send("Page.navigate", { url: `http://127.0.0.1:${port}/web/index.html` });
+      const deadline = Date.now() + 20000;
+      while (Date.now() < deadline) {
+        if (await ev("document.readyState === 'complete' && !!document.querySelector('#t-start')")) return;
+        await sleep(100);
+      }
+      assert.fail("title book did not expose #t-start within 20 seconds after navigation");
+    };
     const K = "almojarife.save.v1", B = "almojarife.save.backup", get = k => ev(`localStorage.getItem(${JSON.stringify(k)})`), click = i => ev(`document.getElementById('${i}').click()`);
     await nav(); await ev("localStorage.clear()"); await nav();
     // no save: the book starts a game without any dialog
