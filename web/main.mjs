@@ -580,7 +580,8 @@ function render() {
   if (inCity) postCity2dState();
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe && shipWin && !inCity) { shipWin = null; document.getElementById("shipwin")?.remove(); } // a pending event must not hide behind the ship window
-  if (pe) { playing = false; if (!autoPause) autoPause = "event"; h += `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>`; } // recording the cause here also covers a game loaded with the event already pending
+  const evCard = pe ? `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>` : "";
+  if (pe) { playing = false; if (!autoPause) autoPause = "event"; if (!inCity) h += evCard; } // recording the cause here also covers a game loaded with the event already pending; in the city the card pops as a modal (below) instead of hiding in a closed window
   if (inCity || pe) {
   // The ship card is not wallpaper for every window - it shows only where the
   // selected ship actually operates: warehouse (hold in/out), route, shipyard.
@@ -864,6 +865,11 @@ function render() {
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
   $("panel").innerHTML = h;
+  { const ov = $("city-event"); // city view: a pending event decides from a visible modal, never from a card buried in a closed window (the clock froze with no cue)
+    if (pe && inCity) { if (!ov) $("v3d").insertAdjacentHTML("beforeend", `<div class="sea-shade" id="city-event"><section class="sea-dialog" role="dialog" aria-modal="true" aria-label="${pe.title[lang]}">${evCard}</section></div>`);
+      else ov.querySelector(".sea-dialog").innerHTML = evCard;
+      $("city-event").querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev))); }
+    else if (ov) ov.remove(); }
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-hall-window",tab==="hall"&&ui2dEnabled(location.search));
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-market-window",tab==="market"&&ui2dEnabled(location.search));
   { const w = $("v3d")?.querySelector(".city-window"); if (w) { w.classList.remove("ui2d-store-window", "ui2d-bank-window"); const k = ui2dEnabled(location.search) ? store2dWindowClass(tab) : ""; if (k) w.classList.add(k); } }
@@ -1189,6 +1195,7 @@ function open3d(s0) {
   handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
   d.querySelector("[data-city-tab]").focus();
   syncCityControls();
+  render(); // re-render once docked: things keyed on the city view (the pending-event modal, panel hints) are decided with the city already open
 }
 addEventListener("message",e=>{
   const d=$("v3d");
