@@ -28,6 +28,13 @@ export function validateEvents(list, textKeys = ["es", "en"]) {
   }
   return errs;
 }
+const worth = (c) => c.outcomes.reduce((a, o) => a + o.p * ((o.effects?.cash ?? 0) - (o.effects?.days ?? 0) * 50 - (o.effects?.cargoLossPct ?? 0) * 10), 0); // rough ranking only: picks the best of equally risk-free choices
+/** The choice to take when an event has no risk at all (every outcome of every choice is a gain or nothing), else null. Such events do not pause the game. */
+export function autoChoice(ev) {
+  const safe = (o) => (o.effects?.cash ?? 0) >= 0 && (o.effects?.cargoLossPct ?? 0) <= 0 && (o.effects?.days ?? 0) <= 0;
+  if (!ev?.choices?.length || !ev.choices.every((c) => c.outcomes.every(safe))) return null;
+  return ev.choices.reduce((best, c) => (worth(c) > worth(best) ? c : best)).id;
+}
 /** Maybe start an event for a player ship at sea. Sets g.pending and returns it, or null. */
 export function rollEvent(g) {
   const list = g.world.events ?? [];
@@ -42,6 +49,8 @@ export function rollEvent(g) {
     let x = r() * total, pick = ok[ok.length - 1];
     for (const e of ok) { x -= e.weight; if (x < 0) { pick = e; break; } }
     g.pending = { event: pick.id, ship: ship.id, day: g.day };
+    const auto = autoChoice(pick);
+    if (auto) { resolveEvent(g, auto); return null; } // purely favourable: resolved at once, the result is in Messages
     return g.pending;
   }
   return null;
