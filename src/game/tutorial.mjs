@@ -42,6 +42,16 @@ export function skipTutorial(g) {
   return true;
 }
 
+/** Restart a finished or skipped tutorial from step one (the player's choice in Settings > Help).
+ *  While it runs again, the mission arc hides and freezes exactly as on a first run.
+ *  Returns true when there was a tutorial to restart; false when it is running, off or damaged. */
+export function restartTutorial(g) {
+  const t = live(g);
+  if (!t || tutorialActive(g)) return false;
+  initTutorial(g);
+  return true;
+}
+
 /** Current step id: "buy", "sell", "sail", "route", "hall" or "done". null when the tutorial is off or damaged. */
 export function tutorialStep(g) {
   const t = live(g);
