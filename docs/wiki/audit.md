@@ -24,6 +24,6 @@ Taken on main b0f0361, 22 Oct 2026. "Fits" is the wiki page that should link to 
 | docs/guides/ADD-CONTENT.md | how to add content | kept; link from rules.md |
 
 ## Gaps
-- No single page lists all goods with base price, class demand and source type.
+- ~~No single page lists all goods with base price, class demand and source type.~~ Closed: [generated/goods.md](generated/goods.md).
 - Several numbers live only in code comments or in PR descriptions.
 - Statistic tables that exist by hand today (in design docs) can drift from the code. First generated tables: ships, weapons, classes.

@@ -24,6 +24,6 @@ Tomada en main b0f0361, 22 oct 2026. «Encaja» es la página de la wiki que deb
 | docs/guides/ADD-CONTENT.md | cómo añadir contenido | se conserva; enlace desde rules.md |
 
 ## Lagunas
-- Ninguna página única lista todas las mercancías con precio base, demanda por clase y tipo de fuente.
+- ~~Ninguna página única lista todas las mercancías con precio base, demanda por clase y tipo de fuente.~~ Cerrada: [generated/es/goods.md](../generated/es/goods.md).
 - Varios números viven solo en comentarios del código o en descripciones de PR.
 - Las tablas de estadísticas escritas a mano hoy (en documentos de diseño) pueden desviarse del código. Primeras tablas generadas: barcos, armas, clases.
