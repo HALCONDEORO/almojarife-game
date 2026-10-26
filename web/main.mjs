@@ -474,8 +474,8 @@ function render() {
   renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
-  $("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
-  $("fleet-search").oninput=e=>{const pos=e.target.selectionStart;fleetSearch=e.target.value;render();const input=$("fleet-search");input.focus();input.setSelectionRange(pos,pos);};
+  if($("fleet-filter"))$("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
+  if($("fleet-search"))$("fleet-search").oninput=e=>{const pos=e.target.selectionStart;fleetSearch=e.target.value;render();const input=$("fleet-search");input.focus();input.setSelectionRange(pos,pos);};
   $("fleet-body").querySelectorAll('[data-fleet-ship]').forEach(button=>button.onclick=()=>{sel=Number(button.dataset.fleetShip);target=null;shipWin={tab:'data'};render();});
   document.getElementById('sea-modal')?.remove();
   if(g.pending?.event==='sea-pirates'||g.encounterReport){
