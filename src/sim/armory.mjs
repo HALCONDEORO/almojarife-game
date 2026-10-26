@@ -11,9 +11,10 @@ export function armoryBlock(g, ship, extraWeight, price, cash) {
   return null;
 }
 /** Buy and mount a weapon at the armory of the ship's port. `holder` pays: the game (player) or an AI trader, same rules. */
-export function buyWeapon(g, ship, type = "cannon", holder = g) {
+export function buyWeapon(g, ship, type = "cannon", holder = g, at) { // `at`: port the player acts from (optional; AI traders omit it): arming happens where the ship is docked
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (at !== undefined && ship.at !== at) return { ok: false, reason: "not in this port" };
   const W = WEAPON_TYPES[type]; if (!W) return { ok: false, reason: "bad type" };
   if (weaponCount(ship) >= maxCannons(ship)) return { ok: false, reason: "full" };
   const price = armoryPrice(g, ship.at, W.price), why = armoryBlock(g, ship, W.weight, price, holder.cash);
