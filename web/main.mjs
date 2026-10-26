@@ -641,14 +641,14 @@ function render() {
     const ui2dMark = h.length; // start of the tab content (ui2d wraps it below)
     if (tab === "market") {
       const market2d=ui2dEnabled(location.search);
-      if(market2d) {
+      if(market2d && wh) { /* the filter only makes sense with a warehouse in this port */
         h+=`<div class="market-tools mkt-tools"><label><input data-market-cargo type="checkbox" ${marketCargoOnly?'checked':''}> ${lang==='es'?'Solo mi carga':'My cargo only'}</label></div>`;
         
       }
       const mktFee = FEE * feeMul(g, s.at);
       h += `<div class="mkt-preview" data-market-preview aria-live="polite"></div><div class="mkt-table${market2d ? " ui2d-market" : ""}"><div class="mkt-heads"><div class="mkt-head">${["", t.good, t.price, t.stock, t.hold, t.avgLbl, t.buy, t.sell].map((x) => `<span>${esc(x)}</span>`).join("")}</div><div class="mkt-head mkt-head2">${["", t.good, t.price, t.stock, t.hold, t.avgLbl, t.buy, t.sell].map((x) => `<span>${esc(x)}</span>`).join("")}</div></div><div class="mkt-grid">`;
       for (const gd of Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang))) {
-        if(market2d && marketCargoOnly && !(s.cargo[gd]>0)) continue;
+        if(market2d && wh && marketCargoOnly && !(s.cargo[gd]>0) && !(wh?.goods?.[gd]>0)) continue;
         const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, bq = marketQty === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, mktFee).qty) : marketQty, sq = marketQty === "max" ? Math.max(1, have) : marketQty, pb = previewBuy(g.world, g.market, s, g.cash, gd, bq, mktFee), ps = previewSell(g.world, g.market, s, gd, sq, mktFee), spb = s.basis?.[gd], avg = spb != null && spb > 0 && have > 0 ? Math.round(spb / have) : null;
         const p = quote(g, s.at, gd), base = g.world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit";
         const buyCost = Math.round(pb.cost), sellPay = Math.round(ps.revenue); // whole-coin display only: the trade itself still settles with cents
