@@ -7,6 +7,7 @@ import { assignedCaptainHtml, CT } from "./captainview.mjs";
 import { captainOf as captainOfShip } from "../game/captains.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponWeight, gearOf, gearWeight, GEAR, GEAR_MAX, armoryPrice } from "../game/crew.mjs";
 import { shipCapacity } from "../sim/trade.mjs";
+import { hullSpeedFactor } from "../game/seawear.mjs";
 import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, warehouseOf, quote } from "../game/game.mjs";
 
 const WEAPON_NAME = { es: { ballista: "Ballesta", catapult: "Catapulta", cannon: "Cañón", bombard: "Bombarda" }, en: { ballista: "Ballista", catapult: "Catapult", cannon: "Cannon", bombard: "Bombard" } };
@@ -23,7 +24,7 @@ export const SW = {
     guns: "Armamento", gunCond: "Estado {c}%", gunNone: "Sin cañones",
     gunRepair: "Reparar armamento ({p})", cannonBuy: "Comprar cañón ({p})",
     armory: "Armería", weaponBuy: "{w} ({p}, poder {pw}, peso {wt})", gearLine: "Equipo de marineros: nivel {l}/{m}", gearBuy: "Mejorar equipo ({p})", weightLine: "Armas y equipo restan {w} de bodega",
-    hull: "Casco {h}%", repair: "Reparar casco ({p})",
+    hull: "Casco {h}%", repair: "Reparar casco ({p})", hullSlow: "Lento por casco dañado: −{p}% de velocidad",
     upkeep: "Mantenimiento: {u}/día", value: "Valor: {v}",
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
     route: "Ruta activa: {a} ⇄ {b}, lleva {out}{back}. Viajes completados: {n}.", noRoute: "Sin ruta.",
@@ -43,7 +44,7 @@ export const SW = {
     guns: "Armament", gunCond: "Condition {c}%", gunNone: "No cannons",
     gunRepair: "Repair armament ({p})", cannonBuy: "Buy a cannon ({p})",
     armory: "Armory", weaponBuy: "{w} ({p}, power {pw}, weight {wt})", gearLine: "Sailors' gear: level {l}/{m}", gearBuy: "Upgrade gear ({p})", weightLine: "Weapons and gear take {w} from the hold",
-    hull: "Hull {h}%", repair: "Repair hull ({p})",
+    hull: "Hull {h}%", repair: "Repair hull ({p})", hullSlow: "Slowed by hull damage: −{p}% speed",
     upkeep: "Upkeep: {u}/day", value: "Value: {v}",
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
     route: "Active route: {a} ⇄ {b}, carries {out}{back}. Trips completed: {n}.", noRoute: "No route.",
@@ -137,6 +138,7 @@ function dataTab(g, s, t, hp) {
   const fmt = hp.fmt, cn = hp.cityName, rp = repairPrice(g, s), sv = shipValue(s);
   let h = "";
   h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} <button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp))}</button><br>`;
+  { const hs = Math.round((1 - hullSpeedFactor(s.hull)) * 100); if (s.voyage && hs > 0) h += `<small class="warn">${t.hullSlow.replace("{p}", hs)}</small><br>`; }
   h += `${t.upkeep.replace("{u}", SHIP_TYPES[s.type].upkeepPerDay)} · ${t.value.replace("{v}", fmt(sv))}</p>`;
   h += s.voyage
     ? `<p>${t.atSea.replace("{from}", cn(s.voyage.from)).replace("{to}", cn(s.voyage.to)).replace("{eta}", hp.eta(s))}</p>`

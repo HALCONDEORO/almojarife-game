@@ -33,7 +33,11 @@ test('keeping the prize adds a crewless ship that keeps station and arrives with
  const before=g.ships.length,r=claimPrize(g,true);
  assert.ok(r.ok);assert.equal(g.ships.length,before+1);assert.equal(g.encounterReport,null);
  const p=r.ship;assert.equal(p.type,e.prize.type);assert.equal(p.hull,e.prize.hull);assert.equal(p.prize,true);assert.equal(p.crew,0);
- assert.deepEqual(p.voyage,s.voyage,'same voyage as the winner');
+ // DECLARED (hull-wear rebalance 26/10): the pair carries escort markers (escorted / escortedBy) so
+ // hull drag leaves them in station; everything else about the shared voyage is identical.
+ const{escorted,...pv}=p.voyage,{escortedBy,...wv}=s.voyage;
+ assert.deepEqual(pv,wv,'same voyage as the winner');
+ assert.equal(escorted,true);assert.equal(escortedBy,p.id,'escort markers on the pair');
  assert.equal(claimPrize(g,true).ok,false,'once per encounter');
  arrive(g,s);
  assert.ok(!p.voyage&&p.at===s.at,'both arrived at the destination');

@@ -17,6 +17,7 @@ import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
 import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { seaWearDay, hullSpeedFactor, hullWarning } from "./seawear.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
 import { gainXp } from "./captainxp.mjs";
@@ -158,7 +159,12 @@ function dayTick(g) {
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
-    if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
+    if (s.voyage) { // armament and hull wear at sea, once per day; hull wear is weather-coupled for player ships (docs/design/hull-wear-rebalance.md)
+      wearGuns(s);
+      const before = s.hull ?? 100;
+      if (seaWearDay(g, s)) { const w = hullWarning(before, s); if (w) { g.log.unshift({ day: g.day, key: "event", txt: w, ship: s.id }); if (g.log.length > 30) g.log.pop(); post(g, "event", { txt: w, ship: s.id }); } }
+      else tickShip(s); // anchored or voyage-less edge: keep the old charge model
+    }
     accrueDay(g, s);
   }
   const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
@@ -199,7 +205,7 @@ function dayTick(g) {
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
-  wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
+  wearGuns(s); seaWearDay(g, s, true); // the arrival day counts as a day at sea (weather at the arrival position), charged now instead of at the boundary
   chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
   arrivalJustice(g, s); // flag off or no data: nothing
   gainXp(g, s, "navigation"); // flag off: nothing
@@ -337,7 +343,7 @@ export function doSail(g, ship, to) {
   const from = ship.at;
   // Per-leg wind from the regional field (seeded by day and leg ends), so replays and save/load keep the same weather.
   const wind = legWind(g, ship, from, to);
-  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship), wind });
+  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship) * hullSpeedFactor(ship.hull), wind }); // a damaged hull sails slower from the first tick
   if (r.ok) openVoyage(g, ship, from, to);
   if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
   if (r.ok) campaignEvent(g, { kind: "sail", to }, MISSION);
