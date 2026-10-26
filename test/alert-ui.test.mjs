@@ -23,12 +23,8 @@ test("the fired message names the good and the port as the player reads them", (
   assert.ok(/grain/i.test(m.txt.en), "EN good");
 });
 
-test("the web wires the alerts UI into the market tab", () => {
+test("the market window no longer shows the price-alert block (engine and saved alerts untouched)", () => {
   const main = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-  assert.ok(main.includes("alertsOf(g, s.at)"), "lists the port's alerts");
-  assert.ok(main.includes("setPriceAlert(g, s.at"), "sets alerts");
-  assert.ok(main.includes('data-al-del'), "clears alerts");
-  assert.ok(main.includes('class="al-err"'), "error surface");
-  const css = fs.readFileSync(new URL("../web/ui2d.css", import.meta.url), "utf8");
-  assert.ok(css.includes(".al-box"), "styled");
+  assert.ok(!main.includes('class="al-box"'), "no alerts box in the market tab");
+  assert.ok(!main.includes("alertsOf(g, s.at)"), "market tab does not list alerts");
 });
