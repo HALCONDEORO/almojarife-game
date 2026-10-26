@@ -1,3 +1,4 @@
+import { forecastData, forecastHtml } from "../src/view/forecastview.mjs";
 import { noticeData, noticeHtml } from "../src/view/noticeview.mjs";
 import { portData, portHtml, tradesHtml, nearestPorts } from "../src/view/portview.mjs";
 import { cashCardHtml, financeSummary } from "../src/view/cashcard.mjs";
@@ -477,6 +478,7 @@ function render() {
   $("route-repeat")?.addEventListener("click", () => act(() => repeatRoute(g, ship())));
   $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   { const nc = $("notice-card"); nc.innerHTML = noticeHtml(noticeData(g), { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k }); nc.hidden = !nc.innerHTML; }
+  { const fc = $("forecast-card"); if (fc) { fc.innerHTML = forecastHtml(forecastData(g, world, ship()), { lang, cityName }); fc.hidden = !fc.innerHTML; } }
   fitFleet();
   renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
