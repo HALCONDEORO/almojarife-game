@@ -10,7 +10,7 @@
 
 You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
 
-**Status: early alpha.** It is playable and free, but rough. The honest list of what is still missing for the alpha is below.
+**Status: experimental development build.** A first public beta pre-release is being prepared, not published. The game is playable and free, but rough.
 
 **Platform: desktop only.** El Almojarife is a desktop game: it is played in a Windows, Mac or Linux browser with keyboard and mouse. It is not designed for or tested on phones or tablets.
 
@@ -59,9 +59,9 @@ _Historical screenshot set, not release-candidate evidence. All eight screenshot
 
 Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to reset.
 
-## What is missing for the alpha
+## What remains before the first beta release
 
-Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.5.0-beta.1`, not yet published. Its PUBLIC audience is conditionally approved; final integrated documentation, polish and Playtest approval remain required. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
+Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.5.0-beta.1`, not yet published. The intended audience is public; publication remains pending final owner approval, integrated documentation, polish and Playtest approval. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
 
 **Still missing or in progress:**
 

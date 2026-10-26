@@ -1,6 +1,6 @@
 # Release notes draft: v0.5.0-beta.1
 
-DRAFT ONLY. The public audience is approved conditionally; no tag, release date or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
+DRAFT ONLY. The intended audience is public; publication is pending final owner approval; no tag, release date or final commit has been approved. The final batch is still being integrated. This is a proposal for review, not a published release.
 
 ## El Almojarife: first beta batch
 
@@ -32,7 +32,7 @@ Forecasts, variable salvage rewards, workshop margin warnings, persistent course
 ## Release record to complete
 
 - Final commit and tree: PENDING.
-- Version: v0.5.0-beta.1 under the beta.N policy; no alpha release, full release v1.0.0. Intended audience: PUBLIC, approved conditionally on26 October18:20.
+- Version: v0.5.0-beta.1 under the beta.N policy; no alpha release, full release v1.0.0. Intended audience: public; publication pending final owner approval.
 - Independent documentation review: PENDING.
 - Exact-head CI and simulation gates for the full batch: PENDING.
 - Deployment and ES desktop post-merge playtest: PENDING.

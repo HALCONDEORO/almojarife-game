@@ -2,13 +2,13 @@
 
 ## Current status (26 October 2026)
 
-The repository is public. A GitHub pre-release here is publicly readable. The owner approved a PUBLIC beta pre-release on 26 October 2026 at18:20, conditional on verified documentation, integrated code links, polish and Playtest approval. Do not change repository visibility as part of a release.
+The repository is public. A GitHub pre-release here is publicly readable. The intended first beta audience is public; publication is pending final owner approval, verified documentation, integrated code links, polish and Playtest approval. Do not change repository visibility as part of a release.
 
 No GitHub release exists at this checkpoint. Source merged into `main` is not proof that the hosted game has been deployed or tested.
 
 ## Proposed versions, not tags
 
-Owner correction on26 October2026 at18:21: no alpha release. The first public release is `v0.5.0-beta.1`, marked as a GitHub pre-release. Later candidates use `beta.2`, `beta.3`, and so on; the full release is `v1.0.0`. Increase the middle number according to the size of later batches. No save compatibility is promised in `0.x` unless explicitly documented and tested. No tag has been created by this policy.
+No alpha release is planned. The first public release is `v0.5.0-beta.1`, marked as a GitHub pre-release. Later candidates use `beta.2`, `beta.3`, and so on; the full release is `v1.0.0`. Increase the middle number according to the size of later batches. No save compatibility is promised in `0.x` unless explicitly documented and tested. No tag has been created by this policy.
 
 ## Batch releases, focused pull requests
 
