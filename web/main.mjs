@@ -730,11 +730,10 @@ function render() {
     } else if (tab === "town") { // a typed town building clicked in the 3D view: read-only card, no services yet
       h += t.townTypes[townSel] ? `<h3>${t.townTypes[townSel]}</h3><p>${t.townDesc[townSel]}</p>` : `<p><i>${t.townNone}</i></p>`;
     } else if (tab === "house") {
-      const pr = premises(g,s.at,lang);
+      const pr = premises(g,s.at,lang,hasOffice(g, s.at));
       h += `<h3>${pr.label}: ${cityName(s.at)}</h3><p>${pr.info}</p>`;
       h += houseHtml(g, lang, netWorth(g), fmtM, cityName, LOAN_MAX);
       if (!pr.isHome && !hasOffice(g, s.at)) { const rp = repOf(g, s.at); h += `<p><i>${t.officeReq.replace("{p}", fmt(OFFICE_PRICE)).replace("{r}", RESPECT_NAMES[lang][respectOf(g, s.at).id]).replace("{n}", Math.floor(rp))}</i></p>` + `<p><button data-bldact="office|buy" ${g.cash < OFFICE_PRICE || rp < OFFICE_MIN_RESPECT ? "disabled" : ""}>${t.officeBuy.replace("{p}", fmt(OFFICE_PRICE))}</button></p>`; }
-      else if (!pr.isHome) h += `<p><i>${t.officeOwned}</i></p>`;
       if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
       const room = bankRoom(g, s.at), tm = termsFor(g, s.at), capHere = tm.room < 1 ? Math.floor(loanCapFor(g, LOAN_MAX) * tm.room / 100) * 100 : loanCapFor(g, LOAN_MAX), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
