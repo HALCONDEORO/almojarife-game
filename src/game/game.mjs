@@ -177,7 +177,7 @@ function dayTick(g) {
   if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
-  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)) }); // ships with a standing route act on the day they are docked
+  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => repairShip(g, s)), repairQuote: (s) => repairPrice(g, s) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
   dailyJustice(g); // flag off: nothing

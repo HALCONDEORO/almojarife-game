@@ -19,6 +19,23 @@ export function setRoute(g, ship, a, b, out, back = "") {
 }
 export function clearRoute(ship) { const had = !!ship.route; delete ship.route; return had; }
 
+// Automatic routes take care of the hull: below ROUTE_REPAIR_HULL a docked route ship repairs
+// at the yard before loading, as long as the bill leaves the route's cash brake intact.
+// When the brake does not cover it the ship sails worn and the feed says so (once per stretch).
+export const ROUTE_REPAIR_HULL = 50;
+function routeRepair(g, s, r, ops, brake) {
+  if (!ops.doRepair || !ops.repairQuote) return;
+  if ((s.hull ?? 100) >= ROUTE_REPAIR_HULL) { r.repairWarned = 0; return; }
+  const cost = ops.repairQuote(s);
+  if (cost <= 0) return;
+  if (g.cash - cost < Math.max(0, brake)) {
+    if (!r.repairWarned) { r.repairWarned = 1; post(g, "routeRepairSkip", { ship: s.id, city: s.at, hull: Math.round(s.hull ?? 100), cost }); }
+    return;
+  }
+  const res = ops.doRepair(s);
+  if (res.ok) { r.repairWarned = 0; post(g, "routeRepair", { ship: s.id, city: s.at, cost: res.cost }); }
+}
+
 /** Run one step for every ship that has a route and is docked. `ops` are the game's own doBuy/doSell/doSail. */
 export function processRoutes(g, ops) {
   for (const s of g.ships) {
@@ -31,6 +48,7 @@ export function processRoutes(g, ops) {
       const q = s.cargo[sellGood], res = ops.doSell(g, s, sellGood, q);
       if (res.ok) { r.legs++; post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     }
+    routeRepair(g, s, r, ops, 0);
     if (buyGood) ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
     if (atA && (s.cargo[r.out] ?? 0) === 0) { // need the outbound good, not just any cargo
@@ -110,6 +128,7 @@ function processRouteAdv(g, s, r, ops) {
     const res = ops.doSell(g, s, rule.good, q);
     if (res.ok) { traded = true; post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
   }
+  routeRepair(g, s, r, ops, r.minCash);
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
     if (room <= 0) break;

@@ -7,7 +7,7 @@ const categories={
  en:{port:'Port',house:'Trading house',bank:'Bank',council:'Council',report:'Report',read:'Read',new:'Unread',intro:'News from your trading house and the port, in one place.'}
 };
 export function messageCategory(kind){
- if(['arrival','order','routeLeg','routeStuck'].includes(kind))return ['port','⚓'];
+ if(['arrival','order','routeLeg','routeStuck','routeRepair','routeRepairSkip'].includes(kind))return ['port','⚓'];
  if(['loan','loanPaid','loanDue','loanLate','loanSeized','debt','bankrupt'].includes(kind))return ['bank','◎'];
  if(['contractAccept','contractDone','contractFailed','respect'].includes(kind))return ['council','⚜'];
  if(kind==='report')return ['report','▤'];
