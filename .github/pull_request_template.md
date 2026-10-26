@@ -1,23 +1,24 @@
-<!-- Título en español: qué cambia para el jugador, sin jerga. Un PR = un cambio. -->
-## Qué cambia
+<!-- English title: describe the player-facing change without jargon. One PR = one change. -->
+## What changes
 
-## Por qué
-<!-- Problema o petición de Marco, con fecha. No atribuir aprobación a metadatos del parche. -->
+## Why
+<!-- Problem or Marco's request, with date. Patch metadata does not establish approval. -->
 
-## Cómo se ve
-<!-- Capturas antes y después de producto desktop ES. Indicar si son simuladas/inyectadas, head fuente y si son post-merge. -->
+## How it looks
+<!-- Before/after ES desktop product screenshots. Label simulated/injected states, source head and post-merge evidence. -->
 
-## Riesgo y qué NO toca
-<!-- Explicar balance, simulación, guardados y compatibilidad. Declarar cambios a tests existentes. -->
+## Risks and what stays unchanged
+<!-- Balance, simulation, saves and compatibility. Declare changes to existing tests. -->
 
-## Pruebas
-<!-- Tests exactos y resultados. Resultado de suite completa independiente en head exacto, o PENDIENTE. CI no sustituye revisión. -->
+## Tests
+<!-- Exact tests and results. Independent full suite on the exact head, or PENDING. CI does not replace review. -->
 
-## Cómo probarlo a mano
+## How to test manually
 
-## Control de entrada
-- [ ] Un único cambio.
-- [ ] Prioridad: bug, petición de Marco de hoy, resto.
-- [ ] No supera seis PRs abiertos; excepción solo para bug urgente.
-- [ ] PASS independiente en head exacto y CI verde antes de merge.
-- [ ] Captura post-merge desktop ES solicitada con SHA de main.
+## Entry checks
+- [ ] English title and description; product language unchanged; game screenshots in ES desktop.
+- [ ] One change only.
+- [ ] Priority: bugs, Marco's requests today, then the rest.
+- [ ] At most six open PRs; exception only for urgent bugs or explicit approval.
+- [ ] Independent exact-head PASS and green CI before merge.
+- [ ] Post-merge ES desktop screenshot requested with main SHA.
