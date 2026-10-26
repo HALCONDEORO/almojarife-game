@@ -20,7 +20,7 @@ import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/enco
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
-import { shipWindowHtml } from "../src/view/shipwindow.mjs";
+import { shipWindowHtml, SW } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { createMenuGuard } from "../src/view/menuguard.mjs";
@@ -338,6 +338,12 @@ function act(fn) {
   if (g.day !== day) { progress = 0; tickAcc = 0; } // wait buttons advance whole days
   if (autoPause === "event" && !g.pending && !g.encounterReport && !g.over) { playing = true; autoPause = null; } // the event that stopped the clock is decided: resume
   autosave(); render();
+}
+
+function armFailNote(reason) { // an armory rejection names its cause on the hint line, then the next render restores it
+  const h = $("hint"); if (!h) return;
+  h.textContent = (SW[lang] ?? SW.es).armWhy?.[reason] ?? reason;
+  setTimeout(() => render(), 2500);
 }
 
 function activeMissionLine() {
@@ -971,8 +977,8 @@ function render() {
   P.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s)));
   P.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   P.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
-  P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => act(() => buyWeapon(g, s, e.dataset.weapon)));
-  P.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => act(() => buyGear(g, s)));
+  P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
+  P.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id))));
   P.querySelectorAll("[data-cvleave]").forEach((e) => e.onclick = () => act(() => leaveConvoy(g, s.id)));
   P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s)));
@@ -1046,8 +1052,8 @@ function renderShipWin() {
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s)));
-  d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => act(() => buyWeapon(g, s, e.dataset.weapon)));
-  d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => act(() => buyGear(g, s)));
+  d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon))); if (r && !r.ok) armFailNote(r.reason); });
+  d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s)));
   d.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
 }

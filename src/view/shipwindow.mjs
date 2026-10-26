@@ -8,6 +8,7 @@ import { captainOf as captainOfShip } from "../game/captains.mjs";
 import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponWeight, gearOf, gearWeight, GEAR, GEAR_MAX, armoryPrice } from "../game/crew.mjs";
 import { shipCapacity } from "../sim/trade.mjs";
 import { hullSpeedFactor } from "../game/seawear.mjs";
+import { armoryBlock, gearNextWeight } from "../sim/armory.mjs";
 import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, warehouseOf, quote } from "../game/game.mjs";
 
 const WEAPON_NAME = { es: { ballista: "Ballesta", catapult: "Catapulta", cannon: "Cañón", bombard: "Bombarda" }, en: { ballista: "Ballista", catapult: "Catapult", cannon: "Cannon", bombard: "Bombard" } };
@@ -25,6 +26,7 @@ export const SW = {
     gunRepair: "Reparar armamento ({p})", cannonBuy: "Comprar cañón ({p})",
     armory: "Armería", weaponBuy: "{w} ({p}, poder {pw}, peso {wt})", gearLine: "Equipo de marineros: nivel {l}/{m}", gearBuy: "Mejorar equipo ({p})", weightLine: "Armas y equipo restan {w} de bodega",
     hull: "Casco {h}%", repair: "Reparar casco ({p})", hullSlow: "Lento por casco dañado: −{p}% de velocidad",
+    armWhy: { "game over": "La partida ha terminado.", "at sea": "El barco esta en el mar.", "no cash": "No llegan las monedas.", "hold full": "La bodega no tiene sitio para ese peso.", "full": "No caben mas armas en esta nave.", "max level": "El equipo ya esta al maximo." },
     upkeep: "Mantenimiento: {u}/día", value: "Valor: {v}",
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
     route: "Ruta activa: {a} ⇄ {b}, lleva {out}{back}. Viajes completados: {n}.", noRoute: "Sin ruta.",
@@ -47,6 +49,7 @@ export const SW = {
     gunRepair: "Repair armament ({p})", cannonBuy: "Buy a cannon ({p})",
     armory: "Armory", weaponBuy: "{w} ({p}, power {pw}, weight {wt})", gearLine: "Sailors' gear: level {l}/{m}", gearBuy: "Upgrade gear ({p})", weightLine: "Weapons and gear take {w} from the hold",
     hull: "Hull {h}%", repair: "Repair hull ({p})", hullSlow: "Slowed by hull damage: −{p}% speed",
+    armWhy: { "game over": "The game is over.", "at sea": "The ship is at sea.", "no cash": "Not enough coins.", "hold full": "The hold has no room for that weight.", "full": "No room for more weapons on this ship.", "max level": "Gear is already at max level." },
     upkeep: "Upkeep: {u}/day", value: "Value: {v}",
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
     route: "Active route: {a} ⇄ {b}, carries {out}{back}. Trips completed: {n}.", noRoute: "No route.",
@@ -132,8 +135,9 @@ function crewTab(g, s, lang, t, fmt, fmtM = fmt) {
   h += `<button data-gunrepair="1" ${gr <= 0 || s.voyage || g.over || g.cash < gr ? "disabled" : ""}>${t.gunRepair.replace("{p}", fmtM(gr))}</button> `;
   h += `<button data-cannon="1" ${s.voyage || g.over || cn >= mc || g.cash < CANNON_PRICE ? "disabled" : ""}>${t.cannonBuy.replace("{p}", fmt(CANNON_PRICE))}</button></div>`;
   const gl = gearOf(s), gp = gl < GEAR_MAX ? armoryPrice(g, s.at, GEAR[gl + 1] - GEAR[gl]) : 0, lw = weaponWeight(s) + gearWeight(s);
-  h += `<div class="armory"><b>${t.armory}</b>: ` + Object.entries(WEAPON_TYPES).map(([k, W]) => { const p = armoryPrice(g, s.at, W.price); return `<button data-weapon="${k}" ${s.voyage || g.over || cn >= mc || g.cash < p ? "disabled" : ""}>${t.weaponBuy.replace("{w}", WEAPON_NAME[lang]?.[k] ?? k).replace("{p}", fmt(p)).replace("{pw}", W.power).replace("{wt}", W.weight)}</button>`; }).join(" ");
-  h += `<br>${t.gearLine.replace("{l}", gl).replace("{m}", GEAR_MAX)} <button data-gear="1" ${s.voyage || g.over || gl >= GEAR_MAX || g.cash < gp ? "disabled" : ""}>${t.gearBuy.replace("{p}", fmt(gp))}</button>`;
+  h += `<div class="armory"><b>${t.armory}</b>: ` + Object.entries(WEAPON_TYPES).map(([k, W]) => { const p = armoryPrice(g, s.at, W.price); const why = cn >= mc ? "full" : armoryBlock(g, s, W.weight, p, g.cash); return `<button data-weapon="${k}" ${why ? "disabled" : ""}${why ? ` title="${t.armWhy[why] ?? why}"` : ""}>${t.weaponBuy.replace("{w}", WEAPON_NAME[lang]?.[k] ?? k).replace("{p}", fmt(p)).replace("{pw}", W.power).replace("{wt}", W.weight)}</button>`; }).join(" ");
+  const gwhy = gl >= GEAR_MAX ? "max level" : armoryBlock(g, s, gearNextWeight(s, gl), gp, g.cash);
+  h += `<br>${t.gearLine.replace("{l}", gl).replace("{m}", GEAR_MAX)} <button data-gear="1" ${gwhy ? "disabled" : ""}${gwhy ? ` title="${t.armWhy[gwhy] ?? gwhy}"` : ""}>${t.gearBuy.replace("{p}", fmt(gp))}</button>`;
   h += `<br><small>${t.weightLine.replace("{w}", lw)}</small></div>`;
   return h;
 }

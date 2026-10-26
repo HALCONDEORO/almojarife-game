@@ -3,7 +3,7 @@
 import { SHIP_TYPES } from "./trade.mjs";
 import { WEAPON_TYPES, weaponCount, maxCannons, weaponsOf, mountWeapon, armoryPrice, crewOf, gearOf, gearWeight, loadWeight, GEAR, GEAR_MAX } from "./armament.mjs";
 /** Why a weapon or gear purchase cannot happen now, or null. The same check serves the player and the AI traders. */
-function armoryBlock(g, ship, extraWeight, price, cash) {
+export function armoryBlock(g, ship, extraWeight, price, cash) {
   if (g.over) return "game over";
   if (ship.voyage) return "at sea";
   if (cash < price) return "no cash";
@@ -22,12 +22,14 @@ export function buyWeapon(g, ship, type = "cannon", holder = g) {
   mountWeapon(ship, type);
   return { ok: true, cost: price, weapons: weaponsOf(ship) };
 }
+/** Extra hold weight the next gear level would add — the UI needs the same number to warn before the click. */
+export function gearNextWeight(ship, lvl = gearOf(ship)) { return Math.ceil(crewOf(ship) * 0.1 * (lvl + 1) - 1e-9) - gearWeight(ship); }
 /** Buy the next level of sailors' gear at the armory (pays the difference to the next level). */
 export function buyGear(g, ship, holder = g) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
   const lvl = gearOf(ship); if (lvl >= GEAR_MAX) return { ok: false, reason: "max level" };
-  const nextW = Math.ceil(crewOf(ship) * 0.1 * (lvl + 1) - 1e-9) - gearWeight(ship);
+  const nextW = gearNextWeight(ship, lvl);
   const price = armoryPrice(g, ship.at, GEAR[lvl + 1] - GEAR[lvl]), why = armoryBlock(g, ship, nextW, price, holder.cash);
   if (why) return { ok: false, reason: why };
   holder.cash = Math.round((holder.cash - price) * 100) / 100; ship.gear = lvl + 1;
