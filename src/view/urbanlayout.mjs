@@ -42,5 +42,5 @@ export function urbanLayout(canonical,pop) {
   for(let i=0;i<count;i++)residential.push({id:`residential-${canonical.id}-${i}`,type:'house',x:5+(i%houseCols)*5.5,y:houseY+Math.floor(i/houseCols)*6,w:4,d:4,level:housing.level});
   for(let r=0;r<=houseRows;r++)road(1,houseY-1+r*6,Math.max(width,houseCols*5.5+7)-1,houseY-1+r*6);
   road(width-1,cy+5,width-1,houseY+houseRows*6);
-  return {...canonical,plots,paths,plaza,residential,housing,walled:hf?{minX:1,minY:1,maxX:width-1,maxY:gridBottom,gateN:3+Math.round(cols/2)*pitch,gateS:3+Math.round(cols/2)*pitch,gateE:3+r0*pitch}:undefined,visualBounds:{minX:0,minY:0,maxX:Math.max(width,houseCols*5.5+7),maxY:houseY+houseRows*6+3}};
+  return {...canonical,plots,paths,plaza,residential,housing,walled:hf?{minX:1,minY:1,maxX:width-1,maxY:gridBottom,gateN:3+Math.round(cols/2)*pitch,gateE:3+r0*pitch}:undefined,visualBounds:{minX:0,minY:0,maxX:Math.max(width,houseCols*5.5+7),maxY:houseY+houseRows*6+3}};
 }
