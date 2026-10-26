@@ -6,6 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SHIP_TYPES, FEE } from "../src/sim/trade.mjs";
 import { buildWorld, route } from "../src/sim/world.mjs";
+import { BUILDING_TYPES, JOBS_PER_LEVEL, CIVIC_BUILDINGS } from "../src/game/buildings.mjs";
+import { RECIPES } from "../src/sim/recipes.mjs";
 import { WEAPON_TYPES, MAX_CANNONS } from "../src/game/crew.mjs";
 import { CLASSES, TOLERANCE, classShares, PER_1000, OPTIONAL_PER_1000 } from "../src/sim/classes.mjs";
 import { NEED_GROUP } from "../src/sim/needs.mjs";
@@ -29,6 +31,11 @@ const routeRows = (shipName) => {
   }
   return rows;
 };
+const bldRows = (bldName, goodName) => Object.entries(BUILDING_TYPES).map(([k, v]) => [
+  bldName(k) + (CIVIC_BUILDINGS.includes(k) ? " †" : "") + (v.minPop ? " ‡" : ""),
+  v.fee, v.buildDays, v.upkeep, JOBS_PER_LEVEL[k] ?? 0,
+  Object.entries(RECIPES[v.recipe]).map(([g, n]) => `${goodName(g)} ${n}`).join(", "),
+]);
 const laneRows = () => WORLD.lanes
   .map(([a, b]) => [nodeLabel(a), nodeLabel(b), Math.round(GRAPH.adj[a].find((e) => e.to === b).km)])
   .sort((x, y) => x[0].localeCompare(y[0]) || x[1].localeCompare(y[1]));
@@ -44,6 +51,8 @@ const ES_CLASS = { poor: "Pobres", middle: "Artesanos y mercaderes", rich: "Rico
 const ES_GOOD = { grain: "Trigo", fish: "Pescado", salt: "Sal", wool: "Lana", iron: "Hierro", ironware: "Herrajes", timber: "Madera", cloth: "Paño", olive_oil: "Aceite", wine: "Vino", silk: "Seda", sugar: "Azúcar", pepper: "Pimienta", saffron: "Azafrán", beer: "Cerveza", bricks: "Ladrillos", esparto: "Esparto", meat: "Carne", pottery: "Cerámica", legumes: "Legumbres", leather: "Cuero", soap: "Jabón" };
 const ES_GROUP = { food: "Alimento", drink: "Bebida", luxury: "Lujo", clothing: "Ropa", household: "Hogar", materials: "Materiales", other: "Otros" };
 const OPTIONAL_GOODS = [POTTERY, LEGUMES]; // flag-gated goods (on by default): src/sim/optional_goods.mjs
+const BLD_EN = { house: "House", workshop: "Workshop", warehouse: "Warehouse", farm: "Farm", pasture: "Pasture", sawmill: "Sawmill", mine: "Mine", oil_mill: "Oil mill", vineyard: "Vineyard", saltworks: "Saltworks", brewery: "Brewery", brickworks: "Brickworks", esparto_field: "Esparto field", ranch: "Ranch", dock: "Dock", armory: "Armory", ironworks: "Ironworks", fishery: "Fishery", soapworks: "Soapworks", pottery: "Pottery", posito: "Granary", hospital: "Hospital", alhondiga: "Corn exchange", caminos: "Streets", pozo: "Well", capilla: "Chapel", carniceria: "Butcher's", molino: "Mill", corral: "Playhouse", house_poor: "Poor house", house_comfortable: "Well-off house", house_rich: "Rich house" };
+const BLD_ES = { house: "Casa", workshop: "Taller", warehouse: "Almacén", farm: "Granja", pasture: "Dehesa", sawmill: "Aserradero", mine: "Mina", oil_mill: "Almazara", vineyard: "Viñedo", saltworks: "Salina", brewery: "Cervecería", brickworks: "Ladrillería", esparto_field: "Espartizal", ranch: "Ganadería", dock: "Muelle", armory: "Armería", ironworks: "Fragua", fishery: "Pesca", soapworks: "Jabonería", pottery: "Alfarería", posito: "Pósito", hospital: "Hospital", alhondiga: "Alhóndiga", caminos: "Caminos", pozo: "Pozo", capilla: "Capilla", carniceria: "Carnicería", molino: "Molino", corral: "Corral de comedias", house_poor: "Casa pobre", house_comfortable: "Casa acomodada", house_rich: "Casa rica" };
 const COAST_NAME_EN = { luz: "Costa de la Luz", portugal: "Portuguese coast", cantabrico: "Cantabrian coast", levante: "Levante & Catalonia", baleares: "Balearics", rif: "The Rif", marruecos: "Atlantic Morocco", berberia: "Eastern Barbary" };
 const COAST_NAME_ES = { luz: "Costa de la Luz", portugal: "Costa portuguesa", cantabrico: "Costa Cantábrica", levante: "Levante y Cataluña", baleares: "Baleares", rif: "El Rif", marruecos: "Marruecos atlántico", berberia: "Berbería oriental" };
 const portsRows = (coastName, goodName, realmName) => {
@@ -138,6 +147,16 @@ export function render() {
   re += row("Desde", "Hasta", "km") + row("---", "---", "---");
   for (const r of laneRows()) re += row(...r);
   out["es/routes.md"] = re;
+
+  let bn = HEAD + "# Buildings (generated)\n\nSource: `BUILDING_TYPES` and `JOBS_PER_LEVEL` in `src/game/buildings.mjs`, `RECIPES` in `src/sim/recipes.mjs`. Type of data: game design values (assumed). Costs are per level: materials, fee and build time all multiply by the level you build or upgrade to. Materials come first from your warehouse in the city; what the port lacks is imported at IMPORT_MUL = 1.5 over base price plus fee (`src/sim/recipes.mjs`). Upkeep and wages (1 coin per worker per day, `WAGE_PER_WORKER`) accrue daily into the weekly book; a building that cannot be paid halts. † marks a civic building of the city-life module (respect gates and per-city caps, see [buildings.md](../buildings.md)); ‡ needs a minimum city population.\n\n";
+  bn += row("Building", "Fee", "Build days", "Upkeep/day", "Workers/level", "Materials per level") + row("---", "---", "---", "---", "---", "---");
+  for (const r of bldRows((k) => BLD_EN[k] ?? k, (g) => g)) bn += row(...r);
+  out["buildings.md"] = bn;
+
+  let be = HEAD_ES + "# Edificios (generado)\n\nFuente: `BUILDING_TYPES` y `JOBS_PER_LEVEL` en `src/game/buildings.mjs`, `RECIPES` en `src/sim/recipes.mjs`. Tipo de dato: valores de diseño del juego (supuestos). Los costes son por nivel: materiales, tasa y tiempo de obra se multiplican por el nivel que construyes o mejoras. Los materiales salen primero de tu almacén en la ciudad; lo que falte se importa con IMPORT_MUL = 1.5 sobre el precio base más la tasa (`src/sim/recipes.mjs`). El mantenimiento y los jornales (1 moneda por trabajador y día, `WAGE_PER_WORKER`) se anotan a diario en el libro semanal; un edificio que no puede pagarse se para. † marca un edificio cívico del módulo de vida urbana (puertas de respeto y límites por ciudad, ver [buildings.md](../es/buildings.md)); ‡ exige una población mínima de la ciudad.\n\n";
+  be += row("Edificio", "Tasa", "Días de obra", "Mantenimiento/día", "Trabajadores/nivel", "Materiales por nivel") + row("---", "---", "---", "---", "---", "---");
+  for (const r of bldRows((k) => BLD_ES[k] ?? k, (g) => ES_GOOD[g] ?? g)) be += row(...r);
+  out["es/buildings.md"] = be;
   return out;
 }
 
