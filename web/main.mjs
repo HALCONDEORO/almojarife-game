@@ -401,6 +401,7 @@ const FLEET_WIDE = matchMedia("(min-width: 1280px)"); // keep in step with the #
 FLEET_WIDE.addEventListener?.("change", () => { if (FLEET_WIDE.matches) $("fleet").open = true; });
 function render() {
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-open")?.addEventListener("click", () => { if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   if (FLEET_WIDE.matches) $("fleet").open = true; // wide screens: the fleet list stays open in the empty side band
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});

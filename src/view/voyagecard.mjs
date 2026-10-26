@@ -7,8 +7,13 @@ export function voyageSummary(s){
 }
 export function voyageCardHtml(s,{lang='es',cityName=id=>id,eta=()=>'',cargo=null}={}){
  const en=lang==='en',r=voyageSummary(s);
- if(r.atPort)return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${en?'At port':'En puerto'}: ${esc(cityName(r.port))}`;
- const cargoLine=cargo?` · ${en?'Cargo':'Carga'} ${cargo.used}/${cargo.cap}`:'';
- if(s.voyage.anchored)return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}${cargoLine}<br><span>${en?'Holding position':'Al pairo'}</span>`; // anchored at a free point: no arrival to promise
- return `<b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b> · ${esc(cityName(r.from))} → ${esc(cityName(r.to))}${cargoLine}<br><span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}<br><label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${Math.round(r.progress*100)}">${Math.round(r.progress*100)}%</progress> ${Math.round(r.progress*100)}%</label>`;
+ const row=h=>`<div class="vc-row">${h}</div>`;
+ const head=`<div class="vc-head"><b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b></div>`;
+ const cargoRow=cargo?row(`${en?'Cargo':'Carga'}: ${cargo.used}/${cargo.cap}`):'';
+ const open=`<button type="button" id="voyage-open" class="vc-open">${en?'Open ship':'Abrir barco'}</button>`;
+ if(r.atPort)return head+row(`${en?'At port':'En puerto'}: ${esc(cityName(r.port))}`)+cargoRow+open;
+ const route=row(`${esc(cityName(r.from))} → ${esc(cityName(r.to))}`);
+ if(s.voyage.anchored)return head+route+row(`<span>${en?'Holding position':'Al pairo'}</span>`)+cargoRow+open; // anchored at a free point: no arrival to promise
+ const pct=Math.round(r.progress*100);
+ return head+route+row(`<span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}`)+cargoRow+row(`<label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${pct}">${pct}%</progress> ${pct}%</label>`)+open;
 }
