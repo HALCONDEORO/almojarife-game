@@ -1001,6 +1001,7 @@ function close3d() {
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;if(tb!==tab)rumorNote=null;tab=tb;
+  if (tb === "hall") tutorialNote(g, "hall"); // the city-view council visit closes the tutorial, same as the map-panel tab
   const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;if(w.hidden)sfx("open");w.hidden=false;d.classList.add("win-open");
   render();
   d.querySelector(".city-window-title").textContent=cityPanelTitle(tb);
