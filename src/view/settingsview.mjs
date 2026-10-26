@@ -11,7 +11,7 @@ const section = (icon, title, body) =>
 
 /**
  * @param t   language table (needs the st* keys)
- * @param s   { lang, speed, automaticTime, large, reduceMotion, inGame }
+ * @param s   { lang, speed, automaticTime, large, reduceMotion, inGame, tutReplay }
  */
 export function settingsHtml(t, s) {
   const row = (label, control) => `<div class="st-row"><span class="st-lbl">${label}</span>${control}</div>`;
@@ -23,6 +23,6 @@ export function settingsHtml(t, s) {
     section("game", t.stSecGame, row(t.speedDef, `<button id="st-spd">${s.speed}x</button>`) + chk(`<input id="st-auto" type="checkbox" ${ck(s.automaticTime)}>`, t.stAuto) + chk(`<input id="st-sound" type="checkbox" ${ck(s.sound)}>`, t.stSound) + vol("st-vol-sfx", t.stVolSfx, s.vol?.sfx) + vol("st-vol-music", t.stVolMusic, s.vol?.music) + vol("st-vol-amb", t.stVolAmb, s.vol?.amb) + `<p class="st-hint">${t.stSoundKey}</p>` + `<p class="st-hint">${t.stAutoHint}</p>`) +
     section("access", t.stSecAccess, row(t.stText, `<button id="st-text" aria-pressed="${s.large}">${s.large ? t.stLarge : t.stNormal}</button>`) + chk(`<input id="st-motion" type="checkbox" ${ck(s.reduceMotion)}>`, t.stMotion)) +
     section("data", t.stSecData, `<p class="st-hint">${t.stNote}</p>` + (s.inGame ? `<div class="st-row"><button id="st-save">${t.saveNow}</button> <button id="st-exp">${t.exportS}</button> <span id="st-msg" role="status"></span></div>` : "")) +
-    section("help", t.stSecHelp, `<p class="st-hint">${t.keys}</p><div class="st-row"><a id="st-help" href="${helpUrl(s.lang)}" target="_blank" rel="noopener noreferrer">${t.stHelpLink}</a> <button id="st-cred">${t.cred}</button></div>`);
+    section("help", t.stSecHelp, `<p class="st-hint">${t.keys}</p><div class="st-row"><a id="st-help" href="${helpUrl(s.lang)}" target="_blank" rel="noopener noreferrer">${t.stHelpLink}</a> <button id="st-cred">${t.cred}</button></div>` + (s.tutReplay ? `<div class="st-row"><button id="st-tut" title="${t.tutReplayTitle}" aria-label="${t.tutReplayTitle}">${t.tutReplay}</button></div>` : ""));
   return `<div class="box pausemenu st-win"><div class="pausemenu-handle"><h2>${t.stTitle}</h2></div><div class="pausemenu-body st-body">${body}<p><button id="st-back">${t.back}</button></p></div></div>`;
 }
