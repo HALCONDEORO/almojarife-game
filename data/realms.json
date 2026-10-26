@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them. 'zones' holds approximate hand-drawn realm washes (lon/lat polygons) for the political map mode: each row enters only with a cited source, follows the same from/until convention, and is a soft period wash by design, never an exact border. Ports with no verified holding (e.g. the Moroccan coast) belong to no realm and get no wash.",
+  "note": "Which realm holds a port, by year, for letters of marque (docs/design/piracy-study.md, mechanic 1). A row enters only with a cited source; ports not listed (or not yet verified for that year) belong to no realm and cannot be named in a letter. 'unions' lists realms that share one monarch in a period: they cannot be named in a letter issued by one of them. 'zones' holds approximate hand-drawn realm washes (lon/lat polygons) for the political map mode: each row enters only with a cited source, follows the same from/until convention, and is a soft period wash by design, never an exact border. Ports with no verified holding (e.g. the Moroccan coast) belong to no realm and get no wash. Map-only realm definitions in mapRealms are not holdings, letters-of-marque targets or unions.",
   "realms": {
     "castile": {
       "name": {
@@ -368,48 +368,84 @@
           42.55
         ],
         [
-          -2.6,
-          43.1
+          -2.5,
+          42.85
         ],
         [
-          -2.93,
-          43.3
+          -1.9,
+          43.15
         ],
         [
-          -3.81,
-          43.46
-        ],
-        [
-          -4.8,
+          -1.7,
           43.4
         ],
         [
-          -6.5,
+          -2.0,
+          43.48
+        ],
+        [
+          -2.7,
+          43.5
+        ],
+        [
+          -3.3,
           43.55
         ],
         [
-          -7.8,
-          43.7
+          -3.8,
+          43.58
         ],
         [
-          -8.41,
-          43.37
+          -4.6,
+          43.55
         ],
         [
-          -8.88,
+          -5.3,
           43.72
         ],
         [
-          -8.55,
-          42.9
+          -6.0,
+          43.72
+        ],
+        [
+          -6.9,
+          43.68
+        ],
+        [
+          -7.6,
+          43.8
         ],
         [
           -8.2,
-          42.6
+          43.8
         ],
         [
-          -7.55,
+          -8.6,
+          43.65
+        ],
+        [
+          -9.2,
+          43.25
+        ],
+        [
+          -9.3,
+          42.85
+        ],
+        [
+          -9.05,
           42.2
+        ],
+        [
+          -8.85,
+          41.9
+        ],
+        [
+          -8.15,
+          41.9
+        ],
+        [
+          -7.5,
+          41.9
         ],
         [
           -7.0,
@@ -588,28 +624,16 @@
           41.15
         ],
         [
-          -8.87,
-          41.95
+          -8.85,
+          41.9
         ],
         [
-          -8.76,
-          42.88
+          -8.15,
+          41.9
         ],
         [
-          -8.88,
-          43.72
-        ],
-        [
-          -8.55,
-          42.9
-        ],
-        [
-          -8.2,
-          42.6
-        ],
-        [
-          -7.55,
-          42.2
+          -7.5,
+          41.9
         ],
         [
           -7.0,
@@ -912,6 +936,113 @@
           35.45
         ]
       ]
+    },
+    {
+      "realm": "navarre",
+      "from": null,
+      "until": 1515,
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "polygon": [
+        [
+          -2.45,
+          42.55
+        ],
+        [
+          -2.2,
+          42.1
+        ],
+        [
+          -1.75,
+          42.0
+        ],
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.3,
+          42.7
+        ],
+        [
+          -0.85,
+          42.95
+        ],
+        [
+          -1.15,
+          43.15
+        ],
+        [
+          -1.7,
+          43.4
+        ],
+        [
+          -1.9,
+          43.15
+        ],
+        [
+          -2.5,
+          42.85
+        ]
+      ],
+      "note": "Approximate southern Navarre wash; conquest 1512, formal incorporation in Castile 1515. Northern Navarre outside this chart is not claimed."
+    },
+    {
+      "realm": "castile",
+      "from": 1515,
+      "until": null,
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "polygon": [
+        [
+          -2.45,
+          42.55
+        ],
+        [
+          -2.2,
+          42.1
+        ],
+        [
+          -1.75,
+          42.0
+        ],
+        [
+          -1.45,
+          42.2
+        ],
+        [
+          -1.3,
+          42.7
+        ],
+        [
+          -0.85,
+          42.95
+        ],
+        [
+          -1.15,
+          43.15
+        ],
+        [
+          -1.7,
+          43.4
+        ],
+        [
+          -1.9,
+          43.15
+        ],
+        [
+          -2.5,
+          42.85
+        ]
+      ]
     }
-  ]
+  ],
+  "mapRealms": {
+    "navarre": {
+      "name": {
+        "es": "Navarra",
+        "en": "Navarre"
+      },
+      "source": "https://www.unav.es/biblioteca/fondoantiguo/hufaexp23/incorporacion.html",
+      "note": "Map-only territorial context. No port holding, marque target or union is added."
+    }
+  }
 }
