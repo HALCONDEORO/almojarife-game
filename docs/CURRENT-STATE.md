@@ -6,7 +6,7 @@ Updated 26 October 2026. This is not a release announcement.
 
 The integrated source checkpoint is main commit `e96ab3a2e9c24974d699e29835b79d4a08e9af34` (tree `b192bb3d7ef880d035b07aa5c9dd271222e0c191`). This identifies source contents, not a final release candidate or a verified deployment. Refresh the record if more changes enter the batch.
 
-The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the intended audience is public and publication is pending final owner approval. The release date is not decided. No deployment or public-beta readiness is certified here.
+The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the intended audience is public and the owner approved publication on 26 October after polishing the notes, subject to all release gates. The release date is not decided. No deployment or public-beta readiness is certified here.
 
 ## Implemented in the checkpoint
 
@@ -28,7 +28,7 @@ The repository is public. No GitHub release existed when this record was prepare
 - Full simulation gates, exact-commit CI, deployment verification and ES desktop playtest must be recorded on the final batch commit.
 - Screenshots in README are an older source set. They are not screenshots of an approved release candidate.
 - Campaign completion, balance, save migration, accessibility and browser coverage are not declared complete.
-- The intended audience is public; publication is pending final owner approval. Final documentation, integrated-code links, polish and Playtest approval remain required.
+- The intended audience is public; the owner approved publication on 26 October after polishing the notes, subject to all release gates. Final documentation, integrated-code links, polish and Playtest approval remain required.
 
 ## Documentation map
 
@@ -41,3 +41,9 @@ The repository is public. No GitHub release existed when this record was prepare
 - `docs/research/`, `docs/ideas/`, `docs/worklog.md` and old decision logs: dated research/history, not release promises.
 
 No proposed launch date in these files overrides a later owner decision. No dependency update or release task authorizes spending, changing accounts or disclosing private data.
+
+## Beta preparation after the source batch
+
+- Integrated #592, #593, #594 and #596: visible construction confirmation, real free plots with read-only neighbours, centred confirmation and bounded zoom/staged sprite loading.
+- #595, #597, #598 and #599 are pending proposals, not release contents. Reconcile these entries before final review.
+- VERSION names the proposed beta candidate, not a published tag. Exact final CI, independent review, deployment and new-game Playtest remain required.

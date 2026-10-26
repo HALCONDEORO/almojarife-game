@@ -2,7 +2,7 @@
 
 ## Current status (26 October 2026)
 
-The repository is public. A GitHub pre-release here is publicly readable. The intended first beta audience is public; publication is pending final owner approval, verified documentation, integrated code links, polish and Playtest approval. Do not change repository visibility as part of a release.
+The repository is public. A GitHub pre-release here is publicly readable. The intended first beta audience is public; the owner approved polishing the release notes and publication on 26 October 2026, subject to verified documentation, integrated code links, polish and Playtest approval. Do not change repository visibility as part of a release.
 
 No GitHub release exists at this checkpoint. Source merged into `main` is not proof that the hosted game has been deployed or tested.
 

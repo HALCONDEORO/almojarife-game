@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No GitHub release or tag is announced by this section. The first public beta pre-release is planned as v0.5.0-beta.1; publication remains pending final owner approval and the release gates in docs/RELEASE.md.
+No GitHub release or tag is announced by this section. The first public beta pre-release is planned as v0.5.0-beta.1; the owner approved polished notes and publication on 26 October, subject to the release gates in docs/RELEASE.md. No tag or pre-release exists merely because this candidate file is present.
 
 ### Integrated source batch, 26 October 2026
 - Route and finance cards, missions, tabs, port details and notices in the right panel.
@@ -26,6 +26,11 @@ No GitHub release or tag is announced by this section. The first public beta pre
 - Integer aggregate money displays in the top bar and finance card (#588, #590), without changing stored cents.
 
 These entries describe merged source, not a verified deployment. PRs still open at the final release checkpoint must not be promoted into this list without integration checks.
+
+### Additional integrated city polish
+- Visible construction confirmation and missing-coin feedback (#592); centre confirmation below the sticky header (#594).
+- Separate free plots from neighbours' read-only municipal houses; town hall and exchange sprites (#593).
+- Bounded city zoom-out and staged sprite loading (#596). Higher-level art can arrive after the first frame.
 
 ### Earlier unreleased work
 - Accessibility: the map hint and the city mission line (including the tutorial steps) are polite live regions, so screen readers announce them when they change. No visual change.
