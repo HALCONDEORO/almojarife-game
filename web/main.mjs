@@ -70,6 +70,7 @@ import { pregonMissing } from "../src/game/pregon.mjs";
 const PRG = { es: { badge: "Pregón", tip: "Pregón vigente: el concejo pide este bien en la plaza. Faltan ≈{n} para volver al nivel normal; el pregón sigue mientras dure la escasez." }, en: { badge: "Notice", tip: "Town-crier notice in force: the council calls for this good. ≈{n} short of the normal level; the notice stands while the shortage lasts." } };
 import { setPriceAlert, clearPriceAlert, alertsOf } from "../src/game/alerts.mjs";
 import { seasonOf } from "../src/sim/market.mjs";
+import { choiceOdds } from "../src/view/oddsview.mjs";
 import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { doGoTo } from "../src/game/game.mjs";
@@ -580,7 +581,7 @@ function render() {
   if (inCity) postCity2dState();
   document.body.classList.toggle("has-event", !!pe && !inCity);
   if (pe && shipWin && !inCity) { shipWin = null; document.getElementById("shipwin")?.remove(); } // a pending event must not hide behind the ship window
-  const evCard = pe ? `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<button data-ev="${c.id}">${c.label[lang]}</button>`).join(" ") + `</div>` : "";
+  const evCard = pe ? `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<div class="ev-choice"><button data-ev="${c.id}">${c.label[lang]}</button><small class="ev-odds">${choiceOdds(c, lang)}</small></div>`).join("") + `</div>` : "";
   if (pe) { playing = false; if (!autoPause) autoPause = "event"; if (!inCity) h += evCard; } // recording the cause here also covers a game loaded with the event already pending; in the city the card pops as a modal (below) instead of hiding in a closed window
   if (inCity || pe) {
   // The ship card is not wallpaper for every window - it shows only where the
