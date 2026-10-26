@@ -4,6 +4,8 @@
 // in port. Music in rotation: "A Tale of Water" by InspectorJ (CC BY 3.0), "Peaceful Village"
 // by elerya (CC BY 3.0), "Dragon Tail Tavern" by jan125 (CC BY 4.0), all opengameart.org.
 // Provenance for every file: web/audio/LICENSE-p3-sources.txt.
+// Gulls: "Solo Seagull Sound Effects" by rango-mango (opengameart.org), CC0: two short cries
+// that sound now and then while the port ambience is up (every 18-45 s, very low).
 const FILES = { buy: "audio/buy.ogg", sell: "audio/sell.ogg", click: "audio/click.ogg", confirm: "audio/confirm.ogg", error: "audio/error.ogg", sail: "audio/sail.ogg", arrive: "audio/arrive.ogg", open: "audio/open.ogg", close: "audio/close.ogg", storm: "audio/storm.ogg", pirates: "audio/pirates.ogg", mission: "audio/mission.ogg", council: "audio/council.ogg", festival: "audio/festival.ogg", build: "audio/build.ogg", alert: "audio/alert.ogg" };
 const cache = {};
 export const soundOn = () => localStorage.getItem("sound") !== "0"; // on by default; Ajustes can mute
@@ -23,6 +25,20 @@ const MUSIC_VOL = 0.30, AMB_VOL = 0.06; // ambience sits ~14 dB under the music
 let amb = { name: null, el: null }, music = null, track = Math.floor(Math.random() * MUSIC.length);
 const duck = (el, vol) => { if (!el) return; el.volume = vol * 0.3; setTimeout(() => { try { el.volume = vol; } catch {} }, 1200); };
 
+let gullTimer = null;
+function gullsStart() {
+  if (gullTimer) return;
+  const cry = () => {
+    gullTimer = null;
+    if (amb.name === "port" && soundOn()) {
+      try { const g = new Audio(`audio/gull${1 + Math.floor(Math.random() * 2)}.ogg`); g.volume = 0.10; g.play().catch(() => {}); } catch {}
+      gullTimer = setTimeout(cry, 18000 + Math.random() * 27000);
+    }
+  };
+  gullTimer = setTimeout(cry, 6000 + Math.random() * 8000);
+}
+function gullsStop() { clearTimeout(gullTimer); gullTimer = null; }
+
 /** Keep the ambience loop matching the context ("sea" | "port" | null); stops when sound is off. */
 export function syncAmbience(name) {
   if (!soundOn()) name = null;
@@ -34,6 +50,7 @@ export function syncAmbience(name) {
     const el = new Audio(AMBIENCE[name]); el.loop = true; el.volume = AMB_VOL;
     el.play().catch(() => {}); amb.el = el;
   } catch { /* no Audio here */ }
+  if (name === "port") gullsStart(); else gullsStop();
 }
 
 /** Keep the music rotation going while sound is on; each track hands over to the next. */
