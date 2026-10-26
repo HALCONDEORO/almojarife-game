@@ -23,9 +23,9 @@ test('overview has at most five major known-port cards, never reveals absent por
 import{politicalZoneLayer}from'../src/view/historicalmap.mjs';
 const realmsData=JSON.parse(fs.readFileSync(new URL('../data/realms.json',import.meta.url)));
 test('political washes render one soft path per cited zone active in the year, never borders',()=>{const z=y=>politicalZoneLayer({enabled:true,year:y,data:realmsData,x:n=>n,y:n=>n});
- const p1480=z(1480);assert.equal((p1480.svg.match(/<path/g)??[]).length,8);assert.match(p1480.svg,/fill-opacity="0\.38"/);assert.doesNotMatch(p1480.svg,/<path[^>]*stroke="#/);assert.match(p1480.svg,/Emirato de Granada/);assert.doesNotMatch(p1480.svg,/Regencia de Argel/);
- const p1520=z(1520);assert.equal((p1520.svg.match(/<path/g)??[]).length,9);assert.doesNotMatch(p1520.svg,/Emirato de Granada/);assert.match(p1520.svg,/Regencia de Argel/);assert.match(p1520.svg,/Reino de Tlemecén/);
- const p1560=z(1560);assert.equal((p1560.svg.match(/<path/g)??[]).length,8);assert.doesNotMatch(p1560.svg,/Tlemecén/);});
+ const p1480=z(1480);assert.equal((p1480.svg.match(/<path/g)??[]).length,11);assert.match(p1480.svg,/fill-opacity="0\.38"/);assert.doesNotMatch(p1480.svg,/<path[^>]*stroke="#/);assert.match(p1480.svg,/Emirato de Granada/);assert.doesNotMatch(p1480.svg,/Regencia de Argel/);
+ const p1520=z(1520);assert.equal((p1520.svg.match(/<path/g)??[]).length,12);assert.doesNotMatch(p1520.svg,/Emirato de Granada/);assert.match(p1520.svg,/Regencia de Argel/);assert.match(p1520.svg,/Reino de Tlemecén/);
+ const p1560=z(1560);assert.equal((p1560.svg.match(/<path/g)??[]).length,11);assert.doesNotMatch(p1560.svg,/Tlemecén/);});
 test('zone rows need a cited source, a known realm and a real polygon',()=>{const base=realmsData.zones[0];
  assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,source:''}]},x:n=>n,y:n=>n}).svg,'');
  assert.equal(politicalZoneLayer({enabled:true,year:1480,data:{...realmsData,zones:[{...base,realm:'atlantis'}]},x:n=>n,y:n=>n}).svg,'');
@@ -54,7 +54,7 @@ test('chart generator and title artwork contain no decorative compass roses or r
 
 test('political legend has aligned swatches and Granada keeps its complete accessible name in a compact two-line label',()=>{
  const a=historicalLayer({enabled:true,mode:'political',ports:[],year:1480,data:realmsData,x:n=>n,y:n=>n});
- assert.match(a.legend,/class="realm-key"/);assert.equal((a.legend.match(/class="realm-key-item"/g)??[]).length,6);
+ assert.match(a.legend,/class="realm-key"/);assert.equal((a.legend.match(/class="realm-key-item"/g)??[]).length,8);
  assert.match(a.underlay,/aria-label="Emirato de Granada"/);assert.match(a.underlay,/<tspan x="0" dy="-10">Emirato de<\/tspan><tspan x="0" dy="20">Granada<\/tspan>/);
  assert.match(a.underlay,/font-size="19"/);assert.match(a.underlay,/data-realm="granada"[^>]*data-my="37.5"/);
 });
@@ -69,4 +69,18 @@ test('northern Castilian coast is washed, Galicia is not painted Portugal, and N
  const at=year=>politicalZoneLayer({enabled:true,year,data:realmsData,x:n=>n,y:n=>n}).svg;
  assert.match(at(1480),/data-realm="navarre"/);assert.match(at(1514),/data-realm="navarre"/);assert.doesNotMatch(at(1515),/data-realm="navarre"/);
  assert.ok(inWash([-1.65,42.65],realmsData.zones.find(z=>z.realm==='navarre').polygon));
+});
+
+import {CHART_LAND} from '../src/view/chartland.mjs';
+test('political coverage uses background coast geometry: land neutral beneath clipped realm washes, never sea',()=>{
+ const a=politicalZoneLayer({enabled:true,year:1480,data:realmsData,x:n=>n,y:n=>n});
+ assert.match(a.svg,/clip-path="url\(#political-land\)"/);assert.match(a.svg,/data-unverified-land="true"/);
+ assert.match(a.legend,/sin atribución verificada/);
+ for(const p of [[-8.5,43],[-8.8,38.8],[-4.4,36.8],[-.5,38.4],[2.8,39.7],[1.4,38.95],[-6,34.5],[-.5,35.6],[3,36.5]])assert.ok(CHART_LAND.some(r=>inWash(p,r)),`coast land ${p}`);
+ for(const p of [[-9.5,40],[-5,36],[0,38.9],[2,38]])assert.equal(CHART_LAND.some(r=>inWash(p,r)),false,`sea ${p}`);
+});
+test('Moroccan dynasties stay map-only and contested1549-1554 is explicitly neutral',()=>{
+ for(const id of ['wattasid','saadi']){assert.ok(realmsData.mapRealms[id]);assert.equal(realmsData.realms[id],undefined);assert.equal(realmsData.holdings.some(h=>h.realm===id),false);}
+ const at=year=>politicalZoneLayer({enabled:true,year,data:realmsData,x:n=>n,y:n=>n}).svg;
+ assert.match(at(1480),/data-realm="wattasid"/);assert.doesNotMatch(at(1550),/data-realm="wattasid"|data-realm="saadi"/);assert.match(at(1554),/data-realm="saadi"/);
 });
