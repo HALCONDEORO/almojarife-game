@@ -295,11 +295,16 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
+
+// Floating windows scale with the screen (Marco 26/10: on a big screen or at 80% zoom they looked tiny). CSS zoom on .city-window and #shipwin follows --win-zoom; drag maths below uses local (unzoomed) units.
+const winZoom = () => parseFloat(document.documentElement.style.getPropertyValue("--win-zoom")) || 1;
+function updateWinZoom() { const z = !(window.CSS && CSS.supports && CSS.supports("zoom", "1")) ? 1 : Math.min(1.75, Math.max(1, Math.min(innerWidth / 1500, innerHeight / 820))); document.documentElement.style.setProperty("--win-zoom", z.toFixed(3)); }
+updateWinZoom(); addEventListener("resize", updateWinZoom);
 let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours' house card opened from the city map (read only)
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
 let tab = "market"; let rumorNote = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
-let bldAction = null, bldError = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
+let bldAction = null, bldError = null, bldJustBought = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
@@ -406,11 +411,11 @@ function syncMissionEcho() {
     for (const el of [chip, cbar]) {
       if (!el || el.hidden) continue;
       const cr = el.getBoundingClientRect();
-      if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, cr.bottom - vt + 6);
+      if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, (cr.bottom - vt + 6) / winZoom());
     }
     if (need) {
-      win.style.left = win.offsetLeft + "px"; win.style.right = "auto";
-      win.style.top = Math.min(need, Math.max(0, innerHeight - 70 - Math.min(win.offsetHeight, 80))) + "px";
+      /* keep the right anchor: locking left here used a width that was not final yet */
+      win.style.top = Math.min(need, Math.max(0, (innerHeight - 70) / winZoom() - Math.min(win.offsetHeight, 80))) + "px";
     }
   }
 }
@@ -806,7 +811,7 @@ function render() {
         const pv = plotViewState(plotsCache, world, g, s.at, bldSelPlot), o = pv.kind === "offer" ? pv.offer : null;
         if (pv.kind === "loading") h += `<p><i>${t.bldLoading}</i></p>`;
         else if (pv.kind === "error") h += `<p><i style="color:#a11">${t.bldPlotsErr}</i></p>`;
-        else if (o && hasOffice(g, s.at)) { const pnl = g.almonedaPermits?.[s.at] ?? 0; h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); if (pnl > 0) h += `<p><i>${({ es: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar este solar.", en: "Building permits from the town auction: {n}. Redeem one when buying this plot." }[lang] ?? "Permisos de obra de la almoneda: {n}.").replace("{n}", pnl)}</i></p>`; h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmtM(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
+        else if (o && hasOffice(g, s.at)) { const pnl = g.almonedaPermits?.[s.at] ?? 0, pend = bldAction && (bldAction.kind === "buy" || bldAction.kind === "buypermit") && bldAction.plotId === o.id; if (!pend) h += `<h3>${t.bldState.plot} <small>${o.id}</small></h3><p>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</p>`; h += bldCard(); if (pnl > 0) h += `<p><i>${({ es: "Permisos de obra de la almoneda: {n}. Canjea uno al comprar este solar.", en: "Building permits from the town auction: {n}. Redeem one when buying this plot." }[lang] ?? "Permisos de obra de la almoneda: {n}.").replace("{n}", pnl)}</i></p>`; if (!pend) /* the confirm card above is already the buy step: no second Comprar */ h += `<p><button data-bldact="buy|${o.id}" ${g.cash < o.price ? "disabled" : ""}>${t.bldBuy.replace("{p}", fmtM(o.price))}</button>${(g.almonedaPermits?.[s.at] ?? 0) ? ` <button data-bldact="buypermit|${o.id}">${{ es: "Usar permiso de obra", en: "Use building permit" }[lang] ?? "Usar permiso de obra"}</button>` : ""}</p>`; }
         else h += `<p><i>${o ? t.bldNeedOffice : t.bldNone}</i></p>`;
       }
       else {
@@ -816,6 +821,7 @@ function render() {
         h += bldCard();
         const up = r.state === "active" ? upgradeOffer(g, s.at, r.plotId) : null;
         if (up) h += up.ok ? `<p><button data-bldact="upgrade|${r.plotId}|${r.type}" ${up.affordable ? "" : "disabled"}>${t.bldUpgrade.replace("{l}", up.level).replace("{p}", fmt(up.cost))}</button></p>` : `<p><small>${up.reason === "max level" ? t.bldMax : whyText(t, up.reason, lang)}</small></p>`;
+        if (r.state === "plot" && bldJustBought === r.plotId) h += `<p class="bld-guide"><b>${lang === "es" ? "Solar comprado. Ahora elige qué construir:" : "Plot bought. Now choose what to build:"}</b></p>`;
         if (r.state === "plot") { // P3 build menu: one card per type - drawing, investment, running costs, production; grouped like the classic Hansa build menu
           const offers = buildOffers(g, s.at, r.plotId).filter((o) => o.ok || OFFER_LOCKED_SHOW.has(o.reason)), bo2 = BO[lang] ?? BO.es; // only types this city's resources allow; refused-but-unlockable ones stay visible, disabled, with their reason
           for (const grp of ["primary", "workshop", "own", "civic"]) { // Marco 25/10: fields and factories first, civic buildings last so they stay out of the way
@@ -966,6 +972,7 @@ function render() {
       else r = startConstruction(g, s.at, a0.plotId, a0.type);
     });
     if (r && !r.ok) { bldError = r.reason ?? "error"; render(); return; } // keep the card armed and say why
+    bldJustBought = (a0.kind === "buy" || a0.kind === "buypermit") ? a0.plotId : null; /* guide line after buying a plot */
     bldAction = null; bldError = null; render(); });
   if ($("rt-set")) $("rt-set").onclick = () => act(() => setRoute(g, s, s.at, $("rt-to").value, $("rt-out").value, $("rt-back").value));
   if ($("rt-cancel")) $("rt-cancel").onclick = () => act(() => clearRoute(s));
@@ -1073,9 +1080,9 @@ function renderShipWin() {
   if (!swWasOpen) sfx("open"); // only when the window appears, not on every re-render
   document.body.appendChild(d);
   const handle = d.querySelector(".pwin-handle"); let drag = null;
-  const move = (x, y) => { const q = clampWindow(x, y, d.offsetWidth, d.offsetHeight, innerWidth, innerHeight - 70); d.style.left = q.left + "px"; d.style.top = q.top + "px"; d.style.right = "auto"; };
-  handle.onpointerdown = (e) => { if (e.target.closest("button")) return; drag = [e.clientX - d.offsetLeft, e.clientY - d.offsetTop]; handle.setPointerCapture(e.pointerId); };
-  handle.onpointermove = (e) => { if (drag) move(e.clientX - drag[0], e.clientY - drag[1]); };
+  const move = (x, y) => { const q = clampWindow(x, y, d.offsetWidth, d.offsetHeight, innerWidth / winZoom(), (innerHeight - 70) / winZoom()); d.style.left = q.left + "px"; d.style.top = q.top + "px"; d.style.right = "auto"; };
+  handle.onpointerdown = (e) => { if (e.target.closest("button")) return; drag = [e.clientX / winZoom() - d.offsetLeft, e.clientY / winZoom() - d.offsetTop]; handle.setPointerCapture(e.pointerId); };
+  handle.onpointermove = (e) => { if (drag) move(e.clientX / winZoom() - drag[0], e.clientY / winZoom() - drag[1]); };
   handle.onpointerup = handle.onpointercancel = () => drag = null;
   handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
@@ -1224,13 +1231,13 @@ function open3d(s0) {
   d.querySelectorAll("[data-city-tab]").forEach(b=>b.onclick=()=>openCityPanel(b.dataset.cityTab));
   const ci=d.querySelector("#city-header-info");ci.onclick=()=>openCityPanel("city");ci.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCityPanel("city");}};
   const handle=d.querySelector(".city-window-handle"),win=d.querySelector(".city-window");let drag=null;
-  const move=(x,y)=>{const p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,innerWidth,innerHeight-70);
+  const move=(x,y)=>{const wz=winZoom(),cc=d.querySelector(".city-controls"),ccr=cc&&cc.offsetWidth?cc.getBoundingClientRect().left:innerWidth,p=clampWindow(x,y,win.offsetWidth,win.offsetHeight,Math.min(innerWidth,ccr)/wz,(innerHeight-70)/wz); /* stays left of the right panel so the close button is never covered */
   for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")]){ // the bar and the mission chip (expanded or minimised flag) never cover the title/close row (Marco 25/10)
-    if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight;
-      if(p.left<br&&p.left+win.offsetWidth>bl&&p.top<bb+6)p.top=Math.min(bb+6,Math.max(0,innerHeight-70-Math.min(win.offsetHeight,80)));}}
+    if(el&&!el.hidden){const bl=el.offsetLeft,br=bl+el.offsetWidth,bb=el.offsetTop+el.offsetHeight; /* bar offsets are screen px; the window's are zoomed local units */
+      if(p.left*wz<br&&(p.left+win.offsetWidth)*wz>bl&&p.top*wz<bb+6)p.top=Math.min((bb+6)/wz,Math.max(0,(innerHeight-70)/wz-Math.min(win.offsetHeight,80)));}}
   win.style.left=p.left+"px";win.style.top=p.top+"px";win.style.right="auto";};
-  handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX-win.offsetLeft,e.clientY-win.offsetTop];handle.setPointerCapture(e.pointerId);};
-  handle.onpointermove=e=>{if(drag)move(e.clientX-drag[0],e.clientY-drag[1]);};
+  handle.onpointerdown=e=>{if(e.target.closest("button"))return;drag=[e.clientX/winZoom()-win.offsetLeft,e.clientY/winZoom()-win.offsetTop];handle.setPointerCapture(e.pointerId);};
+  handle.onpointermove=e=>{if(drag)move(e.clientX/winZoom()-drag[0],e.clientY/winZoom()-drag[1]);};
   handle.onpointerup=handle.onpointercancel=()=>drag=null;
   handle.onkeydown=e=>{if(e.target!==handle)return;const keys={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const v=keys[e.key];if(v){e.preventDefault();e.stopPropagation();move(win.offsetLeft+v[0],win.offsetTop+v[1]);}};
   d.querySelector("[data-city-tab]").focus();
