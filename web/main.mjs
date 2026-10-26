@@ -82,7 +82,8 @@ import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
 import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
-import { offerOf, activeContracts, acceptContract, CONTRACT_MAX_ACTIVE } from "../src/game/contracts.mjs";
+import { offerOf, activeContracts, acceptContract } from "../src/game/contracts.mjs";
+import { contractMaxFor } from "../src/game/rankperks.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
 import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
@@ -697,7 +698,7 @@ function render() {
       }
       { const cto = offerOf(g, s.at), cta = activeContracts(g);
         h += `<h3>${t.ctTitle}</h3><p>${t.ctInfo}</p>`;
-        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= CONTRACT_MAX_ACTIVE ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= CONTRACT_MAX_ACTIVE ? ` <small>${t.ctFull.replace("{n}", CONTRACT_MAX_ACTIVE)}</small>` : ""}</div>`;
+        if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= contractMaxFor(g) ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= contractMaxFor(g) ? ` <small>${t.ctFull.replace("{n}", contractMaxFor(g))}</small>` : ""}</div>`;
         else if (!cta.some((x) => x.city === s.at)) h += `<p><i>${t.ctNone}</i></p>`;
         if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay)).join("<br>") + `</p>`; }
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
