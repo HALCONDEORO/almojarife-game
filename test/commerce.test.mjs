@@ -10,6 +10,7 @@ import { consumeUnitsImport } from "../src/sim/recipes.mjs";
 import { commerceOf, openCommerce, COMMERCE_LEDGER_ENABLED, recordMarketPurchase } from "../src/sim/procurement.mjs";
 import { HOUSEHOLD_INCOME } from "../src/sim/households.mjs";
 import { classCounts } from "../src/sim/classes.mjs";
+import { PURSE_UNCAPPED } from "../src/sim/households.mjs";
 
 const w = loadWorld();
 const cents = (x) => Math.round(x * 100) / 100;
@@ -46,10 +47,20 @@ test("recording never changes the economy: identical ticks, stocks and trades wi
     tickMarket(a, d, w);
     tickMarket(b, d, w, { commerceLedger: false });
   }
+  // Declared semantic change (docs/design/household-purses-limit.md): since household purses now cap
+  // DISCRETIONARY retail consumption, the account is no longer invisible for non-food goods. What must
+  // stay identical is food (measured, never capped) and every ship trade; discretionary entries may only
+  // diverge by keeping unsold stock (caps reduce consumption, never raise it).
   for (const [c, row] of Object.entries(a)) {
     for (const [g, e] of Object.entries(row)) {
-      const { commerce, ...rest } = e;
-      assert.deepEqual(rest, b[c][g], `${c}.${g} diverged`);
+      const { commerce, needsLedger, ...rest } = e;
+      const { needsLedger: _nl, ...restB } = b[c][g];
+      if (PURSE_UNCAPPED.has(g)) assert.deepEqual(rest, restB, `${c}.${g} food diverged`);
+      else {
+        const { stock, ...metaA } = rest, { stock: stockB, ...metaB } = restB;
+        assert.deepEqual(metaA, metaB, `${c}.${g} non-stock fields diverged`);
+        assert.ok(stock >= stockB, `${c}.${g} purse caps must never increase consumption`);
+      }
     }
   }
   const shA = makeShip("s1", "cog", "cadiz"), shB = makeShip("s2", "cog", "cadiz");
