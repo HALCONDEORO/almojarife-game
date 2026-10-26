@@ -8,6 +8,10 @@ const num = (n) => String(Math.round(n));
 export function effectText(fx = {}, lang = "es") {
   const en = lang === "en", out = [];
   if (fx.cash) out.push(fx.cash > 0 ? (en ? `you gain ${num(fx.cash)} coins` : `ganas ${num(fx.cash)} monedas`) : (en ? `you lose ${num(-fx.cash)} coins` : `pierdes ${num(-fx.cash)} monedas`));
+  if (fx.salvage) { // pays by hold size with a luck band: per hold slot, never a fixed amount
+    const j = fx.salvage.jitter ?? 0, per = fx.salvage.perCap ?? 2, lo = per * (1 - j), hi = per * (1 + j), d = (n) => String(Math.round(n * 10) / 10).replace(".", en ? "." : ",");
+    out.push(en ? `you recover coins by hold size (${d(lo)} to ${d(hi)} per hold slot)` : `recuperas monedas según la bodega (de ${d(lo)} a ${d(hi)} por plaza de carga)`);
+  }
   if (fx.cargoLossPct) out.push(en ? `you lose ${num(fx.cargoLossPct)} % of the cargo` : `pierdes el ${num(fx.cargoLossPct)} % de la carga`);
   if (fx.days) out.push(fx.days > 0 ? (en ? `${fx.days} day${fx.days > 1 ? "s" : ""} later` : `${fx.days} día${fx.days > 1 ? "s" : ""} más`) : (en ? `${-fx.days} day${fx.days < -1 ? "s" : ""} sooner` : `${-fx.days} día${fx.days < -1 ? "s" : ""} menos`));
   return out.length ? out.join(en ? " and " : " y ") : (en ? "no consequences" : "sin consecuencias");
