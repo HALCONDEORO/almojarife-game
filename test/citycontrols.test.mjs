@@ -61,7 +61,7 @@ test('open window keeps clear of the corner bar as well as the mission chip', ()
   assert.ok(i > 0, 'unified keep-clear comment');
   const body = js.slice(i, i + 900);
   assert.ok(body.includes('for (const el of [chip, cbar])'), 'chip and bar both considered');
-  assert.ok(body.includes('need = Math.max(need, cr.bottom - vt + 6)'), 'deepest blocker wins');
+  assert.ok(body.includes('need = Math.max(need, (cr.bottom - vt + 6) / winZoom())'), 'deepest blocker wins');
   assert.ok(body.includes('win.style.top = Math.min(need,'), 'pushed below the deepest blocker');
 });
 
@@ -110,7 +110,7 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
 test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
   assert.match(css, /\.city-window\{position:absolute;right:238px;top:84px/, 'window home below bar');
   assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")])'), 'drag clamp reads bar, chip and minimised flag');
-  assert.ok(js.includes('p.top=Math.min(bb+6,'), 'drag clamps below them');
+  assert.ok(js.includes('p.top=Math.min((bb+6)/wz,'), 'drag clamps below them');
 });
 
 test('class percentages use one decimal and stay truthful (67+27+7=101 catch)', () => {

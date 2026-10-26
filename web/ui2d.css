@@ -97,3 +97,10 @@ body.in-city-3d .city-window.ui2d-market-window{max-height:calc(100dvh - 172px)}
 /* Market window: every column centred (names, numbers, icons, headers) and the filter row centred over the table. */
 .mkt-good{justify-content:center;text-align:center}.mkt-hold,.mkt-avg,.mkt-head .mkt-hold,.mkt-head .mkt-avg{text-align:center}.mkt-head>div,.mkt-head>span{text-align:center}.mkt-tools{justify-content:center}.mkt-qtybar{justify-content:center}
 .bldoffer-short{display:block;margin-top:4px;font-size:11px;font-weight:bold;color:#8a2a1a}
+/* Floating windows scale with the viewport (see updateWinZoom in main.mjs). Offsets and caps are divided by the zoom so the window keeps its place on screen. */
+@supports(zoom:1){.city-window,#shipwin{zoom:var(--win-zoom,1)}}
+@media(min-width:900px){.city-window{right:calc(238px / var(--win-zoom,1));top:calc(84px / var(--win-zoom,1));max-width:calc((100vw - 20px) / var(--win-zoom,1))}
+body.in-city-3d .city-window,body.in-city-3d .city-window.ui2d-market-window{max-height:calc((100dvh - var(--game-header-height,96px) - 38px) / var(--win-zoom,1))!important}
+#shipwin{top:calc(var(--game-header-height,70px) / var(--win-zoom,1));width:calc(clamp(340px,30vw,520px) / var(--win-zoom,1));max-width:calc(100vw / var(--win-zoom,1))}}
+/* Market is centred in the space left of the right panel; its offsets are in zoomed units, so divide by the zoom. */
+@media(min-width:900px){html body.in-city-3d .city-window[data-city-panel="market"]{left:max(calc(12px / var(--win-zoom,1)),calc((100vw - 238px - 640px * var(--win-zoom,1)) / 2 / var(--win-zoom,1)));right:auto;top:calc(38px / var(--win-zoom,1));width:min(640px,calc((100vw - 254px) / var(--win-zoom,1)))}}
