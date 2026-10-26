@@ -12,3 +12,5 @@ Continues `docs/DECISIONS.md`. Format: date, decision, why, where it lives. Sour
 | 22 Oct | Public repo text carries no personal names | The repo is public | PR #228 |
 | 22 Oct | Internal wiki lives in docs/, tables generated from code, every game PR updates its page | One versioned source that cannot drift | README.md |
 | 22 Oct | Meat is dear for the rich; food is split across three classes | Matches the historical split of consumption by class | classes.md (not yet in game) |
+
+| 26 Oct | Political map realm names use smaller labels, a separate Granada callout and an aligned key | Keep all realm and port names readable together at desktop overview; colours remain approximate washes, not borders | src/view/historicalmap.mjs |

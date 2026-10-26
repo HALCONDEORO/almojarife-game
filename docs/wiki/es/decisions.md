@@ -12,3 +12,5 @@ Continúa `docs/DECISIONS.md`. Formato: fecha, decisión, por qué, dónde vive.
 | 22 oct | El texto del repo público no lleva nombres personales | El repositorio es público | PR #228 |
 | 22 oct | La wiki interna vive en docs/, con tablas generadas desde el código, y cada PR del juego actualiza su página | Una fuente versionada que no puede desviarse | README.md |
 | 22 oct | La carne es cara para los ricos; la comida se reparte entre tres clases | Coincide con el reparto histórico del consumo por clase | classes.md (aún no en el juego) |
+
+| 26 Oct | Nombres de reinos más discretos, Granada separada y leyenda alineada | Leer reinos y puertos juntos en la vista completa de escritorio; colores aproximados, no fronteras | src/view/historicalmap.mjs |

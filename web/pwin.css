@@ -69,3 +69,9 @@ body.in-city-3d .city-window[data-city-panel="market"]{top:38px;right:auto;left:
 .bldoffer-locked .bldoffer-art{opacity:.55;filter:grayscale(.35)}
 .bldoffer-locked .bldoffer-name{color:#6e5a3a}
 .bldoffer-why{color:#5a4a33;font-style:italic}
+
+/* Political chart: quiet, aligned key; names on the chart carry the hierarchy. */
+#historical-map-key .realm-key {display:grid;gap:5px;padding:3px 1px 7px}
+#historical-map-key .realm-key-item {display:flex;align-items:center;gap:7px;font-size:13px;line-height:1.25}
+#historical-map-key .realm-key-item i {display:inline-block;width:10px;height:10px;border-radius:2px;flex:0 0 10px}
+#historical-map-key .realm-key-note {display:block;padding-top:6px;border-top:1px solid #b7a37b;font-size:11px;line-height:1.4;color:#645339}
