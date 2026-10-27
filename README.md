@@ -5,14 +5,26 @@
 <h1 align="center">El Almojarife</h1>
 <p align="center"><em>An open-source sea-trading game on the Iberian and Mediterranean coast, 15th-16th century.</em><br>
 <a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your desktop browser</b></a></p>
+<p align="center"><a href="https://github.com/HALCONDEORO/almojarife-game/releases/latest"><img src="https://img.shields.io/github/v/release/HALCONDEORO/almojarife-game?display_name=tag&label=release" alt="Latest release"></a></p>
 
 <p align="center"><img src="docs/img/map.png" alt="The sea chart with ports, routes and ships" width="780"></p>
 
 You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
 
-**Status: experimental development build.** A first public beta pre-release is being prepared, not published. The game is playable and free, but rough.
+**Status: public beta.** The first public beta (v0.5.0-beta.2) is published as the latest release, with installers for Windows, Mac and Linux (see Downloads). The game is playable and free, but rough.
 
 **Platform: desktop only.** El Almojarife is a desktop game: it is played in a Windows, Mac or Linux browser with keyboard and mouse. It is not designed for or tested on phones or tablets.
+
+
+## Downloads
+
+Get the latest release from [GitHub Releases](https://github.com/HALCONDEORO/almojarife-game/releases/latest):
+
+- **Windows**: `El.Almojarife.Setup.<version>.exe` (installer) or `El.Almojarife.<version>.exe` (portable).
+- **Mac (Apple Silicon)**: `El.Almojarife-<version>-arm64.dmg`.
+- **Linux**: `El.Almojarife-<version>.AppImage` (any distribution) or `almojarife-desktop_<version>_amd64.deb` (Debian/Ubuntu).
+
+Every release includes `SHA256SUMS.txt` to verify the downloads. You can also [play in your desktop browser](https://halcondeoro.github.io/almojarife-game/) without installing anything.
 
 ## Why you might like it
 
