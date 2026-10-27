@@ -903,7 +903,7 @@ function render() {
         : bankHeader2d(lang, { city, room: bankRoom(g, s.at), owed: loansOwed(g), ratePct: +(LOAN_RATE * termsFor(g, s.at).rate * 100).toFixed(2), loans: (g.loans ?? []).length }, fmtM);
       h = h.slice(0, ui2dMark) + store2dWrap(tab === "store" ? "warehouse" : "bank", head, inner);
     }
-    if(!(tab==="hall"&&ui2dEnabled(location.search))) { const te = target ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null, tlw = te?.ok ? legWeather(s.at, target) : null;
+    if (!inCity) { const te = target ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null, tlw = te?.ok ? legWeather(s.at, target) : null;
       h += `<div class="dest"><b>${t.target}:</b> ` + (te?.ok ? `${cityName(target)} - ≈ ${hoursOf(te.ticks)} h, ${te.km} km${wxNote(tlw)} <button data-go="1">${t.sailGo} (↵)</button>` : `<i>${t.hint}</i>`) + `</div>`; }
   }
   if (inCity && city3dId && tab === "yard" && s.voyage) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
