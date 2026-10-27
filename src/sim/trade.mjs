@@ -4,7 +4,7 @@ import { route } from "./world.mjs";
 import { ticksForKm } from "./clock.mjs";
 import { price } from "./market.mjs";
 import { loadWeight } from "./armament.mjs";
-import { recordMarketPurchase, recordWholesaleSale } from "./procurement.mjs";
+import { WHOLESALE_PURSE_BINDING, commerceOf, recordMarketPurchase, recordWholesaleSale } from "./procurement.mjs";
 
 export const SHIP_TYPES = {
   barca: { capacity: 25, kmPerDay: 100, upkeepPerDay: 1, price: 900, buildDays: 8 },
@@ -97,7 +97,18 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   qty = Math.min(qty, ship.cargo[good] ?? 0);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
-  for (let i = 0; i < qty; i++) { e.stock += 1; revenue += floor2(price(world, e, good) * (1 - fee)); }
+  const purse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // a binding purse pays only what it holds
+  const cashCents = purse ? Math.round(purse.cash * 100) : 0; // money compares in integer cents: 3 x 19.60 IS 58.80
+  let revenueCents = 0;
+  let n = 0;
+  while (n < qty) {
+    e.stock += 1;
+    const unit = floor2(price(world, e, good) * (1 - fee));
+    if (purse && revenueCents + Math.round(unit * 100) > cashCents) { e.stock -= 1; break; }
+    revenueCents += Math.round(unit * 100); revenue += unit; n++;
+  }
+  if (n === 0) return { ok: false, reason: "market has no cash" };
+  qty = n;
   const had = ship.cargo[good], paid = ship.basis?.[good] ?? 0;
   const spent = qty === had ? paid : Math.round(paid * qty / had); // share of the cost that leaves with the goods; a full sale settles at the exact book cost, no cent lost
   ship.cargo[good] -= qty;
@@ -124,8 +135,18 @@ export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
 export function previewSell(world, market, ship, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
-  const n = Math.min(qty, have), sim = { ...e }; let revenue = 0;
-  for (let i = 0; i < n; i++) { sim.stock += 1; revenue += floor2(price(world, sim, good) * (1 - fee)); }
+  const sim = { ...e }; let revenue = 0;
+  const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sell()
+  const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
+  let pvCents = 0;
+  let n = 0;
+  while (n < Math.min(qty, have)) {
+    sim.stock += 1;
+    const unit = floor2(price(world, sim, good) * (1 - fee));
+    if (pvPurse && pvCents + Math.round(unit * 100) > pvCashCents) { sim.stock -= 1; break; }
+    pvCents += Math.round(unit * 100); revenue += unit; n++;
+  }
+  if (n === 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const spent = n === have ? (ship.basis?.[good] ?? 0) : Math.round((ship.basis?.[good] ?? 0) * n / have);
   return { qty: n, revenue, avg: Math.round(revenue / n * 100) / 100, profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }

@@ -8,6 +8,13 @@
 // (quoteUnitsImport's external part), council fees and derechos, ship upkeep and wages.
 export const COMMERCE_LEDGER_ENABLED = true; // telemetry only: gates account creation; recording follows account presence
 
+/** Phase 1 of the ledger (the "later, separately reviewed phase" declared above): the purse becomes
+ *  BINDING for wholesale sales INTO the market. A trader or the warehouse administrator selling goods
+ *  to a port can only draw the cash that port actually holds: a sale larger than the purse settles
+ *  partially and an empty purse pays nothing at all. Retail consumption, unpaid local supply and all
+ *  bookkeeping stay exactly as in phase 0. */
+export const WHOLESALE_PURSE_BINDING = true;
+
 const round2 = (x) => Math.round(x * 100) / 100; // ledger money settles to cents like the trades it records
 
 /** The port's commerce account, or null on markets built without one (bare fixtures stay untouched). */
