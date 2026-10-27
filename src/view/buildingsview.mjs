@@ -202,7 +202,7 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
     if (r.jobs) cells.push(cell(BWI.worker, bw.jobs.replace("{j}", r.jobs), r.jobs, bwl.jobs));
     if (r.wages) cells.push(cell(BWI.coin, bw.wages.replace("{w}", fmt(r.wages)), fmt(r.wages), bwl.wages));
   }
-  return `<div class="bwcard"><div class="bwc-icon">${cardIcon}</div><div class="bwc-main"><div class="bwc-name"><b>${escBw(buildingLabel(t, r))}</b> <small>${escBw(r.plotId)}</small></div><div class="bwc-state">${escBw(state)}</div>${cells.length ? `<div class="bwc-stats">${cells.join("")}</div>` : ""}</div></div>`;
+  return `<div class="bwcard"><div class="bwc-icon">${cardIcon}</div><div class="bwc-main"><div class="bwc-name"><b>${escBw(buildingLabel(t, r))}</b></div><div class="bwc-state">${escBw(state)}</div>${cells.length ? `<div class="bwc-stats">${cells.join("")}</div>` : ""}</div></div>`;
 }
 
 
