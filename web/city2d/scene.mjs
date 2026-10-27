@@ -289,7 +289,7 @@ function draw(t){if(!layout)return;canvas.width=innerWidth;canvas.height=innerHe
   polygon(selected);ctx.strokeStyle='#fff1a6';ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([5,4]);ctx.strokeStyle='#6a6039';ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);
 
  }
- if(selected){const b=bld[selected.id];$('tip').textContent=(labels[selected.id]||names[b?.type||selected.type]||chrome().plot)+' · '+selected.id+(preview?' · '+dispNames()[$('type').value]+' '+$('level').value+' · '+chrome().previewTip:'')}
+ if(selected){const b=bld[selected.id];$('tip').textContent=(labels[selected.id]||names[b?.type||selected.type]||chrome().plot)+(preview?' · '+dispNames()[$('type').value]+' '+$('level').value+' · '+chrome().previewTip:'')}
  placeLabels();
  window.__city2d={city,walls,plots:layout.plots.length,owned:Object.keys(bld).length,selected:selected?.id||null,preview,grid,animate,frame,zoom,points:layout.plots.map(p=>({id:p.id,...xy(p.x+p.w/2,p.y+p.d/2)}))};
 }
