@@ -42,3 +42,18 @@ test('alerts survive a save/load and fire through advanceDay on the real market'
  assert.equal(alertsOf(r,'cadiz').length,0,'fired through the day work');
  assert.ok((r.inbox??[]).some((m)=>m.kind==='alert'));
 });
+
+test('fractional targets cannot round to zero or remove an existing alert',()=>{
+ const g=mk();
+ for(const target of [0.1,0.49,Number.MIN_VALUE]){
+  assert.deepEqual(setPriceAlert(g,'cadiz','grain','below',target),{ok:false,reason:'bad price'});
+  assert.equal(alertsOf(g).length,0);
+ }
+ assert.ok(setPriceAlert(g,'cadiz','grain','above',9).ok);
+ const before=structuredClone(alertsOf(g));
+ assert.equal(setPriceAlert(g,'cadiz','grain','below',0.1).reason,'bad price');
+ assert.deepEqual(alertsOf(g),before,'invalid replacement preserves the previous alert');
+ assert.ok(setPriceAlert(g,'cadiz','grain','below',0.5).ok);
+ assert.equal(alertsOf(g)[0].price,1,'smallest rounding boundary remains positive');
+ assert.equal(alertsOf(g).length,1);
+});

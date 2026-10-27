@@ -15,10 +15,12 @@ export function setPriceAlert(g, city, good, dir, target) {
   if (!g.world.nodes[city]) return { ok: false, reason: "unknown port" };
   if (dir !== "below" && dir !== "above") return { ok: false, reason: "bad direction" };
   if (!Number.isFinite(target) || target <= 0) return { ok: false, reason: "bad price" };
+  const roundedTarget = Math.round(target);
+  if (roundedTarget <= 0) return { ok: false, reason: "bad price" };
   const list = (g.priceAlerts ??= []), old = list.findIndex((a) => a.city === city && a.good === good);
   if (old >= 0) list.splice(old, 1); // replacing, not stacking
   else if (list.length >= ALERT_MAX) return { ok: false, reason: "too many alerts" };
-  const a = { id: `al:${city}:${good}`, city, good, dir, price: Math.round(target), sinceDay: g.day };
+  const a = { id: `al:${city}:${good}`, city, good, dir, price: roundedTarget, sinceDay: g.day };
   list.push(a);
   return { ok: true, alert: a };
 }
