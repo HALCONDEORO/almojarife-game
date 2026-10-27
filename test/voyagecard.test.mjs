@@ -11,3 +11,13 @@ test('a pending voyage event gets a button to resolve it, in both languages and 
  assert.match(voyageCardHtml(s,{lang:'en',eventPending:true}),/Resolve voyage event/);
  assert.doesNotMatch(voyageCardHtml(s,{lang:'es'}),/voyage-event/);
 });
+
+test('ETA explains accumulated storm delays in both languages without claiming current storm',()=>{
+ const s={id:1,voyage:{from:'a',to:'b',ticksLeft:480,totalTicks:720,stormDelayDays:1}},before=JSON.stringify(s);
+ assert.match(voyageCardHtml(s),/Retraso por tormenta en este viaje: \+1 día \(incluido en la estimación\)/);
+ s.voyage.stormDelayDays=3;assert.match(voyageCardHtml(s,{lang:'en'}),/Storm delay on this voyage: \+3 days \(included in estimate\)/);
+ s.voyage.stormDelayDays=1;assert.equal(JSON.stringify(s),before);
+ for(const days of [undefined,0,-1,1.5,NaN,'1','<x>']){s.voyage.stormDelayDays=days;assert.doesNotMatch(voyageCardHtml(s),/Retraso por tormenta/);}
+ s.voyage.stormDelayDays=1;s.voyage.anchored=true;assert.doesNotMatch(voyageCardHtml(s),/Retraso por tormenta/);
+ delete s.voyage;assert.doesNotMatch(voyageCardHtml(s),/Retraso por tormenta/);
+});

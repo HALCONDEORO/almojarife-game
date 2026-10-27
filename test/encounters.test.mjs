@@ -26,3 +26,20 @@ test('total loss clears ship basis and global book, no phantom basis on later tr
  applyEncounter(g,s,{kind:'pirates',hullLoss:10,cargoLossPct:100,delay:0});
  assert.deepEqual(s.cargo,{});assert.deepEqual(s.basis,{});assert.deepEqual(g.basis.salt,{qty:0,cost:0});
 });
+
+test('storm delay attribution accumulates on this voyage only, without changing timing rules',()=>{
+ const s=ship(),g={ships:[s],cash:500},out={kind:'storm',hullLoss:0,cargoLossPct:0,delay:1};
+ applyEncounter(g,s,out);assert.equal(s.voyage.stormDelayDays,1);assert.equal(s.voyage.ticksLeft,960);assert.equal(s.voyage.totalTicks,1440);
+ applyEncounter(g,s,{...out,delay:2});assert.equal(s.voyage.stormDelayDays,3);assert.equal(s.voyage.ticksLeft,1440);
+ applyEncounter(g,s,{...out,kind:'pirates'});assert.equal(s.voyage.stormDelayDays,3);
+ s.voyage={ticksLeft:10,totalTicks:10};applyEncounter(g,s,out);assert.equal(s.voyage.stormDelayDays,1);
+});
+
+test('storm attribution survives save/reload and clears with arrival/new departure',async()=>{
+ const fs=await import('node:fs');const {buildWorld}=await import('../src/sim/world.mjs');const {newGame}=await import('../src/game/game.mjs');const {serialize,deserialize}=await import('../src/game/gamesave.mjs');const {sail,sailTick}=await import('../src/sim/trade.mjs');
+ const world=buildWorld(JSON.parse(fs.readFileSync(new URL('../data/world.json',import.meta.url))));const g=newGame(world,'cadiz'),s=g.ships[0];
+ assert.ok(sail(world,s,'sevilla').ok);applyEncounter(g,s,{kind:'storm',hullLoss:0,cargoLossPct:0,delay:1});
+ const {g:loaded}=deserialize(serialize(g,'Test'),world),ls=loaded.ships[0];assert.equal(ls.voyage.stormDelayDays,1);assert.equal(ls.voyage.ticksLeft,s.voyage.ticksLeft);
+ ls.voyage.ticksLeft=1;assert.ok(sailTick(ls));assert.equal(ls.voyage,null);assert.ok(sail(world,ls,'cadiz').ok);assert.equal(ls.voyage.stormDelayDays,undefined);
+ const old=serialize(loaded,'Test');delete old.state.ships[0].voyage.stormDelayDays;assert.equal(deserialize(old,world).g.ships[0].voyage.stormDelayDays,undefined);
+});

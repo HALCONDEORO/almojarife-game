@@ -36,6 +36,8 @@ export function applyEncounter(g,ship,outcome){
   const b=g.basis?.[good];if(b&&b.qty>0){const used=Math.min(lost,b.qty),unit=b.cost/b.qty;b.qty-=used;b.cost=Math.max(0,b.cost-used*unit);}
  }
  ship.voyage.ticksLeft+=outcome.delay*TICKS_PER_DAY;ship.voyage.totalTicks=Math.max((ship.voyage.totalTicks??ship.voyage.ticksLeft-outcome.delay*TICKS_PER_DAY)+outcome.delay*TICKS_PER_DAY,ship.voyage.ticksLeft);
+ // Display-only attribution stays with this voyage; a new departure creates a fresh object.
+ if(outcome.kind==='storm'&&outcome.delay>0){const old=ship.voyage.stormDelayDays;ship.voyage.stormDelayDays=(Number.isSafeInteger(old)&&old>=0?old:0)+outcome.delay;}
  xpOfEncounter(g,ship,outcome); // flag off: nothing
  return {ok:true,...outcome,hullLost:before-ship.hull,cargoLost};
 }
