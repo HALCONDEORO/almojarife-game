@@ -83,8 +83,10 @@ test('pirate fight flag is on by default (owner directive 2026-10-23) and saved 
 import {MAX_CANNONS as MAXC} from '../src/game/crew.mjs';
 import {resolvePirates as resolveP,prizeFor as prizeForP} from '../src/game/encounterdaily.mjs';
 import {doSail as doSailP} from '../src/game/game.mjs';
+const pirateWorld=loadWorldFlag(),pirateBase={}; // newGame cuesta ~0,4s y es determinista: una base por flag + clone por iteracion
 function pirateRun(flag,i){
- const g=newGameFlag(loadWorldFlag(),undefined,{pirateFight:flag});g.eventsOn=true;g.seed=3;const s=g.ships[0];doSailP(g,s,'barcelona');
+ const k=flag?'1':'0';if(!pirateBase[k])pirateBase[k]=newGameFlag(pirateWorld,undefined,{pirateFight:flag});
+ const g=structuredClone(pirateBase[k]);g.eventsOn=true;g.seed=3;const s=g.ships[0];doSailP(g,s,'barcelona');
  g.pending={event:'sea-pirates',ship:s.id,day:g.day,hour:0,id:`p:${i}`,escapeChance:50};
  return {g,e:resolveP(g,'fight')};
 }
