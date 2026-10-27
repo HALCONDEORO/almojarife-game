@@ -26,7 +26,7 @@ export function reportsHtml(g, lang, fmt, goodName = (k) => k) {
   if (!rs.length) return h + `<p>${t.none}</p>`;
   for (const r of rs.slice(0, 12)) {
     h += `<div class="card"><b>${t.week} ${r.week}</b> (${t.day} ${r.day})<table><tr><th>${t.ship}</th><th>${t.cost}</th><th>${t.crew}</th><th>${t.guns}</th><th>${t.captain}</th></tr>` +
-      r.lines.map((l) => `<tr><td>${esc(typeName(lang, l.type))} #${l.ship}</td><td>${fmt(l.cost)}</td><td>${l.wages ? fmt(l.wages) : "–"}</td><td>${l.cannons ? fmt(l.cannons) : "–"}</td><td>${l.captain ? fmt(l.captain) : "–"}</td></tr>`).join("") + `</table>` +
+      r.lines.map((l) => `<tr><td>${esc(typeName(lang, l.type))} ${l.ship}</td><td>${fmt(l.cost)}</td><td>${l.wages ? fmt(l.wages) : "–"}</td><td>${l.cannons ? fmt(l.cannons) : "–"}</td><td>${l.captain ? fmt(l.captain) : "–"}</td></tr>`).join("") + `</table>` +
       `<small>${t.upkeep}: ${fmt(r.upkeep)}` + (r.carried ? ` · ${t.carried}: ${fmt(r.carried)}` : "") + (r.tolls ? ` · ${t.tolls}: ${fmt(r.tolls)}` : "") + (r.interest ? ` · ${t.interest}: ${fmt(r.interest)}` : "") + (r.household ? ` · ${t.household}: ${fmt(r.household)}` : "") + (r.loanInterest ? ` · ${t.loanInt}: ${fmt(r.loanInterest)}` : "") + (r.loanPrincipal ? ` · ${t.loanPrin}: ${fmt(r.loanPrincipal)}` : "") + ` · ${t.paid}: ${fmt(r.paid)}` + (r.debt ? ` · <b>${t.debt}: ${fmt(r.debt)}</b>` : "") + (r.negMargin?.length ? ` · <b>${t.negMargin}: ${r.negMargin.map(esc).join(", ")}</b>` : "") + ` · ${t.cashAfter}: ${fmt(r.cashAfter)}</small>` + tradeTable(r, t, fmt, goodName) + `</div>`;
   }
   return h;
