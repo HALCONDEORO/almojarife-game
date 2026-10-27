@@ -20,7 +20,7 @@ code signing. If approved, the required statement will read:
 
 "Free code signing provided by SignPath.io, certificate by SignPath Foundation"
 
-Status: **application drafted, not yet submitted.** Until then Windows
+Status: **application submitted to the SignPath Foundation on 27 Oct 2026, pending review.** Until then Windows
 packages are unsigned and SmartScreen may warn.
 
 ## macOS (unsigned)
