@@ -97,18 +97,18 @@ test("ship trades feed the purse: received/paid identities and exact shelf settl
   assert.ok(a.releasedBasis > 0);
 });
 
-test("the purse never limits a trade: a deep-negative purse still buys full cargoes", () => {
+test("phase 1: the purse is binding, a deep-negative purse buys nothing", () => {
   const m = makeMarket(w);
   const a = commerceOf(m.cadiz);
-  a.cash = -999999; // bookkeeping may go negative; the market must not notice
+  a.cash = -999999; // phase 0 bookkeeping could go negative unnoticed; phase 1 makes the purse binding
   const sh = makeShip("s1", "cog", "cadiz");
   sh.cargo.grain = 50;
   sh.basis = { grain: 500 };
   const before = m.cadiz.grain.stock;
   const r = sell(w, m, sh, "grain", 50);
-  assert.ok(r.ok && r.qty === 50, "full sale despite negative purse");
-  assert.equal(m.cadiz.grain.stock, before + 50);
-  assert.equal(a.paid, cents(r.revenue));
+  assert.deepEqual(r, { ok: false, reason: "market has no cash" }, "a negative purse pays nothing");
+  assert.equal(m.cadiz.grain.stock, before, "no stock moved");
+  assert.equal(sh.cargo.grain, 50, "cargo stays aboard");
 });
 
 test("old save without accounts: fillMissingMarketRows reopens them at current stock value", () => {

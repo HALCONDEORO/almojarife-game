@@ -12,7 +12,7 @@ import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { relationsOnSale } from "./relations.mjs";
 import { addRespect } from "./rank.mjs";
 import { recordSale } from "./voyages.mjs";
-import { recordMarketPurchase, recordWholesaleSale } from "../sim/procurement.mjs";
+import { WHOLESALE_PURSE_BINDING, commerceOf, recordMarketPurchase, recordWholesaleSale } from "../sim/procurement.mjs";
 
 export const stewardOf = (g, city) => g.warehouses?.[city]?.admin ?? null;
 const GOOD_NAMES = {
@@ -63,7 +63,8 @@ export function stewardTick(g, city, cap) {
       const have = w.goods[good] ?? 0, can = have - r.sellKeep;
       if (can > 0) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
-        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; revenue += floor2(p * (1 - FEE)); n++; }
+        const purse = WHOLESALE_PURSE_BINDING ? commerceOf(g.market[city]) : null; // standing orders cannot draw more than the purse holds
+        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; const unit = floor2(p * (1 - FEE)); if (purse && revenue + unit > purse.cash) break; revenue += unit; n++; }
         if (n > 0) {
           const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
           e.stock += n;
