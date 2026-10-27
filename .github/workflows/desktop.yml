@@ -136,6 +136,7 @@ jobs:
         working-directory: dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           shopt -s nullglob
