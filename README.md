@@ -21,7 +21,7 @@ You are a small merchant with one cog and a few coins in a harbour town. Buy che
 Get the latest release from [GitHub Releases](https://github.com/HALCONDEORO/almojarife-game/releases/latest):
 
 - **Windows**: `El.Almojarife.Setup.<version>.exe` (installer) or `El.Almojarife.<version>.exe` (portable).
-- **Mac (Apple Silicon)**: `El.Almojarife-<version>-arm64.dmg`.
+- **Mac (Apple Silicon)**: `El.Almojarife-<version>-arm64.dmg` (installer image) or `El.Almojarife-<version>-arm64-mac.zip` (zipped app).
 - **Linux**: `El.Almojarife-<version>.AppImage` (any distribution) or `almojarife-desktop_<version>_amd64.deb` (Debian/Ubuntu).
 
 Every release includes `SHA256SUMS.txt` to verify the downloads. You can also [play in your desktop browser](https://halcondeoro.github.io/almojarife-game/) without installing anything.
