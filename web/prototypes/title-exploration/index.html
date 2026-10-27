@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#302018">
+  <title>El Almojarife — Libro de cuentas</title>
+  <style>
+    :root {
+      --wax: #8c2a1c;
+      --gold: #f0d88a;
+      --paper: #d9c79c;
+      --ink: #382b1e;
+      --muted: #706044;
+      --rule: #92734455;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      background: #241a13;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-width: 320px; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--wax); outline-offset: 5px; }
+    .desk-header :focus-visible, .desk-footer :focus-visible { outline-color: var(--gold); }
+    .definitions { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .desk {
+      min-height: 100svh;
+      isolation: isolate;
+      overflow: hidden;
+      position: relative;
+      padding: 20px 34px 14px;
+      background:
+        radial-gradient(ellipse at 87% 20%, #c38c4340, transparent 40%),
+        radial-gradient(ellipse at 48% 45%, transparent 34%, #0e0a08c9 100%),
+        repeating-linear-gradient(1deg, #dfb57b04 0 1px, transparent 1px 5px, #08030118 6px 7px, transparent 8px 17px),
+        repeating-linear-gradient(179deg, transparent 0 155px, #0e08068a 157px 160px, #a57b4426 161px 163px, transparent 165px 323px),
+        linear-gradient(105deg, #352319, #503424 40%, #39271c 70%, #523622);
+    }
+    .desk::before {
+      content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+      background: #ad8653; filter: url(#wood-grain); opacity: .18; mix-blend-mode: soft-light;
+    }
+    .desk-header, .desk-footer { max-width: 1260px; margin-inline: auto; position: relative; z-index: 5; }
+    .desk-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; color: #cebb92; }
+    .desk-signature { display: flex; gap: 12px; align-items: center; }
+    .desk-signature svg { width: 27px; height: 34px; opacity: .8; }
+    .small-caps { font-size: 10px; letter-spacing: .2em; line-height: 1.5; text-transform: uppercase; }
+    .desk-signature small { display: block; font-size: 10px; font-style: italic; opacity: .65; margin-top: 3px; letter-spacing: .06em; }
+    .languages { display: flex; align-items: center; gap: 9px; }
+    .languages span { opacity: .35; font-size: 11px; }
+    .languages button { min-width: 38px; min-height: 44px; border: 0; padding: 10px 4px; background: none; color: #b6a17c; font-size: 12px; letter-spacing: .1em; }
+    .languages button[aria-pressed="true"] { color: var(--gold); text-decoration: underline; text-underline-offset: 7px; text-decoration-thickness: 1px; }
+    .languages button:hover { color: #fff0c2; }
+    .stage { max-width: 1260px; margin: 26px auto 22px; position: relative; }
+    .book {
+      position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr;
+      width: min(1120px, 100% - 76px); margin: auto;
+      border: 7px solid #38231a; border-top-width: 5px; border-bottom-width: 11px;
+      border-radius: 9px 12px 15px 12px;
+      background: #7b5b37;
+      box-shadow: 0 1px 0 1px #a07c4659, 0 4px 0 #251910, 1px 9px 0 -2px #654527,
+        1px 12px 0 -2px #25180e, 0 27px 32px -14px #070402d9, 0 48px 75px -25px #080503;
+      transform: rotate(-.35deg);
+    }
+    .book::before {
+      content: ''; position: absolute; left: 5px; right: 5px; bottom: -8px; height: 12px;
+      border-radius: 0 0 8px 7px;
+      background: repeating-linear-gradient(0deg, #8b7753 0 1px, #d2bd8c 1px 2px, #bba576 2px 3px);
+      box-shadow: 0 3px 4px #120b06a6;
+    }
+    .book::after {
+      content: ''; z-index: 4; pointer-events: none; position: absolute; left: calc(50% - 17px); top: 0; bottom: 0; width: 34px;
+      background: linear-gradient(90deg, transparent, #73532f21 27%, #3f2a1c61 48%, #3827188c 50%, #ffedb937 58%, transparent);
+    }
+    .page { position: relative; min-width: 0; padding: 26px 44px 24px; background-color: var(--paper); }
+    .page::before {
+      content: ''; position: absolute; z-index: 0; inset: 0; opacity: .12; pointer-events: none;
+      background: #73552a; filter: url(#paper-grain); mix-blend-mode: multiply;
+    }
+    .page > * { position: relative; z-index: 1; }
+    .left-page {
+      border-radius: 3px 42% 2px 5px / 3px 10px 2px 5px;
+      background-image: radial-gradient(ellipse at 7% 30%, #fff2c963, transparent 66%),
+        radial-gradient(ellipse at 13% 88%, #8e542c26, transparent 27%),
+        linear-gradient(90deg, #a78a552c, #f6e6bd36 8%, transparent 68%, #75512829 97%, #5d402855);
+      box-shadow: inset 2px 0 5px #78502138;
+    }
+    .right-page {
+      padding-left: 50px; padding-right: 45px;
+      border-radius: 42% 4px 5px 2px / 10px 4px 5px 2px;
+      background-image: radial-gradient(ellipse at 80% 35%, #fff5d767, transparent 70%),
+        radial-gradient(ellipse at 85% 97%, #a5763230, transparent 38%),
+        linear-gradient(90deg, #64472c42, transparent 11%, #faecc026 85%, #94734230);
+      box-shadow: inset -2px 0 5px #78502138;
+    }
+    .running-head { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 11px; border-bottom: 1px solid var(--rule); color: var(--muted); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+    .running-head span:last-child { white-space: nowrap; }
+    .title-block { text-align: center; margin: 14px -15px; }
+    .title-pre { display: flex; justify-content: center; align-items: center; gap: 12px; font-size: 13px; letter-spacing: .2em; color: var(--wax); }
+    .title-pre::before, .title-pre::after { content: ''; width: 40px; height: 1px; background: var(--rule); }
+    h1 { font-size: clamp(38px, 4.6vw, 59px); line-height: 1; letter-spacing: -.055em; font-weight: normal; margin: 4px 0 11px; text-shadow: 0 1px #fff1c0; }
+    .title-block p { margin: 0; color: #665135; font-size: 10px; text-transform: uppercase; letter-spacing: .23em; }
+    .harbor { margin: 0; }
+    .plate {
+      position: relative; height: 228px; overflow: hidden; isolation: isolate;
+      border: 1px solid #7b664882; outline: 1px solid #8a70465c; outline-offset: 4px;
+      background: linear-gradient(#c8be96 0%, #b7bba1 36%, #8daca4 60%, #77958d 100%);
+      box-shadow: inset 0 0 25px #63533165;
+    }
+    .atlas { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: 50% 37%; opacity: .46; mix-blend-mode: multiply; filter: sepia(.4); }
+    .harbor-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .plate::after { content: ''; z-index: 4; pointer-events: none; position: absolute; inset: 0; box-shadow: inset 0 0 30px 8px #d2c29a8f; background: linear-gradient(#e8dab833, transparent 32%, #6c5b3317); }
+    .harbor-town { position: absolute; inset: 0; filter: sepia(.48) saturate(.62) contrast(.92); }
+    .harbor-town img { position: absolute; height: auto; filter: drop-shadow(2px 5px 2px #34473b4d); }
+    .chapel { width: 42%; top: -1%; left: 25%; }
+    .warehouse { width: 42%; top: 15%; left: 38%; }
+    .merchant-house { width: 44%; top: 10%; left: 1%; }
+    .quay { width: 63%; top: 28%; left: 9%; }
+    .harbor-town .ship { width: 43%; top: 17%; right: -1%; filter: drop-shadow(2px 9px 3px #213f3b65); }
+    .plate-label { position: absolute; left: 15px; top: 12px; font-style: italic; color: #4b513c; font-size: 12px; letter-spacing: .06em; }
+    .plate-number { position: absolute; bottom: 12px; right: 16px; color: #f3e9c9; font-size: 9px; letter-spacing: .16em; }
+    .chart-rose { position: absolute; width: 82px; height: 82px; bottom: 9px; left: 10px; color: #414b36; opacity: .9; }
+    .harbor figcaption { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 14px; font-size: 9px; color: #685537; letter-spacing: .14em; text-transform: uppercase; }
+    .harbor figcaption::before, .harbor figcaption::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+    .invitation { max-width: 310px; text-align: center; margin: 16px auto 0; font-size: 16px; line-height: 1.4; font-style: italic; }
+    .left-colophon { min-height: 65px; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 22px; }
+    .motto { text-align: center; font-size: 9px; line-height: 1.8; color: #776345; text-transform: uppercase; letter-spacing: .19em; }
+    .wax-seal {
+      width: 64px; height: 65px; flex-shrink: 0; display: grid; place-items: center; position: relative;
+      border-radius: 43% 48% 42% 46%; transform: rotate(-13deg);
+      background: radial-gradient(circle at 30% 19%, #d07a566e, transparent 32%),
+        radial-gradient(circle at 70% 76%, #4a120e83, transparent 50%), #8c2a1c;
+      border: 1px solid #6d261d; color: #e5a16b;
+      box-shadow: 1px 4px 1px #4b211c, 2px 6px 6px #472b234b, inset 1px 2px 2px #e087597a, inset -2px -2px 4px #5c150f;
+    }
+    .wax-seal::before { content: ''; position: absolute; inset: 7px; border: 1px solid #d18b555e; border-radius: 50%; box-shadow: 0 1px 1px #42100a, inset 1px 1px 2px #511910, 0 -1px 1px #f1b77757; }
+    .wax-seal svg { width: 30px; height: 35px; opacity: .75; filter: drop-shadow(0 1px 0 #49140f); }
+    .page-number { position: absolute; bottom: 10px; left: 50%; font-size: 9px; color: #89704c; font-style: italic; }
+    .chapter { margin: 18px 0 14px; }
+    .chapter .small-caps { display: block; color: var(--wax); font-size: 9px; }
+    h2 { font-size: 29px; line-height: 1.15; font-weight: normal; margin: 6px 0; letter-spacing: -.025em; }
+    .chapter p { font-size: 12px; line-height: 1.35; font-style: italic; color: var(--muted); margin: 6px 0 0; }
+    .save-card { min-height: 92px; padding: 11px 15px 10px; border: 1px solid #95733e55; position: relative; background: #a17b2d09; box-shadow: inset 0 0 15px #a17b2d0b; }
+    .save-card::before, .save-card::after { content: ''; position: absolute; width: 4px; height: 4px; background: #9b7d4e; transform: rotate(45deg); top: -3px; }
+    .save-card::before { left: -3px; } .save-card::after { right: -3px; }
+    .save-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #755c37; }
+    .save-heading .small-caps { font-size: 8px; letter-spacing: .17em; }
+    .save-heading svg { width: 15px; height: 16px; color: var(--wax); }
+    .house-name { font-size: 21px; font-weight: normal; margin: 7px 0 8px; }
+    .save-stats { display: flex; flex-wrap: wrap; gap: 8px 13px; font-size: 11px; color: #655335; font-variant-numeric: tabular-nums; }
+    .save-stats span + span { border-left: 1px solid #93714369; padding-left: 13px; }
+    .empty-save { min-height: 92px; display: flex; align-items: center; gap: 15px; padding: 13px 15px; border-block: 1px solid var(--rule); }
+    .empty-save svg { width: 28px; height: 36px; color: #927245; flex-shrink: 0; }
+    .empty-save p { font-size: 14px; margin: 0 0 6px; }
+    .empty-save small { font-size: 11px; color: var(--muted); }
+    .menu { display: grid; margin-top: 12px; gap: 2px; }
+    .menu-entry {
+      position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 7px 13px;
+      border: 1px solid transparent; text-align: left; background: none; transition: background .18s, border-color .18s, color .18s;
+    }
+    .menu-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .menu-label { font-size: 20px; line-height: 1.15; }
+    .menu-label::first-letter { color: var(--wax); font-size: 1.17em; }
+    .menu-entry small { font-size: 10px; line-height: 1.3; color: var(--muted); }
+    .entry-index { color: #9a8056; font-size: 10px; font-style: italic; width: 15px; flex-shrink: 0; text-align: center; }
+    .entry-flourish { margin-left: auto; width: 24px; height: 16px; color: var(--wax); opacity: 0; transform: translateX(-5px); transition: opacity .2s, transform .2s; flex-shrink: 0; }
+    .menu-entry.primary { min-height: 64px; background: linear-gradient(90deg, #ad813d20, #f9e8b736); border-color: #98713855; }
+    .menu-entry:not(.primary) #start-hint { display: none; }
+    .menu-entry.primary::before { content: ''; position: absolute; width: 3px; height: 29px; left: -2px; background: var(--wax); }
+    .menu-entry.primary .menu-label { font-size: 26px; }
+    .menu-entry.primary .entry-flourish { opacity: .7; transform: none; }
+    .menu-entry:not(:disabled):hover { background: linear-gradient(90deg, #b483372a, #f8e9bd52); border-color: #96753d66; }
+    .menu-entry:not(:disabled):hover .menu-label { color: #722719; text-shadow: 0 0 8px #e6c57870; }
+    .menu-entry:not(:disabled):hover .entry-flourish, .menu-entry:focus-visible .entry-flourish { opacity: 1; transform: translateX(2px); }
+    .menu-entry:disabled .menu-label, .menu-entry:disabled .menu-label::first-letter { color: #88785d; }
+    .menu-entry:disabled .entry-index { opacity: .6; }
+    .menu-entry:disabled { opacity: .68; }
+    .menu-entry.utility .menu-label { font-size: 16px; }
+    .menu-entry.utility { min-height: 40px; }
+    .menu-divider { display: flex; align-items: center; gap: 12px; margin: 8px 13px 4px; color: #806a48; font-size: 8px; letter-spacing: .2em; text-transform: uppercase; }
+    .menu-divider::before, .menu-divider::after { content: ''; height: 1px; background: var(--rule); flex: 1; }
+    .page-footnote { margin: 14px 12px 0; font-size: 10px; line-height: 1.5; color: #776345; font-style: italic; }
+    .ribbon { position: absolute; z-index: 3; top: -6px; left: 52%; width: 20px; height: 57px; background: linear-gradient(90deg, #591810, #9b3423 40%, #6e1e17); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 87%, 0 100%); filter: drop-shadow(2px 2px 1px #33201255); }
+    .desk-object { position: absolute; pointer-events: none; }
+    .compass { width: 158px; height: 158px; left: -29px; bottom: -17px; z-index: 1; transform: rotate(-17deg); filter: drop-shadow(4px 9px 7px #110b07b3); }
+    .quill { width: 146px; height: 318px; right: -17px; bottom: -38px; z-index: 3; transform: rotate(13deg); transform-origin: 60% 95%; filter: drop-shadow(5px 7px 3px #160d0773); animation: quill-rest 8s ease-in-out infinite; }
+    .coins { left: 24px; bottom: -28px; width: 140px; height: 77px; z-index: 3; filter: drop-shadow(2px 3px 2px #110a06b3); }
+    .candle { width: 84px; height: 164px; right: -27px; top: -39px; z-index: 1; filter: drop-shadow(3px 8px 5px #160e08a6); }
+    .candle::before { content: ''; position: absolute; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(#f6c96819, transparent 65%); top: -84px; left: -79px; }
+    .candle svg { position: relative; width: 100%; height: 100%; }
+    .flame { animation: flicker 3.6s ease-in-out infinite; transform-origin: 42px 49px; }
+    @keyframes flicker { 0%, 100% { transform: rotate(-3deg) scaleX(.92); opacity: .92; } 37% { transform: rotate(4deg) scaleY(1.06); opacity: 1; } 68% { transform: rotate(-1deg) scaleX(1.06); opacity: .86; } }
+    @keyframes quill-rest { 0%, 100% { transform: rotate(13deg); } 50% { transform: rotate(13.7deg); } }
+    .desk-footer { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding-top: 8px; font-size: 10px; color: #c3ad86; line-height: 1.5; }
+    .desk-footer p { margin: 0; }
+    .scenarios { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+    .scenarios span { color: #a28b67; font-style: italic; }
+    .scenarios a { color: #cbb68e; text-underline-offset: 4px; padding: 10px 0; }
+    .scenarios a[aria-current="page"] { color: var(--gold); }
+    .status { max-width: 660px; min-height: 18px; margin: 8px auto 0; text-align: center; color: #f0dcae; font-size: 12px; line-height: 1.5; }
+    noscript p { margin: 12px auto; max-width: 700px; padding: 12px; background: var(--paper); text-align: center; }
+    dialog { width: min(460px, calc(100% - 32px)); max-height: calc(100svh - 32px); overflow: auto; padding: 32px; color: var(--ink); background: radial-gradient(ellipse at 70% 10%, #f4e5bf, transparent), var(--paper); border: 1px solid #a98649; outline: 5px solid #38251b; box-shadow: 0 30px 100px #100905b3, inset 0 0 30px #98723833; }
+    dialog::backdrop { background: #140e09b5; backdrop-filter: blur(3px); }
+    .dialog-kicker { margin: 0 0 13px; color: var(--wax); }
+    dialog h2 { font-size: 29px; line-height: 1.15; margin: 0 0 14px; }
+    .dialog-description { font-size: 14px; line-height: 1.65; }
+    .dialog-save { margin: 20px 0; padding: 14px 0; border-block: 1px solid var(--rule); }
+    .dialog-save strong { display: block; font-size: 19px; font-weight: normal; margin-bottom: 6px; }
+    .dialog-save p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .dialog-note { color: #786144; font-size: 11px; line-height: 1.5; font-style: italic; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .dialog-actions button { min-height: 44px; padding: 10px 15px; border: 1px solid #9f7b48; background: transparent; font-size: 13px; }
+    .dialog-actions .confirm { background: var(--wax); color: #fae8bc; border-color: #6e2117; box-shadow: inset 0 1px #b95d3c; }
+    .dialog-actions button:hover { box-shadow: inset 0 0 0 1px #9f7b48; }
+    @media (min-width: 1500px) and (min-height: 900px) { .stage { margin-top: 8vh; margin-bottom: 6vh; } }
+    @media (max-width: 1100px) {
+      .desk { padding-inline: 22px; }
+      .book { width: calc(100% - 30px); }
+      .page { padding-inline: 30px; }
+      .right-page { padding-left: 37px; }
+      .plate { height: 240px; }
+      .quill { right: -30px; width: 112px; bottom: -27px; }
+      .candle { right: -34px; }
+      .compass { left: -40px; width: 140px; }
+      .running-head { font-size: 8px; letter-spacing: .12em; }
+      .menu-label { font-size: 18px; }
+    }
+    @media (max-width: 760px) {
+      .desk { padding: 17px 19px 22px; }
+      .desk-signature .small-caps { font-size: 9px; letter-spacing: .12em; }
+      .desk-signature small { font-size: 9px; }
+      .stage { margin: 28px auto 34px; }
+      .book { width: 100%; grid-template-columns: 1fr; max-width: 510px; transform: none; border-width: 5px 5px 10px; }
+      .book::after { display: none; }
+      .page { padding: 23px 29px 29px; border-radius: 2px; }
+      .left-page { padding-bottom: 22px; }
+      .right-page { border-top: 1px solid #8d6b3e66; box-shadow: inset 0 8px 15px -12px #5d3e25; }
+      .title-block { margin-block: 18px; }
+      h1 { font-size: 54px; }
+      .plate { height: auto; aspect-ratio: 1.65; }
+      .left-colophon { min-height: 62px; margin-top: 10px; gap: 19px; }
+      .wax-seal { width: 50px; height: 51px; }
+      .wax-seal svg { width: 24px; }
+      .invitation { margin-top: 19px; font-size: 16px; }
+      .chapter { margin-top: 19px; }
+      .ribbon { left: auto; right: 22px; height: 40px; }
+      .compass, .quill, .candle { display: none; }
+      .coins { bottom: -27px; left: -13px; width: 95px; height: 52px; }
+      .desk-footer { flex-direction: column; gap: 5px; text-align: center; }
+      .scenarios { justify-content: center; }
+      .status { margin-top: 10px; }
+      .menu-entry { min-height: 51px; }
+      .menu-entry.utility { min-height: 47px; }
+      .menu-entry small { font-size: 11px; }
+      .page-footnote { font-size: 11px; }
+    }
+    @media (max-width: 410px) {
+      .desk { padding-inline: 13px; }
+      .page { padding-inline: 23px; }
+      h1 { font-size: 47px; }
+      .title-block p { letter-spacing: .17em; font-size: 9px; }
+      .desk-signature { gap: 7px; }
+      .desk-signature svg { width: 22px; }
+      .languages { gap: 3px; }
+      .menu-entry { padding-inline: 9px; gap: 9px; }
+      .menu-entry.utility .menu-label { font-size: 16px; }
+      .entry-flourish { width: 18px; }
+      .chart-rose { width: 63px; height: 63px; }
+      .harbor figcaption { font-size: 8px; letter-spacing: .1em; }
+      dialog { padding: 25px 23px; }
+      .dialog-actions { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="definitions" aria-hidden="true">
+    <defs>
+      <filter id="paper-grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+      <filter id="wood-grain"><feTurbulence type="fractalNoise" baseFrequency=".014 .38" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+      <linearGradient id="brass" x2="1" y2="1"><stop stop-color="#e3bc68"/><stop offset=".3" stop-color="#83602e"/><stop offset=".6" stop-color="#be9b53"/><stop offset="1" stop-color="#574020"/></linearGradient>
+      <symbol id="merchant-mark" viewBox="0 0 40 48">
+        <path d="M5 4h30v24c0 8-8 13-15 17C13 41 5 36 5 28Z" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M20 10v25m-9-18h18M13 17l-5 10h10Zm14 0-5 10h10ZM8 28q5 4 10 0m4 0q5 4 10 0m-18 8h12" fill="none" stroke="currentColor" stroke-width="1.1"/>
+        <circle cx="20" cy="12" r="2" fill="currentColor"/>
+      </symbol>
+      <symbol id="flourish" viewBox="0 0 30 18"><path d="M1 9h24m-7-5 7 5-7 5M4 6l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="28" cy="9" r="1" fill="currentColor"/></symbol>
+      <symbol id="rose" viewBox="0 0 100 100">
+        <g fill="none" stroke="currentColor"><circle cx="50" cy="50" r="34" stroke-width=".6"/><circle cx="50" cy="50" r="30" stroke-width=".4"/><path d="M50 10v80M10 50h80M21 21l58 58m0-58L21 79" stroke-width=".5"/></g>
+        <path d="m50 13 6 31 31 6-31 6-6 31-6-31-31-6 31-6Z" fill="#eee1b5" stroke="currentColor" stroke-width=".7"/>
+        <path d="m50 13 6 31-6 6Zm37 37-31 6-6-6ZM50 87l-6-31 6-6ZM13 50l31-6 6 6Z" fill="#8c2a1c"/>
+        <path d="m27 27 23 15 23-15-15 23 15 23-23-15-23 15 15-23Z" fill="none" stroke="currentColor" stroke-width=".7"/>
+        <circle cx="50" cy="50" r="3" fill="currentColor"/>
+        <path d="m47 6 3-5 3 5-3-1Z" fill="currentColor"/>
+      </symbol>
+    </defs>
+  </svg>
+  <div class="desk">
+    <header class="desk-header">
+      <div class="desk-signature">
+        <svg aria-hidden="true"><use href="#merchant-mark"/></svg>
+        <div><span class="small-caps" data-i18n="deskTitle">El oficio de prosperar</span><small data-i18n="deskSubtitle">Puertos, fortuna y buen nombre.</small></div>
+      </div>
+      <nav class="languages" aria-label="Idioma" data-i18n-aria="language">
+        <button type="button" data-lang="es" lang="es" aria-label="Español" aria-pressed="true">ES</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="false">EN</button>
+      </nav>
+    </header>
+
+    <main class="stage" id="main">
+      <div class="desk-object candle" aria-hidden="true">
+        <svg viewBox="0 0 84 164">
+          <defs><linearGradient id="candle-wax"><stop stop-color="#96733f"/><stop offset=".35" stop-color="#ecdaa0"/><stop offset=".7" stop-color="#d3b67a"/><stop offset="1" stop-color="#a57b43"/></linearGradient><radialGradient id="candle-flame"><stop stop-color="#fff5c4"/><stop offset=".6" stop-color="#f4c05e"/><stop offset="1" stop-color="#d4843266"/></radialGradient></defs>
+          <ellipse cx="42" cy="149" rx="38" ry="12" fill="#382a18" stroke="#947446"/>
+          <ellipse cx="42" cy="145" rx="32" ry="9" fill="#8e6e3d"/><path d="M27 143V55h29v88q-14 9-29 0" fill="url(#candle-wax)"/>
+          <ellipse cx="41.5" cy="55" rx="14.5" ry="5" fill="#ead49e"/><path d="M29 57v37q4 7 5 0V68q5-2 5 5v10q6 5 6-3V60" fill="#ddc38c"/>
+          <path d="m42 56 1-11" stroke="#372315" stroke-width="2"/><path class="flame" d="M43 49C23 43 36 25 42 12c-2 18 18 23 1 37" fill="url(#candle-flame)"/>
+          <ellipse cx="42" cy="146" rx="17" ry="3" fill="#b29156" opacity=".6"/>
+        </svg>
+      </div>
+      <svg class="desk-object compass" viewBox="0 0 180 180" aria-hidden="true">
+        <circle cx="90" cy="90" r="79" fill="#30251a" stroke="url(#brass)" stroke-width="7"/><circle cx="90" cy="90" r="71" fill="#d5c18c" stroke="#5d4828" stroke-width="2"/>
+        <circle cx="90" cy="90" r="65" fill="none" stroke="#937a43" stroke-width="5" stroke-dasharray="1 5"/><use href="#rose" x="30" y="30" width="120" height="120" style="color:#59462c"/>
+        <circle cx="90" cy="90" r="71" fill="#e9d9a312"/><path d="M38 56q36-41 77-20" fill="none" stroke="#fff0ae" opacity=".23" stroke-width="4"/>
+      </svg>
+
+      <article class="book" aria-label="El libro del mercader" data-i18n-aria="bookLabel">
+        <div class="ribbon" aria-hidden="true"></div>
+        <section class="page left-page" aria-labelledby="game-title">
+          <div class="running-head"><span data-i18n="leftRunning">De los puertos y sus gentes</span><span>Anno MCDLXXV</span></div>
+          <header class="title-block">
+            <div class="title-pre" aria-hidden="true">EL</div>
+            <h1 id="game-title" aria-label="El Almojarife">Almojarife</h1>
+            <p data-i18n="subtitle">Una vida entre el mar y el comercio</p>
+          </header>
+          <figure class="harbor">
+            <div class="plate" role="img" aria-label="Lámina de un puerto mercantil: casas, muelle y velero sobre una carta de la península ibérica." data-i18n-aria="harborAlt">
+              <img class="atlas" src="../../../assets/map/background.webp" alt="">
+              <svg class="harbor-lines" viewBox="0 0 440 258" preserveAspectRatio="none" aria-hidden="true">
+                <defs><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#a8b6a0" stop-opacity=".1"/><stop offset=".4" stop-color="#83a49a" stop-opacity=".86"/><stop offset="1" stop-color="#5f8880" stop-opacity=".95"/></linearGradient><pattern id="ripples" width="61" height="17" patternUnits="userSpaceOnUse"><path d="M3 4h19m8 7h26M9 15h7" stroke="#e0dcb6" stroke-width=".6" opacity=".4"/></pattern></defs>
+                <path d="M0 97q68-30 121 6t109 2 210-20v173H0Z" fill="#b3b696" opacity=".5"/>
+                <path d="M0 119q65-17 127-4t138-1 175-15v159H0Z" fill="url(#sea)"/>
+                <path d="M0 151q87-27 165-8t275-8v123H0Z" fill="url(#ripples)"/>
+                <g fill="none" stroke="#e5dab1" stroke-width=".7" opacity=".55"><path d="M0 222 440 66M35 258 279 0M0 15l440 232M3 78l437 80"/><path d="M83 208q115-94 269-17" stroke="#4e6657" stroke-dasharray="4 4"/></g>
+                <g fill="none" stroke="#53604a" stroke-width="1" opacity=".6"><path d="m295 51 5-3 4 3m16 8 5-3 5 2m-25 4 3-2 4 2M48 74l3-2 3 2"/></g>
+              </svg>
+              <div class="harbor-town" aria-hidden="true">
+                <img class="chapel" src="../../city2d/assets/capilla-1.webp" alt="" width="512" height="512">
+                <img class="warehouse" src="../../city2d/assets/warehouse-1.webp" alt="" width="512" height="512">
+                <img class="merchant-house" src="../../city2d/assets/house_rich-1.webp" alt="" width="512" height="512">
+                <img class="quay" src="../../city2d/assets/muelle.webp" alt="" width="512" height="512">
+                <img class="ship" src="../../city2d/assets/barco.webp" alt="" width="512" height="512">
+              </div>
+              <span class="plate-label" aria-hidden="true" data-i18n="plateLabel">La bahía de Cádiz</span>
+              <svg class="chart-rose" viewBox="0 0 100 100" aria-hidden="true"><use href="#rose"/></svg>
+              <span class="plate-number" aria-hidden="true">I · MCDLXXV</span>
+            </div>
+            <figcaption data-i18n="caption">Carta de una ambición · Cádiz, 1475</figcaption>
+          </figure>
+          <p class="invitation" data-i18n="invitation">Donde hay un puerto,<br>hay un porvenir.</p>
+          <div class="left-colophon">
+            <p class="motto" data-i18n="motto">Por mar, con buen viento.<br>En tierra, con buen nombre.</p>
+            <div class="wax-seal" aria-hidden="true"><svg><use href="#merchant-mark"/></svg></div>
+          </div>
+          <span class="page-number" aria-hidden="true">I</span>
+        </section>
+
+        <section class="page right-page" aria-labelledby="ledger-title">
+          <div class="running-head"><span data-i18n="rightRunning">Registro de la casa mercantil</span><span data-i18n="folio">Folio II</span></div>
+          <header class="chapter">
+            <span class="small-caps" data-i18n="chapter">A la atención del mercader</span>
+            <h2 id="ledger-title" data-i18n="ledgerTitle">Tu libro de cuentas</h2>
+            <p data-i18n="ledgerSubtitle">Toda fortuna empieza con una primera línea.</p>
+          </header>
+          <div class="save-card" id="save-card" hidden>
+            <div class="save-heading"><span class="small-caps" data-i18n="lastSave">Última partida</span><svg aria-hidden="true"><use href="#merchant-mark"/></svg></div>
+            <h3 class="house-name" id="save-house"></h3>
+            <div class="save-stats"><span id="save-day"></span><span id="save-coins"></span><span>Cádiz</span></div>
+          </div>
+          <div class="empty-save" id="empty-save">
+            <svg aria-hidden="true"><use href="#merchant-mark"/></svg>
+            <div><p data-i18n="emptyTitle">La primera página está en blanco.</p><small data-i18n="emptyDescription">Tu casa mercantil está por fundar.</small></div>
+          </div>
+          <nav class="menu" id="menu" aria-label="Partidas" data-i18n-aria="menuLabel">
+            <button type="button" class="menu-entry" id="start" disabled>
+              <span class="entry-index" aria-hidden="true">I</span><span class="menu-copy"><span class="menu-label" data-i18n="start">Empezar</span><small id="start-hint" data-i18n="startHint">Funda tu casa. Escribe tu historia.</small></span><svg class="entry-flourish" aria-hidden="true"><use href="#flourish"/></svg>
+            </button>
+            <button type="button" class="menu-entry" id="continue" disabled>
+              <span class="entry-index" aria-hidden="true">II</span><span class="menu-copy"><span class="menu-label" data-i18n="continue">Continuar</span><small id="continue-hint" data-i18n="continueEmpty">Aún no hay una partida guardada.</small></span><svg class="entry-flourish" aria-hidden="true"><use href="#flourish"/></svg>
+            </button>
+            <div class="menu-divider" id="menu-divider" data-i18n="archive">El archivo de la casa</div>
+            <button type="button" class="menu-entry utility" id="import" disabled>
+              <span class="entry-index" aria-hidden="true">III</span><span class="menu-copy"><span class="menu-label" data-i18n="import">Importar</span></span><svg class="entry-flourish" aria-hidden="true"><use href="#flourish"/></svg>
+            </button>
+            <button type="button" class="menu-entry utility" id="export" disabled>
+              <span class="entry-index" aria-hidden="true">IV</span><span class="menu-copy"><span class="menu-label" data-i18n="export">Exportar</span></span><svg class="entry-flourish" aria-hidden="true"><use href="#flourish"/></svg>
+            </button>
+            <button type="button" class="menu-entry utility" id="restore" disabled>
+              <span class="entry-index" aria-hidden="true">V</span><span class="menu-copy"><span class="menu-label" data-i18n="restore">Restaurar copia previa</span><small id="restore-hint" data-i18n="restoreEmpty">No hay copia previa disponible.</small></span><svg class="entry-flourish" aria-hidden="true"><use href="#flourish"/></svg>
+            </button>
+          </nav>
+          <p class="page-footnote" data-i18n="pageNote">Un libro bien guardado es un viaje que continúa.</p>
+          <span class="page-number" aria-hidden="true">II</span>
+        </section>
+      </article>
+
+      <svg class="desk-object quill" viewBox="0 0 146 318" aria-hidden="true">
+        <defs><linearGradient id="feather" x2="1" y2=".5"><stop stop-color="#a79266"/><stop offset=".5" stop-color="#e6d9b3"/><stop offset=".8" stop-color="#f4e7bf"/><stop offset="1" stop-color="#ad9567"/></linearGradient><linearGradient id="inkpot"><stop stop-color="#181d1a"/><stop offset=".4" stop-color="#454b3b"/><stop offset=".7" stop-color="#252c23"/><stop offset="1" stop-color="#141a16"/></linearGradient></defs>
+        <path d="M52 281q-11 5-10 20l6 10q22 11 45-1l4-11q-1-15-12-18Z" fill="url(#inkpot)" stroke="#131712"/>
+        <ellipse cx="69" cy="281" rx="18" ry="7" fill="#8f7c4e"/><ellipse cx="69" cy="280" rx="12" ry="4" fill="#101611"/>
+        <path d="M66 264C68 215 50 161 60 103 67 63 105 13 130 3c-8 23 4 60-13 88l-13 8 9-1c-12 32-20 32-25 52l-10 7 6 1c-9 32-12 63-18 106Z" fill="url(#feather)"/>
+        <path d="M66 279C69 202 73 129 126 14" fill="none" stroke="#826e46" stroke-width="1.3"/>
+        <g fill="none" stroke="#8b785341" stroke-width=".8"><path d="m70 217-8-28m11 14 10-33m-9 10-14-36m18 17 15-39m-13 20-18-32m22 16 20-32m-17 18L74 78m20 22 24-32M97 89 88 54m16 22 19-29m-13 13-4-31"/></g>
+        <path d="M46 296q8 8 12 5" fill="none" stroke="#d9d0a2" opacity=".2" stroke-width="2"/>
+      </svg>
+      <svg class="desk-object coins" viewBox="0 0 140 77" aria-hidden="true">
+        <g fill="url(#brass)" stroke="#b49754"><ellipse cx="34" cy="52" rx="24" ry="12"/><ellipse cx="34" cy="49" rx="24" ry="12"/><ellipse cx="34" cy="46" rx="24" ry="12"/><ellipse cx="34" cy="43" rx="24" ry="12"/><ellipse cx="34" cy="40" rx="24" ry="12"/><ellipse cx="79" cy="57" rx="24" ry="12"/><ellipse cx="79" cy="54" rx="24" ry="12"/><ellipse cx="112" cy="28" rx="23" ry="12" transform="rotate(-20 112 28)"/></g>
+        <g fill="none" stroke="#665029" stroke-width="1"><ellipse cx="34" cy="40" rx="19" ry="8"/><ellipse cx="79" cy="54" rx="19" ry="8"/><ellipse cx="112" cy="28" rx="18" ry="8" transform="rotate(-20 112 28)"/><path d="M27 40h14m-7-6v12m38 8h14m-7-6v12m26-30 13-4m-9-2 4 9"/></g>
+      </svg>
+    </main>
+
+    <footer class="desk-footer">
+      <p data-i18n="prototypeNote">Estudio de portada · Datos de ejemplo · Tus partidas reales no se modifican.</p>
+      <nav class="scenarios" aria-label="Escenarios de demostración" data-i18n-aria="scenariosLabel">
+        <span data-i18n="scenarioLabel">Ver el libro:</span>
+        <a id="scenario-saved" href="?save=1" data-i18n="scenarioSaved">Con partida</a>
+        <a id="scenario-empty" href="?save=0" data-i18n="scenarioEmpty">Sin partida</a>
+      </nav>
+    </footer>
+    <p class="status" id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    <noscript><p lang="es">Activa JavaScript para probar los menús y cambiar de idioma.</p><p lang="en">Enable JavaScript to try the menus and switch languages.</p></noscript>
+  </div>
+
+  <dialog id="action-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description dialog-note">
+    <p class="dialog-kicker small-caps" data-i18n="dialogKicker">El archivo de la casa · Demostración</p>
+    <h2 id="dialog-title"></h2>
+    <p class="dialog-description" id="dialog-description"></p>
+    <div class="dialog-save"><strong id="dialog-house"></strong><p id="dialog-stats"></p></div>
+    <p class="dialog-note" id="dialog-note"></p>
+    <div class="dialog-actions">
+      <button type="button" id="dialog-cancel" autofocus data-i18n="cancel">Volver al libro</button>
+      <button type="button" class="confirm" id="dialog-confirm"></button>
+    </div>
+  </dialog>
+
+  <script>
+    'use strict';
+    // Demonstration data only. No game storage, network, files or game modules.
+    const translations = {
+      es: {
+        pageTitle: 'El Almojarife — Libro de cuentas', language: 'Idioma',
+        deskTitle: 'El oficio de prosperar', deskSubtitle: 'Puertos, fortuna y buen nombre.',
+        bookLabel: 'El libro del mercader', leftRunning: 'De los puertos y sus gentes',
+        subtitle: 'Una vida entre el mar y el comercio',
+        harborAlt: 'Lámina de un puerto mercantil: casas, muelle y velero sobre una carta de la península ibérica.',
+        plateLabel: 'La bahía de Cádiz', caption: 'Carta de una ambición · Cádiz, 1475',
+        invitation: 'Donde hay un puerto,\nhay un porvenir.', motto: 'Por mar, con buen viento.\nEn tierra, con buen nombre.',
+        rightRunning: 'Registro de la casa mercantil', folio: 'Folio II', chapter: 'A la atención del mercader',
+        ledgerTitle: 'Tu libro de cuentas', ledgerSubtitle: 'Toda fortuna empieza con una primera línea.',
+        lastSave: 'Última partida', emptyTitle: 'La primera página está en blanco.', emptyDescription: 'Tu casa mercantil está por fundar.',
+        menuLabel: 'Partidas', start: 'Empezar', startHint: 'Funda tu casa. Escribe tu historia.', startSafe: 'Un nuevo comienzo, con copia de la partida actual.',
+        continue: 'Continuar', continueHint: 'Retoma el rumbo donde lo dejaste.', continueEmpty: 'Aún no hay una partida guardada.',
+        archive: 'El archivo de la casa', import: 'Importar', export: 'Exportar', restore: 'Restaurar copia previa',
+        exportEmpty: 'Disponible cuando haya una partida.', exportReady: 'Ver la copia de ejemplo que se exportaría.',
+        restoreEmpty: 'No hay copia previa disponible.', restoreHint: 'Copia del día {day} · {house}',
+        pageNote: 'Un libro bien guardado es un viaje que continúa.',
+        prototypeNote: 'Estudio de portada · Datos de ejemplo · Tus partidas reales no se modifican.',
+        scenariosLabel: 'Escenarios de demostración', scenarioLabel: 'Ver el libro:', scenarioSaved: 'Con partida', scenarioEmpty: 'Sin partida',
+        houseVega: 'Casa de la Vega', houseAlba: 'Casa del Alba', houseMedina: 'Casa de Medina',
+        day: 'Día {day}', coins: '{coins} monedas',
+        dialogKicker: 'El archivo de la casa · Demostración', cancel: 'Volver al libro',
+        startTitle: 'Una nueva página, sin perder tu historia',
+        startDescription: 'Ya hay una partida en este libro. Al empezar, la partida actual quedará como copia previa y podrás restaurarla desde el menú.',
+        startNote: 'Se abrirá una casa de ejemplo. Esta demostración no modifica tus partidas reales.',
+        startConfirm: 'Guardar copia y empezar',
+        importTitle: 'Una historia que llega de otro puerto',
+        importDescription: 'Vista previa de una partida de ejemplo. Al importarla, la partida actual, si la hay, quedará como copia previa.',
+        importNote: 'Archivo de muestra: casa-de-medina.json. Aquí no se abre ni se lee ningún archivo de tu equipo.',
+        importConfirm: 'Importar ejemplo',
+        exportTitle: 'Una copia para el camino',
+        exportDescription: 'Esta es la partida que se incluiría en el archivo de exportación. La partida del libro permanece intacta.',
+        exportNote: 'Vista previa de ejemplo. Este prototipo no descarga un archivo ni accede a tus partidas reales.',
+        exportConfirm: 'Cerrar vista previa',
+        restoreTitle: 'Volver a una página anterior',
+        restoreDescription: 'Esta copia pasará a ser la partida actual. La partida que tienes ahora, si la hay, quedará como copia previa para poder volver a ella.',
+        restoreNote: 'Solo se intercambian los datos de ejemplo de esta demostración.',
+        restoreConfirm: 'Restaurar esta copia',
+        resumed: 'Rumbo a Cádiz: {house}, día {day}. Continuación simulada; tu partida real permanece intacta.',
+        started: 'Se ha abierto {house}. Tu primera jornada comienza en Cádiz. Partida de ejemplo.',
+        imported: 'Se ha importado {house} en este libro de ejemplo.',
+        restored: 'Copia restaurada: {house}, día {day}. Solo datos de ejemplo.'
+      },
+      en: {
+        pageTitle: 'El Almojarife — The merchant’s ledger', language: 'Language',
+        deskTitle: 'The art of prosperity', deskSubtitle: 'Harbours, fortune and a good name.',
+        bookLabel: 'The merchant’s book', leftRunning: 'Of harbours and their people',
+        subtitle: 'A life of seafaring and trade',
+        harborAlt: 'An illustrated trading harbour: houses, a stone quay and a sailing boat over a chart of the Iberian peninsula.',
+        plateLabel: 'The bay of Cádiz', caption: 'A chart of ambition · Cádiz, 1475',
+        invitation: 'Where there is a harbour,\nthere is a future.', motto: 'At sea, a fair wind.\nOn land, a good name.',
+        rightRunning: 'Register of the merchant house', folio: 'Folio II', chapter: 'To the attention of the merchant',
+        ledgerTitle: 'Your merchant’s ledger', ledgerSubtitle: 'Every fortune begins with a first entry.',
+        lastSave: 'Last saved game', emptyTitle: 'The first page is still unwritten.', emptyDescription: 'Your merchant house awaits its founding.',
+        menuLabel: 'Saved games', start: 'Start', startHint: 'Found your house. Write your story.', startSafe: 'A fresh start, with a copy of your current game.',
+        continue: 'Continue', continueHint: 'Pick up your voyage where you left off.', continueEmpty: 'There is no saved game yet.',
+        archive: 'The house archives', import: 'Import', export: 'Export', restore: 'Restore previous copy',
+        exportEmpty: 'Available once you have a saved game.', exportReady: 'Preview the sample copy that would be exported.',
+        restoreEmpty: 'No previous copy is available.', restoreHint: 'Copy from day {day} · {house}',
+        pageNote: 'A well-kept ledger is a voyage that continues.',
+        prototypeNote: 'Title screen study · Sample data · Your real saves remain untouched.',
+        scenariosLabel: 'Demonstration scenarios', scenarioLabel: 'View the book:', scenarioSaved: 'With a save', scenarioEmpty: 'Without a save',
+        houseVega: 'House de la Vega', houseAlba: 'House del Alba', houseMedina: 'House de Medina',
+        day: 'Day {day}', coins: '{coins} coins',
+        dialogKicker: 'The house archives · Demonstration', cancel: 'Back to the ledger',
+        startTitle: 'A fresh page, with your history preserved',
+        startDescription: 'There is already a saved game in this ledger. Starting again will keep the current game as a previous copy, which you can restore from the menu.',
+        startNote: 'A sample house will be opened. This demonstration leaves your real saves untouched.',
+        startConfirm: 'Keep a copy and start',
+        importTitle: 'A story from another harbour',
+        importDescription: 'Preview of a sample saved game. Importing it will keep your current game, if any, as a previous copy.',
+        importNote: 'Sample file: casa-de-medina.json. No file on your device is opened or read here.',
+        importConfirm: 'Import sample',
+        exportTitle: 'A copy for the journey',
+        exportDescription: 'This is the saved game that would be included in the export file. The game in your ledger stays untouched.',
+        exportNote: 'Sample preview. This prototype does not download a file or access your real saves.',
+        exportConfirm: 'Close preview',
+        restoreTitle: 'Return to an earlier page',
+        restoreDescription: 'This copy will become your current game. The game you have now, if any, will be kept as a previous copy so you can return to it.',
+        restoreNote: 'Only the sample data within this demonstration will be exchanged.',
+        restoreConfirm: 'Restore this copy',
+        resumed: 'Bound for Cádiz: {house}, day {day}. Simulated continuation; your real save remains untouched.',
+        started: '{house} is open. Your first day begins in Cádiz. Sample game only.',
+        imported: '{house} has been imported into this sample ledger.',
+        restored: 'Copy restored: {house}, day {day}. Sample data only.'
+      }
+    };
+
+    const query = new URLSearchParams(location.search);
+    let language = query.get('lang') === 'en' ? 'en' : 'es';
+    const initialHasSave = query.get('save') !== '0';
+    const sample = { house: 'houseVega', day: 38, coins: 2480 };
+    const importedSample = { house: 'houseMedina', day: 17, coins: 1320 };
+    let currentSave = initialHasSave ? { ...sample } : null;
+    // Retain earlier sample copies in memory when starting/importing repeatedly.
+    const copies = (query.has('backup') ? query.get('backup') === '1' : initialHasSave)
+      ? [{ house: 'houseVega', day: 37, coins: 2240 }] : [];
+    let activeDialog = null;
+    let dialogTrigger = null;
+    let lastNotice = null;
+    const $ = id => document.getElementById(id);
+    const dialog = $('action-dialog');
+    const buttons = Object.fromEntries(['continue', 'start', 'import', 'export', 'restore'].map(id => [id, $(id)]));
+    const t = (key, values = {}) => translations[language][key].replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
+    const houseName = save => t(save.house);
+    const saveValues = save => ({ house: houseName(save), day: save.day });
+    const coinsText = save => t('coins', { coins: new Intl.NumberFormat(language === 'es' ? 'es-ES' : 'en-GB', { useGrouping: true }).format(save.coins) });
+    const previousCopy = () => copies.at(-1);
+
+    function setNotice(key, save) {
+      lastNotice = { key, save: { ...save } };
+      $('status').textContent = t(key, saveValues(save));
+    }
+
+    function renderDialog() {
+      if (!activeDialog) return;
+      const save = activeDialog === 'import' ? importedSample : activeDialog === 'restore' ? previousCopy() : currentSave;
+      $('dialog-title').textContent = t(activeDialog + 'Title');
+      $('dialog-description').textContent = t(activeDialog + 'Description');
+      $('dialog-note').textContent = t(activeDialog + 'Note');
+      $('dialog-confirm').textContent = t(activeDialog + 'Confirm');
+      $('dialog-cancel').hidden = activeDialog === 'export';
+      $('dialog-house').textContent = houseName(save);
+      $('dialog-stats').textContent = `${t('day', { day: save.day })} · ${coinsText(save)} · Cádiz`;
+    }
+
+    function render() {
+      document.documentElement.lang = language;
+      document.title = t('pageTitle');
+      document.querySelectorAll('[data-i18n]').forEach(node => {
+        const lines = t(node.dataset.i18n).split('\n');
+        node.replaceChildren(...lines.flatMap((line, index) => index ? [document.createElement('br'), document.createTextNode(line)] : [document.createTextNode(line)]));
+      });
+      document.querySelectorAll('[data-i18n-aria]').forEach(node => node.setAttribute('aria-label', t(node.dataset.i18nAria)));
+      document.querySelectorAll('[data-lang]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.lang === language)));
+
+      $('save-card').hidden = !currentSave;
+      $('empty-save').hidden = Boolean(currentSave);
+      if (currentSave) {
+        $('save-house').textContent = houseName(currentSave);
+        $('save-day').textContent = t('day', { day: currentSave.day });
+        $('save-coins').textContent = coinsText(currentSave);
+      }
+      buttons.start.disabled = false;
+      buttons.import.disabled = false;
+      buttons.continue.disabled = !currentSave;
+      buttons.export.disabled = !currentSave;
+      buttons.restore.disabled = !previousCopy();
+      buttons.continue.classList.toggle('primary', Boolean(currentSave));
+      buttons.start.classList.toggle('primary', !currentSave);
+      $('continue-hint').textContent = t(currentSave ? 'continueHint' : 'continueEmpty');
+      $('start-hint').textContent = t(currentSave ? 'startSafe' : 'startHint');
+      $('restore-hint').textContent = previousCopy() ? t('restoreHint', saveValues(previousCopy())) : t('restoreEmpty');
+      buttons.export.title = t(currentSave ? 'exportReady' : 'exportEmpty');
+      const order = currentSave ? [buttons.continue, buttons.start] : [buttons.start, buttons.continue];
+      // DOM order, reading order and keyboard order agree in both scenarios.
+      order.forEach((button, index) => { button.querySelector('.entry-index').textContent = index === 0 ? 'I' : 'II'; });
+      $('menu').replaceChildren(...order, $('menu-divider'), buttons.import, buttons.export, buttons.restore);
+
+      for (const [id, value] of [['scenario-saved', '1'], ['scenario-empty', '0']]) {
+        $(id).href = `?save=${value}&lang=${language}`;
+        if (initialHasSave === (value === '1')) $(id).setAttribute('aria-current', 'page');
+        else $(id).removeAttribute('aria-current');
+      }
+      if (lastNotice) $('status').textContent = t(lastNotice.key, saveValues(lastNotice.save));
+      renderDialog();
+    }
+
+    function openDialog(action) {
+      activeDialog = action;
+      dialogTrigger = buttons[action];
+      renderDialog();
+      dialog.showModal();
+      // Prefer the non-destructive choice; export has only a close action.
+      (action === 'export' ? $('dialog-confirm') : $('dialog-cancel')).focus();
+    }
+
+    function beginSample() {
+      if (currentSave) copies.push({ ...currentSave });
+      currentSave = { house: 'houseAlba', day: 1, coins: 500 };
+      render();
+      setNotice('started', currentSave);
+    }
+
+    buttons.continue.addEventListener('click', () => {
+      if (currentSave) setNotice('resumed', currentSave);
+    });
+    buttons.start.addEventListener('click', () => {
+      if (currentSave) openDialog('start');
+      else { beginSample(); buttons.continue.focus(); }
+    });
+    buttons.import.addEventListener('click', () => openDialog('import'));
+    buttons.export.addEventListener('click', () => { if (currentSave) openDialog('export'); });
+    buttons.restore.addEventListener('click', () => { if (previousCopy()) openDialog('restore'); });
+
+    $('dialog-cancel').addEventListener('click', () => dialog.close());
+    $('dialog-confirm').addEventListener('click', () => {
+      const action = activeDialog;
+      // Clear the dialog mode before rendering a changed save/copy.
+      activeDialog = null;
+      if (action === 'start') beginSample();
+      if (action === 'import') {
+        if (currentSave) copies.push({ ...currentSave });
+        currentSave = { ...importedSample };
+        render();
+        setNotice('imported', currentSave);
+      }
+      if (action === 'restore' && previousCopy()) {
+        const restored = copies.pop();
+        if (currentSave) copies.push({ ...currentSave });
+        currentSave = restored;
+        render();
+        setNotice('restored', currentSave);
+      }
+      dialog.close();
+    });
+    dialog.addEventListener('close', () => {
+      activeDialog = null;
+      if (dialogTrigger && !dialogTrigger.disabled) dialogTrigger.focus();
+      else buttons.continue.focus();
+    });
+    document.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click', () => {
+      language = button.dataset.lang;
+      render();
+    }));
+    render();
+  </script>
+</body>
+</html>
