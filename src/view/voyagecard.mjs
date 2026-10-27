@@ -27,6 +27,8 @@ export function voyageCardHtml(s,{lang='es',cityName=id=>id,eta=()=>'',cargo=nul
  if(r.atPort)return head+row(`${en?'At port':'En puerto'}: ${esc(cityName(r.port))}`)+navRow+cargoRow+ev+go+open;
  const route=row(`${esc(cityName(r.from))} → ${esc(cityName(r.to))}`);
  if(s.voyage.anchored)return head+route+row(`<span>${en?'Holding position':'Al pairo'}</span>`)+navRow+cargoRow+ev+open; // anchored at a free point: no arrival to promise
+ const days=s.voyage.stormDelayDays;
+ const stormRow=Number.isSafeInteger(days)&&days>0?row(`<span class="vc-warn">${en?`Storm delay on this voyage: +${days} ${days===1?'day':'days'} (included in estimate).`:`Retraso por tormenta en este viaje: +${days} ${days===1?'día':'días'} (incluido en la estimación).`}</span>`):'';
  const pct=Math.round(r.progress*100);
- return head+route+row(`<span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}`)+navRow+cargoRow+row(`<label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${pct}">${pct}%</progress> ${pct}%</label>`)+ev+open;
+ return head+route+row(`<span>${en?'Estimated arrival':'Llegada estimada'}: ${esc(eta(s))}</span> · ≈ ${Math.round(r.remainingKm)} km ${en?'left':'restantes'}`)+stormRow+navRow+cargoRow+row(`<label>${en?'Voyage progress':'Progreso del viaje'} <progress max="100" value="${pct}">${pct}%</progress> ${pct}%</label>`)+ev+open;
 }
