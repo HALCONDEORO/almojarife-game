@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, buyWarehouse } from "../src/game/game.mjs";
 import { setStewardReserve, setStewardRule, stewardOf } from "../src/game/steward.mjs";
-import { setRoute } from "../src/game/routes.mjs";
+import { setRoute, setRouteAdv } from "../src/game/routes.mjs";
 import { addInfamy, infamyOf } from "../src/game/pardon.mjs";
 const world = loadWorld();
 const mk = () => { const g = newGame(world); g.cash = 100000; assert.ok(buyWarehouse(g, "cadiz").ok); return g; };
@@ -55,4 +55,30 @@ test("addInfamy: non-finite input changes nothing", () => {
   const before = infamyOf(g);
   addInfamy(g, NaN);
   assert.equal(infamyOf(g), before);
+});
+
+test("setStewardRule: legacy and unknown keys are dropped, never stored", () => {
+  const g = mk();
+  assert.ok(setStewardRule(g, "cadiz", "grain", { buyBelow: 3, buyTo: 10, note: "old UI", v: 1 }).ok);
+  assert.deepEqual(Object.keys(stewardOf(g, "cadiz").rules.grain).sort(), ["buyBelow", "buyTo", "sellAbove", "sellKeep"], "only whitelisted keys stored");
+  assert.ok(setStewardRule(g, "cadiz", "grain", null).ok, "null rule resets to defaults");
+  assert.deepEqual(stewardOf(g, "cadiz").rules.grain, { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 });
+});
+
+test("setRouteAdv: bad input never replaces the route in force; rule keys are whitelisted", () => {
+  const g = mk();
+  const s = g.ships[0];
+  const stops = [
+    { city: "cadiz", buy: [{ good: "grain", maxPrice: 5 }], sell: [] },
+    { city: "lisboa", buy: [], sell: [{ good: "grain", minPrice: 2 }] },
+  ];
+  assert.ok(setRouteAdv(g, s, stops).ok);
+  const before = structuredClone(s.route);
+  assert.deepEqual(Object.keys(s.route.stops[0].buy[0]).sort(), ["good", "maxPrice", "minPrice"], "only whitelisted rule keys");
+  for (const bad of [null, [stops[0]], [...stops, stops[1]], [{ city: "nowhere" }, stops[1]], [{ city: "cadiz", buy: [{ good: "grain", maxPrice: -1 }] }, stops[1]]]) {
+    assert.equal(setRouteAdv(g, s, bad).ok, false);
+    assert.deepEqual(s.route, before, "route in force untouched");
+  }
+  assert.equal(setRouteAdv(g, s, stops, { minCash: NaN }).ok, false);
+  assert.deepEqual(s.route, before);
 });

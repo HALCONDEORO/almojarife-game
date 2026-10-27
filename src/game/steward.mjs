@@ -26,7 +26,8 @@ export function setStewardRule(g, city, good, rule, cap) {
   const w = g.warehouses?.[city];
   if (!w) return { ok: false, reason: "no warehouse here" };
   if (!g.world.goods[good]) return { ok: false, reason: "unknown good" };
-  const r = { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0, ...rule };
+  const src = rule ?? {};
+  const r = { buyBelow: src.buyBelow ?? 0, buyTo: src.buyTo ?? 0, sellAbove: src.sellAbove ?? 0, sellKeep: src.sellKeep ?? 0 }; // whitelist: legacy or unknown keys are dropped, never stored
   for (const k of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (!Number.isFinite(r[k]) || r[k] < 0) return { ok: false, reason: "bad number" };
   r.buyTo = Math.floor(r.buyTo); r.sellKeep = Math.floor(r.sellKeep);
   if (r.buyBelow > 0 && !(r.buyTo > 0)) return { ok: false, reason: "buy needs a stock target" };
