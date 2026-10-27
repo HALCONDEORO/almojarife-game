@@ -47,3 +47,17 @@ test("a port without a ledger account sells exactly as before (bare fixtures)", 
   const r = sell(world, m, s, GOOD, 10);
   assert.ok(r.ok && r.qty === 10, "no account, no cap");
 });
+
+test("exact funds cover the full sale to the cent (sell and preview)", () => {
+  const m = makeMarket(world), s = makeShip(1, "cog", A);
+  const b = buy(world, m, s, 1e9, GOOD, 3);
+  assert.ok(b.ok);
+  const a = commerceOf(m[A]);
+  const full = previewSell(world, m, s, GOOD, 3);
+  assert.equal(full.qty, 3);
+  a.cash = Math.round(full.revenue * 100) / 100; // clean cents: the float sum can read larger (58.800000000000004 vs 58.8)
+  const pv = previewSell(world, m, s, GOOD, 3);
+  assert.equal(pv.qty, 3, "preview sells every unit exact funds cover");
+  const r = sell(world, m, s, GOOD, 3);
+  assert.equal(r.qty, 3, "sell settles every unit exact funds cover");
+});

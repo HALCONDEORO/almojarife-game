@@ -64,7 +64,9 @@ export function stewardTick(g, city, cap) {
       if (can > 0) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
         const purse = WHOLESALE_PURSE_BINDING ? commerceOf(g.market[city]) : null; // standing orders cannot draw more than the purse holds
-        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; const unit = floor2(p * (1 - FEE)); if (purse && revenue + unit > purse.cash) break; revenue += unit; n++; }
+        const cashCents = purse ? Math.round(purse.cash * 100) : 0; // integer cents, like trade.sell
+        let revenueCents = 0;
+        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; const unit = floor2(p * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; n++; }
         if (n > 0) {
           const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
           e.stock += n;

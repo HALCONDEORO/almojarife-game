@@ -2,8 +2,9 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,advanceDay,buyWarehouse,warehouseCap,WAREHOUSE_PRICE} from '../src/game/game.mjs';
 import {setStewardRule,clearStewardRule,setStewardReserve,stewardOf,stewardTick} from '../src/game/steward.mjs';
-import {FEE} from '../src/sim/trade.mjs';
+import {FEE,floor2} from '../src/sim/trade.mjs';
 import {price} from '../src/sim/market.mjs';
+import {commerceOf} from '../src/sim/procurement.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 import {repOf} from '../src/game/rank.mjs';
 import {openVoyage,voyageLog} from '../src/game/voyages.mjs';
@@ -164,4 +165,16 @@ test('standing-order trades keep the port name alive against the monthly decay',
  const{g:g2}=mk();dear(g2,'grain');addRep(g2,'cadiz',-5);g2.day=29;g2.repTrade={};
  const p=price(world,g2.market.cadiz.grain,'grain');assert.ok(setStewardRule(g2,'cadiz','grain',{buyBelow:p,buyTo:1},999).ok);
  assert.ok(stewardTick(g2,'cadiz',999)?.[0]?.bought>0);assert.equal(g2.repTrade.cadiz,29,'the buy was noted');
+});
+
+test('exact funds cover a standing-order sale to the cent',()=>{
+ const {g}=mk();
+ cheap(g,'grain');
+ const e=g.market.cadiz.grain;
+ g.warehouses.cadiz.goods={grain:3};
+ assert.ok(setStewardRule(g,'cadiz','grain',{sellAbove:1,sellKeep:0}).ok);
+ let expected=0; for(let i=0;i<3;i++) expected+=floor2(price(world,{...e,stock:e.stock+i+1},'grain')*(1-FEE));
+ const a=commerceOf(g.market.cadiz); a.cash=Math.round(expected*100)/100; // clean cents, like a settled account
+ const did=stewardTick(g,'cadiz',warehouseCap(g,'cadiz'));
+ assert.equal(did?.find(d=>d.good==='grain')?.sold,3,'the purse paid every unit it could exactly afford');
 });

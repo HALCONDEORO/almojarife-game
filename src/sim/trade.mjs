@@ -98,12 +98,14 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
   const purse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // a binding purse pays only what it holds
+  const cashCents = purse ? Math.round(purse.cash * 100) : 0; // money compares in integer cents: 3 x 19.60 IS 58.80
+  let revenueCents = 0;
   let n = 0;
   while (n < qty) {
     e.stock += 1;
     const unit = floor2(price(world, e, good) * (1 - fee));
-    if (purse && revenue + unit > purse.cash) { e.stock -= 1; break; }
-    revenue += unit; n++;
+    if (purse && revenueCents + Math.round(unit * 100) > cashCents) { e.stock -= 1; break; }
+    revenueCents += Math.round(unit * 100); revenue += unit; n++;
   }
   if (n === 0) return { ok: false, reason: "market has no cash" };
   qty = n;
@@ -135,12 +137,14 @@ export function previewSell(world, market, ship, good, qty, fee = FEE) {
   if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const sim = { ...e }; let revenue = 0;
   const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sell()
+  const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
+  let pvCents = 0;
   let n = 0;
   while (n < Math.min(qty, have)) {
     sim.stock += 1;
     const unit = floor2(price(world, sim, good) * (1 - fee));
-    if (pvPurse && revenue + unit > pvPurse.cash) { sim.stock -= 1; break; }
-    revenue += unit; n++;
+    if (pvPurse && pvCents + Math.round(unit * 100) > pvCashCents) { sim.stock -= 1; break; }
+    pvCents += Math.round(unit * 100); revenue += unit; n++;
   }
   if (n === 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const spent = n === have ? (ship.basis?.[good] ?? 0) : Math.round((ship.basis?.[good] ?? 0) * n / have);
