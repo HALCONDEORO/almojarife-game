@@ -45,7 +45,9 @@ export function clearStewardRule(g, city, good) {
 export function setStewardReserve(g, city, amount) {
   const w = g.warehouses?.[city];
   if (!w || !Number.isFinite(amount) || amount < 0) return { ok: false, reason: "bad amount" };
-  (w.admin ??= { rules: {}, reserve: 0 }).reserve = Math.floor(amount);
+  const normalized = Math.floor(amount);
+  if (amount > 0 && normalized === 0) return { ok: false, reason: "bad amount" }; // a positive reserve must survive normalization (setPriceAlert pattern)
+  (w.admin ??= { rules: {}, reserve: 0 }).reserve = normalized;
   return { ok: true };
 }
 
