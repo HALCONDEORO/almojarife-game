@@ -25,6 +25,9 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      # id-token/attestations are needed for the tag-gated attest step below.
+      # They are granted job-wide (GitHub has no per-step permissions), so they
+      # also apply on PR runs, but the only step using them never runs there.
       id-token: write
       attestations: write
     steps:
@@ -134,10 +137,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           shopt -s nullglob
           assets=(*.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt)
-          shopt -s nullglob; ascs=(*.asc)
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
+          ascs=(*.asc)
+          # Safety: never mutate an already-published release. Upload only to
+          # a draft; if the release exists and is published, fail touching
+          # nothing. If none exists, create a draft pre-release.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" != "true" ]; then
+              echo "::error::Release $TAG exists and is already published; refusing to modify its assets. Upload manually if intended."
+              exit 1
+            fi
+          else
             gh release create "$TAG" --draft --prerelease \
               --title "$TAG" \
               --notes "Draft created by the release-provenance job so assets can be attached. Replace these notes before publishing (docs/RELEASE.md)."

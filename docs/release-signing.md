@@ -11,9 +11,11 @@ layer 1 + 2 need no secrets and work on the next tag push after merging.
 
 The `release-provenance` job in `.github/workflows/desktop.yml` runs on every
 `v*` tag push. It downloads the three platform builds, writes
-`SHA256SUMS.txt`, and attaches it plus the packages to the GitHub release
-(creating a **draft** pre-release if none exists, so nothing is published
-automatically).
+`SHA256SUMS.txt`, and attaches it plus the packages to the GitHub release.
+Safety rule: it only uploads to a **draft** release. If the tag already has a
+published release, the job fails without touching any asset; if no release
+exists, it creates a draft pre-release, so nothing is published
+automatically.
 
 User verification:
 
