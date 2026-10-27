@@ -114,6 +114,12 @@ Silicon `.dmg`/`.zip`, and Linux x64 `.AppImage`/`.deb` files. Candidate artifac
 are not automatically published as releases. Download only assets attached to
 an approved release of this repository.
 
+### Code signing policy
+
+Release provenance and signing status are described in the
+[code signing policy](docs/code-signing-policy.md); verification steps are in
+[release signing](docs/release-signing.md).
+
 ### Installation of unsigned packages
 
 - **Windows:** run the installer or portable executable. If SmartScreen shows
