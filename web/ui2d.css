@@ -111,3 +111,6 @@ body.in-city-3d .city-window,body.in-city-3d .city-window.ui2d-market-window{max
 .ui2d-market-window .city-panel-host{position:relative}
 .ui2d-market-window .mkt-preview{position:absolute;left:10px;right:10px;bottom:100%;z-index:2;pointer-events:none}
 .mkt-preview:empty{display:none}
+
+/* Smaller desktop windows need shared row tracks too, not row-local max-content. */
+@media(min-width:651px) and (max-width:899px){.mkt-head,.mkt-row{grid-template-columns:24px 130px 54px 60px 30px 36px 76px 76px}}
