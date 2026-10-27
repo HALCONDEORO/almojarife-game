@@ -104,3 +104,6 @@ body.in-city-3d .city-window,body.in-city-3d .city-window.ui2d-market-window{max
 #shipwin{top:calc(var(--game-header-height,70px) / var(--win-zoom,1));width:calc(clamp(340px,30vw,520px) / var(--win-zoom,1));max-width:calc(100vw / var(--win-zoom,1))}}
 /* Market is centred in the space left of the right panel; its offsets are in zoomed units, so divide by the zoom. */
 @media(min-width:900px){html body.in-city-3d .city-window[data-city-panel="market"]{left:max(calc(12px / var(--win-zoom,1)),calc((100vw - 238px - 640px * var(--win-zoom,1)) / 2 / var(--win-zoom,1)));right:auto;top:calc(38px / var(--win-zoom,1));width:min(640px,calc((100vw - 254px) / var(--win-zoom,1)))}}
+
+/* Shared desktop tracks: a Pregón badge must not resize only its own row. */
+@media(min-width:900px){.mkt-head,.mkt-row{grid-template-columns:26px 142px 58px 66px 40px 44px 86px 86px}}
