@@ -121,8 +121,9 @@ function planBuy(g, s, good, room, budget, maxPrice) {
   const e = g.market[s.at]?.[good];
   if (!e) return 0;
   const sim = { ...e };
+  const maxN = Math.min(room, sim.stock); // freeze availability: sim.stock shrinks as each unit is planned
   let n = 0, cost = 0;
-  while (n < Math.min(room, sim.stock)) {
+  while (n < maxN) {
     const unit = price(g.world, sim, good);
     if (maxPrice != null && unit > maxPrice) break; // the limit compares to the market price, before the port fee
     const charged = Math.ceil(unit * (1 + FEE * feeMul(g, s.at))); // plan with the REAL fee of this port (respect-scaled), so the cash brake never underestimates the charge
