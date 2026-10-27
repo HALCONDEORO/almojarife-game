@@ -36,7 +36,7 @@ This README describes merged source at the documentation checkpoint, not a deplo
 
 ## Screenshots
 
-_Historical screenshot set, not release-candidate evidence. All eight screenshots were refreshed on 26 Oct 2026 (English). The city plan (`city2d.png`) was captured from the playable build at `main` d8a7383bf9713fd0d4f980363685cc1d06a1a22b and the sea chart (`map.png`) from `main` 4afd05024bf879820483a57e850a37b436e97cf8; the remaining six were captured from `main` c4ef80d84bdc1f500809eb4c7e163b0894a5fd2e. Refresh screenshots when the UI changes so they never show unmerged work._
+_Screenshot set from merged `main`: the city plan (`city2d.png`), the five port windows (`market.png`, `shipyard.png`, `tavern.png`, `bank.png`, `warehouse.png`) and the house-creation form (`create.png`) were refreshed on 27 Oct 2026 (Spanish UI) from the playable build at `main` 78a50f8e595b50ed6c611c68e0353f861deb6a99 (`v0.5.0-beta.1`); the sea chart (`map.png`) was captured from `main` 4afd05024bf879820483a57e850a37b436e97cf8 and remains accurate. Refresh screenshots when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
