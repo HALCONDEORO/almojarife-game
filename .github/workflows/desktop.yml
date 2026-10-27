@@ -1,7 +1,9 @@
 name: Desktop builds
-# Builds unsigned Windows (nsis + portable exe), macOS (dmg + zip) and Linux
+# Builds Windows (nsis + portable exe), macOS (dmg + zip) and Linux
 # (AppImage + deb) packages. Manual run, or push a v* tag for a release set.
-# Signing/notarization is intentionally absent: see docs/desktop.md.
+# On tag pushes it also adds release provenance: SHA-256 checksums, GitHub
+# artifact attestations and, once configured, GPG detached signatures.
+# See docs/release-signing.md.
 on:
   workflow_dispatch:
   pull_request:
@@ -21,6 +23,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # id-token/attestations are needed for the tag-gated attest step below.
+      # They are granted job-wide (GitHub has no per-step permissions), so they
+      # also apply on PR runs, but the only step using them never runs there.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -57,3 +66,92 @@ jobs:
             desktop/dist/*.exe
             desktop/dist/smoke/*
           if-no-files-found: error
+      - name: Attest build provenance of the packages
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.exe
+  release-provenance:
+    name: Checksums, signatures and release assets
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: almojarife-*
+          path: dist
+          merge-multiple: true
+      - name: Generate SHA-256 checksums
+        working-directory: dist
+        run: |
+          shopt -s nullglob
+          sha256sum -- *.AppImage *.deb *.dmg *.zip *.exe | tee SHA256SUMS.txt
+      - name: Check whether a GPG key is configured
+        id: gpg
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GPG_PRIVATE_KEY secret not configured; skipping GPG signatures. See docs/release-signing.md."
+          fi
+      - name: Import the GPG release key
+        if: steps.gpg.outputs.present == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+      - name: GPG-detached-sign packages and checksums
+        if: steps.gpg.outputs.present == 'true'
+        working-directory: dist
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          shopt -s nullglob
+          for f in *.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt; do
+            printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+              --passphrase-fd 0 --detach-sign --armor --output "$f.asc" "$f"
+          done
+          ls -1 *.asc
+      - name: Attest the checksum manifest
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/SHA256SUMS.txt
+      - name: Attach assets to the GitHub release
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(*.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt)
+          ascs=(*.asc)
+          # Safety: never mutate an already-published release. Upload only to
+          # a draft; if the release exists and is published, fail touching
+          # nothing. If none exists, create a draft pre-release.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" != "true" ]; then
+              echo "::error::Release $TAG exists and is already published; refusing to modify its assets. Upload manually if intended."
+              exit 1
+            fi
+          else
+            gh release create "$TAG" --draft --prerelease \
+              --title "$TAG" \
+              --notes "Draft created by the release-provenance job so assets can be attached. Replace these notes before publishing (docs/RELEASE.md)."
+          fi
+          gh release upload "$TAG" "${assets[@]}" ${ascs[@]+"${ascs[@]}"} --clobber
