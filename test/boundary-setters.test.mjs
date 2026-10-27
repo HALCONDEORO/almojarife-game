@@ -82,3 +82,16 @@ test("setRouteAdv: bad input never replaces the route in force; rule keys are wh
   assert.equal(setRouteAdv(g, s, stops, { minCash: NaN }).ok, false);
   assert.deepEqual(s.route, before);
 });
+
+test("setStewardRule: explicit null/undefined per field is rejected, previous rule kept; prototype values are ignored", () => {
+  const g = mk();
+  assert.ok(setStewardRule(g, "cadiz", "grain", { buyBelow: 3, buyTo: 10 }).ok);
+  const before = structuredClone(stewardOf(g, "cadiz").rules.grain);
+  for (const bad of [{ buyBelow: null, buyTo: 10 }, { buyBelow: 3, buyTo: undefined }, { buyBelow: null }, { sellAbove: null, sellKeep: 2 }]) {
+    assert.equal(setStewardRule(g, "cadiz", "grain", bad).ok, false, JSON.stringify(bad));
+    assert.deepEqual(stewardOf(g, "cadiz").rules.grain, before, "previous rule untouched");
+  }
+  const proto = Object.create({ buyBelow: 4, buyTo: 8 });
+  assert.ok(setStewardRule(g, "cadiz", "grain", proto).ok, "empty own-keys object resets to defaults");
+  assert.deepEqual(stewardOf(g, "cadiz").rules.grain, { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 }, "prototype-inherited values ignored");
+});
