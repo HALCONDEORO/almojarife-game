@@ -15,3 +15,9 @@ export async function loadJusticeData(fetcher, ports, timeoutMs = 2500) {
   setJusticeData(null);return {realms:null,courts:null,ready:false};
  }finally{clearTimeout(timer);}
 }
+
+/** Bound any optional JSON dependency before the title, including a hung body. */
+export async function optionalJson(fetcher,url,timeoutMs=2500){
+ const controller=new AbortController();let timer;
+ try{return await Promise.race([new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},timeoutMs);}),Promise.resolve().then(()=>fetcher(url,{signal:controller.signal})).then(r=>r.ok?r.json():null)]);}catch{return null;}finally{clearTimeout(timer);}
+}
