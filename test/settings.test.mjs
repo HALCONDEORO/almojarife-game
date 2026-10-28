@@ -61,3 +61,16 @@ test("every pictogram is credited in CREDITS.md and in both Credits windows", ()
   assert.match(credits, /CC BY 3\.0/);
   assert.equal((main.match(/credIcons: "/g) || []).length, 2);
 });
+
+test('Settings owns Escape from its focused controls and keeps initial focus inside', () => {
+  const source = readFileSync('web/main.mjs', 'utf8');
+  assert.match(source, /querySelector\("\.st-win"\)\.addEventListener\("keydown", e =>/);
+  assert.match(source, /if \(e.key !== "Escape"\) return;\s*e.preventDefault\(\); e.stopPropagation\(\); \$\("st-back"\)\.click\(\)/);
+  assert.match(source, /\$\("st-lang"\)\.focus\(\)/);
+});
+
+test('Settings scales its viewport height with large text and scrolls its body', () => {
+  assert.match(html, /#title \.box\.st-win\{zoom:1;display:flex;flex-direction:column;box-sizing:border-box;max-height:calc\(\(100dvh - 32px\)\/var\(--settings-scale,1\)\)/);
+  assert.match(html, /#title \.st-win \.st-body\{min-height:0;max-height:none;overflow:auto\}/);
+  assert.match(html, /body\.text-large \.st-win\{--settings-scale:1\.12\}/);
+});
