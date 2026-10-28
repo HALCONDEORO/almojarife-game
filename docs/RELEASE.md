@@ -1,14 +1,10 @@
 # Release process
 
-## Current status (26 October 2026)
+## Current status (28 October 2026)
 
-The repository is public. A GitHub pre-release here is publicly readable. The intended first beta audience is public; publication is on hold pending an explicit final go/no-go, verified documentation, integrated code links, polish and Playtest approval. Do not change repository visibility as part of a release.
+The repository is public. [beta.1](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.1) was published on 26 October; [beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) on 27 October. Existing tags/assets are immutable. Source merged into main is not proof that a packaged build or the hosted game has been deployed or tested.
 
-No GitHub release exists at this checkpoint. Source merged into `main` is not proof that the hosted game has been deployed or tested.
-
-## Proposed versions, not tags
-
-No alpha release is planned. The first public release is `v0.5.0-beta.1`, marked as a GitHub pre-release. Later candidates use `beta.2`, `beta.3`, and so on; the full release is `v1.0.0`. Increase the middle number according to the size of later batches. No save compatibility is promised in `0.x` unless explicitly documented and tested. No tag has been created by this policy.
+The proposed next batch is `v0.5.0-beta.3`, a public GitHub pre-release. Its candidate scope, evidence, failed playtest findings, remaining gates and rollback are in [BETA3-CHECKPOINT.md](BETA3-CHECKPOINT.md). That document does not create a tag or announce publication. No alpha is planned; the full release remains a later `v1.0.0`. Save compatibility in 0.x must be documented and tested rather than assumed. Do not change repository visibility as part of a release.
 
 ## Batch releases, focused pull requests
 

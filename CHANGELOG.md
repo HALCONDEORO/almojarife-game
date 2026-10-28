@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-No GitHub release or tag is announced by this section. The first public beta pre-release is planned as v0.5.0-beta.1; publication is on hold pending an explicit final go/no-go and the release gates in docs/RELEASE.md. No tag or pre-release exists merely because this candidate file is present.
+The next proposed batch is `v0.5.0-beta.3`; it has not been tagged or published by this section. beta.1 and beta.2 already exist. See [release gates](docs/RELEASE.md) and the [current candidate checkpoint](docs/BETA3-CHECKPOINT.md). Historical entries below are source notes, not a complete manifest of the existing release binaries.
+
+### Integrated source, 28 October 2026
+- Bounded optional justice/peace data loading with retry/unavailable states (#638).
+- Letters of marque and prize handling (#635), council pardon and grain embargo defaults (#637).
+- Eight living-city defaults (#636); household, calamity and regional-rival defaults (#639).
+- Balance caveat: #639 passes the new conservative L2 and same-horizon NPC ON/OFF policy, not the retired absolute 30x criterion; legacy L3 bankruptcies remain visible.
+- Tutorial/layout #640 and free-navigation convoy #641 are still candidates, not integrated or shipped at this checkpoint.
 
 ### Integrated source batch, 26 October 2026
 - Route and finance cards, missions, tabs, port details and notices in the right panel.
