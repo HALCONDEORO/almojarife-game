@@ -18,8 +18,12 @@ export function trailSvg(points, k = 1) {
 }
 /** Heading arrow in marker space (0 deg = east, same convention as headingDeg). Placed before the
  *  ship icon in the marker group so it renders under the hull and only its tip shows ahead of the bow. */
-export const headingArrowSvg = () =>
-  `<g class="heading" pointer-events="none"><path d="M6 -3.5 L24 0 L6 3.5 Z" fill="${INK}" fill-opacity="0.75" stroke="#f4ead0" stroke-width="0.8"/></g>`;
+// Physical bow extent in marker units: BOW_X * CLASS_SCALE * 1.7 from ships.mjs.
+export const HEADING_TIP = Object.freeze({barca: 8.5*.9*1.7+8, cog:12.5*1.7+8, caravel:14.5*1.08*1.7+8, nao:15*1.18*1.7+8});
+export function headingArrowSvg(type='cog') {
+  const tip=HEADING_TIP[type]??HEADING_TIP.cog;
+  return `<g class="heading" pointer-events="none"><path d="M${f1(tip-10)} -4 L${f1(tip)} 0 L${f1(tip-10)} 4 Z" fill="${INK}" fill-opacity="0.75" stroke="#f4ead0" stroke-width="0.8"/></g>`;
+}
 /** "auto" for a ship sailing an automated trade route, "manual" for a player order or preview. */
 export const routeKind = (ship) => (ship?.route ? "auto" : "manual");
 export const ROUTE_STYLE = Object.freeze({

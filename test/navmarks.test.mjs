@@ -31,7 +31,7 @@ test("heading arrow points east at 0 degrees and ignores the pointer", () => {
   const svg = headingArrowSvg();
   assert.match(svg, /class="heading"/);
   assert.match(svg, /pointer-events="none"/);
-  assert.match(svg, /L24 0/); // tip on +x, ahead of the bow
+  assert.match(svg, /L29.3 0/); // tip on +x, ahead of the bow
 });
 test("automatic trade routes are drawn thin and distinct from manual orders", () => {
   assert.equal(routeKind({ route: { a: "cadiz", b: "tanger" } }), "auto");
@@ -55,4 +55,13 @@ test('remaining route never redraws passed waypoints behind the ship',()=>{
  const ship={voyage:{path:['a','b','c'],km,totalTicks:4,ticksLeft:1}};
  assert.deepEqual(remainingRoute(world,ship),[world.nodes.c]);
  assert.deepEqual(remainingRoute(world,{}),[]);
+});
+
+import {HEADING_TIP} from '../src/view/navmarks.mjs';
+test('heading tip extends eight marker units beyond the scaled bow for all four types',()=>{
+ const bows={barca:8.5*.9*1.7,cog:12.5*1.7,caravel:14.5*1.08*1.7,nao:15*1.18*1.7};
+ for(const [type,bow] of Object.entries(bows)){
+  assert.ok(HEADING_TIP[type]-bow>=7.99,type);
+  assert.match(headingArrowSvg(type),new RegExp(`L${(Math.round(HEADING_TIP[type]*10)/10)} 0`));
+ }
 });
