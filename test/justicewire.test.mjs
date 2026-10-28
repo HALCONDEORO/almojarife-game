@@ -49,7 +49,7 @@ test("flag off or no data: arrival does nothing", () => {
   assert.equal(heldNow(g, { heldUntil: 99 }), false);
 });
 test("a bad name fades a point a month with justice on (and does not with every flag off)", () => {
-  const a = newGame(world); a.justice = true; a.infamy = 10; const b = newGame(world); b.infamy = 10;
+  const a = newGame(world); a.justice = true; a.infamy = 10; const b = newGame(world, "cadiz", { justice: false }); b.infamy = 10;
   for (let i = 0; i < 60; i++) { advanceDay(a); advanceDay(b); } assert.ok(infamyOf(a) < 10); assert.equal(infamyOf(b), 10);
 });
 test("charges, convictions and the held day survive a save and reload", () => {
@@ -64,7 +64,7 @@ test("a convoy with one held member does not leave at all: no member is left sai
   const cv = formConvoy(g, [a.id, b.id], "C"); assert.ok(cv.ok, JSON.stringify(cv)); b.heldUntil = g.day + 5;
   const r = sailConvoy(g, cv.convoy.id, "malaga", { doSail: ds }); assert.equal(r.reason, "held"); assert.equal(!!a.voyage, false); assert.equal(!!b.voyage, false);
   g.day = b.heldUntil; const ok = sailConvoy(g, cv.convoy.id, "malaga", { doSail: ds }); assert.equal(ok.ok, true);
-  const off = newGame(world); off.ships[0].heldUntil = 99; assert.equal(heldNow(off, off.ships[0]), false);
+  const off = newGame(world, "cadiz", { justice: false }); off.ships[0].heldUntil = 99; assert.equal(heldNow(off, off.ships[0]), false);
 });
 import { messageText } from "../src/view/ledgerview.mjs";
 test("a sentence reads as its own text in the inbox, in both languages", () => {

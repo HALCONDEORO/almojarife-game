@@ -154,3 +154,6 @@ The engine is `src/game/justice.mjs` (charges, courts by port or realm, graded s
 - when a ship docks, the officers of that port's realm try its open charges; a prison sentence holds the ship (`heldUntil`);
 - a bad name fades one point a month. Nothing is shown to the player while the flag is off.
 Not wired yet: smuggling and fraud charges (the game has no export bans yet) and any bot use of courts. Famine as a consequence waits for verified sources.
+
+### Browser activation (28 October 2026)
+New games enable port justice by default. The browser loads realms and courts and registers them with the arrival/charge hooks. The town hall shows a read-only justice summary. Explicit `justice:false` remains available to isolated baseline tests. Existing saves keep their saved flags for now. This activation does not change fines, sentences or trade rules. Letters, merchant attacks and prize-court controls are a separate host-UI follow-up; their pure modules alone do not make those actions playable.

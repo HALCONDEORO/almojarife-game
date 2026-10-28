@@ -1,3 +1,5 @@
+import { setJusticeData } from "../src/game/justicewire.mjs";
+import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
 import {renameShip} from '../src/game/shipnames.mjs';
@@ -118,6 +120,8 @@ const CLOSE_ICON = `<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true" fo
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang), fmtM = (n) => (Math.round(n * 100) / 100).toLocaleString(lang, { maximumFractionDigits: 2 }); // fmtM: money, cents shown when they exist; integers render the same as fmt
 const world = buildWorld(await (await fetch("../data/world.json")).json());
 if (PIRACY_DAILY_ENABLED) { const [rl, pc] = await Promise.all([fetch("../data/realms.json").then(r => r.ok ? r.json() : null).catch(() => null), fetch("../data/peaces.json").then(r => r.ok ? r.json() : null).catch(() => null)]); if (rl && pc) installMarqueDaily(DAILY_HOOKS, rl, pc); }
+const [justiceRealms, justiceCourts] = await Promise.all(["realms", "courts"].map(async name => { const r = await fetch(`../data/${name}.json`); if (!r.ok) throw new Error(`Cannot load ${name}`); return r.json(); }));
+setJusticeData(justiceRealms, justiceCourts);
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
@@ -735,6 +739,7 @@ function render() {
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisaPct > 0 ? "+" : "") + hv.sisaPct + "%").replace("{p}", (hv.portazgoPct > 0 ? "+" : "") + hv.portazgoPct + "%")}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
+      h += justiceStatusHtml(g, lang);
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
