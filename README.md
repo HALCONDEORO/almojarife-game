@@ -12,7 +12,7 @@ Un juego de comercio marítimo: funda una casa mercantil, compra mercancías, na
 
 ## Estado real de esta versión
 
-Este documento describe el código integrado en `main` hasta `ace71d6feb14f80a42e3c61fabe7e49719d27167`, no garantiza que la web o una descarga contengan ese mismo código. Los PR abiertos no se presentan como funciones publicadas.
+Este documento describe el código integrado en `main` hasta `6102bc80fa981d44cca8bfe0ceb02ab10c14be95`, no garantiza que la web o una descarga contengan ese mismo código. Los PR abiertos no se presentan como funciones publicadas.
 
 - [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) es una **pre-release de código fuente**, publicada el 28 de octubre de 2026, fijada en `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No tiene instaladores adjuntos y no incluye los cambios posteriores de navegación de este README.
 - `v0.5.0-beta.2` sigue marcada como `Latest`. Para instalar, comprueba los archivos realmente adjuntos a la versión elegida y sus notas; no supongas que cada beta contiene binarios o `SHA256SUMS.txt`.
@@ -44,7 +44,7 @@ Este documento describe el código integrado en `main` hasta `ace71d6feb14f80a42
 | Pausar / reanudar | Botón del reloj; espacio en el mapa, fuera de campos de texto |
 | Cerrar una ventana o cancelar selección | `Esc`; para guardado y ajustes, usa **Menú** |
 
-Los atajos de cámara no escriben en los campos de texto. Acercar o centrar no da una orden al barco. La leyenda del mapa distingue red tenue, viaje activo, automática, plan y destino no válido. El seguimiento continuo de un barco no forma parte de este punto de control de `main`.
+Los atajos de cámara no escriben en los campos de texto. Acercar o centrar no da una orden al barco. La leyenda del mapa distingue red tenue, viaje activo, automática, plan y destino no válido. En la ventana del barco, **Seguir barco** activa el seguimiento de cámara; **Dejar de seguir** lo desactiva. `Esc`, arrastrar o mover manualmente la vista lo cancelan; la rueda conserva el seguimiento. No cambia la simulación ni se guarda.
 
 ## La ciudad y la casa mercantil
 
@@ -63,7 +63,7 @@ Estas tres capturas son de una **partida nueva real**, en español a 1280×720, 
 | --- | --- |
 | ![Mercado de Huelva durante una venta de la partida de prueba](docs/img/player-guide/market.png) | ![Ventana de Barcos y rutas en la ciudad](docs/img/player-guide/routes.png) |
 
-![Ayuntamiento de Huelva durante la partida real del tutorial](docs/img/player-guide/council.png)
+![Ayuntamiento de Huelva durante el paso 4/5, antes de fijar la ruta y de la visita final](docs/img/player-guide/council.png)
 
 Las capturas antiguas de `docs/img/` se conservan para no romper referencias, pero ya no se usan aquí como prueba de la interfaz actual.
 

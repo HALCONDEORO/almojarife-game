@@ -1,6 +1,6 @@
 # Cómo jugar a El Almojarife
 
-Guía del código integrado en `main` hasta `ace71d6` (28 de octubre de 2026). La web y los paquetes pueden ir por otro punto de control. Vuelve al [README](../README.md) para consultar las versiones. No incluye funciones de PR abiertos.
+Guía del código integrado en `main` hasta `6102bc80` (28 de octubre de 2026). La web y los paquetes pueden ir por otro punto de control. Vuelve al [README](../README.md) para consultar las versiones. No incluye funciones de PR abiertos.
 
 ## 1. Empieza en el puerto
 
@@ -34,7 +34,7 @@ Las partidas antiguas sin navegación libre mantienen el flujo anterior de elegi
 - Doble clic restablece el encuadre. `Esc` cierra ventanas o cancela la selección; abre **Menú** para guardar o ajustar la partida.
 - La leyenda diferencia la red tenue, el viaje activo, una automática, un plan y un destino inválido. El color no sustituye la información de destino y llegada de la tarjeta del barco.
 
-Los atajos de cámara no actúan mientras escribes en una entrada de texto. El seguimiento continuo no está integrado en el punto de control descrito aquí.
+Los atajos de cámara no actúan mientras escribes en una entrada de texto. En la ventana del barco, **Seguir barco** activa la cámara de seguimiento. La rueda mantiene el seguimiento; `Esc`, arrastrar o desplazar/centrar manualmente lo cancelan. **Dejar de seguir** lo apaga. Este estado de vista no se guarda ni modifica la simulación.
 
 ## 5. Delega el comercio con una ruta automática
 
@@ -50,7 +50,7 @@ El Astillero permite construir y reparar. La venta de barcos está en la almoned
 
 Consulta **Informes** para el historial y las cuentas semanales. **Mensajes** reúne avisos, resultados y sucesos. Reserva efectivo para la liquidación: tener mercancía o edificios valiosos no equivale a tener dinero disponible. No se promete una victoria automática por llegar a una cifra; las partidas nuevas usan campaña y tutorial, mientras que algunas antiguas conservan objetivos previos.
 
-![Ayuntamiento de Huelva durante la partida del tutorial](img/player-guide/council.png)
+![Ayuntamiento de Huelva durante el paso 4/5, antes de fijar la ruta y de la visita final](img/player-guide/council.png)
 
 ## 7. Guarda y vuelve
 
