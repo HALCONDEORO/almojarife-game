@@ -1,11 +1,9 @@
-# Release signing and provenance (draft)
+# Release signing and provenance
 
-Status: **draft, not yet active.** The workflow support is proposed in this
-branch; nothing here is live until the PR is merged and the secrets below are
-configured. Cost of everything on this page: 0 EUR.
+Status: workflow support is merged. Every v* tag runs the desktop package and provenance pipeline. A new release is kept draft until reviewed and published. GPG remains optional and must not be claimed unless its assets and configuration are verified. Cost of this pipeline: 0 EUR.
 
 Three independent layers, cheapest first. A release can ship with any subset;
-layer 1 + 2 need no secrets and work on the next tag push after merging.
+layer 1 + 2 need no secrets and run on tag pushes without signing secrets.
 
 ## Layer 1 - SHA-256 checksums (no setup)
 
