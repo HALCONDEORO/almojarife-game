@@ -1,12 +1,12 @@
 # Current source checkpoint
 
-Updated 26 October 2026. This is not a release announcement.
+Updated 28 October 2026. Source-checkpoint history and published-release status are recorded separately.
 
 ## Source and delivery are different
 
 The integrated source checkpoint is main commit `e96ab3a2e9c24974d699e29835b79d4a08e9af34` (tree `b192bb3d7ef880d035b07aa5c9dd271222e0c191`). This identifies source contents, not a final release candidate or a verified deployment. Refresh the record if more changes enter the batch.
 
-The repository is public. No GitHub release existed when this record was prepared. The proposed version is `v0.5.0-beta.1`; the intended audience is public and publication remains on hold pending an explicit final go/no-go and all release gates. The release date is not decided. No deployment or public-beta readiness is certified here.
+The repository is public. [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) was published on 27 October 2026 at 08:19:46 UTC with seven assets: Linux DEB and AppImage, macOS ARM64 ZIP and DMG, Windows portable EXE and installer, and SHA256SUMS.txt. This supersedes the earlier beta.1 proposal. Publication does not certify every later main-branch change or platform-specific runtime behavior.
 
 ## Implemented in the checkpoint
 
@@ -22,13 +22,13 @@ The repository is public. No GitHub release existed when this record was prepare
 - Free-navigation right click sails immediately. The confirmation menu introduced in #583 was reverted by #587; no confirmation is promised.
 - Generated wiki/reference tables read from game data. Historical design notes and research are not the current game's API or balance specification.
 
-## Still subject to the release gate
+## Remaining validation and future release gates
 
-- The integrated batch is not yet a published release. Any later open proposals must be reviewed and integrated separately before being called available.
+- Beta.2 is published. Later open proposals must still be reviewed and integrated separately before being called available.
 - Full simulation gates, exact-commit CI, deployment verification and ES desktop playtest must be recorded on the final batch commit.
-- Screenshots in README are an older source set. They are not screenshots of an approved release candidate.
+- README screenshots were refreshed in #628 on 28 October 2026. They document that source checkpoint, not a certification of every later main-branch change or platform build.
 - Campaign completion, balance, save migration, accessibility and browser coverage are not declared complete.
-- The intended audience is public; publication remains on hold pending an explicit final go/no-go and all release gates. Final documentation, integrated-code links, polish and Playtest approval remain required.
+- Future releases still require their own final documentation, integrated-code links, polish, Playtest and release gates. The earlier publication hold is historical, not the current beta.2 status.
 
 ## Documentation map
 
@@ -46,4 +46,4 @@ No proposed launch date in these files overrides a later owner decision. No depe
 
 - Integrated #592, #593, #594 and #596: visible construction confirmation, real free plots (decorative neighbours removed by the current candidate), centred confirmation and bounded zoom/staged sprite loading.
 - #595, #597, #598 and #599 are integrated at 4afd05024bf879820483a57e850a37b436e97cf8. The #600 candidate adds painterly ground, clearer own-plot text, block-filling lot drawings, fixed Cádiz presentation and no decorative neighbour buildings. Final exact-candidate review and Playtest remain pending.
-- VERSION names the proposed beta candidate, not a published tag. Exact final CI, independent review, deployment and new-game Playtest remain required.
+- The beta preparation notes above describe earlier source candidates. Beta.2 is now published at the linked tag; they are not a current publication hold. New changes still need exact-head CI, independent review and relevant playtests.
