@@ -146,3 +146,13 @@ test("view: warning and debt messages read well in both languages", () => {
   assert.equal(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "en", fmt), "Cash is negative: you owe 12. Every week 2% interest is charged on that debt. Past 3000, you go bankrupt.");
   assert.ok(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "es", fmt).includes("debes 12"));
 });
+test('view: negative-margin plots use readable localized city labels without mutating saved IDs',()=>{
+ const g=idle();g.reports=[{week:114,day:798,lines:[],negMargin:['sevilla:70','cadiz:48','bad-token','unknown:5'],upkeep:0,paid:0,cashAfter:100}];
+ const raw=JSON.stringify(g.reports);
+ const names=id=>({sevilla:'Sevilla',cadiz:'Cádiz'}[id]??id);
+ const es=reportsHtml(g,'es',fmt,k=>k,names),en=reportsHtml(g,'en',fmt,k=>k,names);
+ assert.match(es,/Sevilla \(parcela 70\); Cádiz \(parcela 48\)/);assert.match(en,/Cádiz \(plot 48\)/);
+ for(const h of [es,en])assert.doesNotMatch(h,/sevilla:70|cadiz:48|bad-token|unknown:5/);
+ assert.match(es,/Puerto desconocido/);assert.match(en,/Unknown port/);assert.equal(JSON.stringify(g.reports),raw);
+ const escaped=reportsHtml(g,'es',fmt,k=>k,()=>'<b>Port</b>');assert.ok(escaped.includes('&lt;b&gt;Port&lt;/b&gt;'));assert.ok(!escaped.includes('<b>Port</b>'));
+});

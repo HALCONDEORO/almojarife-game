@@ -32,7 +32,7 @@ function routeStuckTemplate(m, lang) {
 export const daysToSettle = (day) => SETTLE_EVERY - (day % SETTLE_EVERY || 0) || SETTLE_EVERY;
 const typeName = (l, k) => LT[l].types[k] ?? (Object.hasOwn(SHIP_TYPES, k) ? k : "?");
 /** The reports screen: what comes next, then the last weeks, newest first. */
-export function reportsHtml(g, lang, fmt, goodName = (k) => k) {
+export function reportsHtml(g, lang, fmt, goodName = (k) => k, cityName = id => g.world?.cities?.find(c => c.id === id)?.name ?? "") {
   const t = LT[lang], n = daysToSettle(g.day);
   let h = `<h2>${t.reports}</h2><p>${t.next}: <b>${t.nextIn.replace("{n}", n)}</b> · ${t.due}: <b>${fmt(dueNow(g))}</b></p>`;
   const rs = g.reports ?? [];
@@ -40,9 +40,17 @@ export function reportsHtml(g, lang, fmt, goodName = (k) => k) {
   for (const r of rs.slice(0, 12)) {
     h += `<div class="card"><b>${t.week} ${r.week}</b> (${t.day} ${r.day})<table><tr><th>${t.ship}</th><th>${t.cost}</th><th>${t.crew}</th><th>${t.guns}</th><th>${t.captain}</th></tr>` +
       r.lines.map((l) => `<tr><td>${esc(recordedShipName(g,l.ship,l.shipName,typeName(lang,l.type)))}</td><td>${fmt(l.cost)}</td><td>${l.wages ? fmt(l.wages) : "–"}</td><td>${l.cannons ? fmt(l.cannons) : "–"}</td><td>${l.captain ? fmt(l.captain) : "–"}</td></tr>`).join("") + `</table>` +
-      `<small>${t.upkeep}: ${fmt(r.upkeep)}` + (r.carried ? ` · ${t.carried}: ${fmt(r.carried)}` : "") + (r.tolls ? ` · ${t.tolls}: ${fmt(r.tolls)}` : "") + (r.interest ? ` · ${t.interest}: ${fmt(r.interest)}` : "") + (r.household ? ` · ${t.household}: ${fmt(r.household)}` : "") + (r.loanInterest ? ` · ${t.loanInt}: ${fmt(r.loanInterest)}` : "") + (r.loanPrincipal ? ` · ${t.loanPrin}: ${fmt(r.loanPrincipal)}` : "") + ` · ${t.paid}: ${fmt(r.paid)}` + (r.debt ? ` · <b>${t.debt}: ${fmt(r.debt)}</b>` : "") + (r.negMargin?.length ? ` · <b>${t.negMargin}: ${r.negMargin.map(esc).join(", ")}</b>` : "") + ` · ${t.cashAfter}: ${fmt(r.cashAfter)}</small>` + tradeTable(r, t, fmt, goodName) + `</div>`;
+      `<small>${t.upkeep}: ${fmt(r.upkeep)}` + (r.carried ? ` · ${t.carried}: ${fmt(r.carried)}` : "") + (r.tolls ? ` · ${t.tolls}: ${fmt(r.tolls)}` : "") + (r.interest ? ` · ${t.interest}: ${fmt(r.interest)}` : "") + (r.household ? ` · ${t.household}: ${fmt(r.household)}` : "") + (r.loanInterest ? ` · ${t.loanInt}: ${fmt(r.loanInterest)}` : "") + (r.loanPrincipal ? ` · ${t.loanPrin}: ${fmt(r.loanPrincipal)}` : "") + ` · ${t.paid}: ${fmt(r.paid)}` + (r.debt ? ` · <b>${t.debt}: ${fmt(r.debt)}</b>` : "") + (r.negMargin?.length ? ` · <b>${t.negMargin}: ${r.negMargin.map(id => esc(marginPlotLabel(id,lang,cityName))).join("; ")}</b>` : "") + ` · ${t.cashAfter}: ${fmt(r.cashAfter)}</small>` + tradeTable(r, t, fmt, goodName) + `</div>`;
   }
   return h;
+}
+// Saved report entries retain their city:plot keys; only the presentation is translated.
+export function marginPlotLabel(id,lang,cityName) {
+  const match=String(id).match(/^([^:]+):(\d+)$/);
+  const unknown=lang==='es'?'Puerto desconocido':'Unknown port';
+  if(!match)return unknown;
+  const city=cityName(match[1]);
+  return `${city && city!==match[1] ? city : unknown} (${lang==='es'?'parcela':'plot'} ${match[2]})`;
 }
 function tradeTable(r, t, fmt, goodName) {
   if (!r.trades?.length) return "";
