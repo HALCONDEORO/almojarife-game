@@ -666,7 +666,9 @@ function render() {
   if (pe && shipWin && !inCity) { shipWin = null; document.getElementById("shipwin")?.remove(); } // a pending event must not hide behind the ship window
   const evCard = pe ? `<div class="event"><b>${pe.title[lang]}</b><p>${pe.text[lang]}</p><p class="ev-paused"><i>${t.evPaused}</i></p>` + pe.choices.map((c) => `<div class="ev-choice"><button data-ev="${c.id}">${c.label[lang]}</button><small class="ev-odds">${choiceOdds(c, lang)}</small></div>`).join("") + `</div>` : "";
   if (pe) { playing = false; if (!autoPause) autoPause = "event"; if (!inCity) h += evCard; } // recording the cause here also covers a game loaded with the event already pending; in the city the card pops as a modal (below) instead of hiding in a closed window
-  if (inCity || pe) {
+  if (inCity && s.voyage) {
+    h += `<p data-city-away role="status">${lang === "es" ? "El barco seleccionado está en el mar. Los servicios del puerto estarán disponibles cuando atraque. Vuelve al mapa para seguir el viaje o selecciona un barco amarrado aquí." : "The selected ship is at sea. Port services will be available when it docks. Return to the map to follow the voyage or select a ship docked here."}</p>`;
+  } else if (inCity || pe) {
   // The ship card is not wallpaper for every window - it shows only where the
   // selected ship actually operates: warehouse (hold in/out), route, shipyard.
   const shipCtx = !inCity || tab === "store" || tab === "route" || tab === "yard";
@@ -961,7 +963,7 @@ function render() {
   if (inCity && city3dId && tab === "yard" && s.voyage) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
-  if (s.voyage && privateeringReady) h += privateeringSeaHtml(g,s,justiceRealms,privateeringPeaces,lang);
+  if (!inCity && s.voyage && privateeringReady) h += privateeringSeaHtml(g,s,justiceRealms,privateeringPeaces,lang);
   $("panel").innerHTML = h;
   { const ov = $("city-event"); // city view: a pending event decides from a visible modal, never from a card buried in a closed window (the clock froze with no cue)
     if (pe && inCity) { if (!ov) $("v3d").insertAdjacentHTML("beforeend", `<div class="sea-shade" id="city-event"><section class="sea-dialog" role="dialog" aria-modal="true" aria-label="${pe.title[lang]}">${evCard}</section></div>`);
@@ -1272,7 +1274,7 @@ function open3d(s0) {
       if (nav) { d.city2dNavObs?.disconnect(); d.city2dNavObs = new MutationObserver(() => syncMissionEcho()); d.city2dNavObs.observe(nav, { attributes: true, childList: true, subtree: true, attributeFilter: ["hidden", "class", "style"] }); }
     } catch { /* cross-document watch unavailable: load/resize hooks still cover placement */ } });
   if(city2dEnabled(location.search)){const resize=()=>{d.querySelector("iframe").style.width=Math.max(200,d.clientWidth-d.querySelector(".city-controls").offsetWidth)+"px";syncMissionEcho();};d.city2dResize=new ResizeObserver(resize);d.city2dResize.observe(d);d.city2dResize.observe(d.querySelector(".city-controls"));resize();}
-  d.querySelector("[data-map]").onclick=close3d;
+  d.querySelector("[data-map]").onclick=()=>{close3d();render();};
   d.querySelector("[data-city-ships]").onclick=()=>openCityPanel("route");
   d.querySelector("[data-city-reports]").onclick=()=>showLedger("rep");
   d.querySelector("[data-city-menu]").onclick=showMenu;
