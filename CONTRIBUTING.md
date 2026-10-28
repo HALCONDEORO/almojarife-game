@@ -30,6 +30,7 @@ See [GOVERNANCE.md](GOVERNANCE.md). In short: CI must pass, one maintainer revie
 
 - GitHub is English-only: PR titles, descriptions, comments, review threads and commit messages. Product content (UI text, game or site copy) keeps its own language.
 - Every PR needs: a clear title, what and why, how it was tested, risk and rollback, links to related issues or PRs, and screenshots when the UI changes.
+- Release and pre-release titles, descriptions and notes are also in English. Keep tags and assets separate from editorial changes; do not claim packages, signing or tests that were not verified for that release.
 - Do not mix languages in the same PR.
 - One topic per PR: keep the change focused and small enough to review.
 - No direct pushes to the default branch for shared work: open a PR and wait for review and green CI before merging.
