@@ -1458,6 +1458,11 @@ function showSettings() {
   $("st-sound").onchange = e => { localStorage.setItem("sound", e.target.checked ? "1" : "0"); if (e.target.checked) sfx("confirm"); };
   $("st-tut")?.addEventListener("click", () => { act(() => restartTutorial(g)); showMenu(); });
   $("st-back").onclick = () => { if (inTitle) showTitle(); else showMenu(); };
+  el.querySelector(".st-win").addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.preventDefault(); e.stopPropagation(); $("st-back").click();
+  });
+  $("st-lang").focus();
 }
 document.addEventListener("keydown", (e) => { // M mutes or unmutes all sound, anywhere except while typing
   if (e.defaultPrevented || e.repeat || e.key.toLowerCase() !== "m" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.("select,input,textarea,[contenteditable]")) return;
