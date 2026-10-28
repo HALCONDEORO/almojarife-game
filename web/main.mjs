@@ -988,7 +988,7 @@ function render() {
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>openLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); if (tab === "hall") autosave(); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
@@ -1170,7 +1170,7 @@ function close3d() {
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;if(tb!==tab)rumorNote=null;tab=tb;
-  if (tb === "hall") tutorialNote(g, "hall"); // the city-view council visit closes the tutorial, same as the map-panel tab
+  if (tb === "hall") tutorialNote(g, "hall"); if (tb === "hall") autosave(); // the city-view council visit closes the tutorial, same as the map-panel tab
   const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;if(w.hidden)sfx("open");w.hidden=false;d.classList.add("win-open");
   render();
   d.querySelector(".city-window-title").textContent=cityPanelTitle(tb);

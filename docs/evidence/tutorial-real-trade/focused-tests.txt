@@ -1,0 +1,346 @@
+TAP version 13
+# Subtest: setRoute validates ports and goods
+ok 1 - setRoute validates ports and goods
+  ---
+  duration_ms: 465.45209
+  type: 'test'
+  ...
+# Subtest: a ship with a route loads, sails, sells and comes back by itself
+ok 2 - a ship with a route loads, sails, sells and comes back by itself
+  ---
+  duration_ms: 916.30252
+  type: 'test'
+  ...
+# Subtest: at A it never sails empty: no cash stalls the route with one message, then it recovers
+ok 3 - at A it never sails empty: no cash stalls the route with one message, then it recovers
+  ---
+  duration_ms: 333.45433
+  type: 'test'
+  ...
+# Subtest: a ship away from the route first goes to A
+ok 4 - a ship away from the route first goes to A
+  ---
+  duration_ms: 299.263479
+  type: 'test'
+  ...
+# Subtest: routes survive saving and show in both languages
+ok 5 - routes survive saving and show in both languages
+  ---
+  duration_ms: 304.76818
+  type: 'test'
+  ...
+# Subtest: a hold full of an unrelated good does not shuttle without trading
+ok 6 - a hold full of an unrelated good does not shuttle without trading
+  ---
+  duration_ms: 342.34201
+  type: 'test'
+  ...
+# Subtest: route tab source: goods is declared before the advanced-route editor uses it (TDZ regression)
+ok 7 - route tab source: goods is declared before the advanced-route editor uses it (TDZ regression)
+  ---
+  duration_ms: 2.60411
+  type: 'test'
+  ...
+# Subtest: the route tab shows its explainer line exactly once
+ok 8 - the route tab shows its explainer line exactly once
+  ---
+  duration_ms: 1.23136
+  type: 'test'
+  ...
+# Subtest: route tab source: the active advanced route renders as a visual P3 chain with one chip per stop
+ok 9 - route tab source: the active advanced route renders as a visual P3 chain with one chip per stop
+  ---
+  duration_ms: 0.678
+  type: 'test'
+  ...
+# Subtest: route tab source: the simple A⇄B card never renders for an advanced (v2) route
+ok 10 - route tab source: the simple A⇄B card never renders for an advanced (v2) route
+  ---
+  duration_ms: 0.64743
+  type: 'test'
+  ...
+# Subtest: route tab source: the editor keeps its control ids inside the compact table
+ok 11 - route tab source: the editor keeps its control ids inside the compact table
+  ---
+  duration_ms: 0.57036
+  type: 'test'
+  ...
+# Subtest: data tab renders an advanced v2 circuit instead of undefined fields
+ok 12 - data tab renders an advanced v2 circuit instead of undefined fields
+  ---
+  duration_ms: 482.19333
+  type: 'test'
+  ...
+# Subtest: data tab v2: no cash brake line when minCash is 0, current stop follows idx
+ok 13 - data tab v2: no cash brake line when minCash is 0, current stop follows idx
+  ---
+  duration_ms: 313.55082
+  type: 'test'
+  ...
+# Subtest: data tab still renders legacy v1 routes unchanged
+ok 14 - data tab still renders legacy v1 routes unchanged
+  ---
+  duration_ms: 282.71569
+  type: 'test'
+  ...
+# Subtest: cargo tab renders rows with average cost and local price, ES and EN
+ok 15 - cargo tab renders rows with average cost and local price, ES and EN
+  ---
+  duration_ms: 502.70312
+  type: 'test'
+  ...
+# Subtest: cargo tab: warehouse adds store/take buttons, sea makes it read-only
+ok 16 - cargo tab: warehouse adds store/take buttons, sea makes it read-only
+  ---
+  duration_ms: 317.79754
+  type: 'test'
+  ...
+# Subtest: crew tab: hire disabled without cash, dismiss disabled at sea, captain hint
+ok 17 - crew tab: hire disabled without cash, dismiss disabled at sea, captain hint
+  ---
+  duration_ms: 560.8309
+  type: 'test'
+  ...
+# Subtest: crew tab: a crewless prize ship shows the short-crew warning
+ok 18 - crew tab: a crewless prize ship shows the short-crew warning
+  ---
+  duration_ms: 282.796269
+  type: 'test'
+  ...
+# Subtest: data tab: hull, upkeep and value render; no sell button (sales only at the town auction)
+ok 19 - data tab: hull, upkeep and value render; no sell button (sales only at the town auction)
+  ---
+  duration_ms: 305.50018
+  type: 'test'
+  ...
+# Subtest: data tab: voyage, route and prize badge render
+ok 20 - data tab: voyage, route and prize badge render
+  ---
+  duration_ms: 268.41843
+  type: 'test'
+  ...
+# Subtest: both languages ship every tab label
+ok 21 - both languages ship every tab label
+  ---
+  duration_ms: 3.34969
+  type: 'test'
+  ...
+# Subtest: summary card: pinned on every tab with real hull, crew, guns and hold, ES and EN
+ok 22 - summary card: pinned on every tab with real hull, crew, guns and hold, ES and EN
+  ---
+  duration_ms: 308.15369
+  type: 'test'
+  ...
+# Subtest: summary card: short crew flagged, at-sea state shows the route and eta
+ok 23 - summary card: short crew flagged, at-sea state shows the route and eta
+  ---
+  duration_ms: 279.53684
+  type: 'test'
+  ...
+# Subtest: data tab: an advanced route lists its stops, never "undefined"
+ok 24 - data tab: an advanced route lists its stops, never "undefined"
+  ---
+  duration_ms: 281.35855
+  type: 'test'
+  ...
+# Subtest: city-view town-hall panel closes the tutorial
+ok 25 - city-view town-hall panel closes the tutorial
+  ---
+  duration_ms: 0.56768
+  type: 'test'
+  ...
+# Subtest: both town-hall paths feed the same tutorial step
+ok 26 - both town-hall paths feed the same tutorial step
+  ---
+  duration_ms: 0.12728
+  type: 'test'
+  ...
+# Subtest: hall progress is saved immediately on both entry paths
+ok 27 - hall progress is saved immediately on both entry paths
+  ---
+  duration_ms: 0.13271
+  type: 'test'
+  ...
+# Subtest: a game in the tutorial shows no missions and mission events do not count
+ok 28 - a game in the tutorial shows no missions and mission events do not count
+  ---
+  duration_ms: 476.54633
+  type: 'test'
+  ...
+# Subtest: no activation, progress or deadlines while the tutorial runs
+ok 29 - no activation, progress or deadlines while the tutorial runs
+  ---
+  duration_ms: 313.57659
+  type: 'test'
+  ...
+# Subtest: skipping the tutorial releases the mission arc the same day
+ok 30 - skipping the tutorial releases the mission arc the same day
+  ---
+  duration_ms: 316.03164
+  type: 'test'
+  ...
+# Subtest: finishing the tutorial by hand releases the mission arc
+ok 31 - finishing the tutorial by hand releases the mission arc
+  ---
+  duration_ms: 299.97816
+  type: 'test'
+  ...
+# Subtest: a game without the tutorial keeps the old behaviour (missions from day one)
+ok 32 - a game without the tutorial keeps the old behaviour (missions from day one)
+  ---
+  duration_ms: 288.7695
+  type: 'test'
+  ...
+# Subtest: tutorial state (running or skipped) survives the save file
+ok 33 - tutorial state (running or skipped) survives the save file
+  ---
+  duration_ms: 640.360319
+  type: 'test'
+  ...
+# Subtest: a real purchase does not advance missions while the tutorial runs
+ok 34 - a real purchase does not advance missions while the tutorial runs
+  ---
+  duration_ms: 272.38119
+  type: 'test'
+  ...
+# Subtest: a finished tutorial restarts from step one and runs again
+ok 35 - a finished tutorial restarts from step one and runs again
+  ---
+  duration_ms: 0.48484
+  type: 'test'
+  ...
+# Subtest: a skipped tutorial restarts too
+ok 36 - a skipped tutorial restarts too
+  ---
+  duration_ms: 0.70703
+  type: 'test'
+  ...
+# Subtest: there is nothing to restart while the tutorial runs, was never on, or its data is damaged
+ok 37 - there is nothing to restart while the tutorial runs, was never on, or its data is damaged
+  ---
+  duration_ms: 0.12338
+  type: 'test'
+  ...
+# Subtest: the replay button only appears in Settings when there is a tutorial to replay
+ok 38 - the replay button only appears in Settings when there is a tutorial to replay
+  ---
+  duration_ms: 0.31901
+  type: 'test'
+  ...
+# Subtest: main wires the replay button and carries both locales
+ok 39 - main wires the replay button and carries both locales
+  ---
+  duration_ms: 0.64646
+  type: 'test'
+  ...
+# Subtest: standing-route tutorial directs players to the visible city Ships control
+ok 40 - standing-route tutorial directs players to the visible city Ships control
+  ---
+  duration_ms: 0.40897
+  type: 'test'
+  ...
+# Subtest: tutorial off: no key, no step, no hint
+ok 41 - tutorial off: no key, no step, no hint
+  ---
+  duration_ms: 0.84828
+  type: 'test'
+  ...
+# Subtest: steps go buy -> sell -> sail -> route -> hall -> done, in order only
+ok 42 - steps go buy -> sell -> sail -> route -> hall -> done, in order only
+  ---
+  duration_ms: 0.15381
+  type: 'test'
+  ...
+# Subtest: a completed v1 tutorial (bought/sold/sailed, no v field) stays complete
+ok 43 - a completed v1 tutorial (bought/sold/sailed, no v field) stays complete
+  ---
+  duration_ms: 0.10437
+  type: 'test'
+  ...
+# Subtest: skip: one click finishes the tutorial from any step, only while it runs
+ok 44 - skip: one click finishes the tutorial from any step, only while it runs
+  ---
+  duration_ms: 0.09542
+  type: 'test'
+  ...
+# Subtest: every step has es and en text, no leftover placeholders
+ok 45 - every step has es and en text, no leftover placeholders
+  ---
+  duration_ms: 0.25287
+  type: 'test'
+  ...
+# Subtest: a real game: off by default, on with opts.tutorial, advances on real trades
+ok 46 - a real game: off by default, on with opts.tutorial, advances on real trades
+  ---
+  duration_ms: 836.92781
+  type: 'test'
+  ...
+# Subtest: failed actions do not advance the tutorial
+ok 47 - failed actions do not advance the tutorial
+  ---
+  duration_ms: 342.55966
+  type: 'test'
+  ...
+# Subtest: engine rule: the tutorial starts on any difficulty, only when asked for
+ok 48 - engine rule: the tutorial starts on any difficulty, only when asked for
+  ---
+  duration_ms: 1774.848929
+  type: 'test'
+  ...
+# Subtest: damaged g.tut never throws and trading still works
+ok 49 - damaged g.tut never throws and trading still works
+  ---
+  duration_ms: 1691.452
+  type: 'test'
+  ...
+# Subtest: free navigation counts as sailing
+ok 50 - free navigation counts as sailing
+  ---
+  duration_ms: 267.54138
+  type: 'test'
+  ...
+# Subtest: the real start path: every difficulty starts in the tutorial, with no 50,000 goal and no deadline
+ok 51 - the real start path: every difficulty starts in the tutorial, with no 50,000 goal and no deadline
+  ---
+  duration_ms: 8632.165767
+  type: 'test'
+  ...
+# Subtest: open-ended keeps bankruptcy as a real defeat
+ok 52 - open-ended keeps bankruptcy as a real defeat
+  ---
+  duration_ms: 294.64176
+  type: 'test'
+  ...
+# Subtest: a game without openended keeps the old 50,000 / 365 rules (existing saves)
+ok 53 - a game without openended keeps the old 50,000 / 365 rules (existing saves)
+  ---
+  duration_ms: 2534.57958
+  type: 'test'
+  ...
+# Subtest: the tutorial step order on a started game
+ok 54 - the tutorial step order on a started game
+  ---
+  duration_ms: 258.88885
+  type: 'test'
+  ...
+# Subtest: automated trading (standing routes) does not advance the tutorial
+ok 55 - automated trading (standing routes) does not advance the tutorial
+  ---
+  duration_ms: 663.554309
+  type: 'test'
+  ...
+# Subtest: v2 sale needs finite positive profit and known cost; v1 stays compatible
+ok 56 - v2 sale needs finite positive profit and known cost; v1 stays compatible
+  ---
+  duration_ms: 0.28981
+  type: 'test'
+  ...
+1..56
+# tests 56
+# suites 0
+# pass 56
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27181.312322
