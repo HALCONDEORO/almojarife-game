@@ -72,9 +72,9 @@ export function politicalZoneLayer({year,data,x,y,lang='es',enabled=false}){
 }
 export function historicalLayer({mode,...args}){if(!args.enabled)return {svg:'',legend:''};if(mode==='political'){const zones=politicalZoneLayer(args),ports=politicalPortLayer(args),t=TEXT[args.lang]??TEXT.es;return{underlay:zones.svg,svg:ports.svg,legend:ports.legend?`${zones.legend}<span class="realm-key-note">${t.zones} ${t.ports}</span>`:''};}if(mode==='trade')return tradePortLayer(args);if(mode==='leagues')return leaguePortLayer({...args,data:args.leagues});return{svg:'',legend:mode==='leagues'?(TEXT[args.lang]??TEXT.es).pending:''};}
 /** Declared game specialisations only. No inferred historical trade volumes. */
-export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id,x,y,bounds={width:800,height:850},zoom=1}){
+export function tradePortLayer({enabled=false,ports=[],lang='es',goodName=id=>id,x,y,bounds={width:800,height:850},zoom=1,labelAt,labelObstacles}){
  if(!enabled)return{svg:'',legend:''};const es=lang==='es';
- const cards=typeof x==='function'&&typeof y==='function'?tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom}):'';
+ const cards=typeof x==='function'&&typeof y==='function'?tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom,labelAt,labelObstacles}):'';
  return{svg:cards,legend:''};
 }
 /** Dated institutional evidence, not territory, alliances in game or invented routes. */
@@ -90,8 +90,8 @@ export function mapLabelPlacement(id){return ({lisboa:{x:-18,y:-14,anchor:'end'}
 
 /** Stable collision-free cards in map coordinates at overview zoom. */
 const cardLayouts=new Map();
-export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,obstaclePorts=ports){
- const cacheKey=JSON.stringify([bounds,zoom,ports.map(p=>[p.id,p.name,p.makes,p.needs,x(p.lon),y(p.lat)])]);
+export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,obstaclePorts=ports,labelAt=mapLabelPlacement){
+ const cacheKey=JSON.stringify([bounds,zoom,obstaclePorts.map(p=>[p.id,p.name,x(p.lon),y(p.lat),labelAt(p.id)]),ports.map(p=>[p.id,p.name,p.makes,p.needs,x(p.lon),y(p.lat)])]);
  if(cardLayouts.has(cacheKey))return cardLayouts.get(cacheKey);
  const gap=5/zoom,boxes=[],out=[];
  const hits=(a,b)=>a.x<b.x+b.w+gap&&a.x+a.w+gap>b.x&&a.y<b.y+b.h+gap&&a.y+a.h+gap>b.y;
@@ -100,7 +100,7 @@ export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,o
  // Obstacles mirror the DOM label model (maplabels.test.mjs): labels render inside a group
  // scaled by markerScale(zoom) with font labelFontSize(zoom); 0.571*fs per char is the audited
  // conservative width bound. Cards must avoid the label the player actually sees.
- const obstacles=obstaclePorts.flatMap(p=>{const px=x(p.lon),py=y(p.lat),l=mapLabelPlacement(p.id),w=p.name.length*fs*0.571*k,h=1.214*fs*k,tx=px+k*l.x,ty=py+k*l.y;return[{x:px-13*k,y:py-13*k,w:26*k,h:26*k},{x:tx-(l.anchor==='end'?w:l.anchor==='middle'?w/2:0),y:ty-13*(fs/14)*k,w,h}];});
+ const obstacles=obstaclePorts.flatMap(p=>{const px=x(p.lon),py=y(p.lat),l=labelAt(p.id)??{hidden:true},lf=l.fontSize??fs,w=p.name.length*lf*0.571*k,h=1.214*lf*k,tx=px+k*l.x,ty=py+k*l.y;return[{x:px-13*k,y:py-13*k,w:26*k,h:26*k},...(!l.hidden?[{x:tx-(l.anchor==='end'?w:l.anchor==='middle'?w/2:0),y:ty-13*(lf/14)*k,w,h}]:[])];});
  for(const p of [...ports].sort((a,b)=>{const near=p=>ports.filter(q=>Math.hypot(x(q.lon)-x(p.lon),y(q.lat)-y(p.lat))<100).length;return near(b)-near(a)||a.id.localeCompare(b.id)})){const px=x(p.lon),py=y(p.lat),size=tradeCardSize(p),W=size.w/zoom,H=size.h/zoom,candidates=[];
  for(let yy=8;yy<bounds.height-H-8;yy+=Math.max(4,16/zoom))for(let xx=8;xx<bounds.width-W-8;xx+=Math.max(4,16/zoom)){const b={x:xx,y:yy,w:W,h:H};if([...boxes,...obstacles].some(o=>hits(b,o)))continue;const dx=xx+W/2-px,dy=yy+H-py;candidates.push({...b,score:dx*dx+dy*dy+(dy>0?1600:0)});}
  candidates.sort((a,b)=>a.score-b.score);const b=candidates[0];if(!b)continue;boxes.push(b);out.push({port:p,box:b,px,py});
@@ -108,8 +108,8 @@ export function tradeCardLayout(ports,x,y,bounds={width:800,height:850},zoom=1,o
 }
 export function tradeCardSize(p){return {w:138,h:20+Math.max(1,Math.ceil((p.makes?.length??0)/4))*27+Math.max(1,Math.ceil((p.needs?.length??0)/4))*27};}
 export const tradeBadgePorts=(ports,zoom=1)=>zoom>=1.8?ports.filter(p=>zoom>=3||(p.pop??0)>=5000):ports.filter(p=>(p.pop??0)>=12000).sort((a,b)=>(b.pop??0)-(a.pop??0)||a.id.localeCompare(b.id)).slice(0,5);
-export function tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom=1}){
- const es=lang==='es';return tradeCardLayout(tradeBadgePorts(ports,zoom),x,y,bounds,zoom,ports).map(({port:p,box:b,px,py})=>{
+export function tradeGoodsCards({ports,x,y,lang,goodName,bounds,zoom=1,labelAt,labelObstacles}){
+ const es=lang==='es';return tradeCardLayout(tradeBadgePorts(ports,zoom),x,y,bounds,zoom,labelObstacles??ports,labelAt).map(({port:p,box:b,px,py})=>{
  const title=`${p.name}: ${es?'produce':'produces'} ${(p.makes??[]).map(goodName).join(', ')||'-'}; ${es?'pide':'needs'} ${(p.needs??[]).map(goodName).join(', ')||'-'}`;
  const size=tradeCardSize(p),nMakes=Math.max(1,Math.ceil((p.makes?.length??0)/4));
  const row=(goods,yy,label,color)=>`<text x="5" y="${yy+18}" font-size="18" font-weight="bold" fill="${color}">${label}</text>${goods.map((id,i)=>`<g transform="translate(${26+(i%4)*27} ${yy+Math.floor(i/4)*27})"><title>${esc(goodName(id))}</title>${goodIcon(id,24)}</g>`).join('')}`;

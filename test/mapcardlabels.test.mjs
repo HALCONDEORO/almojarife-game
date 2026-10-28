@@ -44,3 +44,11 @@ test("Argel trade card does not cover the Mostaganem label at zoom 1", () => {
     `argel card ${JSON.stringify(b)} covers mostaganem label ${JSON.stringify(lb)}`,
   );
 });
+
+test('card cache follows actual label offsets and obstacles, not only port data',()=>{
+ const ps=[{id:'p',name:'Port',lon:100,lat:100,makes:['salt'],needs:[]}],x=v=>v,y=v=>v,bounds={width:400,height:300};
+ const left=tradeCardLayout(ps,x,y,bounds,1,ps,()=>({x:14,y:4,anchor:'start'}));
+ const right=tradeCardLayout(ps,x,y,bounds,1,ps,()=>({x:-14,y:4,anchor:'end'}));
+ assert.notStrictEqual(left,right);
+ assert.equal(tradeCardLayout(ps,x,y,bounds,1,ps,()=>({x:-14,y:4,anchor:'end'})),right);
+});

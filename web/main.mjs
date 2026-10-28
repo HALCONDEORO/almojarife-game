@@ -3,6 +3,8 @@ import { installModalFocus } from "./modalfocus.mjs";
 import { armoryBlock } from "../src/sim/armory.mjs";
 import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
+import { TRAIL_LEN, TRAIL_STEP, trailSvg, headingArrowSvg, routeKind, remainingRoute } from "../src/view/navmarks.mjs";
+import { placeLabels, LANDMARKS } from "../src/view/labelplace.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
@@ -36,7 +38,7 @@ import { routeStyle, routeStrokeAttrs, routeLineSvg, routeLegendHtml } from "../
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
-import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
+import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer} from "../src/view/historicalmap.mjs";
 import { chartOrnamentSvg } from "../src/view/chartornament.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
@@ -55,7 +57,7 @@ import { missionView, campaignEvent } from "../src/game/campaigns.mjs";
 import { shipClickAction, portClickAction } from "../src/view/navflow.mjs";
 import { MISSION as MISSION_HOOKS, DAILY_HOOKS } from "../src/game/game.mjs";
 import { installMarqueDaily, PIRACY_DAILY_ENABLED } from "../src/game/marqueday.mjs";
-import { headingDeg, shipSvg, wakeSvg, pushTrail } from "../src/view/ships.mjs";
+import { headingDeg, shipSvg, pushTrail } from "../src/view/ships.mjs";
 import { newCamera, zoomAt, panBy, viewBox, markerScale, portHitRadius, labelFontSize, contentFraction, contentScale } from "../src/view/camera.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
@@ -147,13 +149,14 @@ $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
 let target = null, lp = 0; // destination chosen on the map; long-press timer
 const follow = newFollow();
 const cam = newCamera(800, VH), mapEl = $("map");
-const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); if(HISTORICAL_MAPS_ENABLED && mapMode==="trade")render(); };
+let labelZoom = cam.zoom;
+const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); if(labelZoom!==cam.zoom){labelZoom=cam.zoom;render();} };
 function scaleMarkers() {
   const k = markerScale(cam.zoom);
   mapEl.querySelectorAll("[data-mx]").forEach((el) => el.setAttribute("transform", `translate(${el.dataset.mx} ${el.dataset.my}) scale(${k})`));
   mapEl.querySelectorAll("#static line").forEach((el) => el.setAttribute("stroke-width", 1.5 * k));
   const fs = labelFontSize(cam.zoom).toFixed(2); // names stay readable from full chart to close zoom
-  mapEl.querySelectorAll("g.city text").forEach((el) => el.setAttribute("font-size", fs));
+  mapEl.querySelectorAll("g.city text").forEach((el) => el.setAttribute("font-size", el.closest(".landmark")?fs*.75:fs));
 }
 // Cursor fractions of the VIEWED MAP CONTENT, not the raw viewport: with preserveAspectRatio
 // meet the map is letterboxed inside a wider/shorter pane, and anchoring zoom to the viewport
@@ -198,6 +201,13 @@ const wxNote = (lw) => (lw ? ` · ${WX[lang].wind}: ${lw.name}${lw.storm ? ` · 
 // distance to its nearest neighbour (dense clusters like Ceuta/Tetuan stay unambiguous).
 const cityPx = new Map(world.cities.map((c) => [c.id, { x: X(c.lon), y: Y(c.lat) }]));
 const hitR = (id) => { const a = cityPx.get(id); let best = Infinity; for (const [oid, b] of cityPx) { if (oid !== id) best = Math.min(best, Math.hypot(a.x - b.x, a.y - b.y)); } return portHitRadius(best); };
+// View-only placement. Rebuild inputs on render so discovery/locale edits cannot hit stale memo entries.
+let priorLabels = new Map();
+function chartLabels(){
+ const items=[...world.cities.map(c=>({...c,x:X(c.lon),y:Y(c.lat),kind:'port'})),...LANDMARKS.map(l=>({...l,x:X(l.lon),y:Y(l.lat),kind:'landmark'}))];
+ const placed=placeLabels(items,{zoom:cam.zoom,hitR,bounds:{width:800,height:VH},prev:priorLabels});
+ priorLabels=new Map(placed.map(r=>[r.id,r])); return priorLabels;
+}
 const cityName = (id) => (typeof id === "string" && id.startsWith("pt:") ? t.openSea : (world.nodes[id]?.name ?? id)); // an unknown id shows as the id, it never throws
 
 document.documentElement.lang = lang;
@@ -242,7 +252,7 @@ function drawShips() {
     if (sh.voyage) {
       const q = shipPosition(world, sh, Math.min(1, f + 0.08)), qb = shipPosition(world, sh, Math.max(0, f - 0.08));
       ang = headingDeg({ x: X(qb.lon), y: Y(qb.lat) }, { x: X(q.lon), y: Y(q.lat) }) ?? 0;
-      wakes += wakeSvg(pushTrail(trails, id, pt));
+      wakes += trailSvg(pushTrail(trails, id, pt, TRAIL_LEN, TRAIL_STEP), markerScale(cam.zoom));
     } else delete trails[id];
     seen.add(id);
     let el = shipEls.get(id);
@@ -254,7 +264,7 @@ function drawShips() {
       el = document.createElementNS("http://www.w3.org/2000/svg", "g");
       el._ckey = ckey;
       if (mine) { el.setAttribute("data-ship", g.ships.indexOf(sh)); el.style.cursor = "pointer"; el.setAttribute("pointer-events", "all"); }
-      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0, weapons: weaponCount(sh), maxGuns: maxCannons(sh), gun: gunCond(sh), hull: sh.hull ?? 100 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${esc(shipDisplayName(sh,T[lang].types))}</text>` : ""}`;
+      el.innerHTML = `${headingArrowSvg()}${shipSvg(sh.type, { mine, heading: 0, weapons: weaponCount(sh), maxGuns: maxCannons(sh), gun: gunCond(sh), hull: sh.hull ?? 100 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${esc(shipDisplayName(sh,T[lang].types))}</text>` : ""}`;
       if (mine) {
         el.onclick = () => {
           const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
@@ -288,7 +298,8 @@ function drawShips() {
       layer.appendChild(el);
     }
     el.dataset.mx = pt.x; el.dataset.my = pt.y;
-    const rot = el.firstElementChild; if (rot) { const off = convoyOffset(sh); rot.setAttribute("transform", `${off}rotate(${ang}) scale(1.7)`); const lab = el.querySelector("text"); if (lab) lab.setAttribute("transform", off); }
+    const hd=el.querySelector("g.heading"); if(hd){hd.setAttribute("transform",`${convoyOffset(sh)}rotate(${ang})`);hd.style.display=sh.voyage?"":"none";}
+    const rot = el.querySelector("g.ship"); if (rot) { const off = convoyOffset(sh); rot.setAttribute("transform", `${off}rotate(${ang}) scale(1.7)`); const lab = el.querySelector("text"); if (lab) lab.setAttribute("transform", off); }
   }
   for (const [id, el] of shipEls) if (!seen.has(id)) { el.remove(); shipEls.delete(id); }
   wakesEl.innerHTML = wakes; scaleMarkers();
@@ -639,26 +650,29 @@ function render() {
   let m = chartOrnamentSvg({enabled:new URLSearchParams(location.search).get("chartornament")==="1",mode:mapMode,lang,x:X,y:Y});
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" ${routeStrokeAttrs("network")}/>`; }
-  if (s.voyage?.path?.length) { // selected voyage: solid green; automatic voyages use a thinner stroke
-    const cur = shipPosition(world, s, tickAcc / tickDurationMs());
-    const nd = (id) => s.voyage.pts?.[id] ?? world.nodes[id], ids = s.voyage.path.filter((id) => nd(id));
-    const pts = [`${X(cur.lon)},${Y(cur.lat)}`, ...ids.map((id) => `${X(nd(id).lon)},${Y(nd(id).lat)}`)].join(" ");
-    const last = ids.at(-1);
-    if (last) m += routeLineSvg(pts, s.route ? "automatic" : "active");
+  // Keep main's route legend/styles while clipping already passed waypoints.
+  for(const sh of g.ships){
+    if(!sh.voyage?.path?.length || (sh!==s && routeKind(sh)!=="auto"))continue;
+    const cur=shipPosition(world,sh,tickAcc/tickDurationMs());
+    const points=remainingRoute(world,sh,tickAcc/tickDurationMs());
+    const pts=[[X(cur.lon),Y(cur.lat)],...points.map(p=>[X(p.lon),Y(p.lat)])].map(p=>p.join(',')).join(' ');
+    m+=routeLineSvg(pts,routeKind(sh)==="auto"?"automatic":"active");
   }
   const est = target && !s.voyage ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null;
   if (est?.ok) {
-    const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
-    m += routeLineSvg(pts, "preview");
+    const pts=est.path.map(id=>`${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(' ');
+    m+=routeLineSvg(pts,"preview");
   }
-  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
+  const labels=chartLabels();
+  const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom,labelAt:id=>labels.get(id),labelObstacles:[...world.cities,...LANDMARKS]});
   m += historical.underlay ?? ""; // realm washes sit behind ports and labels
   for (const c of world.cities) {
     const explored = isDiscovered(g, c.id); // chart shows every port, discovery still gates interactions
     const e = !s.voyage ? travelEstimate(world, s, c.id, legWindEst(s.at, c.id)) : null, lw = !s.voyage && e?.ok ? legWeather(s.at, c.id) : null, tip = c.name + (!explored ? (lang === "es" ? " · Puerto no explorado" : " · Unexplored port") : "") + (explored && e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km${wxNote(lw)}` : "");
-    const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
-    m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? routeStyle(est?.ok === false && est.reason !== "already here" ? "invalid" : "preview").stroke : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
+    const label = {x:0,y:0,anchor:"start",fontSize:labelFontSize(cam.zoom),...labels.get(c.id)};
+    m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? routeStyle(est?.ok === false && est.reason !== "already here" ? "invalid" : "preview").stroke : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${!label.hidden ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text visibility="${label.hidden?"hidden":"visible"}" x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="${label.fontSize}" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
   }
+  for(const l of LANDMARKS){const r=labels.get(l.id);if(r&&!r.hidden)m+=`<g class="city landmark" data-mx="${X(l.lon)}" data-my="${Y(l.lat)}" pointer-events="none"><text x="${r.x}" y="${r.y}" text-anchor="${r.anchor}" font-size="${r.fontSize}" font-style="italic" fill="#58452e">${l.name}</text></g>`;}
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
     if (!key) { key=document.createElement("div");key.id="historical-map-key";key.style.cssText="font-size:14px;padding:6px;line-height:1.5";$("mapleft").append(key); }
