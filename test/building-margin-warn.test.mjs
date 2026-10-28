@@ -64,7 +64,7 @@ test("the message reads es/en and the weekly report lists the losing plots", () 
   assert.ok(g.reports.length >= 1, "a weekly report exists after day 7");
   assert.ok(g.reports[0].negMargin.includes("cadiz:7"), "the report lists the plot");
   const html = reportsHtml(g, "es", fmt);
-  assert.ok(html.includes("Margen negativo 3+ días") && html.includes("cadiz:7"), "the report renders the warning line");
+  assert.ok(html.includes("Margen negativo 3+ días") && html.includes("Cádiz (parcela 7)") && !html.includes("cadiz:7"), "the report renders a readable port and plot label");
 });
 
 test("the Buildings tab card marks the streak in red from day 3", () => {
