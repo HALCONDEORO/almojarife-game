@@ -58,3 +58,21 @@ test("label font size grows gently with zoom (screen size ~ zoom^0.5)", () => {
   assert.ok(labelFontSize(8) > labelFontSize(4) && labelFontSize(4) > labelFontSize(2) && labelFontSize(2) > labelFontSize(1));
   assert.ok(labelFontSize(8) < 45); // bounded: close zoom does not blow names up
 });
+
+import {centerOn,panTo,minimapPoint,mapKey} from '../src/view/camera.mjs';
+test('centerOn uses minimum 2x, clamps edges and preserves a closer zoom',()=>{
+  const c=newCamera(800,600);centerOn(c,400,300);assert.deepEqual(viewBox(c),[200,150,400,300]);
+  centerOn(c,-100,999);assert.deepEqual(viewBox(c),[0,300,400,300]);
+  c.zoom=4;centerOn(c,400,300);assert.deepEqual(viewBox(c),[300,225,200,150]);
+});
+test('minimap coordinates cover full chart; panTo preserves zoom and clamps',()=>{
+  const c=newCamera(800,600);assert.deepEqual(minimapPoint(c,.25,.5),[200,300]);
+  assert.deepEqual(minimapPoint(c,-1,2),[0,600]);c.zoom=4;panTo(c,...minimapPoint(c,.25,.5));assert.deepEqual(viewBox(c),[100,225,200,150]);
+  panTo(c,0,600);assert.deepEqual(viewBox(c),[0,450,200,150]);
+});
+test('map keyboard ignores editable controls and keeps numeric ship keys',()=>{
+  for(const key of ['Home','c','a','ArrowDown','+','-'])assert.equal(mapKey(key,true),null);
+  for(const key of ['1','2','9','Escape',' '])assert.equal(mapKey(key),null);
+  assert.deepEqual(mapKey('Home'),{kind:'ship'});assert.deepEqual(mapKey('C'),{kind:'port'});
+  assert.equal(mapKey('w').dy,.15);assert.equal(mapKey('ArrowRight').dx,-.15);
+});
