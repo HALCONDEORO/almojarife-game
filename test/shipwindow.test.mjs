@@ -64,11 +64,11 @@ test('summary card: pinned on every tab with real hull, crew, guns and hold, ES 
  const{g,s}=mk();
  for(const tab of['cargo','crew','data']){
   const es=shipWindowHtml(g,s,'es',tab,hp),en=shipWindowHtml(g,s,'en',tab,hpEn);
-  assert.ok(es.includes('swcard')&&es.includes('Coca 1'),'ES card name on '+tab);
+  assert.ok(es.includes('swcard')&&es.includes(s.name),'ES card name on '+tab);
   assert.ok(es.includes('En cadiz'),'ES state line');
   assert.ok(es.includes('aria-label="Casco 100%"'),'ES hull aria');
   assert.ok(es.includes('Bodega 25/60'),'ES hold aria with real cargo');
-  assert.ok(en.includes('Cog 1')&&en.includes('At cadiz'),'EN card on '+tab);
+  assert.ok(en.includes(s.name)&&en.includes('At cadiz'),'EN card on '+tab);
   assert.ok(en.includes('aria-label="Hull 100%"'),'EN hull aria');
   assert.ok(en.includes('Hold 25/60'),'EN hold aria');
  }

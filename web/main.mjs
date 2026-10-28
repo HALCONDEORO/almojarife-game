@@ -1,3 +1,4 @@
+import {shipDisplayName} from "../src/sim/shipnames.mjs";
 import { forecastData, forecastHtml } from "../src/view/forecastview.mjs";
 import { noticeData, noticeHtml } from "../src/view/noticeview.mjs";
 import { portData, portHtml, tradesHtml, nearestPorts } from "../src/view/portview.mjs";
@@ -623,8 +624,8 @@ function render() {
   // selected ship actually operates: warehouse (hold in/out), route, shipyard.
   const shipCtx = !inCity || tab === "store" || tab === "route" || tab === "yard";
   if (shipCtx) {
-  h += `<div class="port-ship-summary">` + g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${t.types[sh.type]} ${sh.id}</button>`).join("");
-  h += ` <b>${t.types[s.type]} ${s.id}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${shipCapacity(s)}<br>`;
+  h += `<div class="port-ship-summary">` + g.ships.map((sh, i) => `<button data-sel="${i}" ${i === sel ? "disabled" : ""}>${esc(shipDisplayName(sh,t.types))}</button>`).join("");
+  h += ` <b>${esc(shipDisplayName(s,t.types))}</b>: ${s.voyage ? `${t.sea} ${cityName(s.voyage.to)} (${s.voyage.anchored ? t.anchored : etaText(g.tick + s.voyage.ticksLeft)})` : `${t.at} ${cityName(s.at)}`} - ${t.cap} ${cargoUsed(s)}/${shipCapacity(s)}<br>`;
   h += assignedCaptainHtml(s,lang) + `</div>`;
   }
   if (!s.voyage && !g.over) {
@@ -865,7 +866,7 @@ function render() {
       { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
         const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
         // 1. what needs doing to this ship, with the numbers that matter
-        h += sec(`${en ? "Your ship" : "Tu barco"}: ${t.types[s.type]} ${s.id}`,
+        h += sec(`${en ? "Your ship" : "Tu barco"}: ${esc(shipDisplayName(s,t.types))}`,
           `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
           `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
           `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${away || s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
@@ -1074,9 +1075,9 @@ function renderShipWin() {
   const s = ship();
   const d = document.createElement("section");
   d.id = "shipwin"; d.className = "pwin"; d.setAttribute("role", "dialog");
-  d.setAttribute("aria-label", `${t.types[s.type]} ${s.id}`);
+  d.setAttribute("aria-label", shipDisplayName(s,t.types));
   const hp = { fmt, fmtM, cityName, types: t.types, goods: t.goods, eta: (sh) => sh.voyage?.anchored ? t.anchored : etaText(g.tick + sh.voyage.ticksLeft) };
-  d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${t.types[s.type]} ${s.id}</span><button class="pwin-close" data-swclose="1" aria-label="${t.close} (Esc)" title="${t.close} (Esc)">${CLOSE_ICON}</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
+  d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${esc(shipDisplayName(s,t.types))}</span><button class="pwin-close" data-swclose="1" aria-label="${t.close} (Esc)" title="${t.close} (Esc)">${CLOSE_ICON}</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
   if (!swWasOpen) sfx("open"); // only when the window appears, not on every re-render
   document.body.appendChild(d);
   const handle = d.querySelector(".pwin-handle"); let drag = null;
