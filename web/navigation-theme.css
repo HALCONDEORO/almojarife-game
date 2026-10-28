@@ -1,7 +1,7 @@
 /* Navigation theme: visual-only polish for the chart window and its cards.
    Scope: #mapcard, #mapleft, #historical-map-tools/-key, #fleet, #voyage-card and SVG text/routes inside #map.
-   Loaded after the inline <style> of index.html so equal-specificity rules here win. No layout, sizing of the chart,
-   pointer-events, geometry or behaviour is changed. Palette (design reference): paper #f4ead0, ink #302719,
+   Loaded after the inline <style> of index.html so equal-specificity rules here win. Compact cards and controls adjust padding, minimum height, font size and line height.
+   Chart geometry and pointer behavior stay unchanged. Palette (design reference): paper #f4ead0, ink #302719,
    ink-soft #5a4630, rule #8b6d36, red #285752, header #55412c, header-text #fff0cb. No images, fonts or network. */
 
 /* ---- Chart SVG text and routes: readability only ---- */
