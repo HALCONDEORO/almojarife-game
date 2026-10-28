@@ -4,7 +4,7 @@ Status: candidate only. No beta.3 tag, release or packaged build is announced by
 
 ## Integrated scope at this checkpoint
 
-Merge commits on main between beta.2 and the checkpoint below. SHAs are the merge or squash commit shown by `git log`. CI/Balance status of #629-#632, #633-#636 and #644 is not restated here; the independent exact-head review record of each PR is the source.
+Integrated changes on main between beta.2 and the checkpoint below, identified by PR number. CI/Balance status of #629-#632, #633-#636 and #644 is not restated here; the independent exact-head review record of each PR is the source.
 
 | Change | PR |
 | --- | --- |
