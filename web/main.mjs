@@ -1,3 +1,4 @@
+import { installModalFocus } from "./modalfocus.mjs";
 import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
@@ -340,6 +341,7 @@ function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error
 const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 let inTitle = true; // boot lands on the title screen over a throwaway background game
+installModalFocus($("title"), () => !inTitle);
 function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
 // Besides the daily save: every few minutes and when hidden or closed. Skip the title and byte-identical campaign payloads (savedAt is metadata).
 const AUTOSAVE_EVERY_MS = 3 * 60 * 1000;
@@ -1397,11 +1399,12 @@ $("hint-tut-skip").onclick = () => act(() => skipTutorial(g));
 function showMenu() {
   t = T[lang]; const el = $("title"), wasPlaying = playing; playing = false;
   // One place per control: language, speed, automatic time, sound, shortcuts and export live in Ajustes, not here.
-  el.innerHTML = `<div class="box pausemenu"><div class="pausemenu-handle"><h2>${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-slots">${SLOT_TEXT[lang].title}</button> <span id="m-msg" role="status"></span></p>` +
+  el.innerHTML = `<div class="box pausemenu" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div class="pausemenu-handle"><h2 id="pause-title">${t.paused}</h2></div><div class="pausemenu-body"><p><button id="m-res">${t.resume}</button></p><p><button id="m-save">${t.saveNow}</button> <button id="m-slots">${SLOT_TEXT[lang].title}</button> <span id="m-msg" role="status"></span></p>` +
     `<p><small>${t.seedLine.replace("{s}", g.seed ?? 0)}</small></p><p><button id="m-set">${t.stTitle}</button> <button id="m-cred">${t.cred}</button></p><p><button id="m-quit">${t.quit}</button></p></div></div>`;
   el.hidden = false;
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
   $("m-res").onclick = close;
+  $("m-res").focus();
   $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
   $("m-slots").onclick = () => showSlots();
   $("m-cred").onclick = () => showCredits();
