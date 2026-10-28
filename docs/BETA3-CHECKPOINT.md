@@ -12,14 +12,13 @@ Status: candidate only. No beta.3 tag, release or packaged build is announced by
 | Eight living-city defaults | #636 | 0e8e6e3b30041aa73ab0a9fc3262a50b82b5b0ad |
 | Household, calamity and regional-rival defaults | #639 | 9f525b13bf85a41851d19b02a3b3f611452a2eda |
 | Profitable tutorial sale, remembered voyage, reachable route controls and immediate council save | #640 | 1d91313db20b625bfd35c40e4dd709476b4bd7da |
+| Docked convoy departure through free-navigation port orders | #641 | 23c35a3d93be7ed983eb74e73fc40128ba11fb37 |
 
-The source checkpoint is `1d91313db20b625bfd35c40e4dd709476b4bd7da`. Pages deployment run [40678824304](https://github.com/HALCONDEORO/almojarife-game/actions/runs/40678824304) succeeded for that SHA. A live read of `src/game/tutorial.mjs` confirmed the new paid-cargo profit criterion. A live read of `src/game/game.mjs` confirmed the household, calamity and regional-rival defaults. This is not evidence that a desktop binary contains this batch.
+The source checkpoint is `23c35a3d93be7ed983eb74e73fc40128ba11fb37`. Pages deployment run [40681478653](https://github.com/HALCONDEORO/almojarife-game/actions/runs/40681478653) succeeded for that SHA. A live read of `src/game/tutorial.mjs` confirmed the new paid-cargo profit criterion. A live read of `src/game/game.mjs` confirmed the household, calamity and regional-rival defaults. This is not evidence that a desktop binary contains this batch.
 
-## Candidate fixes, NOT integrated or shipped
+## Integrated candidate
 
-- [#641](https://github.com/HALCONDEORO/almojarife-game/pull/641): free-navigation port order dispatches the docked convoy through the existing convoy operation.
-
-Only #641 remains a code candidate. It is not release scope until exact-head independent review, CI/Balance, merge and a final integrated playthrough. Do not tag this checkpoint before those decisions.
+Both #640 and #641 have exact-head independent review, green CI/Balance and squash merges. Final source checkpoint: `23c35a3d93be7ed983eb74e73fc40128ba11fb37`. Its Pages deployment and live Spanish desktop playthroughs passed as recorded below. There is no beta.3 tag or release yet.
 
 ## Evidence and limits
 
@@ -31,11 +30,18 @@ Only #641 remains a code candidate. It is not release scope until exact-head ind
 
 No private saves, credentials or customer data belong in release assets. Screenshots show deliberately created test trading houses only. No paid signing, third-party account changes or external provisioning is in this release.
 
+## Final live web verification
+
+At 11:43 WET on 28 October, the published Pages game passed both browser scripts without save/state injection:
+- `tutorial-playthrough.mjs`: new Spanish game; losing same-port sale does not advance; purchase and real Cádiz→Huelva voyage; profitable sale; save/reload; route button reachable at 1280x720; set route; council visit and completed tutorial survive reload.
+- `convoy-port.mjs`: new Spanish game; skip tutorial; order a barque; real game clock to construction on day 8; form two-ship convoy; right-click Huelva; both ships depart with destination Huelva and equal 402 remaining ticks in the action save.
+
+Raw live outputs are alongside this checkpoint in `docs/evidence/beta3-live`. No complete long campaign, all calamity outcomes, hostile justice encounter or new packaged binary is certified by these two checks.
+
 ## Remaining gates before publication
 
-- Resolve #641 against exact-head independent review and green CI/Balance; re-review any changed head.
-- Refresh this table, CHANGELOG and release notes to the final integrated source SHA. Review the documentation independently.
-- Repeat the real Spanish desktop paths on the final integrated candidate and verify the exact Pages deployment. Keep any incomplete scenario explicit rather than converting it into PASS.
+- #640/#641 are merged after exact-head independent review and green CI/Balance. Re-review any further code changes.
+- Independently review this documentation and release notes against source checkpoint 23c35a3d. This docs-only PR changes the eventual tag commit but not the game implementation; after merge, verify its Pages deployment separately.
 - Show the final short scope, version, SHA and limits before publication. The release owner decides whether remaining limits are acceptable.
 - Tag only the reviewed exact commit. A `v*` tag starts Desktop builds; wait for all platform builds, packaged-app smoke checks and provenance to finish. The workflow uploads only to a draft release. Do not publish the draft early.
 - Inspect draft assets, checksums, tag commit, pre-release flag, final notes and links. No claim of GPG or platform code-signing without evidence. GPG is optional; paid signing remains out of scope.

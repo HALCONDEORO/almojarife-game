@@ -1,0 +1,234 @@
+AFTERSAIL {
+  ship: {
+    id: 1,
+    type: 'cog',
+    at: 'cadiz',
+    name: 'Buenaventura',
+    cargo: { salt: 10 },
+    voyage: {
+      from: 'cadiz',
+      to: 'huelva',
+      ticksLeft: 353,
+      totalTicks: 353,
+      path: [Array],
+      km: 134.396806838939,
+      wind: 1.016,
+      sailLogged: true
+    },
+    hull: 100,
+    basis: { salt: 183.60000000000002 }
+  },
+  day: 0
+}
+TRADE {
+  day: 1,
+  cash: 2570.78,
+  ship: {
+    id: 1,
+    type: 'cog',
+    at: 'huelva',
+    name: 'Buenaventura',
+    cargo: {},
+    voyage: null,
+    hull: 98.87682172400878,
+    basis: {}
+  },
+  tut: {
+    v: 2,
+    bought: true,
+    sold: true,
+    sailed: true,
+    routed: false,
+    hall: false,
+    skipped: false
+  }
+}
+RELOAD Huelva
+· 3000 habitantes · Respeto: Desconocido
+HALL Ayuntamiento
+
+El concejo gobierna el puerto: nombra al alcalde, vela por el muelle y fija los derechos que paga quien comercia.
+
+⚜
+Alcalde
+
+Rodrigo de la Cerda
+
+◈
+Regidor 1
+
+Alfonso de Quesada
+
+◈
+Regidor 2
+
+Martín de Alarcón
+
+◈
+Regidor 3
+
+Pedro de Cárdenas
+
+◈
+Regidor 4
+
+Jerónimo de Lepe
+
+Trato del concejo contigo: Desconocido (5 puntos de respeto). El respeto de un puerto crece con lo que vendes en él.
+
+Huelva es una ciudad marinera y devota: huele a sal y a pescado, y las campanas marcan el paso del día.
+
+En Huelva la gente está tranquila: los días pasan sin sobresaltos.
+
+La fiesta de Huelva se celebra el día 299 del año.
+
+Con Setúbal, a malas; con Melilla, buen trato.
+
+Derechos del concejo
+◎
+Mercado
+
+Almojarifazgo: el 2 % de lo que compres y vendas en este mercado
+
+⚓
+Puerto
+
+Portazgo al atracar: la capacidad del barco entre 10 (tu descuento por respeto: 0 %)
+
+Caja del concejo: 105,42 monedas
+
+Nivel de tasas: sisa 0% · portazgo 0% (0 = lo normal; subidas y bajadas las vota el concejo)
+
+▤ Próximo cabildo: día 11
+
+El concejo se reúne en sala capitular y sus acuerdos se pregonan en la plaza.
+
+Justicia portuaria
+
+Los oficiales juzgan los cargos al llegar a un puerto del reino afectado. Las sentencias pueden incluir multa, embargo y retención del barco.
+
+Cargos pendientes: 0
+
+Cartas de marca y presas
+
+Una carta dura 365 días y cuesta 600 monedas. Autoriza ataques a mercantes del reino indicado, salvo durante una paz. Un quinto del botín se entrega al emisor.
+
+Portugal · paz vigente: la carta no autoriza ataques ahora: Comprar carta (600)
+
+Emirato de Granada: Comprar carta (600)
+
+Reino de Tlemecén: Comprar carta (600)
+
+Perdón del concejo
+
+Mala fama: 0. El perdón borra la mala fama, no cancela cargos abiertos. Un perdón por reino y año.
+
+Pedir perdón (0)
+
+No tienes mala fama que perdonar.
+
+Tributo de las casas: 2% del patrimonio al año, cobrado cada semana por igual a tu casa y rivales. Salud del puerto: 0.00
+
+Calamidades activas: ninguna
+
+Casas rivales
+
+Casa de la Ría · Inés Salcedo
+
+Casa de la Dársena · Yusuf Zahra
+
+Casa del Levante · Isabel Ferrer
+
+Almoneda
+
+Un día por semana la almoneda vende en la plaza lo que sale en este puerto: un establecimiento, un barco de segunda mano o una casa de vecinos, del concejo o de un vecino. Dejas una puja máxima por cada lote: gana la más alta y paga una moneda sobre la segunda. El martillo cae al final del día.
+
+Próxima almoneda: día 6
+
+Hoy no hay almoneda en este puerto.
+
+Vender un barco
+
+Los barcos se venden solo aquí, en la almoneda: el concejo paga el valor del barco al momento. El barco debe estar amarrado en este puerto y con la bodega vacía.
+
+Buenaventura · Carga: 0/60 Vender barco (1313)
+SHIPWINDOW [
+  '−',
+  'Saltar tutorial',
+  'Flota',
+  'Ciudad',
+  'Puerto',
+  'Mercado',
+  'Informes',
+  'Mensajes',
+  'Renombrar',
+  'BuenaventuraHuelvaSin orden · Carga 0/60 · Casco 99%',
+  'Abrir barco',
+  'Saltar tutorial',
+  '−',
+  'Construir',
+  'Barcos1',
+  'Informes',
+  'Mensajes0',
+  'Menú',
+  'Volver al mapa',
+  '▶',
+  '8x',
+  '',
+  '+',
+  '−',
+  '✦',
+  '⚒',
+  '',
+  'EN',
+  '',
+  'Buenaventura',
+  '✕',
+  'Añadir parada',
+  'Fijar ruta avanzada',
+  'Fijar ruta'
+]
+SCROLL {
+  rect: {
+    x: 496,
+    y: 127,
+    width: 546,
+    height: 587,
+    top: 127,
+    right: 1042,
+    bottom: 714,
+    left: 496
+  },
+  scrollTop: 65,
+  scrollHeight: 646,
+  clientHeight: 581
+}
+ROUTE {
+  route: {
+    a: 'huelva',
+    b: 'cadiz',
+    out: 'grain',
+    back: null,
+    legs: 0,
+    stuck: 0,
+    since: 1
+  },
+  tut: {
+    v: 2,
+    bought: true,
+    sold: true,
+    sailed: true,
+    routed: true,
+    hall: false,
+    skipped: false
+  }
+}
+COMPLETE {
+  v: 2,
+  bought: true,
+  sold: true,
+  sailed: true,
+  routed: true,
+  hall: true,
+  skipped: false
+}
