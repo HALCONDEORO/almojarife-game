@@ -1,0 +1,114 @@
+/* Right-hand navigation: parchment surfaces, ink and nautical green. */
+#panel-home > :is(#rtabs, #rt-fleet, #rt-ledger) {
+  color: #302719;
+  font-size: 15px;
+  line-height: 1.4;
+}
+#panel-home > #rtabs { gap: 5px; flex-wrap: wrap; }
+#panel-home > #rtabs button {
+  min-height: 32px;
+  padding: 6px 12px;
+  background: #eadbb9;
+  color: #302719;
+  border: 1px solid #927544;
+  border-radius: 6px;
+  text-shadow: none;
+  box-shadow: inset 0 1px #fff9e9;
+}
+#panel-home > #rtabs button[aria-selected="true"] {
+  background: #28574f;
+  color: #fff9e9;
+  border-color: #193e39;
+  box-shadow: inset 0 1px #6b9181;
+}
+#panel-home #mapside #voyage-card,
+#panel-home #mapside #cash-card,
+#panel-home #mapside #notice-card,
+#panel-home #mapside #forecast-card,
+#panel-home #mapside #fleet,
+#panel-home > #rt-ledger {
+  box-sizing: border-box;
+  border: 1px solid #a58850;
+  border-radius: 7px;
+  background: #f8efd9;
+  color: #302719;
+  box-shadow: inset 0 1px #fffaf0, 0 2px 5px #49351b24;
+}
+#panel-home #mapside #voyage-card,
+#panel-home #mapside #cash-card,
+#panel-home #mapside #notice-card,
+#panel-home #mapside #forecast-card { padding: 10px 12px; }
+#panel-home #mapside #voyage-card { border-left: 4px solid #28574f; }
+#panel-home #mapside .vc-head,
+#panel-home #mapside .cc-head,
+#panel-home #mapside .nc-title { margin-bottom: 5px; font-size: 16px; }
+#panel-home #mapside .vc-row,
+#panel-home #mapside .cc-row,
+#panel-home #mapside .nc-row { margin: 3px 0; line-height: 1.4; overflow-wrap: anywhere; }
+#panel-home #mapside .vc-warn { color: #962c20; }
+#panel-home #mapside #fleet summary { color: #244b43; font-size: 16px; }
+#panel-home #mapside #fleet-body { padding: 8px 10px 10px; }
+#panel-home #mapside #fleet-body label { display: block; margin: 6px 0; }
+#panel-home #mapside #fleet-body input,
+#panel-home #mapside #fleet-body select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  font: inherit;
+  color: #302719;
+  background: #fffaf0;
+  border: 1px solid #a58850;
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+#panel-home #mapside .fleet-row {
+  min-height: 32px;
+  margin: 3px 1px;
+  color: #302719;
+  background: #f4e6c7;
+  border: 1px solid #b99a5d;
+  text-shadow: none;
+  overflow-wrap: anywhere;
+}
+#panel-home #mapside .fleet-row[aria-pressed="true"] {
+  background: #e0eee4;
+  border: 2px solid #28574f;
+  color: #193e39;
+}
+#panel-home #mapside small { font-size: 12px; }
+#panel-home #mapside .fleet-row small { line-height: 1.35; }
+#panel-home #mapside .fc-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 5px;
+}
+#panel-home #mapside .fc-day { min-width: 0; padding: 4px 1px; line-height: 1.2; }
+#panel-home #mapside .fc-day i,
+#panel-home #mapside .fc-day small { font-size: 12px; opacity: 1; }
+#panel-home #mapside .fc-day.fc-storm { background: #d8dce7; border-color: #5b6b92; }
+#panel-home > #rt-ledger { padding: 10px 12px; }
+#panel-home > #rt-ledger .port-note,
+#panel-home > #rt-ledger small { font-size: 12px; }
+#panel-home #mapside button,
+#panel-home > #rt-ledger button { min-height: 32px; }
+#panel-home #mapside button:hover:not(:disabled):not(:focus-visible),
+#panel-home > #rtabs button:hover:not(:disabled):not(:focus-visible),
+#panel-home > #rt-ledger button:hover:not(:disabled):not(:focus-visible) { filter: none; outline: 1px solid #99783b; outline-offset: 0; }
+#panel-home #mapside button:active:not(:disabled),
+#panel-home > #rtabs button:active:not(:disabled),
+#panel-home > #rt-ledger button:active:not(:disabled) { transform: none; box-shadow: inset 0 2px 4px #30271955; }
+#panel-home #mapside :is(button, input, select, summary):focus-visible,
+#panel-home > #rtabs button:focus-visible,
+#panel-home > #rt-ledger :is(button, input, select, a):focus-visible { outline: 3px solid #28574f; outline-offset: 2px; }
+#panel-home #mapside button:disabled,
+#panel-home > #rtabs button:disabled,
+#panel-home > #rt-ledger button:disabled { opacity: .55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  #panel-home #mapside button,
+  #panel-home #mapside summary,
+  #panel-home #mapside #fleet summary::before,
+  #panel-home > #rtabs button,
+  #panel-home > #rt-ledger button { transition: none; }
+}
