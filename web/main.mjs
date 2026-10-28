@@ -1,3 +1,4 @@
+import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
@@ -138,6 +139,7 @@ const sc = 800 / (x1 - x0), VH = Math.round((y1 - y0) * sc * 1.25);
 $("map").setAttribute("viewBox", `0 0 800 ${VH}`);
 // Pan and zoom: the wheel zooms at the cursor, dragging pans, two fingers pinch, double click resets.
 let target = null, lp = 0; // destination chosen on the map; long-press timer
+const follow = newFollow();
 const cam = newCamera(800, VH), mapEl = $("map");
 const applyCam = () => { mapEl.setAttribute("viewBox", viewBox(cam).join(" ")); scaleMarkers(); if(HISTORICAL_MAPS_ENABLED && mapMode==="trade")render(); };
 function scaleMarkers() {
@@ -153,7 +155,7 @@ function scaleMarkers() {
 const frac = (e) => contentFraction(mapEl.getBoundingClientRect(), viewBox(cam), e.clientX, e.clientY);
 mapEl.style.touchAction = "none";
 mapEl.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(cam, e.deltaY < 0 ? 1.25 : 0.8, ...frac(e)); applyCam(); }, { passive: false });
-mapEl.addEventListener("dblclick", () => { cam.zoom = 1; cam.x = cam.y = 0; applyCam(); });
+mapEl.addEventListener("dblclick", () => { stopFollow(follow); cam.zoom = 1; cam.x = cam.y = 0; applyCam(); });
 const ptrs = new Map(); let moved = 0, pinch = 0;
 mapEl.addEventListener("pointerdown", (e) => { ptrs.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; pinch = 0; });
 mapEl.addEventListener("pointermove", (e) => {
@@ -163,10 +165,10 @@ mapEl.addEventListener("pointermove", (e) => {
     ptrs.set(e.pointerId, [e.clientX, e.clientY]);
     const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (pinch) { zoomAt(cam, d / pinch, ...contentFraction(r, viewBox(cam), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2)); applyCam(); }
-    pinch = d; moved = 99; return;
+    pinch = d; moved = 99; followAfterInput(follow,"pinch"); return;
   }
   const dx = e.clientX - prev[0], dy = e.clientY - prev[1]; moved += Math.abs(dx) + Math.abs(dy);
-  if (moved > 6) { const vb = viewBox(cam), s = contentScale(r, vb); panBy(cam, dx / (vb[2] * s), dy / (vb[3] * s)); applyCam(); ptrs.set(e.pointerId, [e.clientX, e.clientY]); }
+  if (moved > 6) { followAfterInput(follow,"drag"); const vb = viewBox(cam), s = contentScale(r, vb); panBy(cam, dx / (vb[2] * s), dy / (vb[3] * s)); applyCam(); ptrs.set(e.pointerId, [e.clientX, e.clientY]); }
 });
 const endPtr = (e) => { ptrs.delete(e.pointerId); pinch = 0; };
 mapEl.addEventListener("pointerup", endPtr); mapEl.addEventListener("pointercancel", endPtr);
@@ -309,8 +311,14 @@ function frame(now) {
     if (n) { tickAcc -= n * tickDurationMs(); stepTicks(n); }
     progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
+  if(follow.ship!==null&&!$("v3d")&&!inTitle){
+    pruneFollow(follow,g.ships);const sh=g.ships.find(s=>s.id===follow.ship);
+    if(sh){const p=shipPosition(world,sh,tickAcc/tickDurationMs());if(followStep(cam,X(p.lon),Y(p.lat),dt,{reduceMotion:document.body.classList.contains("reduce-motion")||matchMedia("(prefers-reduced-motion: reduce)").matches}))mapEl.setAttribute("viewBox",viewBox(cam).join(" "));}
+  }
   drawShips();
   mapControls.refresh();
+  const followButton=document.querySelector('[data-swfollow]');
+  if(followButton){const active=isFollowing(follow,ship().id),txt=followText(lang);if(followButton.getAttribute('aria-pressed')!==String(active)){followButton.setAttribute('aria-pressed',active);followButton.textContent=active?txt.off:txt.on;}}
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
@@ -357,6 +365,7 @@ const rpathUpdatePreview = (ship) => { const el = $("rts-preview"); if (el && ro
 const routeDrafts = {}; // advanced-route editor drafts, per ship id
 const newRouteDraft = (at, ids) => ({ minCash: "", stops: [{ city: ids[0] ?? at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }] });
 function start(prof, save = true, opts = {}) {
+  stopFollow(follow);
   const p = cleanProfile({ ...prof, company: prof?.company || T[lang].defCo }, cityIds);
   g = newGame(world, p.home, { ...startOptions(p), ...opts, profile: p, events: true, seed: crypto.getRandomValues(new Uint32Array(1))[0] }); sel = 0; pauseNote = null; company = p.company; if (save) autosave(); render(); if (prof && !ship().voyage) open3d(ship()); // city opens for a real new game, not for the background boot game
 }
@@ -1116,7 +1125,7 @@ function renderShipWin() {
   d.id = "shipwin"; d.className = "pwin"; d.setAttribute("role", "dialog");
   d.setAttribute("aria-label", shipDisplayName(s,t.types));
   const hp = { fmt, fmtM, cityName, types: t.types, goods: t.goods, eta: (sh) => sh.voyage?.anchored ? t.anchored : etaText(g.tick + sh.voyage.ticksLeft) };
-  d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${esc(shipDisplayName(s,t.types))}</span><button class="pwin-close" data-swclose="1" aria-label="${t.close} (Esc)" title="${t.close} (Esc)">${CLOSE_ICON}</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
+  d.innerHTML = `<div class="pwin-handle" tabindex="0" role="button" aria-label="${lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys"}"><span class="pwin-title">${esc(shipDisplayName(s,t.types))}</span>${followButtonHtml(lang,isFollowing(follow,s.id))}<button class="pwin-close" data-swclose="1" aria-label="${t.close} (Esc)" title="${t.close} (Esc)">${CLOSE_ICON}</button></div><div class="pwin-body">${shipWindowHtml(g, s, lang, shipWin.tab, hp)}</div>`;
   if (!swWasOpen) sfx("open"); // only when the window appears, not on every re-render
   document.body.appendChild(d);
   const handle = d.querySelector(".pwin-handle"); let drag = null;
@@ -1132,6 +1141,7 @@ function renderShipWin() {
   d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
+  d.querySelector("[data-swfollow]").onclick=()=>{sfx("click");mapControls.cancel();if(toggleFollow(follow,s.id)&&cam.zoom<2){zoomAt(cam,2/cam.zoom);applyCam();}render();};
   d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
@@ -1326,6 +1336,7 @@ document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.("#ctx"
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("select,input,textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("title") && !$("title").hidden) return;
+  if(e.key==="Escape"&&followAfterInput(follow,"escape")){e.preventDefault();render();return;}
   if (e.key === "Escape" && $("v3d")) { e.preventDefault(); const w=$("v3d").querySelector(".city-window"); if(!w.hidden)closeCityWindow();else close3d();return; }
   if($("v3d"))return;
   if (e.key === "Escape") { if (shipWin) { shipWin = null; render(); return; } closeMenu(); target = null; render(); }
@@ -1411,7 +1422,7 @@ function showSlots() {
     if (!recoverRotations()) { say(x.err); return; }
     if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch { say(x.err); return; } }
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { say(x.err); return; }
-    g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
+    stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
   });
 }
@@ -1528,12 +1539,12 @@ function showTitle() {
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // never overwrite backup slots with a parked copy pending
     if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
-    music.leaveTitle(); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
+    music.leaveTitle(); stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if(ship()&&!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
 showTitle(); // title first: it must paint instantly
-const mapControls = installMapControls({
+const mapControls = installMapControls({onInput:input=>{if(followAfterInput(follow,input))render();},
   map:mapEl,cam,apply:applyCam,state:()=>g,locale:()=>lang,
   selected: () => { const s=ship(); return s?shipPosition(world,s,tickAcc/tickDurationMs()):null; },
   position: s => shipPosition(world,s,tickAcc/tickDurationMs()),
