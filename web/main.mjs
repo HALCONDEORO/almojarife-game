@@ -1,3 +1,4 @@
+import { confirmDialog } from "./confirmdialog.mjs";
 import { installModalFocus } from "./modalfocus.mjs";
 import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
@@ -63,7 +64,7 @@ import { defaultProfile, cleanProfile, startBonus, startOptions, crestSvg, portr
 import { previewBuy, previewSell, FEE } from "../src/sim/trade.mjs";
 import { stockLevel } from "../src/game/stocklevel.mjs";
 import { listSlots, readSlot, writeSlot, clearSlot } from "../src/game/saveslots.mjs";
-import { slotsHtml, SLOT_TEXT } from "../src/view/slotsview.mjs";
+import { slotsHtml, SLOT_TEXT, slotError } from "../src/view/slotsview.mjs";
 import { BACKUP_KEY, TMP_KEY, finishPendingRotation, restoreRotate, saveFileName } from "./savefile.mjs";
 import { loanCapFor } from "../src/game/rank.mjs";
 import { houseHtml, RESPECT_NAMES } from "../src/view/rankview.mjs";
@@ -342,7 +343,25 @@ const SAVE_KEY = "almojarife.save.v1";
 let company = "";
 let inTitle = true; // boot lands on the title screen over a throwaway background game
 installModalFocus($("title"), () => !inTitle);
-function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }
+function autosave() {
+  if (inTitle) return false;
+  try {
+    const raw = JSON.stringify(packGame(g, company));
+    localStorage.setItem(SAVE_KEY, raw);
+    if (localStorage.getItem(SAVE_KEY) !== raw) throw new Error("Save verification failed");
+    document.getElementById("save-warning")?.remove();
+    return true;
+  } catch (error) {
+    let warning = document.getElementById("save-warning");
+    if (!warning) { warning = document.createElement("aside"); warning.id = "save-warning"; warning.setAttribute("role", "alert"); warning.style.cssText = "position:fixed;bottom:8px;left:10%;right:10%;z-index:2500;background:#fff2cf;color:#542c15;padding:12px;border:2px solid #8b4928"; document.body.append(warning); }
+    warning.replaceChildren();
+    const text = document.createElement("span"); text.textContent = slotError(error, lang) + " ";
+    const exp = document.createElement("button"); exp.textContent = lang === "es" ? "Exportar partida actual" : "Export current game";
+    exp.onclick = () => exportSave(JSON.stringify(packGame(g, company)), g.day);
+    warning.append(text, exp);
+    return false;
+  }
+}
 // Besides the daily save: every few minutes and when hidden or closed. Skip the title and byte-identical campaign payloads (savedAt is metadata).
 const AUTOSAVE_EVERY_MS = 3 * 60 * 1000;
 function autosaveIfChanged() { try { if (!g || inTitle) return; const stored = localStorage.getItem(SAVE_KEY); const strip = (o) => JSON.stringify({ ...o, savedAt: 0 }); if (stored && strip(JSON.parse(stored)) === strip(packGame(g, company))) return; } catch {} autosave(); }
@@ -1405,11 +1424,15 @@ function showMenu() {
   const close = () => { el.hidden = true; playing = wasPlaying; render(); };
   $("m-res").onclick = close;
   $("m-res").focus();
-  $("m-save").onclick = () => { autosave(); $("m-msg").textContent = t.saved; };
+  $("m-save").onclick = () => {
+    const saved = autosave(), msg = $("m-msg"); msg.textContent = saved ? t.saved : (document.querySelector("#save-warning span")?.textContent ?? SLOT_TEXT[lang].err);
+    if (!saved) { const exp = document.createElement("button"); exp.textContent = lang === "es" ? "Exportar partida actual" : "Export current game"; exp.onclick = () => exportSave(JSON.stringify(packGame(g, company)), g.day); msg.append(exp); }
+    return saved;
+  };
   $("m-slots").onclick = () => showSlots();
   $("m-cred").onclick = () => showCredits();
   $("m-set").onclick = () => showSettings();
-  $("m-quit").onclick = () => { autosave(); playing = false; close3d(); showTitle(); };
+  $("m-quit").onclick = () => { if (!$("m-save").onclick()) return; playing = false; close3d(); showTitle(); };
 }
 
 function showSlots() {
@@ -1418,25 +1441,25 @@ function showSlots() {
   el.innerHTML = slotsHtml(listSlots(localStorage, (raw) => unpackGame(JSON.parse(raw), world)), { lang, inGame, fmt, defCo: t.defCo });
   el.hidden = false;
   $("sl-back").onclick = () => { if (inTitle) showTitle(); else showMenu(); };
-  el.querySelectorAll("[data-sl-save]").forEach((b) => b.onclick = () => {
+  el.querySelectorAll("[data-sl-save]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slSave;
-    if (readSlot(localStorage, n) != null && !confirm(n2(x.confirmOver, n))) return;
-    try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch { say(x.err); return; }
+    if (readSlot(localStorage, n) != null && !await confirmDialog(el, n2(x.confirmOver, n), lang)) { showSlots(); return; }
+    try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     showSlots(); say(n2(x.saved, n));
   });
-  el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = () => {
-    const n = +b.dataset.slDel; if (!confirm(n2(x.confirmDel, n))) return;
-    if (!clearSlot(localStorage, n)) { say(x.err); return; }
+  el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = async () => {
+    const n = +b.dataset.slDel; if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
+    if (!clearSlot(localStorage, n)) { showSlots(); say(x.err); return; }
     showSlots(); say(n2(x.deleted, n));
   });
-  el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = () => {
+  el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slLoad, raw = readSlot(localStorage, n); if (raw == null) return;
     let r; try { r = unpackGame(JSON.parse(raw), world); } catch { say(x.err); return; }
-    if (inGame && !confirm(n2(x.confirmLoad, n))) return;
+    if (inGame && !await confirmDialog(el, n2(x.confirmLoad, n), lang)) { showSlots(); return; }
     const curRaw = localStorage.getItem(SAVE_KEY), cur = curRaw && isValidSaveText(curRaw) ? curRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // same rotation as Import: the current save lands in the backup slot
-    if (!recoverRotations()) { say(x.err); return; }
-    if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch { say(x.err); return; } }
-    else try { localStorage.setItem(SAVE_KEY, packed); } catch { say(x.err); return; }
+    try { finishPendingRotation(localStorage, isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
+    if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; } }
+    else try { localStorage.setItem(SAVE_KEY, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
   });
@@ -1537,14 +1560,14 @@ function showTitle() {
   if (!justiceData.ready) { const warning=document.createElement("p"); warning.id="justice-startup-warning"; warning.style.cssText="position:fixed;bottom:8px;left:10%;right:10%;background:#fff2cf;padding:10px;z-index:2000;color:#542c15"; warning.textContent=lang==="es"?"Justicia no disponible: sus datos no cargaron. Tus cargos guardados se conservan. Recarga para reintentar.":"Justice unavailable: its data did not load. Saved charges are preserved. Reload to retry."; const retry=document.createElement("button");retry.textContent=lang==="es"?"Reintentar":"Retry";retry.onclick=()=>location.reload();warning.append(retry);el.append(warning); }
   $("t-start").onclick = () => showCreate(t.defCo);
   $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
-  $("t-rest").onclick = () => {
+  $("t-rest").onclick = async () => {
     if (!getBackup() && !getTmp()) return;
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
     const b = getBackup(); if (!b) return;
     try { unpackGame(JSON.parse(b), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    if (!confirm(t.restConfirm)) return;
+    if (!await confirmDialog(el, t.restConfirm, lang)) { showTitle(); return; }
     const raw = localStorage.getItem(SAVE_KEY), cur = raw && isValidSaveText(raw) ? raw : null; // a corrupt current is not worth parking
-    try { restoreRotate(localStorage, SAVE_KEY, cur, b); } catch { $("t-msg").textContent = t.errB; return; } // fail-closed: nothing is overwritten unless both copies are safe
+    try { restoreRotate(localStorage, SAVE_KEY, cur, b); } catch (e) { showTitle(); $("t-msg").textContent = slotError(e, lang); return; } // fail-closed: nothing is overwritten unless both copies are safe
     showTitle(); $("t-msg").textContent = t.restDone;
   };
   $("t-lang").onclick = () => { lang = lang === "es" ? "en" : "es"; localStorage.setItem("lang", lang); document.documentElement.lang = lang; showTitle(); };

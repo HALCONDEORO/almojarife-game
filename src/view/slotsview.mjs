@@ -24,3 +24,9 @@ export function slotsHtml(slots, { lang, inGame, fmt = String, defCo = "" }) {
   }).join("");
   return `<div class="box pausemenu sl-win"><div class="pausemenu-handle"><h2>${x.title}</h2></div><div class="pausemenu-body sl-body"><div class="sl-grid">${cards}</div><p class="sl-hint">${x.hint}${inGame ? "" : " " + x.noGame}</p><p><span id="sl-msg" role="status"></span></p><p><button id="sl-back">${x.back}</button></p></div></div>`;
 }
+
+export function slotError(error, lang = 'es') {
+  const quota = error?.name === 'QuotaExceededError' || error?.name === 'NS_ERROR_DOM_QUOTA_REACHED';
+  if (!quota) return (SLOT_TEXT[lang] ?? SLOT_TEXT.es).err;
+  return lang === 'en' ? 'Storage is full. Export a backup before deleting any old save slots. The requested save or load was not completed.' : 'Almacenamiento lleno. Exporta una copia antes de borrar ranuras antiguas. No se ha completado el guardado o la carga solicitada.';
+}
