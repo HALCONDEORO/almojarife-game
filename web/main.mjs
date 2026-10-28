@@ -1,5 +1,6 @@
 import { confirmDialog } from "./confirmdialog.mjs";
 import { installModalFocus } from "./modalfocus.mjs";
+import { armoryBlock } from "../src/sim/armory.mjs";
 import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
@@ -46,7 +47,7 @@ import { shipWindowHtml, SW } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { createMenuGuard } from "../src/view/menuguard.mjs";
-import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponsOf, weaponCount, weaponPower, buyGear } from "../src/game/crew.mjs";
+import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponsOf, weaponCount, weaponPower, buyGear, armoryPrice } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
 import { titleBookHtml } from "./titlebook.mjs";
 import { lonjaEnabled, lonjaHtml } from "../src/view/lonjaview.mjs";
@@ -409,7 +410,10 @@ function act(fn) {
 
 function armFailNote(reason) { // an armory rejection names its cause on the hint line, then the next render restores it
   const h = $("hint"); if (!h) return;
-  h.textContent = (SW[lang] ?? SW.es).armWhy?.[reason] ?? reason;
+  const message = (SW[lang] ?? SW.es).armWhy?.[reason] ?? reason;
+  h.textContent = message;
+  const panel = $("v3d")?.querySelector("#panel");
+  if (panel) { let note = panel.querySelector("#arm-fail-note"); if (!note) { note=document.createElement("p"); note.id="arm-fail-note"; note.setAttribute("role","status"); panel.prepend(note); } note.textContent=message; }
   setTimeout(() => render(), 2500);
 }
 
@@ -944,7 +948,12 @@ function render() {
         h += sec(`${en ? "Your ship" : "Tu barco"}: ${esc(shipDisplayName(s,t.types))}`,
           `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
           `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
-          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${away || s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
+          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => {
+            const price = armoryPrice(g, s.at, w.price), why = away ? "not in this port" : weaponCount(s) >= maxCannons(s) ? "full" : armoryBlock(g, s, w.weight, price, g.cash);
+            const reason = why === "not in this port" ? (en ? "Dock this ship here first." : "Atraca este barco aquí primero.") : (SW[lang] ?? SW.es).armWhy[why];
+            return `<span><button data-weapon="${k}" ${why ? "disabled" : ""} title="${esc(reason ?? t.weaponPowerLbl.replace('{p}', w.power))}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(price))}</button>${why ? `<small class="yd-arm-reason">${esc(reason ?? why)}</small>` : ""}</span>`;
+          }).join("")}</div>`);
+
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
         if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
