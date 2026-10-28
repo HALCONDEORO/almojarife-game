@@ -1,4 +1,8 @@
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
+import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
+import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
+import {buyLetter} from "../src/game/marque.mjs";
+import {attackTrader,settlePrize} from "../src/game/privateering.mjs";
 import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
@@ -118,13 +122,11 @@ const TW = { es: { title: "Atalayas", none: "Sin atalayas", count: "{n} de {m} a
 const CLOSE_ICON = `<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`;
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang), fmtM = (n) => (Math.round(n * 100) / 100).toLocaleString(lang, { maximumFractionDigits: 2 }); // fmtM: money, cents shown when they exist; integers render the same as fmt
 const world = buildWorld(await (await fetch("../data/world.json")).json());
-
 const justiceData = await loadJusticeData(fetch,world.cities.map(c=>c.id));
 const justiceRealms = justiceData.realms, justiceCourts = justiceData.courts;
-if (PIRACY_DAILY_ENABLED && justiceData.ready) {
-  const pc = await optionalJson(fetch,"../data/peaces.json");
-  if (pc) installMarqueDaily(DAILY_HOOKS,justiceRealms,pc);
-}
+const privateeringPeaces = await optionalJson(fetch,"../data/peaces.json");
+const privateeringReady = justiceData.ready && Array.isArray(privateeringPeaces?.treaties);
+if (PIRACY_DAILY_ENABLED && privateeringReady) installMarqueDaily(DAILY_HOOKS,justiceRealms,privateeringPeaces);
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
@@ -509,6 +511,16 @@ const endPress = () => { clearTimeout(pressTimer); setTimeout(() => { uiPressed 
 document.addEventListener("pointerdown", (e) => { if (e.target?.closest?.(PRESS_SCOPE)) { uiPressed = true; clearTimeout(pressTimer); pressTimer = setTimeout(endPress, 1500); } }, true); // 1.5 s safety if the release never arrives
 document.addEventListener("pointerup", endPress, true); document.addEventListener("pointercancel", endPress, true);
 function render() {
+  sel = fleetSelection(g, sel);
+  if (sel < 0) {
+    playing = false; close3d(); shipWin = null; $("shipwin")?.remove(); $("sea-modal")?.remove();
+    g.over = "lose"; g.overReason = "fleet-lost";
+    let lost = $("fleet-loss-overlay"); if (!lost) { lost = document.createElement("div"); lost.id="fleet-loss-overlay"; lost.style.cssText="position:fixed;inset:90px 15% auto;z-index:1000;background:#f6ebcb;padding:24px;border:2px solid #8b6d36"; document.body.append(lost); } lost.innerHTML=fleetLossHtml(lang)+`<button id="fleet-loss-menu">${lang==="es"?"Menú":"Menu"}</button>`; $("fleet-loss-menu").onclick=showMenu;
+    $("panel").innerHTML = ""; $("voyage-card").innerHTML = ""; $("fleet-body").innerHTML = ""; $("cash-card").innerHTML = ""; $("notice-card").innerHTML = "";
+    $("forecast-card").innerHTML = ""; $("hint").textContent = lang === "es" ? "La partida ha terminado: has perdido tu flota." : "Game over: your fleet is lost.";
+    $("ships").textContent = "0"; return;
+  }
+  $("fleet-loss-overlay")?.remove();
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}}); // this second render is the one that sticks: keep the resolve-event button (542)
@@ -743,6 +755,7 @@ function render() {
       h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisaPct > 0 ? "+" : "") + hv.sisaPct + "%").replace("{p}", (hv.portazgoPct > 0 ? "+" : "") + hv.portazgoPct + "%")}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
       h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
+      h += privateeringReady ? privateeringHallHtml(g,s,justiceRealms,privateeringPeaces,lang) : `<p data-privateering-unavailable>${lang === "es" ? "Corso no disponible: faltan datos de tribunales o paces. Recarga para reintentarlo." : "Privateering unavailable: court or peace data is missing. Reload to retry."}</p>`;
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
@@ -923,6 +936,7 @@ function render() {
   if (inCity && city3dId && tab === "yard" && s.voyage) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
+  if (s.voyage && privateeringReady) h += privateeringSeaHtml(g,s,justiceRealms,privateeringPeaces,lang);
   $("panel").innerHTML = h;
   { const ov = $("city-event"); // city view: a pending event decides from a visible modal, never from a card buried in a closed window (the clock froze with no cue)
     if (pe && inCity) { if (!ov) $("v3d").insertAdjacentHTML("beforeend", `<div class="sea-shade" id="city-event"><section class="sea-dialog" role="dialog" aria-modal="true" aria-label="${pe.title[lang]}">${evCard}</section></div>`);
@@ -933,6 +947,9 @@ function render() {
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-market-window",tab==="market"&&ui2dEnabled(location.search));
   { const w = $("v3d")?.querySelector(".city-window"); if (w) { w.classList.remove("ui2d-store-window", "ui2d-bank-window"); const k = ui2dEnabled(location.search) ? store2dWindowClass(tab) : ""; if (k) w.classList.add(k); } }
   const P = $("panel");
+  P.querySelectorAll("[data-letter]").forEach(b=>b.onclick=()=>act(()=>buyLetter(g,justiceRealms,s.at,b.dataset.letter)));
+  P.querySelector("[data-settle-prize]")?.addEventListener("click",()=>act(()=>settlePrize(g,justiceRealms,s)));
+  P.querySelectorAll("[data-trader-attack]").forEach(b=>b.onclick=()=>{if(!confirm(lang==="es"?"¿Atacar al mercante? Puedes perder el barco y recibir cargos sin carta válida.":"Attack this trader? You may lose the ship and face charges without a valid letter."))return;act(()=>attackTrader(g,justiceRealms,s.id,Number(b.dataset.traderAttack),privateeringPeaces,{unlicensed:true}));});
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
@@ -1387,7 +1404,7 @@ function showSlots() {
     if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch { say(x.err); return; } }
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { say(x.err); return; }
     g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
-    try { if (!ship().voyage) open3d(ship()); } catch { close3d(); render(); }
+    try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
   });
 }
 
@@ -1443,7 +1460,7 @@ function showCreate(name) {
     $("p-go").onclick = () => {
       read();
       const raw = localStorage.getItem(SAVE_KEY), prev = raw && isValidSaveText(raw) ? raw : null; // a corrupt current save is not worth protecting
-      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
       if (!prev) return launch(); // nothing saved: nothing to protect
       // A saved game exists: ask first, and park it in the backup slot before the new game's autosave replaces it (same rotation as Import).
       const old = unpackGame(JSON.parse(prev), world), sum = `${esc(old.company || t.defCo)} · ${t.day} ${old.g.day} · ${fmtM(old.g.cash)}`;
@@ -1455,7 +1472,7 @@ function showCreate(name) {
         const keep = localStorage.getItem(SAVE_KEY) ?? prev;
         start(pf, false, { freeNav }); // builds the new game in memory; autosave stays off while inTitle is true
         try { restoreRotate(localStorage, SAVE_KEY, keep, JSON.stringify(packGame(g, company))); } catch { $("r-msg").textContent = t.errB; return; } // fail-closed: if either write fails the saved game is untouched and we stay here
-        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(!ship().voyage)open3d(ship());
+        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
       };
     };
   };
@@ -1480,7 +1497,7 @@ function showTitle() {
   fitTitleBook();
   if (!justiceData.ready) { const warning=document.createElement("p"); warning.id="justice-startup-warning"; warning.style.cssText="position:fixed;bottom:8px;left:10%;right:10%;background:#fff2cf;padding:10px;z-index:2000;color:#542c15"; warning.textContent=lang==="es"?"Justicia no disponible: sus datos no cargaron. Tus cargos guardados se conservan. Recarga para reintentar.":"Justice unavailable: its data did not load. Saved charges are preserved. Reload to retry."; const retry=document.createElement("button");retry.textContent=lang==="es"?"Reintentar":"Retry";retry.onclick=()=>location.reload();warning.append(retry);el.append(warning); }
   $("t-start").onclick = () => showCreate(t.defCo);
-  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
     if (!getBackup() && !getTmp()) return;
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
@@ -1504,7 +1521,7 @@ function showTitle() {
     if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
     music.leaveTitle(); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
-    try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
+    try { if(ship()&&!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
 showTitle(); // title first: it must paint instantly

@@ -55,7 +55,7 @@ export function attackTrader(g, data, shipId, aiIndex, peaces = {}, opts = {}) {
   const lotGoods = Object.fromEntries(Object.entries(kept).filter(([, n]) => n > 0));
   if (Object.keys(lotGoods).length && !ship.sunk) (ship.prizeLots ??= []).push({ realm: t.realm, goods: lotGoods, day: g.day }); // tagged until a court settles it (mechanic 2)
   if (t.unlicensed && Object.keys(rep.loot).length) chargePiracy(g, trader.home, rep.loot);
-  if (ship.sunk) { g.ships = g.ships.filter((s) => s !== ship); }
+  if (ship.sunk) { g.ships = g.ships.filter((s) => s !== ship); if (!g.ships.length) { g.over = "lose"; g.overReason = "fleet-lost"; } }
   if (victim.sunk) { trader.ship = makeShip(victim.id, victim.type, trader.home); } // a trader that goes down starts again from home
   const realmName = data.realms[t.realm].name;
   post(g, "marqueFight", { realm: t.realm, result: rep.result, txt: { es: `Combate contra un mercante de ${realmName.es}: ${rep.result}.`, en: `Fight against a ${realmName.en} trader: ${rep.result}.` } });
