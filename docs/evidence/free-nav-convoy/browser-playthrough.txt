@@ -1,0 +1,36 @@
+ORDER [ { type: 'barca', at: 'cadiz', readyDay: 8 } ]
+CV { cv1: { id: 'cv1', name: 'Convoy 1', ships: [ 1, 2 ], since: 8 } }
+SAIL [
+  {
+    id: 1,
+    type: 'cog',
+    at: 'cadiz',
+    convoy: 'cv1',
+    voyage: {
+      from: 'cadiz',
+      to: 'huelva',
+      ticksLeft: 410,
+      totalTicks: 410,
+      path: [Array],
+      km: 134.396806838939,
+      wind: 0.874,
+      sailLogged: true
+    }
+  },
+  {
+    id: 2,
+    type: 'barca',
+    at: 'cadiz',
+    convoy: 'cv1',
+    voyage: {
+      from: 'cadiz',
+      to: 'huelva',
+      ticksLeft: 410,
+      totalTicks: 410,
+      path: [Array],
+      km: 134.396806838939,
+      wind: 0.874,
+      sailLogged: true
+    }
+  }
+]
