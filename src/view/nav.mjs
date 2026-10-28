@@ -1,4 +1,5 @@
 // Map navigation logic that does not need a browser: travel estimate and the context-menu entries.
+import { hullSpeedFactor } from "../game/seawear.mjs";
 import { playerTravelTicks } from "../game/traveltime.mjs";
 import { route } from "../sim/world.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
@@ -9,7 +10,7 @@ export function travelEstimate(world, ship, to, wind = 1) {
   if (ship.at === to) return { ok: false, reason: "already here" };
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
-  const ticks=playerTravelTicks(r.km,SHIP_TYPES[ship.type].kmPerDay,ship,wind);
+  const ticks=playerTravelTicks(r.km,SHIP_TYPES[ship.type].kmPerDay,ship,wind * hullSpeedFactor(ship.hull));
   if(ticks===null)return {ok:false,reason:"crew"};
   return { ok: true, km: Math.round(r.km), ticks, path: r.path };
 }
