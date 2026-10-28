@@ -359,7 +359,7 @@ export function buyCaravel(g, at) {
   if (g.over) return { ok: false, reason: "game over" };
   if (g.cash < CARAVEL_PRICE) return { ok: false, reason: "no cash" };
   g.cash -= CARAVEL_PRICE;
-  const s = makeShip(g.nextId++, "caravel", at);
+  const s = makeShip(g.nextId++, "caravel", at, g.ships);
   g.ships.push(s); say(g, "caravel", { city: at });
   return { ok: true, ship: s };
 }
@@ -381,7 +381,7 @@ export function deliverOrders(g) {
   for (const o of [...(g.orders ?? [])]) {
     if (o.readyDay > g.day) continue;
     g.orders.splice(g.orders.indexOf(o), 1);
-    const s = makeShip(g.nextId++, o.type, o.at); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id }); post(g, "order", { city: o.at, type: o.type, ship: s.id });
+    const s = makeShip(g.nextId++, o.type, o.at, g.ships); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id }); post(g, "order", { city: o.at, type: o.type, ship: s.id });
   }
 }
 export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);

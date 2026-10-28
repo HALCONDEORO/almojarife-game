@@ -1,3 +1,4 @@
+import {shipDisplayName} from '../sim/shipnames.mjs';
 // Read-only selected-ship voyage summary. ETA is an estimate, not a promise.
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function voyageSummary(s){
@@ -17,7 +18,7 @@ const NAVWHY={
 export function voyageCardHtml(s,{lang='es',cityName=id=>id,eta=()=>'',cargo=null,sail=null,eventPending=false}={}){
  const en=lang==='en',r=voyageSummary(s);
  const row=h=>`<div class="vc-row">${h}</div>`;
- const head=`<div class="vc-head"><b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.id)}</b></div>`;
+ const head=`<div class="vc-head"><b>${en?'Selected ship':'Barco seleccionado'} ${esc(s.name?shipDisplayName(s):s.id)}</b></div>`;
  const cargoRow=cargo?row(`${en?'Cargo':'Carga'}: ${cargo.used}/${cargo.cap}`):'';
  const open=`<button type="button" id="voyage-open" class="vc-open">${en?'Open ship':'Abrir barco'}</button>`;
  const why=s.navError?(NAVWHY[s.navError]?.[en?'en':'es']??(en?'that order is not possible now':'esa orden no es posible ahora')):null;

@@ -1,3 +1,4 @@
+import {defaultShipName} from "./shipnames.mjs";
 // M1b: ships, voyages along sea lanes, and buy/sell with price impact.
 // Own design. Numbers are first-pass and will be tuned by the balance tests.
 import { route } from "./world.mjs";
@@ -34,9 +35,9 @@ export const FEE = 0.02; // market fee on every deal, both sides
 export const ceil2 = (x) => Math.ceil(x * 100 - 1e-9) / 100;
 export const floor2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
 
-export function makeShip(id, type, at) {
+export function makeShip(id, type, at, fleet = []) {
   if (!Object.hasOwn(SHIP_TYPES, type)) throw new Error("unknown ship type " + type);
-  return { id, type, at, cargo: {}, voyage: null, hull: 100 };
+  return { id, type, at, name: defaultShipName(id, fleet), cargo: {}, voyage: null, hull: 100 };
 }
 export function cargoUsed(ship) {
   return Object.values(ship.cargo).reduce((a, b) => a + b, 0);

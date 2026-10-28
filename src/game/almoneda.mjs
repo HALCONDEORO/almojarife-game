@@ -202,7 +202,7 @@ function settle(g, cityId, lot, price) {
   if (g.cash < price) return { ok: false, reason: "no cash", cost: price };
   if (lot.kind === "ship") {
     g.cash -= price;
-    const s = makeShip(g.nextId++, lot.ship.type, cityId);
+    const s = makeShip(g.nextId++, lot.ship.type, cityId, g.ships);
     s.hull = lot.ship.hull;
     g.ships.push(s);
     if (sellerOf(lot).kind === "council") { creditCaja(g, cityId, price); (g.hallAlmonedaGen ??= {})[cityId] = (g.hallAlmonedaGen[cityId] ?? 0) + price; }

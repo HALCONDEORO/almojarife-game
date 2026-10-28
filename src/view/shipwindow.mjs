@@ -1,3 +1,4 @@
+import {shipDisplayName} from '../sim/shipnames.mjs';
 // Ship window (design: docs/design/ship-window.md): one floating window per ship with
 // Cargo / Crew / Data tabs, using the shared .pwin component. Pure HTML strings: main.mjs
 // mounts them and wires every button through act(). No game rules here.
@@ -86,7 +87,7 @@ function swCard(g, s, lang, t, hp) {
     cell(SWI.cannon, `${t.guns} ${guns}/${mc}`, `${guns}/${mc}`),
     cell(SWI.barrel, `${t.hold} ${used}/${cap}`, `${used}/${cap}`),
   ].join("");
-  return `<div class="swcard">${shipIconSvg(s.type, 72, 40)}<div class="swc-main"><div class="swc-name"><b>${escA(hp.types[s.type] ?? s.type)} ${s.id}</b></div><div class="swc-state">${state}</div><div class="swc-stats">${cells}</div></div></div>`;
+  return `<div class="swcard">${shipIconSvg(s.type, 72, 40)}<div class="swc-main"><div class="swc-name"><b>${escA(shipDisplayName(s,hp.types))}</b></div><div class="swc-state">${state}</div><div class="swc-stats">${cells}</div></div></div>`;
 }
 
 /** helpers: { fmt, fmtM, cityName, types, goods, eta } — eta(ship) renders the arrival estimate; fmtM is the money format (cents), fmt the count format. */

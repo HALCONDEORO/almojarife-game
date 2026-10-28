@@ -1,3 +1,4 @@
+import {fillShipNames} from "../sim/shipnames.mjs";
 // Versioned save format. Pure functions (no DOM) so they can be tested.
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
 import { campaignShapeOk, newCampaign } from "./campaigns.mjs";
@@ -57,6 +58,7 @@ export function deserialize(save, world) {
   if (g.pottery === true) g.world = withPottery(g.world);
   if (g.legumes === true) g.world = withLegumes(g.world);
   delete g.kidMeat; // the retired optional-goods flag rides along in old saves; drop it
+  fillShipNames(g.ships);
   migrateRetired(g);
   fillMissingMarketRows(g.world, g.market); // goods or ports added since the save was written get a fresh market row, so old saves keep loading
   return { g, company: cleanCompany(s.company) };
