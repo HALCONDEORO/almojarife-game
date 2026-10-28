@@ -28,6 +28,7 @@ import { enabled as ui2dEnabled, inbox2dHtml, hall2dHtml, reports2dHtml } from "
 import { logHtml } from "../src/view/logview.mjs";
 import { warehouseHeader2d, bankHeader2d, store2dWrap, store2dWindowClass } from "../src/view/ui2d_store.mjs";
 import { enabled as city2dEnabled } from "../src/view/city2d.mjs";
+import { routeStyle, routeStrokeAttrs, routeLineSvg, routeLegendHtml } from "../src/view/routevisual.mjs";
 import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
@@ -595,20 +596,25 @@ function render() {
     tools.querySelector("details").open = wasOpen;
     $("map-mode").onchange = ev => { mapMode = ev.target.value; render(); };
   }
+  { // Normal flow in the existing side panel; never an overlay on the chart.
+    let key = $("route-visual-key");
+    if (!key) { key = document.createElement("div"); key.id = "route-visual-key"; $("mapleft").append(key); }
+    if (key.dataset.lang !== lang) { key.innerHTML = routeLegendHtml(lang); key.dataset.lang = lang; }
+  }
   let m = chartOrnamentSvg({enabled:new URLSearchParams(location.search).get("chartornament")==="1",mode:mapMode,lang,x:X,y:Y});
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
-  for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
-  if (s.voyage?.path?.length) { // selected ship under way: its route in red with live ETA (P3 select-ship)
+  for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" ${routeStrokeAttrs("network")}/>`; }
+  if (s.voyage?.path?.length) { // selected voyage: solid green; automatic voyages use a thinner stroke
     const cur = shipPosition(world, s, tickAcc / tickDurationMs());
     const nd = (id) => s.voyage.pts?.[id] ?? world.nodes[id], ids = s.voyage.path.filter((id) => nd(id));
     const pts = [`${X(cur.lon)},${Y(cur.lat)}`, ...ids.map((id) => `${X(nd(id).lon)},${Y(nd(id).lat)}`)].join(" ");
     const last = ids.at(-1);
-    if (last) m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
+    if (last) m += routeLineSvg(pts, s.route ? "automatic" : "active");
   }
   const est = target && !s.voyage ? travelEstimate(world, s, target, legWindEst(s.at, target)) : null;
   if (est?.ok) {
     const pts = est.path.map((id) => `${X(world.nodes[id].lon)},${Y(world.nodes[id].lat)}`).join(" "), last = world.nodes[target];
-    m += `<polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
+    m += routeLineSvg(pts, "preview");
   }
   const historical = historicalLayer({mode:mapMode,enabled:HISTORICAL_MAPS_ENABLED,ports:world.cities.filter(c=>isDiscovered(g,c.id)),year:cal.year,data:historicalRealms,leagues:historicalLeagues,x:X,y:Y,lang,goodName:id=>t.goods[id]??id,bounds:{width:800,height:VH},zoom:cam.zoom});
   m += historical.underlay ?? ""; // realm washes sit behind ports and labels
@@ -616,7 +622,7 @@ function render() {
     const explored = isDiscovered(g, c.id); // chart shows every port, discovery still gates interactions
     const e = !s.voyage ? travelEstimate(world, s, c.id, legWindEst(s.at, c.id)) : null, lw = !s.voyage && e?.ok ? legWeather(s.at, c.id) : null, tip = c.name + (!explored ? (lang === "es" ? " · Puerto no explorado" : " · Unexplored port") : "") + (explored && e?.ok ? ` - ≈ ${hoursOf(e.ticks)} h, ${e.km} km${wxNote(lw)}` : "");
     const label = HISTORICAL_MAPS_ENABLED ? mapLabelPlacement(c.id) : {x:10,y:4,anchor:"start"};
-    m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? "#c0392b" : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
+    m += `<g class="city" data-explored="${explored}" data-c="${c.id}" data-mx="${X(c.lon)}" data-my="${Y(c.lat)}"><title>${tip}</title><circle cx="0" cy="0" r="${hitR(c.id)}" fill="none" pointer-events="all"/><circle cx="0" cy="0" r="${c.id === target ? 10 : 7}" fill="${!explored ? "#f4ead0" : c.id === s.at ? "#2a7" : "#7a3b1c"}" stroke="${!explored ? "#806b50" : c.id === target ? routeStyle(est?.ok === false && est.reason !== "already here" ? "invalid" : "preview").stroke : "none"}" stroke-width="${explored ? 3 : 2}" stroke-dasharray="${explored ? "none" : "3 2"}" pointer-events="none"/>${HISTORICAL_MAPS_ENABLED ? `<path d="M0 0 L${label.x} ${label.y-4}" fill="none" stroke="#654d31" stroke-width=".7" pointer-events="none"/>` : ""}<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" font-size="14" style="cursor:${explored ? "pointer" : "default"};fill:#302719">${c.name}</text></g>`;
   }
   if (HISTORICAL_MAPS_ENABLED) {
     let key = $("historical-map-key");
