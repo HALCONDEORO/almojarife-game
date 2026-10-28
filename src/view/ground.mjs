@@ -56,12 +56,13 @@ export function fieldPatches(bounds){
  */
 export function scrubPatches(bounds){
  checkBounds(bounds);const{minX,minY,maxX,maxY}=bounds,out=[];
+ const fields=fieldPatches(bounds); // fixed for every candidate in this call
  for(let i=0;out.length<12&&i<60;i++){
   const x=minX-64+hash01(i,11)*(maxX-minX+58),y=minY-58+hash01(i,12)*(maxY-minY+56);
   const rx=5+hash01(i,13)*9,ry=4+hash01(i,14)*7;
   if(x+rx>minX-4&&x-rx<maxX+4&&y+ry>minY-4&&y-ry<maxY+4)continue; // clear of the district
   if(y>maxY-2)continue; // never on the sand band
-  if(fieldPatches(bounds).some(f=>x>f.x-rx&&x<f.x+f.w+rx&&y>f.y-ry&&y<f.y+f.d+ry))continue;
+  if(fields.some(f=>x>f.x-rx&&x<f.x+f.w+rx&&y>f.y-ry&&y<f.y+f.d+ry))continue;
   out.push({x,y,rx,ry});
  }
  return out;
