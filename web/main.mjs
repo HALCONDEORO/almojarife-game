@@ -1,3 +1,5 @@
+import {convoyNameInput} from '../src/view/convoyname.mjs';
+import {renameConvoy} from '../src/game/convoys.mjs';
 import {renameShip} from '../src/game/shipnames.mjs';
 import {wireShipNames} from '../src/view/shipnameform.mjs';
 import {shipDisplayName} from "../src/sim/shipnames.mjs";
@@ -875,8 +877,8 @@ function render() {
           `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${away || s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
-        if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", cvr.name).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
-        else if (!s.voyage && free.length >= 2) h += sec("Convoy", `<div class="yd-row"><small>${t.cvSailNote}</small><button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button></div>`);
+        if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
+        else if (!s.voyage && free.length >= 2) h += sec("Convoy", `<div class="yd-row"><small>${t.cvSailNote}</small>${convoyNameInput("",lang)}<button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button></div>`);
         // 3. orders in progress
         if (g.orders?.length) h += sec(t.orders, g.orders.map((o) => { const pct = Math.round(orderProgress(o, g.day) * 100); return `<div class="yd-row"><span>${t.types[o.type]} · ${cityName(o.at)}</span><progress max="100" value="${pct}"></progress><small>${en ? "ready day" : "listo el día"} ${o.readyDay} (${pct}%)</small></div>`; }).join(""));
         // 4. new ships last: a compact grid
@@ -1023,7 +1025,8 @@ function render() {
   P.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   P.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); });
   P.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
-  P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id))));
+  P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id), P.querySelector("#convoy-name").value)));
+  P.querySelectorAll("[data-cvrename]").forEach(e=>e.onclick=()=>{const input=P.querySelector("#convoy-name");input.setCustomValidity(input.value.trim()?"":(lang==="es"?"Escribe un nombre.":"Enter a name."));if(input.reportValidity())act(()=>renameConvoy(g,e.dataset.cvrename,input.value));});
   P.querySelectorAll("[data-cvleave]").forEach((e) => e.onclick = () => act(() => leaveConvoy(g, s.id)));
   P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
   P.querySelectorAll("[data-sellship-id]").forEach((e) => e.onclick = () => act(() => { const x = g.ships.find((y) => y.id === Number(e.dataset.sellshipId)); const r = x && sellShip(g, x); if (r && r.ok) sel = 0; }));

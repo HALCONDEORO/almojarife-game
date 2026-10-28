@@ -28,6 +28,7 @@ export function escortOf(g, ship) {
 export function formConvoy(g, shipIds, name = "") {
   if (g.over) return { ok: false, reason: "game over" };
   if (!Array.isArray(shipIds)) return { ok: false, reason: "bad ships" };
+  if(typeof name!=='string'||name.trim().length>30||/[\u0000-\u001f\u007f]/u.test(name))return{ok:false,reason:'bad name'};
   const ids = [...new Set(shipIds)];
   if (ids.length < CONVOY_MIN || ids.length > CONVOY_MAX) return { ok: false, reason: "bad size" };
   const ships = [];
@@ -45,6 +46,15 @@ export function formConvoy(g, shipIds, name = "") {
   for (const s of ships) s.convoy = id;
   post(g, "convoyFormed", { convoy: id, name: cv.name, ships: ids, txt: { es: `Se forma el convoy ${cv.name} (${ids.length} barcos).`, en: `Convoy ${cv.name} forms (${ids.length} ships).` } });
   return { ok: true, convoy: cv };
+}
+
+/** Rename an existing owned convoy without changing membership or navigation. */
+export function renameConvoy(g,id,value){
+ if(g.over)return{ok:false,reason:'game over'};
+ if(typeof id!=='string'||!/^cv[1-9][0-9]*$/.test(id)||!g.convoys||!Object.hasOwn(g.convoys,id))return{ok:false,reason:'no convoy'};
+ const cv=g.convoys[id];if(!cv||typeof cv!=='object'||Array.isArray(cv)||cv.id!==id||!Array.isArray(cv.ships))return{ok:false,reason:'no convoy'};
+ if(typeof value!=='string'||!value.trim()||value.trim().length>30||/[\u0000-\u001f\u007f]/u.test(value))return{ok:false,reason:'bad name'};
+ cv.name=value.trim();return{ok:true};
 }
 
 /** Take one ship out; a convoy reduced to a single hull disbands itself. */
