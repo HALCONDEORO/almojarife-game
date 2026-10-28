@@ -1,0 +1,46 @@
+name: Prepare beta release
+# Manual only. No release is published, and no desktop build is dispatched.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Approved beta tag, e.g. v0.5.0-beta.3'
+        required: true
+        type: string
+      expected_sha:
+        description: 'Approved exact main commit (40 lowercase hex characters)'
+        required: true
+        type: string
+      previous_tag:
+        description: 'Previous release tag used to generate change notes'
+        required: true
+        type: string
+      confirmation:
+        description: 'After owner approval, type version@SHA exactly'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: prepare-beta-release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate checkpoint and prepare immutable tag plus draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          PREVIOUS_TAG: ${{ inputs.previous_tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: node tools/release/prepare.mjs
