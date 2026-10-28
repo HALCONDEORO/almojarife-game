@@ -311,12 +311,20 @@ export function doGoTo(g, ship, lat, lon) {
   if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
   // A refused course change leaves its reason on the ship (the voyage card shows it until a new order succeeds).
   const refuse = (reason) => { ship.navError = reason; return { ok: false, reason }; };
-  if (ship.convoy && g.convoys?.[ship.convoy]) return refuse("convoy"); // a convoy sails together to a port
+  const convoy = ship.convoy && g.convoys?.[ship.convoy];
+  if (convoy && ship.voyage) return refuse("convoy"); // no mid-leg convoy course changes
   if (speedFactor(ship) <= 0) return refuse("crew");
   const docked = !ship.voyage;
   if (docked && heldNow(g, ship)) return refuse("held");
   const plan = planTrip(g.world, ship, lat, lon);
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
+  if (convoy) {
+    if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
+    const r = sailConvoy(g, convoy.id, plan.to, { doSail });
+    if (!r.ok) return refuse(r.reason);
+    delete ship.navError;
+    return { ...r, toPort: true };
+  }
   delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
   // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
@@ -494,5 +502,5 @@ export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
 export const bankRoom = (g, city) => loanRoom(g, netWorth(g), city); // pass the port: the lender of that port sets the terms
 export { loansOwed };
 export { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats };
-import { removeFromConvoy } from "./convoys.mjs";
+import { removeFromConvoy, sailConvoy } from "./convoys.mjs";
 export { formConvoy, leaveConvoy, disbandConvoy, sailConvoy, escortOf, convoyOf, removeFromConvoy } from "./convoys.mjs";
