@@ -1,4 +1,7 @@
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
+import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
+import {buyLetter} from "../src/game/marque.mjs";
+import {attackTrader,settlePrize} from "../src/game/privateering.mjs";
 import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
@@ -118,13 +121,11 @@ const TW = { es: { title: "Atalayas", none: "Sin atalayas", count: "{n} de {m} a
 const CLOSE_ICON = `<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`;
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang), fmtM = (n) => (Math.round(n * 100) / 100).toLocaleString(lang, { maximumFractionDigits: 2 }); // fmtM: money, cents shown when they exist; integers render the same as fmt
 const world = buildWorld(await (await fetch("../data/world.json")).json());
-
 const justiceData = await loadJusticeData(fetch,world.cities.map(c=>c.id));
 const justiceRealms = justiceData.realms, justiceCourts = justiceData.courts;
-if (PIRACY_DAILY_ENABLED && justiceData.ready) {
-  const pc = await optionalJson(fetch,"../data/peaces.json");
-  if (pc) installMarqueDaily(DAILY_HOOKS,justiceRealms,pc);
-}
+const privateeringPeaces = await optionalJson(fetch,"../data/peaces.json");
+const privateeringReady = justiceData.ready && !!privateeringPeaces?.peaces;
+if (PIRACY_DAILY_ENABLED && privateeringReady) installMarqueDaily(DAILY_HOOKS,justiceRealms,privateeringPeaces);
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
@@ -743,6 +744,7 @@ function render() {
       h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisaPct > 0 ? "+" : "") + hv.sisaPct + "%").replace("{p}", (hv.portazgoPct > 0 ? "+" : "") + hv.portazgoPct + "%")}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
       h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
+      h += privateeringReady ? privateeringHallHtml(g,s,justiceRealms,privateeringPeaces,lang) : `<p data-privateering-unavailable>${lang === "es" ? "Corso no disponible: faltan datos de tribunales o paces. Recarga para reintentarlo." : "Privateering unavailable: court or peace data is missing. Reload to retry."}</p>`;
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
@@ -923,6 +925,7 @@ function render() {
   if (inCity && city3dId && tab === "yard" && s.voyage) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
   if (!g.over) h += `${s.voyage ? `<div><button data-arrive="1">${t.arrive}</button></div>` : ""}`;
   }
+  if (s.voyage && privateeringReady) h += privateeringSeaHtml(g,s,justiceRealms,privateeringPeaces,lang);
   $("panel").innerHTML = h;
   { const ov = $("city-event"); // city view: a pending event decides from a visible modal, never from a card buried in a closed window (the clock froze with no cue)
     if (pe && inCity) { if (!ov) $("v3d").insertAdjacentHTML("beforeend", `<div class="sea-shade" id="city-event"><section class="sea-dialog" role="dialog" aria-modal="true" aria-label="${pe.title[lang]}">${evCard}</section></div>`);
@@ -933,6 +936,9 @@ function render() {
   $("v3d")?.querySelector(".city-window")?.classList.toggle("ui2d-market-window",tab==="market"&&ui2dEnabled(location.search));
   { const w = $("v3d")?.querySelector(".city-window"); if (w) { w.classList.remove("ui2d-store-window", "ui2d-bank-window"); const k = ui2dEnabled(location.search) ? store2dWindowClass(tab) : ""; if (k) w.classList.add(k); } }
   const P = $("panel");
+  P.querySelectorAll("[data-letter]").forEach(b=>b.onclick=()=>act(()=>buyLetter(g,justiceRealms,s.at,b.dataset.letter)));
+  P.querySelector("[data-settle-prize]")?.addEventListener("click",()=>act(()=>settlePrize(g,justiceRealms,s)));
+  P.querySelectorAll("[data-trader-attack]").forEach(b=>b.onclick=()=>{if(!confirm(lang==="es"?"¿Atacar al mercante? Puedes perder el barco y recibir cargos sin carta válida.":"Attack this trader? You may lose the ship and face charges without a valid letter."))return;act(()=>attackTrader(g,justiceRealms,s.id,Number(b.dataset.traderAttack),privateeringPeaces,{unlicensed:true}));});
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});

@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+import{newGame,doSail}from'../src/game/game.mjs';import{loadWorld}from'../src/sim/world.mjs';
+import{privateeringHallHtml,privateeringSeaHtml}from'../src/view/privateeringview.mjs';
+import{buyLetter}from'../src/game/marque.mjs';
+const realms=JSON.parse(readFileSync(new URL('../data/realms.json',import.meta.url))),peaces=JSON.parse(readFileSync(new URL('../data/peaces.json',import.meta.url))),world=loadWorld();
+test('normal game has letters at hall with existing fee and peace active',()=>{const g=newGame(world);const s=g.ships[0];assert.equal(g.peace,true);assert.match(privateeringHallHtml(g,s,realms,peaces),/data-letter="portugal"/);assert.ok(buyLetter(g,realms,s.at,'portugal').ok);const h=privateeringHallHtml(g,s,realms,peaces);assert.match(h,/Vence día 365/);assert.doesNotMatch(h,/data-letter="portugal"/);});
+test('sea controls expose unlicensed targets and no controls ashore or off',()=>{const g=newGame(world),s=g.ships[0];s.crew=20;assert.equal(privateeringSeaHtml(g,s,realms,peaces),'');assert.ok(doSail(g,s,'malaga').ok);g.ai[0].home='lisboa';g.ai[0].ship.voyage={...s.voyage};assert.match(privateeringSeaHtml(g,s,realms,peaces),/data-trader-attack="0"/);assert.match(privateeringSeaHtml(g,s,realms,peaces),/sin carta válida/);g.marque=false;assert.equal(privateeringSeaHtml(g,s,realms,peaces),'');});
