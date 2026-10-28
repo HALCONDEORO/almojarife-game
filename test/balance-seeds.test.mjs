@@ -39,3 +39,12 @@ test('balance gate rejects a report with a missing horizon snapshot or horizons 
   const fb = join(dir, 'b.json'); writeFileSync(fb, JSON.stringify(b));
   const rb = run({ BALANCE_SEEDS: '1' }, [fb]); assert.notEqual(rb.status, 0); assert.match(rb.stdout, /do not match days/);
 });
+
+test('paired gate rejects absent paired policy data and financial halts without hiding legacy absolute growth',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'bal-pair-'));
+ const rep=JSON.parse(execFileSync(process.execPath,['tools/sim_buildings_economy.mjs','365'],{encoding:'utf8',maxBuffer:64*1024*1024}));
+ const f=join(dir,'pair.json');writeFileSync(f,JSON.stringify(rep));
+ const baseline=run({BALANCE_SEEDS:'none'},[f]);assert.equal(baseline.status,0,baseline.stdout);assert.match(baseline.stdout,/visible absolute NPC growth/);assert.match(baseline.stdout,/Legacy cash gate.*FAIL on activation/);
+ const missing=structuredClone(rep);delete missing.pairedBuilders;writeFileSync(f,JSON.stringify(missing));const a=run({BALANCE_SEEDS:'none'},[f]);assert.notEqual(a.status,0);assert.match(a.stdout,/pair seed 0: OFF\/ON\/legacy policies present.*false/);
+ rep.scenarios.B_builder_bot.financialHalts=1;writeFileSync(f,JSON.stringify(rep));const b=run({BALANCE_SEEDS:'none'},[f]);assert.notEqual(b.status,0);assert.match(b.stdout,/no financial halts.*actual: 1/);
+});

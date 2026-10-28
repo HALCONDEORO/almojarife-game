@@ -6,7 +6,7 @@ import { SETTLE_EVERY, dueNow, accruedTotal, post, unread, markRead, markAllRead
 import { SHIP_TYPES } from "../src/sim/trade.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
-const idle = () => { const g = newGame(world, "cadiz", { cityIdentity: false }); g.eventsOn = false; return g; }; // one cog, docked, no events
+const idle = () => { const g = newGame(world, "cadiz", { cityIdentity: false, household: false, calamities: false, regionalRivals: false }); g.eventsOn = false; return g; }; // one cog, docked, no events
 
 test("upkeep is not charged on ordinary days, only on settlement day", () => {
   const g = idle(), c0 = g.cash, per = SHIP_TYPES.cog.upkeepPerDay;
@@ -25,7 +25,7 @@ test("settlement writes a report with one line per ship and the exact totals", (
   assert.equal(r.cashAfter, g.cash);
 });
 test("upkeepMul still applies to the weekly bill", () => {
-  const g = newGame(world, "cadiz", { upkeepMul: 0.5 }); const c0 = g.cash;
+  const g = newGame(world, "cadiz", { upkeepMul: 0.5, household: false, calamities: false, regionalRivals: false }); const c0 = g.cash;
   for (let d = 0; d < 7; d++) advanceDay(g);
   assert.equal(g.cash, c0 - SHIP_TYPES.cog.upkeepPerDay * 7 * 0.5);
 });

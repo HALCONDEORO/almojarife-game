@@ -14,8 +14,8 @@ test("pure: 2% a year over 52 weeks, never above cash, zero for no worth", () =>
   assert.equal(householdCharge(1000, 0), 0); assert.equal(householdCharge(1000, -50), 0); assert.equal(householdCharge(-10, 1000), 0);
   assert.equal(HOUSEHOLD_RATE_YEAR, 0.02);
 });
-test("flag off by default: state identical to a game that never heard of it, and no funds appear", () => {
-  const a = newGame(world, "cadiz", { seed: 3, events: true }), b = newGame(world, "cadiz", { seed: 3, events: true, household: false });
+test("explicit flag off: state identical to a game that never heard of it, and no funds appear", () => {
+  const a = newGame(world, "cadiz", { seed: 3, events: true, household: false }), b = newGame(world, "cadiz", { seed: 3, events: true, household: false });
   assert.ok(!("household" in a), "OFF adds no key to the state"); assert.ok(!("household" in b), "explicit false adds no key either");
   for (let i = 0; i < 200; i++) { advanceDay(a); advanceDay(b); }
   assert.equal(hash(a), hash(b)); assert.equal(a.cityFunds, undefined); assert.equal(a.cityHealth, undefined);
@@ -59,12 +59,12 @@ test("weekly report line appears with the flag on and not with it off", () => {
   const g = mk(); g.cash = 20000; g.warehouses = {}; for (let i = 0; i < 14; i++) advanceDay(g);
   const rep = g.reports.find((r) => r.household); assert.ok(rep && rep.household > 0);
   const html = reportsHtml(g, "es", (x) => String(x), (k) => k); assert.ok(html.includes("Tributo a la ciudad"));
-  const off = newGame(world, "cadiz", { seed: 3 }); off.cash = 20000; for (let i = 0; i < 14; i++) advanceDay(off);
+  const off = newGame(world, "cadiz", { seed: 3, household: false }); off.cash = 20000; for (let i = 0; i < 14; i++) advanceDay(off);
   assert.ok(!reportsHtml(off, "es", (x) => String(x), (k) => k).includes("Tributo"));
 });
 test("hook does nothing off the weekly day or with the flag off", () => {
   const g = mk(); g.day = 6; const c = g.cash; assert.equal(householdWeek(g, netWorth, botWorth), 0); assert.equal(g.cash, c);
-  const h = newGame(world, "cadiz", { seed: 3 }); h.day = 7; assert.equal(householdWeek(h, netWorth, botWorth), 0);
+  const h = newGame(world, "cadiz", { seed: 3, household: false }); h.day = 7; assert.equal(householdWeek(h, netWorth, botWorth), 0);
 });
 test("same base for both: a player's tribute worth counts ships like a bot (cash + cargo + ships)", () => {
   const g = mk(); g.warehouses = {}; g.loans = []; g.ships = [g.ships[0]]; g.ships[0].cargo = {};
