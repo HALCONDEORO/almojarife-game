@@ -47,6 +47,14 @@ export function formConvoy(g, shipIds, name = "") {
   return { ok: true, convoy: cv };
 }
 
+/** Rename an existing owned convoy without changing membership or navigation. */
+export function renameConvoy(g,id,value){
+ if(g.over)return{ok:false,reason:'game over'};
+ const cv=g.convoys?.[id];if(!cv)return{ok:false,reason:'no convoy'};
+ if(typeof value!=='string'||!value.trim()||value.trim().length>30||/[\u0000-\u001f\u007f]/u.test(value))return{ok:false,reason:'bad name'};
+ cv.name=value.trim();return{ok:true};
+}
+
 /** Take one ship out; a convoy reduced to a single hull disbands itself. */
 export function leaveConvoy(g, shipId) {
   const s = g.ships.find((x) => x.id === shipId);
