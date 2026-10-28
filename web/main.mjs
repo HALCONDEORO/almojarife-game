@@ -490,6 +490,7 @@ function selectRightTab(tab) {
 }
 function openLedger(kind) { if (document.getElementById("v3d")) showLedger(kind); else selectRightTab(kind); }
 function renderRightTabs() {
+  const t = T[lang]; // labels and cache signature must use the same current language
   const bar = $("rtabs"), fleetPane = $("rt-fleet"), led = $("rt-ledger"); if (!bar || !led) return;
   const docked = !!(ship() && !ship().voyage), n = actionUnread(g), key = `${lang}|${rightTab}|${n}|${unread(g)}|${docked}`;
   if (!docked && rightTab === "city") rightTab = "fleet"; // the city list needs a ship in port
