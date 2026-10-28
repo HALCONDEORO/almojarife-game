@@ -6,7 +6,7 @@ import { newGame } from "../src/game/game.mjs";
 import { infamyOf, addInfamy, decayInfamy, pardonFee, pardonBlocker, buyPardon, PARDON_PER_POINT, PARDON_MIN_FEE, PARDON_COOLDOWN_DAYS, INFAMY_MAX } from "../src/game/pardon.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld(), realms = JSON.parse(readFileSync(new URL("../data/realms.json", import.meta.url), "utf8"));
-const mk = (o = {}) => { const g = newGame(world); g.pardon = o.pardon ?? true; g.cash = 50000; g.ships[0].at = "cadiz"; g.ships[0].voyage = null; g.infamy = o.infamy ?? 40; return g; };
+const mk = (o = {}) => { const g = newGame(world, "cadiz", { cityIdentity: false }); g.pardon = o.pardon ?? true; g.cash = 50000; g.ships[0].at = "cadiz"; g.ships[0].voyage = null; g.infamy = o.infamy ?? 40; return g; };
 test("infamy is clamped and tolerant of junk", () => {
   const g = mk(); assert.equal(addInfamy(g, 1000), INFAMY_MAX); assert.equal(addInfamy(g, -1000), 0); g.infamy = "x"; assert.equal(infamyOf(g), 0); assert.equal(addInfamy(g, NaN), 0);
 });
