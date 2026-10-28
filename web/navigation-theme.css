@@ -1,0 +1,70 @@
+/* Navigation theme: visual-only polish for the chart window and its cards.
+   Scope: #mapcard, #mapleft, #historical-map-tools/-key, #fleet, #voyage-card and SVG text/routes inside #map.
+   Loaded after the inline <style> of index.html so equal-specificity rules here win. No layout, sizing of the chart,
+   pointer-events, geometry or behaviour is changed. Palette (design reference): paper #f4ead0, ink #302719,
+   ink-soft #5a4630, rule #8b6d36, red #285752, header #55412c, header-text #fff0cb. No images, fonts or network. */
+
+/* ---- Chart SVG text and routes: readability only ---- */
+/* Port names carry an inline fill:#302719; a thin paper halo keeps them legible over land texture, coast and lanes. */
+#map g.city>text{paint-order:stroke fill;stroke:#f4ead0;stroke-width:3px;stroke-linejoin:round;stroke-opacity:.9}
+/* Own-ship names (fill #300 / #a00 when selected) get the same halo; fills are left to the attributes. */
+#shipsLayer text{paint-order:stroke fill;stroke:#f4ead0;stroke-width:3px;stroke-linejoin:round;stroke-opacity:.9}
+/* Planned/active course: same red and dash, with a faint paper edge so it separates from lanes and sea texture. */
+
+
+#map .trade-card:focus-visible{outline:2px solid #285752;outline-offset:2px}
+
+/* ---- Chart frame and message log ---- */
+#mapcard>#log{background:#f4ead0f5;color:#302719;border:1px solid #8b6d36;border-radius:5px;font-size:14px;line-height:1.4;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 -2px 8px rgba(14,10,8,.3)}
+
+/* ---- Historical-map controls (Mapa/Map) ---- */
+/* The summary has an inline style from historicalmap.mjs; !important is required to restyle it. Kept compact. */
+#mapleft>#historical-map-tools details>summary{padding:4px 10px!important;min-height:30px;box-sizing:border-box;display:inline-flex!important;align-items:center;border:1px solid #8b6d36;border-radius:6px!important;font-variant:small-caps;letter-spacing:.04em;box-shadow:0 2px 8px rgba(50,32,8,.35),inset 0 1px 0 rgba(255,255,255,.5)}
+#mapleft>#historical-map-tools details>summary:focus-visible{outline:2px solid #302719;outline-offset:2px;box-shadow:0 0 0 4px #f4ead0}
+#mapleft>#historical-map-tools select{margin:4px 0 0;min-height:30px;padding:3px 8px;border:1px solid #8b6d36;color:#302719;background:#fff7e3;box-shadow:0 2px 8px rgba(50,32,8,.3)}
+#mapleft>#historical-map-tools select:focus-visible{outline:2px solid #302719;outline-offset:2px;box-shadow:0 0 0 4px #f4ead0}
+#mapleft>#historical-map-tools select option{color:#302719;background:#fff7e3}
+
+/* ---- Historical-map key ---- */
+#mapleft>#historical-map-key{background:#f4ead0f5;color:#302719;border:1px solid #8b6d36;border-radius:6px;box-shadow:0 2px 8px rgba(50,32,8,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+#mapleft>#historical-map-key p{margin:2px 0}
+#mapleft>#historical-map-key b{color:#55412c}
+#historical-map-key .realm-key-item{color:#302719}
+#historical-map-key .realm-key-item i{border:1px solid #5a4630}
+#historical-map-key .realm-key-note{border-top-color:#8b6d3699;color:#5a4630}
+
+/* ---- Selected-ship voyage card ---- */
+#voyage-card{color:#302719}
+#voyage-card .vc-head{padding-bottom:3px;margin-bottom:5px;border-bottom:1px solid #8b6d3688;color:#55412c;font-variant:small-caps;letter-spacing:.03em}
+#voyage-card .vc-row{line-height:1.4}
+#voyage-card .vc-warn{color:#8d301f}
+#voyage-card progress{accent-color:#285752;height:12px}
+#voyage-card .vc-open{background:#55412c;color:#fff0cb;border:1px solid #302719;box-shadow:inset 0 1px 0 rgba(255,240,203,.25)}
+#voyage-card .vc-open.vc-sail{background:#285752;border-color:#173c38}
+#voyage-card .vc-open.vc-event{background:#285752;border-color:#173c38;box-shadow:inset 0 0 0 1px #f4ead0aa}
+#voyage-card .vc-open:focus-visible{outline:2px solid #302719;outline-offset:2px;box-shadow:0 0 0 4px #f4ead0}
+
+/* ---- Fleet fold ---- */
+#fleet{color:#302719;border-color:#8b6d36}
+#fleet summary{font-variant:small-caps;letter-spacing:.04em;color:#55412c}
+#fleet summary:focus-visible{outline:2px solid #302719;outline-offset:-3px;box-shadow:inset 0 0 0 4px #f4ead0}
+#fleet-body{padding:6px 8px 8px}
+#fleet .fleet-row{border-color:#8b6d36;color:#302719}
+#fleet .fleet-row+.fleet-row{margin-top:4px}
+#fleet .fleet-row small{color:#5a4630}
+#fleet .fleet-row[aria-pressed=true]{border:2px solid #285752;box-shadow:inset 4px 0 0 #285752,0 1px 3px rgba(60,40,10,.2)}
+#fleet .fleet-row:focus-visible{outline:2px solid #302719;outline-offset:2px;box-shadow:0 0 0 4px #f4ead0}
+#fleet input:focus-visible,#fleet select:focus-visible,#fleet button:focus-visible{outline:2px solid #302719;outline-offset:2px;box-shadow:0 0 0 4px #f4ead0}
+#fleet input,#fleet select{border-color:#8b6d36}
+
+/* ---- Short windows (1280x720): tighter cards so the chart keeps its room ---- */
+@media(max-height:760px){
+#voyage-card .vc-row{line-height:1.3}
+#maparea>#mapleft>#voyage-card{padding:6px 10px}
+#fleet .fleet-row{padding:7px 10px;gap:2px}
+#fleet summary{padding:7px 12px}
+}
+
+@media(forced-colors:active){
+#fleet .fleet-row[aria-pressed=true]{outline:2px solid Highlight}
+}
