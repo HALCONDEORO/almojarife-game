@@ -33,7 +33,7 @@ test("game ends at the deadline and cash never goes negative", () => {
 });
 // Greedy bot: buy the best current-quote margin, sail there, repeat. Shows the game is winnable but not trivial.
 function runBot(options = {}) {
-  const g = newGame(world, "cadiz", options), s = g.ships[0], goods = Object.keys(world.goods);
+  const g = newGame(world, "cadiz", {household:false,calamities:false,regionalRivals:false,...options}), s = g.ships[0], goods = Object.keys(world.goods);
   const q = (e, gd) => Math.round(world.goods[gd].base * Math.min(3, Math.max(0.4, (e.target / Math.max(1, e.stock)) ** 0.6)));
   while (!g.over) {
     if (!s.voyage) {

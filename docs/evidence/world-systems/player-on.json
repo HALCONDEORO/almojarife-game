@@ -1,0 +1,102 @@
+{
+  "competition": "default",
+  "flags": {},
+  "npcCount": 3,
+  "elapsedMs": 23328,
+  "scope": "Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.",
+  "gamesPerStrategy": 3,
+  "offset": 0,
+  "ports": 33,
+  "summaries": {
+    "greedy-preview": {
+      "wins": 3,
+      "bankrupt": 0,
+      "deadlineLosses": 0,
+      "medianFinalCash": 54730,
+      "medianFinalNetWorth": 54712,
+      "medianEndDay": 27
+    },
+    "random-destination": {
+      "wins": 2,
+      "bankrupt": 0,
+      "deadlineLosses": 1,
+      "medianFinalCash": 50375,
+      "medianFinalNetWorth": 50361,
+      "medianEndDay": 230
+    }
+  },
+  "results": [
+    {
+      "strategy": "greedy-preview",
+      "start": "cadiz",
+      "day": 27,
+      "outcome": "win",
+      "reason": null,
+      "cash": 54730,
+      "netWorth": 54712,
+      "trips": 15,
+      "unitsBought": 816,
+      "repairPaid": 148
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "sevilla",
+      "day": 30,
+      "outcome": "win",
+      "reason": null,
+      "cash": 66253,
+      "netWorth": 66249,
+      "trips": 13,
+      "unitsBought": 723,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "greedy-preview",
+      "start": "lisboa",
+      "day": 23,
+      "outcome": "win",
+      "reason": null,
+      "cash": 53969,
+      "netWorth": 53961,
+      "trips": 10,
+      "unitsBought": 537,
+      "repairPaid": 0
+    },
+    {
+      "strategy": "random-destination",
+      "start": "cadiz",
+      "day": 218,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50787,
+      "netWorth": 50781,
+      "trips": 19,
+      "unitsBought": 1140,
+      "repairPaid": 687
+    },
+    {
+      "strategy": "random-destination",
+      "start": "sevilla",
+      "day": 365,
+      "outcome": "lose",
+      "reason": null,
+      "cash": 35418,
+      "netWorth": 48016,
+      "trips": 23,
+      "unitsBought": 1380,
+      "repairPaid": 1002
+    },
+    {
+      "strategy": "random-destination",
+      "start": "lisboa",
+      "day": 230,
+      "outcome": "win",
+      "reason": null,
+      "cash": 50375,
+      "netWorth": 50361,
+      "trips": 17,
+      "unitsBought": 965,
+      "repairPaid": 562
+    }
+  ]
+}
