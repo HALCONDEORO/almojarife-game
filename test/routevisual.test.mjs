@@ -61,7 +61,7 @@ test("ES/EN legends describe every style in accessible text with decorative swat
 
 // Exercise the actual main rendering fragment without booting the game or a browser.
 const main = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-const start = main.indexOf('  let m = "";\n  const hiddenPort');
+const start = main.indexOf('  let m = chartOrnamentSvg(');
 const end = main.indexOf("  const historical = historicalLayer", start);
 assert.ok(start >= 0 && end > start);
 const fragment = main.slice(start, end) + "\nm;";
@@ -74,7 +74,7 @@ function renderRoutes({ voyage = null, automatic = false, estimate = null } = {}
     isDiscovered: (_, id) => id !== "hidden", X: x => x, Y: y => y,
     shipPosition: () => ({ lon: 1.5, lat: 2.5 }), tickAcc: 0, tickDurationMs: () => 1,
     travelEstimate: () => estimate, legWindEst: () => 1,
-    routeStrokeAttrs, routeLineSvg,
+    routeStrokeAttrs, routeLineSvg, chartOrnamentSvg:()=>"", location:{search:""}, URLSearchParams, mapMode:"geographic", lang:"es",
   });
   assert.equal(JSON.stringify({ world, s, estimate }), before, "rendering must not mutate game inputs");
   assert.equal((html.match(/<line /g) ?? []).length, 1, "hidden lanes stay hidden");
