@@ -1,3 +1,4 @@
+import { installMapControls } from "./mapcontrols.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
@@ -311,6 +312,7 @@ function frame(now) {
     progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
+  mapControls.refresh();
   routeHover.refresh();
   requestAnimationFrame(frame);
 }
@@ -1534,6 +1536,14 @@ function showTitle() {
   };
 }
 showTitle(); // title first: it must paint instantly
+const mapControls = installMapControls({
+  map:mapEl,cam,apply:applyCam,state:()=>g,locale:()=>lang,
+  selected: () => { const s=ship(); return s?shipPosition(world,s,tickAcc/tickDurationMs()):null; },
+  position: s => shipPosition(world,s,tickAcc/tickDurationMs()),
+  port: () => world.nodes[target] ?? world.nodes[ship()?.at],
+  project:p=>[X(p.lon),Y(p.lat)],
+  blocked:()=>inTitle || !$('title').hidden || !!document.querySelector('#v3d,#sea-modal,#ctx')
+});
 const routeHover = installRoutePreview({
   map: mapEl, world, state: () => g, selected: () => ship(), locale: () => lang, name: cityName,
   project: p => [X(p.lon),Y(p.lat)], inverse: q => ({ lon: q.x / sc + x0, lat: y1 - q.y / (sc * 1.25) }),
