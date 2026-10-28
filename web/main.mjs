@@ -33,6 +33,7 @@ import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
+import { chartOrnamentSvg } from "../src/view/chartornament.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -603,7 +604,7 @@ function render() {
     tools.querySelector("details").open = wasOpen;
     $("map-mode").onchange = ev => { mapMode = ev.target.value; render(); };
   }
-  let m = "";
+  let m = chartOrnamentSvg({enabled:new URLSearchParams(location.search).get("chartornament")==="1",mode:mapMode,lang,x:X,y:Y});
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
   if (s.voyage?.path?.length) { // selected ship under way: its route in red with live ETA (P3 select-ship)

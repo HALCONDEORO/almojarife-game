@@ -48,13 +48,17 @@ This README describes merged source at the documentation checkpoint, not a deplo
 
 ## Screenshots
 
-_All eight screenshots below were refreshed on 28 Oct 2026 from merged `main` b24895a1c3783861354f8a5e594ef4e7d7df72b0, at desktop 1440x900 with the Spanish UI and an isolated synthetic campaign. The warehouse view uses synthetic warehouse ownership. Refresh screenshots when the UI changes so they never show unmerged work._
+_Five real-game captures were added or refreshed on 28 Oct 2026 from merged `main` 99c299bc16c822fb7a570853dde5d6383d31b9a9, at desktop 1280x720 with the Spanish UI: title, pause menu, city, messages and activity history. Messages and activity history use the existing day-804 campaign; title, pause menu and city use the title/new-game flow. The other seven captures retain their earlier provenance: merged `main` b24895a1c3783861354f8a5e594ef4e7d7df72b0, desktop 1440x900, isolated synthetic campaign (including synthetic warehouse ownership). No unmerged map-navigation changes are shown. Refresh screenshots when the UI changes._
 
-| The city plan | Trade in the market |
+| Start your trading house | Save and adjust your game |
 |---|---|
-| ![2D city plan of the home port with the city toolbar](docs/img/city2d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
+| ![Pantalla inicial de Almojarife, con el libro de la casa mercantil y las opciones de partida](docs/img/title.png) | ![Menú de pausa con guardado, ranuras, ajustes y regreso al título](docs/img/pause-menu.png) |
+| **The city plan** | **Trade in the market** |
+| ![Ciudad de Cádiz y sus edificios con los controles de construcción, barcos e informes](docs/img/city2d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
 | **The sea chart** | **Build ships at the shipyard** |
 | ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard tab with the ship classes and their orders](docs/img/shipyard.png) |
+| **Messages from port and house** | **Activity history** |
+| ![Mensajes del puerto y de la casa en una partida avanzada, día 804](docs/img/messages.png) | ![Historial de compras, ventas y viajes de una casa mercantil en el día 804](docs/img/activity-history.png) |
 | **Tavern: captains and news** | **Bank: loans and interest** |
 | ![Tavern tab](docs/img/tavern.png) | ![Bank tab](docs/img/bank.png) |
 | **Warehouse and steward** | **Create your house** |
