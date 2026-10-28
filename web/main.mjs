@@ -3,6 +3,8 @@ import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
 import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
 import {buyLetter} from "../src/game/marque.mjs";
 import {attackTrader,settlePrize} from "../src/game/privateering.mjs";
+import {pardonHtml} from "../src/view/pardonview.mjs";
+import {buyPardon} from "../src/game/pardon.mjs";
 import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
@@ -756,6 +758,7 @@ function render() {
       }
       h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
       h += privateeringReady ? privateeringHallHtml(g,s,justiceRealms,privateeringPeaces,lang) : `<p data-privateering-unavailable>${lang === "es" ? "Corso no disponible: faltan datos de tribunales o paces. Recarga para reintentarlo." : "Privateering unavailable: court or peace data is missing. Reload to retry."}</p>`;
+      if (justiceData.ready) h += pardonHtml(g,justiceRealms,s.at,lang);
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
@@ -950,6 +953,7 @@ function render() {
   P.querySelectorAll("[data-letter]").forEach(b=>b.onclick=()=>act(()=>buyLetter(g,justiceRealms,s.at,b.dataset.letter)));
   P.querySelector("[data-settle-prize]")?.addEventListener("click",()=>act(()=>settlePrize(g,justiceRealms,s)));
   P.querySelectorAll("[data-trader-attack]").forEach(b=>b.onclick=()=>{if(!confirm(lang==="es"?"¿Atacar al mercante? Puedes perder el barco y recibir cargos sin carta válida.":"Attack this trader? You may lose the ship and face charges without a valid letter."))return;act(()=>attackTrader(g,justiceRealms,s.id,Number(b.dataset.traderAttack),privateeringPeaces,{unlicensed:true}));});
+  P.querySelector("[data-buy-pardon]")?.addEventListener("click",()=>act(()=>buyPardon(g,justiceRealms,s.at)));
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
   P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
