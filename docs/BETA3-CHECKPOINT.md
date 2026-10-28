@@ -24,12 +24,13 @@ Merge commits on main between beta.2 and the checkpoint below. SHAs are the merg
 | Desktop polish: market columns (#614, #624), empty market frame (#615), obsolete 3D copy (#616), tavern placeholder (#618), SVG toolbar icons (#619), route tutorial wording (#620), internal IDs hidden (#621, #625), ship names in weekly report (#622), crew wage label (#623), storm delay notice (#626), pirate escape wording (#627) | #614-#627 |
 | README screenshots refreshed from Spanish desktop | #628 |
 | Manual beta release bot (no player-visible effect) | #643 |
+| Cancel obsolete PR workflow runs without reducing test coverage; no player-visible change | #645 |
 
-The source checkpoint is whatever exact `main` SHA the owner approves before the tag; at the time of this update `main` was `6706431b549c076760f9029a29ec4c027a572db3`. Earlier Pages verification below was for `23c35a3d93be7ed983eb74e73fc40128ba11fb37` only. Pages deployment and live Spanish desktop play for the final SHA must be rechecked. This is not evidence that a desktop binary contains this batch.
+The source checkpoint is whatever exact `main` SHA the owner approves before the tag; at the time of this update `main` was `99c299bc16c822fb7a570853dde5d6383d31b9a9`. Earlier Pages verification below was for `23c35a3d93be7ed983eb74e73fc40128ba11fb37` only. Pages deployment and live Spanish desktop play for the final SHA must be rechecked. This is not evidence that a desktop binary contains this batch.
 
 ## Integrated candidate
 
-Both #640 and #641 have exact-head independent review, green CI/Balance and squash merges. Earlier source checkpoint `23c35a3d93be7ed983eb74e73fc40128ba11fb37`: its Pages deployment and live Spanish desktop playthroughs passed as recorded below. Later merges (#642-#644 and the items above) are not covered by that record. There is no beta.3 tag or release yet.
+Both #640 and #641 have exact-head independent review, green CI/Balance and squash merges. Earlier source checkpoint `23c35a3d93be7ed983eb74e73fc40128ba11fb37`: its Pages deployment and live Spanish desktop playthroughs passed as recorded below. Later merges (#642-#645 and the items above) are not covered by that record. There is no beta.3 tag or release yet.
 
 ## Evidence and limits
 
