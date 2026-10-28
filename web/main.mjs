@@ -565,9 +565,9 @@ function render() {
     $("ships").textContent = "0"; return;
   }
   $("fleet-loss-overlay")?.remove();
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:shipCapacity(ship())}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}}); // this second render is the one that sticks: keep the resolve-event button (542)
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:shipCapacity(ship())}}); // this second render is the one that sticks: keep the resolve-event button (542)
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM: fmt, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }), stats: routeStats(ship()?.route) });
   $("voyage-event")?.addEventListener("click", () => { shipWin = null; document.getElementById("shipwin")?.remove(); render(); const b = document.querySelector("#panel [data-ev]"); b?.scrollIntoView({ block: "center" }); b?.focus(); });
   $("route-repeat")?.addEventListener("click", () => act(() => repeatRoute(g, ship())));
@@ -829,7 +829,7 @@ function render() {
         const sellable = g.ships.filter((x) => x.at === s.at && !x.voyage);
         h += `<h3>${t.almSellShipTitle}</h3><p>${t.almSellShipInfo}</p>`;
         h += sellable.length
-          ? sellable.map((x) => `<div class="card"><b>${esc(shipDisplayName(x,t.types))}</b> · ${t.cap}: ${cargoUsed(x)}/${SHIP_TYPES[x.type].capacity} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
+          ? sellable.map((x) => `<div class="card"><b>${esc(shipDisplayName(x,t.types))}</b> · ${t.cap}: ${cargoUsed(x)}/${shipCapacity(x)} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
           : `<p><i>${t.almSellShipNone}</i></p>`;
       }
     } else if (tab === "buildings") {
