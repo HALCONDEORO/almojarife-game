@@ -1,3 +1,4 @@
+// Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
@@ -9,7 +10,7 @@ import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, embargo: false, ...opts });
 const starve = (g, city) => { const e = g.market[city].grain; e.stock = Math.max(1, Math.floor(e.target / 4)); }; // scarcity >= 4
 test("flag off: no state, deeds are no-ops, respect untouched, tab shows nothing", () => {
   const g = mk({});

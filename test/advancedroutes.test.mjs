@@ -1,3 +1,4 @@
+// Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
@@ -6,7 +7,7 @@ import { processRoutes } from "../src/game/routes.mjs";
 import { price } from "../src/sim/market.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
-const game = () => { const g = newGame(world); g.eventsOn = false; return g; };
+const game = () => { const g = newGame(world, "cadiz", { embargo: false }); g.eventsOn = false; return g; };
 const run = (g, n) => { for (let i = 0; i < n; i++) advanceDay(g); };
 const ports = (g, n) => { const a = g.ships[0].at; return [a, ...world.cities.filter((c) => c.id !== a).slice(0, n - 1).map((c) => c.id)]; };
 
