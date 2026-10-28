@@ -1,3 +1,4 @@
+import { installMapControls } from "./mapcontrols.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
 import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
@@ -309,6 +310,7 @@ function frame(now) {
     progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
+  mapControls.refresh();
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
@@ -1531,6 +1533,14 @@ function showTitle() {
   };
 }
 showTitle(); // title first: it must paint instantly
+const mapControls = installMapControls({
+  map:mapEl,cam,apply:applyCam,state:()=>g,locale:()=>lang,
+  selected: () => { const s=ship(); return s?shipPosition(world,s,tickAcc/tickDurationMs()):null; },
+  position: s => shipPosition(world,s,tickAcc/tickDurationMs()),
+  port: () => world.nodes[target] ?? world.nodes[ship()?.at],
+  project:p=>[X(p.lon),Y(p.lat)],
+  blocked:()=>inTitle || !$('title').hidden || !!document.querySelector('#v3d,#sea-modal,#ctx')
+});
 requestAnimationFrame(frame);
 setTimeout(() => start(null, false), 0); // background game behind the title screen; it never overwrites a save (deferred: the warmup sim must not delay the title)
 

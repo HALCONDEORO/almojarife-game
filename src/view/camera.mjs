@@ -45,3 +45,27 @@ export const portHitRadius = (nearest) => Math.max(8, Math.min(14, nearest / 2))
 // Port-name size grows gently with zoom (screen size ~ zoom^0.5), so names read well both
 // on the full chart and zoomed in; placements are audited per zoom level in maplabels.test.
 export const labelFontSize = (zoom) => 20 * Math.pow(zoom, 0.35);
+
+// Center a world point without allowing the visible rectangle outside the chart.
+export function centerOn(c, x, y, minZoom = 2) {
+  c.zoom = Math.max(c.zoom, minZoom);
+  clampCamera(c);
+  c.x = x - c.W / c.zoom / 2; c.y = y - c.H / c.zoom / 2;
+  return clampCamera(c);
+}
+// Normalized minimap pointer coordinates -> full-chart world coordinates.
+export const minimapPoint = (c, fx, fy) => [clamp(fx,0,1)*c.W,clamp(fy,0,1)*c.H];
+// Move the viewport center; minimap interactions preserve the current zoom.
+export function panTo(c, x, y) { return centerOn(c,x,y,1); }
+// UI-only keyboard command. Existing ship number keys and editable fields are untouched.
+export function mapKey(key, editable = false) {
+  if (editable) return null;
+  const k=key.toLowerCase();
+  if (key==='Home') return {kind:'ship'};
+  if (k==='c') return {kind:'port'};
+  const dirs={arrowleft:[1,0],a:[1,0],arrowright:[-1,0],d:[-1,0],arrowup:[0,1],w:[0,1],arrowdown:[0,-1],s:[0,-1]};
+  if (dirs[k]) return {kind:'pan',dx:dirs[k][0]*.15,dy:dirs[k][1]*.15};
+  if (key==='+' || key==='=') return {kind:'zoom',factor:1.25};
+  if (key==='-') return {kind:'zoom',factor:.8};
+  return null;
+}
