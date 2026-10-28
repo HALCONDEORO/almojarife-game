@@ -19,7 +19,7 @@ export function setRoute(g, ship, a, b, out, back = "") {
 }
 export function clearRoute(ship) {
   const had = !!ship.route;
-  if (had) { const { legs, stuck, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
+  if (had) { const { legs, stuck, stuckKey, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
   delete ship.route; return had;
 }
 /** Bring back the route this ship had before it was cancelled. Same checks as setting it by hand; the counters start from zero. */
@@ -138,30 +138,44 @@ function processRouteAdv(g, s, r, ops) {
   const n = r.stops.length, stop = r.stops[r.idx % n];
   if (s.at !== stop.city) { ops.doSail(g, s, stop.city); return; } // on the way to the next stop
   const quoteAt = (good) => price(g.world, g.market[s.at][good], good);
-  let traded = false;
+  let traded = false, blocker = null;
+  // Deterministic precedence: the first blocked sell, then the first blocked buy.
+  const blocked = (action, good, cause) => { blocker ??= { action, good, cause: cause || "trade_failed" }; };
   for (const rule of stop.sell) { // sells first: they free the hold and fund the buys
     const q = s.cargo[rule.good] ?? 0;
     if (q <= 0) continue;
-    if (rule.minPrice != null && quoteAt(rule.good) < rule.minPrice) continue; // below the limit: hold for a better day
+    if (rule.minPrice != null && quoteAt(rule.good) < rule.minPrice) { blocked("sell", rule.good, "min_price"); continue; } // below the limit: hold for a better day
     const res = ops.doSell(g, s, rule.good, q);
     if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
+    else blocked("sell", rule.good, res.reason);
   }
   routeRepair(g, s, r, ops, r.minCash);
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
-    if (room <= 0) break;
+    if (room <= 0) { blocked("buy", rule.good, "no_space"); break; }
     const qty = planBuy(g, s, rule.good, room, Math.max(0, g.cash - r.minCash), rule.maxPrice);
-    if (qty <= 0) continue;
-    if (ops.doBuy(g, s, rule.good, qty).ok) traded = true;
+    if (qty <= 0) {
+      const e = g.market[s.at]?.[rule.good];
+      const cause = !e ? "no market" : e.stock <= 0 ? "no_stock" : rule.maxPrice != null && quoteAt(rule.good) > rule.maxPrice ? "max_price" : r.minCash > 0 ? "cash_brake" : "no cash";
+      blocked("buy", rule.good, cause); continue;
+    }
+    const res = ops.doBuy(g, s, rule.good, qty);
+    if (res.ok) traded = true;
+    else blocked("buy", rule.good, res.reason);
   }
   // Wait in port only when nothing traded and nothing aboard is wanted at a later stop.
   const holdsForLater = Object.keys(s.cargo).some((good) =>
     r.stops.some((st, i) => i !== r.idx % n && st.sell.some((x) => x.good === good)));
   if (!traded && !holdsForLater) {
-    if (r.stuck++ === 0) post(g, "routeStuck", { ship: s.id, city: s.at, good: stop.buy[0]?.good ?? "" });
+    const detail = blocker ?? { action: "wait", good: "", cause: "no_trade" };
+    const key = JSON.stringify([s.at, r.idx % n, detail.action, detail.good, detail.cause]);
+    // One notice per unchanged cause/good/stop stretch; a changed cause is useful news.
+    if (r.stuck++ === 0 || r.stuckKey !== key) post(g, "routeStuck", { ship: s.id, city: s.at, ...detail });
+    r.stuckKey = key;
     return;
   }
   r.stuck = 0;
+  delete r.stuckKey;
   r.idx = (r.idx + 1) % n;
   if (r.idx === 0) r.legs++; // a full circuit counts as one completed run
   ops.doSail(g, s, r.stops[r.idx].city);
