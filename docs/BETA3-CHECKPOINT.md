@@ -4,21 +4,33 @@ Status: candidate only. No beta.3 tag, release or packaged build is announced by
 
 ## Integrated scope at this checkpoint
 
-| Change | PR | Merge SHA |
-| --- | --- | --- |
-| Bounded optional justice and peace startup data | #638 | 0c8c4c84b2086d17d053675c462af41fe8ebf893 |
-| Letters of marque and prize handling | #635 | fc58eefb473fd47de212b9e742b6286cd6605cc5 |
-| Council pardon and grain embargo defaults | #637 | 7c54025fb433c29b324ebb0037c348fafadb2223 |
-| Eight living-city defaults | #636 | 0e8e6e3b30041aa73ab0a9fc3262a50b82b5b0ad |
-| Household, calamity and regional-rival defaults | #639 | 9f525b13bf85a41851d19b02a3b3f611452a2eda |
-| Profitable tutorial sale, remembered voyage, reachable route controls and immediate council save | #640 | 1d91313db20b625bfd35c40e4dd709476b4bd7da |
-| Docked convoy departure through free-navigation port orders | #641 | 23c35a3d93be7ed983eb74e73fc40128ba11fb37 |
+Integrated changes on main between beta.2 and the checkpoint below, identified by PR number. CI/Balance status of #629-#632, #633-#636 and #644 is not restated here; the independent exact-head review record of each PR is the source.
 
-The source checkpoint is `23c35a3d93be7ed983eb74e73fc40128ba11fb37`. Pages deployment run [40681478653](https://github.com/HALCONDEORO/almojarife-game/actions/runs/40681478653) succeeded for that SHA. A live read of `src/game/tutorial.mjs` confirmed the new paid-cargo profit criterion. A live read of `src/game/game.mjs` confirmed the household, calamity and regional-rival defaults. This is not evidence that a desktop binary contains this batch.
+| Change | PR |
+| --- | --- |
+| Persistent Castilian default ship names | #629 |
+| Rename owned ships (Fleet and ship windows) | #630 |
+| Name and rename convoys | #631 |
+| Wall construction settles at the displayed whole-coin price | #632 |
+| Port justice and courts in the browser host | #633 |
+| Startup stays available if optional justice data fails | #638 |
+| Letters of marque and prize handling | #635 |
+| Council pardon and grain embargo defaults | #637 |
+| Eight living-city defaults | #636 |
+| Household, calamity and regional-rival defaults | #639 |
+| Profitable tutorial sale, remembered voyage, reachable route controls, immediate council save | #640 |
+| Docked convoy departure through free-navigation port orders | #641 |
+| Advanced route stalls report the failed trade cause | #644 |
+| Desktop polish: market columns (#614, #624), empty market frame (#615), obsolete 3D copy (#616), tavern placeholder (#618), SVG toolbar icons (#619), route tutorial wording (#620), internal IDs hidden (#621, #625), ship names in weekly report (#622), crew wage label (#623), storm delay notice (#626), pirate escape wording (#627) | #614-#627 |
+| README screenshots refreshed from Spanish desktop | #628 |
+| Manual beta release bot (no player-visible effect) | #643 |
+| Cancel obsolete PR workflow runs without reducing test coverage; no player-visible change | #645 |
+
+The source checkpoint is whatever exact `main` SHA the owner approves before the tag; at the time of this update `main` was `99c299bc16c822fb7a570853dde5d6383d31b9a9`. Earlier Pages verification below was for `23c35a3d93be7ed983eb74e73fc40128ba11fb37` only. Pages deployment and live Spanish desktop play for the final SHA must be rechecked. This is not evidence that a desktop binary contains this batch.
 
 ## Integrated candidate
 
-Both #640 and #641 have exact-head independent review, green CI/Balance and squash merges. Final source checkpoint: `23c35a3d93be7ed983eb74e73fc40128ba11fb37`. Its Pages deployment and live Spanish desktop playthroughs passed as recorded below. There is no beta.3 tag or release yet.
+Both #640 and #641 have exact-head independent review, green CI/Balance and squash merges. Earlier source checkpoint `23c35a3d93be7ed983eb74e73fc40128ba11fb37`: its Pages deployment and live Spanish desktop playthroughs passed as recorded below. Later merges (#642-#645 and the items above) are not covered by that record. There is no beta.3 tag or release yet.
 
 ## Evidence and limits
 
@@ -41,9 +53,9 @@ Raw live outputs are alongside this checkpoint in `docs/evidence/beta3-live`. No
 ## Remaining gates before publication
 
 - #640/#641 are merged after exact-head independent review and green CI/Balance. Re-review any further code changes.
-- Independently review this documentation and release notes against source checkpoint 23c35a3d. This docs-only PR changes the eventual tag commit but not the game implementation; after merge, verify its Pages deployment separately.
+- Independently review this documentation, README, CHANGELOG and release notes against the final approved source checkpoint. This docs-only PR changes the eventual tag commit but not the game implementation; after merge, verify its Pages deployment separately.
 - Show the final short scope, version, SHA and limits before publication. The release owner decides whether remaining limits are acceptable.
-- Tag only the reviewed exact commit. A `v*` tag starts Desktop builds; wait for all platform builds, packaged-app smoke checks and provenance to finish. The workflow uploads only to a draft release. Do not publish the draft early.
+- Tag only the reviewed exact commit. The manual bot's `GITHUB_TOKEN` tag does not trigger Desktop builds; it prepares a source-only draft and packaging is separate work. Before publication, require all platform builds, packaged-app smoke checks, assets and provenance. Do not publish a source-only draft as a tested desktop release, and do not publish the draft early.
 - Inspect draft assets, checksums, tag commit, pre-release flag, final notes and links. No claim of GPG or platform code-signing without evidence. GPG is optional; paid signing remains out of scope.
 - Publish as a pre-release only after those checks. Verify the resulting public release and asset list separately.
 
