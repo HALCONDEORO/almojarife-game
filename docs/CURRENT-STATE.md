@@ -26,7 +26,7 @@ The repository is public. [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojar
 
 - Beta.2 is published. Later open proposals must still be reviewed and integrated separately before being called available.
 - Full simulation gates, exact-commit CI, deployment verification and ES desktop playtest must be recorded on the final batch commit.
-- Screenshots in README are an older source set. They are not screenshots of an approved release candidate.
+- README screenshots were refreshed in #628 on 27 October 2026. They document that source checkpoint, not a certification of every later main-branch change or platform build.
 - Campaign completion, balance, save migration, accessibility and browser coverage are not declared complete.
 - Future releases still require their own final documentation, integrated-code links, polish, Playtest and release gates. The earlier publication hold is historical, not the current beta.2 status.
 
