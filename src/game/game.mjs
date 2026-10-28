@@ -112,16 +112,16 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.plague !== false && opts.plague !== 1) g.plague = initPlague(); // plague flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.walls !== false && opts.walls !== 1) g.walls = initWalls(); // walls flag, ON by default: only false or 1 turns it off (an off game keeps no key, saves stay identical)
   if (opts.towers !== false && opts.towers !== 1) g.towers = initTowers(); // towers flag, ON by default (owner order 24/10 12:08: every flag ships ON): only false or 1 turns it off (an off game keeps no key, saves stay identical)
-  if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
-  if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
-  if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
-  if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
-  if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
-  if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
-  if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
-  if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
+  if (opts.cityIdentity !== false) g.cityIdentity = true; // city-identity flag, ON by default: no key in an off game (saves stay identical)
+  if (opts.cityMoodOut !== false) g.cityMoodOut = true; // visible-mood flag, ON by default: no key in an off game
+  if (opts.citySeasons !== false) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
+  if (opts.cityCrafts !== false) g.cityCrafts = true; // city-crafts flag, ON by default: no key in an off game
+  if (opts.cityFestivals !== false) g.cityFestivals = true; // city-festivals flag, ON by default: no key in an off game
+  if (opts.cityMemory !== false) g.cityMemory = true; // city-memory flag, ON by default: no key in an off game
+  if (opts.cityRelations !== false) g.cityRelations = true; // city-relations flag, ON by default: no key in an off game
+  if (opts.cityGrowth !== false) g.cityGrowth = true; // city-growth flag, ON by default: no key in an off game
   if (opts.townIndustry !== false && opts.townIndustry !== 1) g.townIndustry = true; // town-industry flag, ON by default (same owner order as citylife: every flag ships ON); false/1 keeps an off game with no key, saves stay identical (docs/design/town-industry-and-auctions.md)
-  if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
+  if (opts.cityIdentity !== false) arrivalIdentity(g, start); // home port introduces itself on day one
   if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
   if (opts.tutorial === true) initTutorial(g); // first-voyage tutorial, any difficulty; OFF by default: no key in an off game (saves stay identical)
   refreshIntel(g);

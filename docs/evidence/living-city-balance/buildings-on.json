@@ -1,0 +1,206 @@
+{
+ "days": 700,
+ "horizons": [
+  365
+ ],
+ "scenarios": {
+  "A_no_player": {
+   "priceIndex": [
+    1.0654,
+    1.0353
+   ],
+   "npcCash": [
+    48521,
+    102535
+   ],
+   "npcWorth": [
+    56521,
+    130815
+   ],
+   "npcWorthMean10y": 182369,
+   "idlePlayerCashEnd": 600,
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "priceIndex": 1.0425,
+     "npcCash": 150169,
+     "npcWorth": 182369,
+     "idlePlayerCash": 1272
+    }
+   }
+  },
+  "B_builder_bot": {
+   "home": "casablanca",
+   "startCash": 4500,
+   "plotPrice": 222,
+   "buildCost": 2070,
+   "upgrades": 1,
+   "stockpiled": 140,
+   "whOwned": true,
+   "finalLevel": 2,
+   "produced": 598,
+   "bankruptcies": 0,
+   "workshopLostDay": null,
+   "upkeepWagesPaid": 8008,
+   "haltEvents": 0,
+   "haltDays": 0,
+   "avgStaffing": 1,
+   "cashMin": 1156,
+   "cashEnd": 10027,
+   "netWorthEnd": 13957,
+   "priceIndex": [
+    1.0654,
+    1.0348
+   ],
+   "npcCash": [
+    48521,
+    102535
+   ],
+   "jobsEnd": 16,
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "priceIndex": 1.042,
+     "npcCash": 150169,
+     "npcWorth": 182369,
+     "cash": 3427,
+     "netWorth": 7333,
+     "level": 2,
+     "produced": 263,
+     "wagesPaid": 5786,
+     "haltEvents": 0,
+     "haltDays": 0,
+     "halted": false,
+     "avgStaffing": 1
+    }
+   }
+  },
+  "C_poor_bot": {
+   "startCash": 3000,
+   "plotPrice": 408,
+   "buildOk": true,
+   "buildCost": 2443,
+   "firstHaltDay": 36,
+   "resumedDay": null,
+   "halts": 0,
+   "haltedEnd": true,
+   "cashEnd": -1119,
+   "produced": 8,
+   "priceIndex": [
+    1.0654,
+    1.0425
+   ],
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "cash": -1119,
+     "halted": true,
+     "produced": 8
+    }
+   }
+  },
+  "D_freeplay_idle": {
+   "dayEnd": 700,
+   "over": null,
+   "bankruptcies": 0,
+   "cashMin": 600,
+   "cashEnd": 600
+  }
+ },
+ "seedRuns": {
+  "1": {
+   "B_builder_bot": {
+    "home": "casablanca",
+    "startCash": 4500,
+    "plotPrice": 222,
+    "buildCost": 2070,
+    "upgrades": 1,
+    "stockpiled": 140,
+    "whOwned": true,
+    "finalLevel": 2,
+    "produced": 598,
+    "bankruptcies": 0,
+    "workshopLostDay": null,
+    "upkeepWagesPaid": 8008,
+    "haltEvents": 0,
+    "haltDays": 0,
+    "avgStaffing": 1,
+    "cashMin": 1156,
+    "cashEnd": 9742,
+    "netWorthEnd": 13672,
+    "priceIndex": [
+     1.0654,
+     1.037
+    ],
+    "npcCash": [
+     48521,
+     109707
+    ],
+    "jobsEnd": 16,
+    "campaignEnd": {
+     "day": 365,
+     "result": "lose",
+     "reason": null
+    },
+    "horizons": {
+     "365": {
+      "priceIndex": 1.0416,
+      "npcCash": 67372,
+      "npcWorth": 86712,
+      "cash": 2372,
+      "netWorth": 6278,
+      "level": 2,
+      "produced": 263,
+      "wagesPaid": 5786,
+      "haltEvents": 0,
+      "haltDays": 0,
+      "halted": false,
+      "avgStaffing": 1
+     }
+    }
+   },
+   "C_poor_bot": {
+    "startCash": 3000,
+    "plotPrice": 408,
+    "buildOk": true,
+    "buildCost": 2443,
+    "firstHaltDay": 36,
+    "resumedDay": null,
+    "halts": 0,
+    "haltedEnd": true,
+    "cashEnd": -1119,
+    "produced": 8,
+    "priceIndex": [
+     1.0654,
+     1.0422
+    ],
+    "campaignEnd": {
+     "day": 365,
+     "result": "lose",
+     "reason": null
+    },
+    "horizons": {
+     "365": {
+      "cash": -1119,
+      "halted": true,
+      "produced": 8
+     }
+    }
+   }
+  }
+ },
+ "seconds": 68.7,
+ "scope": "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd."
+}

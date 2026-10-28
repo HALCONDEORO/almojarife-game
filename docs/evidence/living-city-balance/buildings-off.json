@@ -1,0 +1,206 @@
+{
+ "days": 700,
+ "horizons": [
+  365
+ ],
+ "scenarios": {
+  "A_no_player": {
+   "priceIndex": [
+    1.0654,
+    1.0373
+   ],
+   "npcCash": [
+    48521,
+    599476
+   ],
+   "npcWorth": [
+    56521,
+    634676
+   ],
+   "npcWorthMean10y": 459320,
+   "idlePlayerCashEnd": 600,
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "priceIndex": 1.0334,
+     "npcCash": 437720,
+     "npcWorth": 459320,
+     "idlePlayerCash": 1272
+    }
+   }
+  },
+  "B_builder_bot": {
+   "home": "casablanca",
+   "startCash": 4500,
+   "plotPrice": 222,
+   "buildCost": 2070,
+   "upgrades": 1,
+   "stockpiled": 140,
+   "whOwned": true,
+   "finalLevel": 2,
+   "produced": 601,
+   "bankruptcies": 0,
+   "workshopLostDay": null,
+   "upkeepWagesPaid": 8008,
+   "haltEvents": 0,
+   "haltDays": 0,
+   "avgStaffing": 1,
+   "cashMin": 1163,
+   "cashEnd": 9726,
+   "netWorthEnd": 13656,
+   "priceIndex": [
+    1.0654,
+    1.0368
+   ],
+   "npcCash": [
+    48521,
+    599476
+   ],
+   "jobsEnd": 16,
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "priceIndex": 1.033,
+     "npcCash": 437720,
+     "npcWorth": 459320,
+     "cash": 2919,
+     "netWorth": 6825,
+     "level": 2,
+     "produced": 266,
+     "wagesPaid": 5863,
+     "haltEvents": 0,
+     "haltDays": 0,
+     "halted": false,
+     "avgStaffing": 1
+    }
+   }
+  },
+  "C_poor_bot": {
+   "startCash": 3000,
+   "plotPrice": 408,
+   "buildOk": true,
+   "buildCost": 2443,
+   "firstHaltDay": 36,
+   "resumedDay": null,
+   "halts": 0,
+   "haltedEnd": true,
+   "cashEnd": -1119,
+   "produced": 8,
+   "priceIndex": [
+    1.0654,
+    1.0334
+   ],
+   "campaignEnd": {
+    "day": 365,
+    "result": "lose",
+    "reason": null
+   },
+   "horizons": {
+    "365": {
+     "cash": -1119,
+     "halted": true,
+     "produced": 8
+    }
+   }
+  },
+  "D_freeplay_idle": {
+   "dayEnd": 700,
+   "over": null,
+   "bankruptcies": 0,
+   "cashMin": 600,
+   "cashEnd": 600
+  }
+ },
+ "seedRuns": {
+  "1": {
+   "B_builder_bot": {
+    "home": "casablanca",
+    "startCash": 4500,
+    "plotPrice": 222,
+    "buildCost": 2070,
+    "upgrades": 1,
+    "stockpiled": 140,
+    "whOwned": true,
+    "finalLevel": 2,
+    "produced": 601,
+    "bankruptcies": 0,
+    "workshopLostDay": null,
+    "upkeepWagesPaid": 8008,
+    "haltEvents": 0,
+    "haltDays": 0,
+    "avgStaffing": 1,
+    "cashMin": 1163,
+    "cashEnd": 8969,
+    "netWorthEnd": 12899,
+    "priceIndex": [
+     1.0654,
+     1.0363
+    ],
+    "npcCash": [
+     48521,
+     338756
+    ],
+    "jobsEnd": 16,
+    "campaignEnd": {
+     "day": 365,
+     "result": "lose",
+     "reason": null
+    },
+    "horizons": {
+     "365": {
+      "priceIndex": 1.0407,
+      "npcCash": 122231,
+      "npcWorth": 152051,
+      "cash": 1868,
+      "netWorth": 5774,
+      "level": 2,
+      "produced": 266,
+      "wagesPaid": 5863,
+      "haltEvents": 0,
+      "haltDays": 0,
+      "halted": false,
+      "avgStaffing": 1
+     }
+    }
+   },
+   "C_poor_bot": {
+    "startCash": 3000,
+    "plotPrice": 408,
+    "buildOk": true,
+    "buildCost": 2443,
+    "firstHaltDay": 36,
+    "resumedDay": null,
+    "halts": 0,
+    "haltedEnd": true,
+    "cashEnd": -1119,
+    "produced": 8,
+    "priceIndex": [
+     1.0654,
+     1.0412
+    ],
+    "campaignEnd": {
+     "day": 365,
+     "result": "lose",
+     "reason": null
+    },
+    "horizons": {
+     "365": {
+      "cash": -1119,
+      "halted": true,
+      "produced": 8
+     }
+    }
+   }
+  }
+ },
+ "seconds": 65.8,
+ "scope": "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd."
+}

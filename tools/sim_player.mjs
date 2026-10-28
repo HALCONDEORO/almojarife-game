@@ -9,9 +9,10 @@ if(!['default','planned'].includes(competition))throw new Error('competition mus
 const started=performance.now(), offset=Number(process.argv[4]??0);
 if(!Number.isSafeInteger(offset)||offset<0)throw new Error('offset must be nonnegative integer');
 if (!Number.isSafeInteger(games) || games < 1) throw new Error('games must be a positive integer');
+const flags = JSON.parse(process.env.SIM_FLAGS ?? '{}');
 const results = [];
 for (const strategy of ['greedy-preview', 'random-destination']) for (let i = offset; i < offset+games; i++) {
-  const start = w.cities[i % w.cities.length].id, g = newGame(w, start, {npcCompetition:competition}), rng = makeRng(i + 1000);
+  const start = w.cities[i % w.cities.length].id, g = newGame(w, start, {npcCompetition:competition,...flags}), rng = makeRng(i + 1000);
   let trips = 0, repaired = 0, traded = 0;
   while (!g.over && g.day < 365) {
     const ship = g.ships[0];
@@ -46,7 +47,7 @@ for (const strategy of ['greedy-preview', 'random-destination']) for (let i = of
 }
 const med = (xs) => [...xs].sort((a,b) => a-b)[Math.floor(xs.length/2)];
 console.log(JSON.stringify({
-  competition, npcCount:competition==='planned'?48:3, elapsedMs:Math.round(performance.now()-started),
+  competition, flags, npcCount:competition==='planned'?48:3, elapsedMs:Math.round(performance.now()-started),
   scope: 'Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.',
   gamesPerStrategy: games, offset, ports: w.cities.length, summaries: Object.fromEntries(['greedy-preview','random-destination'].map((s) => {
     const rs = results.filter((r) => r.strategy === s);

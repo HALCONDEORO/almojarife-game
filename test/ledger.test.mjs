@@ -6,7 +6,7 @@ import { SETTLE_EVERY, dueNow, accruedTotal, post, unread, markRead, markAllRead
 import { SHIP_TYPES } from "../src/sim/trade.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
-const idle = () => { const g = newGame(world); g.eventsOn = false; return g; }; // one cog, docked, no events
+const idle = () => { const g = newGame(world, "cadiz", { cityIdentity: false }); g.eventsOn = false; return g; }; // one cog, docked, no events
 
 test("upkeep is not charged on ordinary days, only on settlement day", () => {
   const g = idle(), c0 = g.cash, per = SHIP_TYPES.cog.upkeepPerDay;

@@ -101,6 +101,8 @@ test("save round trip with the plague flag ON keeps the plague book", () => {
   assert.deepEqual(JSON.parse(JSON.stringify({ ...b, world: undefined })), JSON.parse(JSON.stringify({ ...a, world: undefined })));
 });
 
+// Uses the current Balance builder policy: keep the 1200-coin reserve during upgrades,
+// and keep restocking level 3. This is a bot-policy correction, not engine tuning.
 // Measured tuning of the weekly base chance (sim_buildings_economy scenario B, 3650 days, plague ON):
 // with the previous 0.02 the seed-1 builder bot in casablanca caught two early plagues (days 84-112
 // and 301-329) inside his tight starting-cash window, went bankrupt on day 686 and lost the workshop
@@ -118,11 +120,11 @@ test("the builder bot survives the early plague windows at the measured base cha
   for (let d = 1; d <= 700; d++) {
     advanceDay(g);
     const b = g.buildings?.[home]?.[home + ":1"];
-    if (d % 7 === 0 && b?.state === "active" && !b.halted && b.level < 3) {
+    if (d % 7 === 0 && b?.state === "active" && !b.halted) {
       if (!g.warehouses[home] && g.cash > BUFFER + 1500) buyWarehouse(g, home);
       const ship = g.ships.find((s) => s.at === home && !s.voyage);
       if (g.warehouses[home] && ship) for (const [good, qty] of Object.entries(RECIPES.workshop)) {
-        const need = Math.max(0, qty * (b.level + 1) - (g.warehouses[home].goods[good] ?? 0));
+        const need = Math.max(0, qty * Math.min(b.level + 1, 3) - (g.warehouses[home].goods[good] ?? 0));
         const unit = Math.ceil(price(world, g.market[home][good], good) * 1.1);
         const n = Math.min(need, Math.max(0, Math.floor((g.cash - BUFFER) / unit)));
         if (n > 0) { const r = doBuy(g, ship, good, n); if (r.ok) storeGoods(g, ship, good, r.qty); }
@@ -130,7 +132,8 @@ test("the builder bot survives the early plague windows at the measured base cha
       const q = quoteRecipe(world, g.market, home, "weave");
       const margin = q.ok ? sellQuote(world, g.market, home, "cloth", 2) - q.cost : 0;
       const daily = (BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER) * (b.level + 1);
-      if (g.cash > BUFFER && margin * producerRate("workshop", b.level + 1) >= 3 * daily) startConstruction(g, home, home + ":1", "workshop");
+      const qc = quoteConstruction(g, home, home + ":1", "workshop");
+      if (b.level < 3 && qc.ok && g.cash > BUFFER + qc.cost && margin * producerRate("workshop", b.level + 1) >= 3 * daily) startConstruction(g, home, home + ":1", "workshop");
     }
   }
   assert.equal(g.bankruptcies ?? 0, 0, "no bankruptcy in the early plague windows");

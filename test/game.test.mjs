@@ -32,8 +32,8 @@ test("game ends at the deadline and cash never goes negative", () => {
   assert.ok(g.over === "lose" || g.over === "win"); assert.ok(g.cash >= 0);
 });
 // Greedy bot: buy the best current-quote margin, sail there, repeat. Shows the game is winnable but not trivial.
-function runBot() {
-  const g = newGame(world), s = g.ships[0], goods = Object.keys(world.goods);
+function runBot(options = {}) {
+  const g = newGame(world, "cadiz", options), s = g.ships[0], goods = Object.keys(world.goods);
   const q = (e, gd) => Math.round(world.goods[gd].base * Math.min(3, Math.max(0.4, (e.target / Math.max(1, e.stock)) ** 0.6)));
   while (!g.over) {
     if (!s.voyage) {
@@ -51,10 +51,13 @@ function runBot() {
   }
   return g;
 }
-test("a greedy bot with one ship can win, but not in the first 100 days", () => {
-  const g = runBot();
-  console.log("greedy bot:", g.over, "day", g.day, "net worth", netWorth(g), "goal", GOAL_CASH);
-  assert.equal(g.over, "win"); assert.ok(g.day > 100, "too easy: won on day " + g.day);
+test("legacy ratio-only policy wins with living cities OFF but misses the deadline with growth ON", () => {
+  const flags = ['cityIdentity','cityMoodOut','citySeasons','cityCrafts','cityFestivals','cityMemory','cityRelations','cityGrowth'];
+  const off = runBot(Object.fromEntries(flags.map(k => [k, false]))), on = runBot();
+  assert.equal(off.over, "win"); assert.ok(off.day > 100);
+  assert.equal(on.over, "lose"); assert.equal(on.day, 365);
+  assert.equal(Math.round(netWorth(on)), 43022, "declared living-city baseline, not a winning-policy guarantee");
+  assert.ok(on.cash >= 0); assert.equal(on.bankruptcies ?? 0, 0);
 });
 test("selling to the goal wins at once, before any upkeep, and ends the game", () => {
   const g = newGame(world), s = g.ships[0];

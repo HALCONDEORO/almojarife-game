@@ -10,7 +10,7 @@ import { growthMul, GROWTH_MIN, GROWTH_MAX, GROWTH_STEP } from "../src/game/grow
 const world = loadWorld();
 const DAYS = Number(process.argv[2] ?? 730), SEEDS = (process.argv[3] ?? "1,2,3,4,5,6,7,8").split(",").map(Number);
 const run = (seed, on) => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed, cityGrowth: on ? true : undefined });
+  const g = newGame(world, "cadiz", { freePlay: true, seed, cityGrowth: on });
   while (g.day < DAYS && !g.over) advanceDay(g);
   const grainPrices = world.cities.map((c) => { const e = g.market[c.id].grain; return { city: c.id, stock: e.stock, target: e.target }; });
   return {
