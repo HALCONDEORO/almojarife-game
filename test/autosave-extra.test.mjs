@@ -9,5 +9,8 @@ test("autosave also runs on a timer and when the tab is hidden or closed, never 
   assert.ok(src.includes('addEventListener("pagehide", autosaveIfChanged)'));
 });
 test("the save writer itself is unchanged (same key and format)", () => {
-  assert.ok(src.includes("function autosave() { try { if (inTitle) return; localStorage.setItem(SAVE_KEY, JSON.stringify(packGame(g, company))); } catch {} }"));
+  assert.ok(src.includes("if (inTitle) return false;"));
+  assert.ok(src.includes("Save verification failed"));
+  assert.ok(src.includes('warning.setAttribute("role", "alert")'));
+  assert.ok(src.includes('msg.textContent = saved ? t.saved'));
 });

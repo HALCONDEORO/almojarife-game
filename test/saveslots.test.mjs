@@ -67,7 +67,7 @@ test("main wires slots to the pause menu and the title with the same safe rotati
   assert.match(main, /\$\("m-slots"\)\.onclick = \(\) => showSlots\(\)/);
   assert.match(main, /\$\("t-slots"\)\.onclick = \(\) => showSlots\(\)/);
   const fn = main.slice(main.indexOf("function showSlots()"), main.indexOf("function showCredits()"));
-  assert.match(fn, /recoverRotations\(\)/); assert.match(fn, /restoreRotate\(localStorage, SAVE_KEY, cur, packed\)/);
-  assert.match(fn, /confirm\(n2\(x\.confirmLoad/); assert.match(fn, /confirm\(n2\(x\.confirmDel/);
+  assert.match(fn, /finishPendingRotation\(localStorage, isValidSaveText\)/); assert.match(fn, /restoreRotate\(localStorage, SAVE_KEY, cur, packed\)/);
+  assert.match(fn, /confirmDialog\(el, n2\(x\.confirmLoad/); assert.match(fn, /confirmDialog\(el, n2\(x\.confirmDel/);
   assert.match(book, /entry\("t-slots"/); assert.match(book, /"slots": "Ranuras de guardado"/); assert.match(book, /"slots": "Save slots"/);
 });
