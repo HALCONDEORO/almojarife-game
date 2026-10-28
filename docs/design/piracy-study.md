@@ -157,3 +157,8 @@ Not wired yet: smuggling and fraud charges (the game has no export bans yet) and
 
 ### Browser activation (28 October 2026)
 New games enable port justice by default. The browser loads realms and courts and registers them with the arrival/charge hooks. The town hall shows a read-only justice summary. Explicit `justice:false` remains available to isolated baseline tests. Existing saves keep their saved flags for now. This activation does not change fines, sentences or trade rules. Letters, merchant attacks and prize-court controls are a separate host-UI follow-up; their pure modules alone do not make those actions playable.
+
+### Optional court data availability
+The browser bounds justice data loading to 2.5 seconds, validates its structure and catches network/HTTP/JSON errors. If unavailable, the normal title and trading game still start. The title warns that justice is unavailable and offers Retry (reload); the hall repeats the unavailable state. Saved charges are retained, not cleared or marked tried. Loading failure clears only the runtime justice-data registration. Peace-news loading is also bounded and skipped when justice realms are unavailable.
+
+Regression: `node --test test/justicefallback.test.mjs test/justicehost.test.mjs`; optional Playwright browser check in `test/browser/justice-startup.mjs` covers abort, invalid JSON, 503 and a hung request.
