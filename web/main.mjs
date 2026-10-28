@@ -1,3 +1,4 @@
+import { installMapControls } from "./mapcontrols.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
@@ -31,6 +32,7 @@ import { voyageCardHtml } from "../src/view/voyagecard.mjs";
 import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer,mapLabelPlacement} from "../src/view/historicalmap.mjs";
+import { chartOrnamentSvg } from "../src/view/chartornament.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -310,6 +312,7 @@ function frame(now) {
     progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
+  mapControls.refresh();
   routeHover.refresh();
   requestAnimationFrame(frame);
 }
@@ -592,7 +595,7 @@ function render() {
     tools.querySelector("details").open = wasOpen;
     $("map-mode").onchange = ev => { mapMode = ev.target.value; render(); };
   }
-  let m = "";
+  let m = chartOrnamentSvg({enabled:new URLSearchParams(location.search).get("chartornament")==="1",mode:mapMode,lang,x:X,y:Y});
   const hiddenPort = (id) => cityIdSet.has(id) && !isDiscovered(g, id); // fog of war: only discovered ports and their sea lanes show
   for (const [a, b] of world.lanes) { if (hiddenPort(a) || hiddenPort(b)) continue; m += `<line x1="${X(world.nodes[a].lon)}" y1="${Y(world.nodes[a].lat)}" x2="${X(world.nodes[b].lon)}" y2="${Y(world.nodes[b].lat)}" stroke="#7a9bb0" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
   if (s.voyage?.path?.length) { // selected ship under way: its route in red with live ETA (P3 select-ship)
@@ -1533,6 +1536,14 @@ function showTitle() {
   };
 }
 showTitle(); // title first: it must paint instantly
+const mapControls = installMapControls({
+  map:mapEl,cam,apply:applyCam,state:()=>g,locale:()=>lang,
+  selected: () => { const s=ship(); return s?shipPosition(world,s,tickAcc/tickDurationMs()):null; },
+  position: s => shipPosition(world,s,tickAcc/tickDurationMs()),
+  port: () => world.nodes[target] ?? world.nodes[ship()?.at],
+  project:p=>[X(p.lon),Y(p.lat)],
+  blocked:()=>inTitle || !$('title').hidden || !!document.querySelector('#v3d,#sea-modal,#ctx')
+});
 const routeHover = installRoutePreview({
   map: mapEl, world, state: () => g, selected: () => ship(), locale: () => lang, name: cityName,
   project: p => [X(p.lon),Y(p.lat)], inverse: q => ({ lon: q.x / sc + x0, lat: y1 - q.y / (sc * 1.25) }),
