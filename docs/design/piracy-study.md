@@ -164,3 +164,5 @@ The browser bounds justice data loading to 2.5 seconds, validates its structure 
 Regression: `node --test test/justicefallback.test.mjs test/justicehost.test.mjs`; optional Playwright browser check in `test/browser/justice-startup.mjs` covers abort, invalid JSON, 503 and a hung request.
 ### Playable privateering controls
 The town hall sells the existing 600-coin, 365-day letters and presents tagged prizes to the existing court. The sea panel lists traders on the same lane and asks confirmation before an attack; unlicensed plunder uses the existing charge hook. Peace is on by default in new games and suspensions are labelled before purchase and after it. Fines, combat, loot, quinto and court decisions use the existing modules without balance changes. A court's release/seizure is reported through the existing inbox.
+
+After the startup-fallback merge, privateering shares the bounded peace-data read and disables its controls when realms, courts or peace data are unavailable. It never treats missing peace data as permission to attack. Saved charges remain intact.
