@@ -1508,8 +1508,9 @@ document.addEventListener("keydown", (e) => { // M mutes or unmutes all sound, a
 });
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (inTitle && e.key === "Enter") { const tg = e.target; if (tg && tg.closest && tg.closest("input,select,textarea,button")) return; const c = $("t-cont"), b = c && !c.disabled ? c : $("t-start"); if (b) { e.preventDefault(); b.click(); } return; } if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
 // freeNav defaults ON for new games (Marco 23/10: all flags on); existing saves keep their own flag.
+let createDraft = null; // kept only in memory until a new campaign starts
 function showCreate(name) {
-  t = T[lang]; let freeNav = true; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  t = T[lang]; let freeNav = createDraft?.freeNav ?? true; const el = $("title"), pf = createDraft?.profile ?? defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
@@ -1527,11 +1528,11 @@ function showCreate(name) {
     el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
-    $("p-back").onclick = () => showTitle();
+    $("p-back").onclick = () => { read(); createDraft = {profile: pf, freeNav}; showTitle(); };
     $("p-go").onclick = () => {
       read();
       const raw = localStorage.getItem(SAVE_KEY), prev = raw && isValidSaveText(raw) ? raw : null; // a corrupt current save is not worth protecting
-      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
+      const launch = () => { createDraft = null; music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
       if (!prev) return launch(); // nothing saved: nothing to protect
       // A saved game exists: ask first, and park it in the backup slot before the new game's autosave replaces it (same rotation as Import).
       const old = unpackGame(JSON.parse(prev), world), sum = `${esc(old.company || t.defCo)} · ${t.day} ${old.g.day} · ${fmtM(old.g.cash)}`;
@@ -1543,7 +1544,7 @@ function showCreate(name) {
         const keep = localStorage.getItem(SAVE_KEY) ?? prev;
         start(pf, false, { freeNav }); // builds the new game in memory; autosave stays off while inTitle is true
         try { restoreRotate(localStorage, SAVE_KEY, keep, JSON.stringify(packGame(g, company))); } catch { $("r-msg").textContent = t.errB; return; } // fail-closed: if either write fails the saved game is untouched and we stay here
-        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
+        createDraft = null; music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
       };
     };
   };
