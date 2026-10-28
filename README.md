@@ -48,7 +48,7 @@ This README describes merged source at the documentation checkpoint, not a deplo
 
 ## Screenshots
 
-_Screenshot set from merged `main`: the city plan (`city2d.png`), the five port windows (`market.png`, `shipyard.png`, `tavern.png`, `bank.png`, `warehouse.png`) and the house-creation form (`create.png`) were refreshed on 27 Oct 2026 (Spanish UI) from the playable build at `main` 78a50f8e595b50ed6c611c68e0353f861deb6a99 (`v0.5.0-beta.1`); the sea chart (`map.png`) was captured from `main` 4afd05024bf879820483a57e850a37b436e97cf8 and remains accurate. Refresh screenshots when the UI changes so they never show unmerged work._
+_All eight screenshots below were refreshed on 28 Oct 2026 from merged `main` b24895a1c3783861354f8a5e594ef4e7d7df72b0, at desktop 1440x900 with the Spanish UI and an isolated synthetic campaign. The warehouse view uses synthetic warehouse ownership. Refresh screenshots when the UI changes so they never show unmerged work._
 
 | The city plan | Trade in the market |
 |---|---|
