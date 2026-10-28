@@ -25,8 +25,8 @@ const paidBuildings = (g) => Math.round((g.reports ?? []).reduce((a, r) => a + (
 const halts = (g) => (g.inbox ?? []).filter((m) => m.kind === "halt").length;
 const base = (g) => ({ priceIndex: priceIndex(g), npcCash: npcCash(g), npcWorth: npcWorth(g) });
 
-function scenarioA() {
-  const g = newGame(world, "cadiz", { freePlay: true, ...FLAGS });
+function scenarioA(options = FLAGS) {
+  const g = newGame(world, "cadiz", { freePlay: true, ...options });
   const s0 = base(g);
   const horizons = {};
   const st = {}, worthYears = []; // one NPC worth sample per game year over the last 10 years of the run
@@ -36,24 +36,28 @@ function scenarioA() {
   return { priceIndex: [s0.priceIndex, s1.priceIndex], npcCash: [s0.npcCash, s1.npcCash], npcWorth: [s0.npcWorth, s1.npcWorth], npcWorthMean10y, idlePlayerCashEnd: Math.round(g.cash), campaignEnd: st.firstOver ?? null, horizons };
 }
 
-function scenarioB(seed = 0) {
+const builderCache = new Map();
+function scenarioB(seed = 0, options = FLAGS, maxLevel = 2) {
+  const cacheKey=JSON.stringify([seed,options,maxLevel]); if(builderCache.has(cacheKey))return builderCache.get(cacheKey);
   const home = "casablanca"; // best cloth margin near the start (+125/batch at day 0): the market picks the place
-  const g = newGame(world, home, { cash: 2500, freePlay: true, seed, ...FLAGS }); // 4,500 total: a trader who saved up for his first workshop
+  const g = newGame(world, home, { cash: 2500, freePlay: true, seed, ...options }); // 4,500 total: a trader who saved up for his first workshop
   const s0 = base(g);
   const bp = buyPlot(g, home, { id: home + ":1", type: "workshop", w: 4, d: 4 });
   const build = startConstruction(g, home, home + ":1", "workshop");
   if (!build.ok) return { error: "build failed", reason: build.reason, plotPrice: bp.price };
   let stockpiled = 0; const BUFFER = 1200;
-  let minCash = g.cash, staffSum = 0, staffDays = 0, haltDays = 0, upgrades = 0, haltEvents = 0; let lostB = 0;
+  let minCash = g.cash, staffSum = 0, staffDays = 0, haltDays = 0, upgrades = 0, haltEvents = 0; let lostB = 0; let financialHalts = 0, fireHalts = 0, fireReopens = 0;
   const horizons = {};
   const st = {};
-  const snapB = (d) => { const b = g.buildings?.[home]?.[home + ":1"] ?? {}; horizons[d] = { ...base(g), cash: Math.round(g.cash), netWorth: Math.round(netWorth(g)), level: b.level, produced: b.produced ?? 0, wagesPaid: paidBuildings(g), haltEvents, haltDays, halted: !!b.halted, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1 }; };
+  const snapB = (d) => { const b = g.buildings?.[home]?.[home + ":1"] ?? {}; horizons[d] = { ...base(g), cash: Math.round(g.cash), netWorth: Math.round(netWorth(g)), level: b.level, produced: b.produced ?? 0, financialHalts, fireHalts, fireReopens, fireActive: b.halted === "incendio", wagesPaid: paidBuildings(g), haltEvents, haltDays, halted: !!b.halted, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1 }; };
   for (let d = 1; d <= days; d++) {
-    const wasHalted = !!g.buildings?.[home]?.[home + ":1"]?.halted;
+    const beforeHalt = g.buildings?.[home]?.[home + ":1"]?.halted;
+    const wasHalted = !!beforeHalt;
     advanceDay(g);
     const b = g.buildings?.[home]?.[home + ":1"];
     if (!b && !lostB) lostB = d;
-    if (!wasHalted && b?.halted) haltEvents++;
+    if (!wasHalted && b?.halted) { haltEvents++; if (b.halted === "incendio") fireHalts++; else financialHalts++; }
+    if (beforeHalt === "incendio" && b && b.halted !== "incendio") fireReopens++;
     if (b?.state === "active") { staffSum += staffingRatio(g, home); staffDays++; if (b.halted) haltDays++; }
     if (d % 7 === 0 && b?.state === "active" && !b.halted) { // restock at every level: a max-level loom still eats wool
       if (!g.warehouses[home] && g.cash > BUFFER + 1500) buyWarehouse(g, home);
@@ -68,7 +72,7 @@ function scenarioB(seed = 0) {
       const margin = q.ok ? sellQuote(world, g.market, home, "cloth", 2) - q.cost : 0;
       const daily = (BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER) * (b.level + 1);
       const qc = quoteConstruction(g, home, home + ":1", "workshop"); // never start works that breach the buffer: an upgrade that leaves no cash for wool and wages kills the shop
-      if (b.level < 3 && qc.ok && g.cash > BUFFER + qc.cost && margin * producerRate("workshop", b.level + 1) >= 3 * daily) {
+      if (b.level < maxLevel && qc.ok && g.cash > BUFFER + qc.cost && margin * producerRate("workshop", b.level + 1) >= 3 * daily) {
         const r = startConstruction(g, home, home + ":1", "workshop"); if (r.ok) upgrades++;
       }
     }
@@ -77,10 +81,11 @@ function scenarioB(seed = 0) {
     if (snaps.includes(d)) snapB(d);
   }
   const b = g.buildings[home]?.[home + ":1"]; // a bankrupt bot loses the workshop to the free-play seizure: a valid outcome to report, not a sim crash
-  return { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b?.level ?? null, produced: b?.produced ?? 0, bankruptcies: g.bankruptcies ?? 0, workshopLostDay: lostB || null,
-    upkeepWagesPaid: paidBuildings(g), haltEvents, haltDays, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1,
+  const result = { home, startCash: 4500, plotPrice: bp.price, buildCost: Math.round(build.cost ?? 0), upgrades, stockpiled, whOwned: !!g.warehouses[home], finalLevel: b?.level ?? null, produced: b?.produced ?? 0, bankruptcies: g.bankruptcies ?? 0, workshopLostDay: lostB || null,
+    maxLevel, financialHalts, fireHalts, fireReopens, fireActive: b?.halted === "incendio", upkeepWagesPaid: paidBuildings(g), haltEvents, haltDays, avgStaffing: staffDays ? +(staffSum / staffDays).toFixed(3) : 1,
     cashMin: Math.round(minCash), cashEnd: Math.round(g.cash), netWorthEnd: Math.round(netWorth(g)),
     priceIndex: [s0.priceIndex, priceIndex(g)], npcCash: [s0.npcCash, npcCash(g)], jobsEnd: jobsNeeded(g, home), campaignEnd: st.firstOver ?? null, horizons };
+  builderCache.set(cacheKey,result); return result;
 }
 
 function scenarioC(seed = 0) {
@@ -119,7 +124,10 @@ function scenarioD() {
 // Extra game seeds (argv[3], comma list) run the bots B and C again; seed 0 stays the default and the report shape for it does not change.
 const extraSeeds = (process.argv[3] ?? "").split(",").filter(Boolean).map((x) => (/^\d+$/.test(x) ? Number(x) : NaN));
 if (extraSeeds.some((x) => !Number.isSafeInteger(x) || x < 0 || x > 4294967295)) throw new Error("seeds must be uint32 integers");
+const WORLD_OFF = { ...FLAGS, household: false, calamities: false, regionalRivals: false };
 const t0 = Date.now();
-const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seedRuns: Object.fromEntries(extraSeeds.map((x) => [x, { B_builder_bot: scenarioB(x), C_poor_bot: scenarioC(x) }])), seconds: +((Date.now() - t0) / 1000).toFixed(1),
+const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seedRuns: Object.fromEntries(extraSeeds.map((x) => [x, { B_builder_bot: scenarioB(x), C_poor_bot: scenarioC(x) }])), npcOff: scenarioA(WORLD_OFF), flags: FLAGS,
+  pairedBuilders: Object.fromEntries([0,...extraSeeds].map(seed => [seed, {off:scenarioB(seed,WORLD_OFF),on:scenarioB(seed),legacyOn:scenarioB(seed,FLAGS,3)}])),
+  seconds: +((Date.now() - t0) / 1000).toFixed(1),
   scope: "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd." };
 console.log(JSON.stringify(report, null, 1));

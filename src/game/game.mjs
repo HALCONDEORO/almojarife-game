@@ -95,7 +95,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.legumes === undefined || opts.legumes === true) world = withLegumes(world); // optional staple, default ON (owner order 23/10); pass false/1 to disable
   const ids = world.cities.map((c) => c.id);
   // Opt-in research option only. Production defaults stay exactly three traders.
-  const houses = opts.regionalRivals !== false && opts.regionalRivals !== 1 ? regionalHousePlan(world,normalizeSeed(opts.seed)) : null;
+  const houses = opts.npcCompetition !== "planned" && opts.regionalRivals !== false && opts.regionalRivals !== 1 ? regionalHousePlan(world,normalizeSeed(opts.seed)) : null;
   const origins = houses ? houses.map(h=>h.home) : opts.npcCompetition === "planned" ? npcPlan(world).ports.flatMap(r=>Array(r.count).fill(r.city)) : Array.from({length:3},(_,i)=>ids[(i*3+1)%ids.length]);
   const ai = origins.map((at, i) => ({ cash: 2000, home: at, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) })); // home: where the trader started; its realm decides if a letter of marque covers it
   if(houses)ai.forEach((bot,i)=>{bot.house=houses[i];});

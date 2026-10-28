@@ -7,7 +7,7 @@ import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
 const seasonNotices = (g) => inbox(g).filter((m) => /Llega .* a |comes to /.test(JSON.stringify(m)));
-const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { household: false, calamities: false, regionalRivals: false, cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 test("flag off: no state and no notices, trade unchanged", () => {
   const g = mk({});
   assert.equal(g.citySeasons, undefined); assert.equal(g.seasonSeen, undefined);

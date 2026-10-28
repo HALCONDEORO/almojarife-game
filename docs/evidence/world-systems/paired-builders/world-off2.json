@@ -1,0 +1,99 @@
+{
+  "seed": 2,
+  "off": true,
+  "b": {
+    "home": "casablanca",
+    "startCash": 4500,
+    "plotPrice": 222,
+    "buildCost": 2070,
+    "upgrades": 1,
+    "stockpiled": 140,
+    "whOwned": true,
+    "finalLevel": 2,
+    "produced": 3544,
+    "bankruptcies": 0,
+    "workshopLostDay": null,
+    "maxLevel": 2,
+    "financialHalts": 0,
+    "fireHalts": 0,
+    "fireReopens": 0,
+    "fireActive": false,
+    "upkeepWagesPaid": 8008,
+    "haltEvents": 0,
+    "haltDays": 0,
+    "avgStaffing": 1,
+    "cashMin": 1179,
+    "cashEnd": 63160,
+    "netWorthEnd": 67018,
+    "priceIndex": [
+      1.0654,
+      1.0349
+    ],
+    "npcCash": [
+      48521,
+      347557
+    ],
+    "jobsEnd": 16,
+    "campaignEnd": {
+      "day": 365,
+      "result": "lose",
+      "reason": null
+    },
+    "horizons": {
+      "365": {
+        "priceIndex": 1.0385,
+        "npcCash": 68087,
+        "npcWorth": 96487,
+        "cash": 3345,
+        "netWorth": 7251,
+        "level": 2,
+        "produced": 263,
+        "financialHalts": 0,
+        "fireHalts": 0,
+        "fireReopens": 0,
+        "fireActive": false,
+        "wagesPaid": 5786,
+        "haltEvents": 0,
+        "haltDays": 0,
+        "halted": false,
+        "avgStaffing": 1
+      },
+      "1825": {
+        "priceIndex": 1.0339,
+        "npcCash": 355457,
+        "npcWorth": 387457,
+        "cash": 28660,
+        "netWorth": 32470,
+        "level": 2,
+        "produced": 1719,
+        "financialHalts": 0,
+        "fireHalts": 0,
+        "fireReopens": 0,
+        "fireActive": false,
+        "wagesPaid": 8008,
+        "haltEvents": 0,
+        "haltDays": 0,
+        "halted": false,
+        "avgStaffing": 1
+      },
+      "3650": {
+        "priceIndex": 1.0349,
+        "npcCash": 347557,
+        "npcWorth": 380437,
+        "cash": 63160,
+        "netWorth": 67018,
+        "level": 2,
+        "produced": 3544,
+        "financialHalts": 0,
+        "fireHalts": 0,
+        "fireReopens": 0,
+        "fireActive": false,
+        "wagesPaid": 8008,
+        "haltEvents": 0,
+        "haltDays": 0,
+        "halted": false,
+        "avgStaffing": 1
+      }
+    }
+  }
+}

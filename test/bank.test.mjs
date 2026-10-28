@@ -6,7 +6,7 @@ import { LOAN_RATE, LOAN_TERM_DAYS, LOAN_MAX, loanInterest } from "../src/game/b
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { messageText } from "../src/view/ledgerview.mjs";
 const world = loadWorld();
-const idle = () => { const g = newGame(world); g.eventsOn = false; return g; };
+const idle = () => { const g = newGame(world, "cadiz", {household:false,calamities:false,regionalRivals:false}); g.eventsOn = false; return g; };
 const fmt = (n) => String(Math.round(n));
 
 test("the limit is half of net worth in steps of 100, capped, and needs a docked ship", () => {

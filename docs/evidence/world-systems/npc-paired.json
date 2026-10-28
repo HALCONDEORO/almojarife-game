@@ -1,0 +1,84 @@
+{
+  "on": {
+    "priceIndex": [
+      1.0643,
+      1.0282
+    ],
+    "npcCash": [
+      6000,
+      1248974
+    ],
+    "npcWorth": [
+      6000,
+      1263174
+    ],
+    "npcWorthMean10y": 792927,
+    "idlePlayerCashEnd": -1075,
+    "campaignEnd": {
+      "day": 365,
+      "result": "lose",
+      "reason": null
+    },
+    "horizons": {
+      "365": {
+        "priceIndex": 1.0327,
+        "npcCash": 194197,
+        "npcWorth": 206397,
+        "idlePlayerCash": 1214
+      },
+      "1825": {
+        "priceIndex": 1.0278,
+        "npcCash": 759103,
+        "npcWorth": 771473,
+        "idlePlayerCash": -877
+      },
+      "3650": {
+        "priceIndex": 1.0282,
+        "npcCash": 1248974,
+        "npcWorth": 1263174,
+        "idlePlayerCash": -1075
+      }
+    }
+  },
+  "off": {
+    "priceIndex": [
+      1.0654,
+      1.0299
+    ],
+    "npcCash": [
+      48521,
+      813323
+    ],
+    "npcWorth": [
+      56521,
+      844323
+    ],
+    "npcWorthMean10y": 537001,
+    "idlePlayerCashEnd": -815,
+    "campaignEnd": {
+      "day": 365,
+      "result": "lose",
+      "reason": null
+    },
+    "horizons": {
+      "365": {
+        "priceIndex": 1.0425,
+        "npcCash": 150169,
+        "npcWorth": 182369,
+        "idlePlayerCash": 1272
+      },
+      "1825": {
+        "priceIndex": 1.0357,
+        "npcCash": 445127,
+        "npcWorth": 477127,
+        "idlePlayerCash": -646
+      },
+      "3650": {
+        "priceIndex": 1.0299,
+        "npcCash": 813323,
+        "npcWorth": 844323,
+        "idlePlayerCash": -815
+      }
+    }
+  }
+}
