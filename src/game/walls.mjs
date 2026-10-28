@@ -65,7 +65,10 @@ export function quoteWalls(g, cityId) {
   const q = quoteUnits(g.world, g.market, cityId, missing);
   if (!q.ok) return q;
   const fee = WALL_FEE * level, ticks = WALL_BUILD_DAYS * level * TICKS_PER_DAY;
-  return { ok: true, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing };
+  // Settle the total in whole coins. Keep the material quote unchanged and expose
+  // the sub-coin settlement adjustment so the visible breakdown still adds up.
+  const rawCents = Math.round((q.cost + fee) * 100), cost = Math.ceil(rawCents / 100), rounding = (cost * 100 - rawCents) / 100;
+  return { ok: true, level, cost, materials: q.cost, fee, rounding, ticks, inputs, fromStore, missing };
 }
 
 /** Pay and start the work. An upgrade keeps the old wall active until the new one completes (P3 11.5.3). */
