@@ -156,3 +156,9 @@ test('view: negative-margin plots use readable localized city labels without mut
  assert.match(es,/Puerto desconocido/);assert.match(en,/Unknown port/);assert.equal(JSON.stringify(g.reports),raw);
  const escaped=reportsHtml(g,'es',fmt,k=>k,()=>'<b>Port</b>');assert.ok(escaped.includes('&lt;b&gt;Port&lt;/b&gt;'));assert.ok(!escaped.includes('<b>Port</b>'));
 });
+test('view: next weekly payment uses singular for one day and plural otherwise in ES/EN',()=>{
+ const g=idle();g.day=804;
+ assert.match(reportsHtml(g,'es',fmt),/en 1 día<\/b>/);assert.doesNotMatch(reportsHtml(g,'es',fmt),/en 1 días/);
+ assert.match(reportsHtml(g,'en',fmt),/in 1 day<\/b>/);assert.doesNotMatch(reportsHtml(g,'en',fmt),/in 1 days/);
+ g.day=803;assert.match(reportsHtml(g,'es',fmt),/en 2 días/);assert.match(reportsHtml(g,'en',fmt),/in 2 days/);
+});
