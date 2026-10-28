@@ -1,4 +1,5 @@
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
+import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
 import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
 import {buyLetter} from "../src/game/marque.mjs";
 import {attackTrader,settlePrize} from "../src/game/privateering.mjs";
@@ -124,7 +125,7 @@ const world = buildWorld(await (await fetch("../data/world.json")).json());
 const justiceData = await loadJusticeData(fetch,world.cities.map(c=>c.id));
 const justiceRealms = justiceData.realms, justiceCourts = justiceData.courts;
 const privateeringPeaces = await optionalJson(fetch,"../data/peaces.json");
-const privateeringReady = justiceData.ready && !!privateeringPeaces?.peaces;
+const privateeringReady = justiceData.ready && Array.isArray(privateeringPeaces?.treaties);
 if (PIRACY_DAILY_ENABLED && privateeringReady) installMarqueDaily(DAILY_HOOKS,justiceRealms,privateeringPeaces);
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
@@ -510,6 +511,16 @@ const endPress = () => { clearTimeout(pressTimer); setTimeout(() => { uiPressed 
 document.addEventListener("pointerdown", (e) => { if (e.target?.closest?.(PRESS_SCOPE)) { uiPressed = true; clearTimeout(pressTimer); pressTimer = setTimeout(endPress, 1500); } }, true); // 1.5 s safety if the release never arrives
 document.addEventListener("pointerup", endPress, true); document.addEventListener("pointercancel", endPress, true);
 function render() {
+  sel = fleetSelection(g, sel);
+  if (sel < 0) {
+    playing = false; close3d(); shipWin = null; $("shipwin")?.remove(); $("sea-modal")?.remove();
+    g.over = "lose"; g.overReason = "fleet-lost";
+    let lost = $("fleet-loss-overlay"); if (!lost) { lost = document.createElement("div"); lost.id="fleet-loss-overlay"; lost.style.cssText="position:fixed;inset:90px 15% auto;z-index:1000;background:#f6ebcb;padding:24px;border:2px solid #8b6d36"; document.body.append(lost); } lost.innerHTML=fleetLossHtml(lang)+`<button id="fleet-loss-menu">${lang==="es"?"Menú":"Menu"}</button>`; $("fleet-loss-menu").onclick=showMenu;
+    $("panel").innerHTML = ""; $("voyage-card").innerHTML = ""; $("fleet-body").innerHTML = ""; $("cash-card").innerHTML = ""; $("notice-card").innerHTML = "";
+    $("forecast-card").innerHTML = ""; $("hint").textContent = lang === "es" ? "La partida ha terminado: has perdido tu flota." : "Game over: your fleet is lost.";
+    $("ships").textContent = "0"; return;
+  }
+  $("fleet-loss-overlay")?.remove();
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
   $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}}); // this second render is the one that sticks: keep the resolve-event button (542)
@@ -1393,7 +1404,7 @@ function showSlots() {
     if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch { say(x.err); return; } }
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { say(x.err); return; }
     g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
-    try { if (!ship().voyage) open3d(ship()); } catch { close3d(); render(); }
+    try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
   });
 }
 
@@ -1449,7 +1460,7 @@ function showCreate(name) {
     $("p-go").onclick = () => {
       read();
       const raw = localStorage.getItem(SAVE_KEY), prev = raw && isValidSaveText(raw) ? raw : null; // a corrupt current save is not worth protecting
-      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
       if (!prev) return launch(); // nothing saved: nothing to protect
       // A saved game exists: ask first, and park it in the backup slot before the new game's autosave replaces it (same rotation as Import).
       const old = unpackGame(JSON.parse(prev), world), sum = `${esc(old.company || t.defCo)} · ${t.day} ${old.g.day} · ${fmtM(old.g.cash)}`;
@@ -1461,7 +1472,7 @@ function showCreate(name) {
         const keep = localStorage.getItem(SAVE_KEY) ?? prev;
         start(pf, false, { freeNav }); // builds the new game in memory; autosave stays off while inTitle is true
         try { restoreRotate(localStorage, SAVE_KEY, keep, JSON.stringify(packGame(g, company))); } catch { $("r-msg").textContent = t.errB; return; } // fail-closed: if either write fails the saved game is untouched and we stay here
-        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(!ship().voyage)open3d(ship());
+        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
       };
     };
   };
@@ -1486,7 +1497,7 @@ function showTitle() {
   fitTitleBook();
   if (!justiceData.ready) { const warning=document.createElement("p"); warning.id="justice-startup-warning"; warning.style.cssText="position:fixed;bottom:8px;left:10%;right:10%;background:#fff2cf;padding:10px;z-index:2000;color:#542c15"; warning.textContent=lang==="es"?"Justicia no disponible: sus datos no cargaron. Tus cargos guardados se conservan. Recarga para reintentar.":"Justice unavailable: its data did not load. Saved charges are preserved. Reload to retry."; const retry=document.createElement("button");retry.textContent=lang==="es"?"Reintentar":"Retry";retry.onclick=()=>location.reload();warning.append(retry);el.append(warning); }
   $("t-start").onclick = () => showCreate(t.defCo);
-  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
+  $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
     if (!getBackup() && !getTmp()) return;
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // complete a pending rotation first, or the parked copy would be lost
@@ -1510,7 +1521,7 @@ function showTitle() {
     if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
     else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
     music.leaveTitle(); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
-    try { if(!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
+    try { if(ship()&&!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
 }
 showTitle(); // title first: it must paint instantly
