@@ -52,6 +52,10 @@ on:
         description: "Extra game seeds for bots B and C (comma list; default 1,2,3)"
         required: false
         default: "1,2,3"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   balance:
     runs-on: ubuntu-latest
