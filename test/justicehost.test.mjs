@@ -23,5 +23,5 @@ test('explicit off is unchanged and missing data never claims readiness',()=>{
 });
 test('browser host registers the shipped courts and hall summary',()=>{
  const s=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');
- assert.match(s,/setJusticeData\(justiceRealms, justiceCourts\)/);assert.match(s,/justiceStatusHtml\(g, lang\)/);
+ assert.match(s,/loadJusticeData\(fetch,world.cities.map/);assert.match(s,/justiceStatusHtml\(g, lang\)/);
 });

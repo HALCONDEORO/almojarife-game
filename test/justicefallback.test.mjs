@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+import{loadJusticeData}from'../src/game/justicehost.mjs';import{justiceReady}from'../src/game/justicewire.mjs';
+const files=Object.fromEntries(['realms','courts'].map(k=>[k,JSON.parse(readFileSync(new URL(`../data/${k}.json`,import.meta.url)))]));
+const ports=JSON.parse(readFileSync(new URL('../data/world.json',import.meta.url))).cities.map(c=>c.id);
+test('valid shipped data registers justice',async()=>{const out=await loadJusticeData(async u=>({ok:true,json:async()=>files[u.includes('realms')?'realms':'courts']}),ports);assert.equal(out.ready,true);assert.equal(justiceReady({justice:true}),true);});
+test('network, 404, invalid JSON and malformed objects fall back and clear old registration',async()=>{for(const fetcher of [async()=>{throw Error('offline')},async()=>({ok:false}),async()=>({ok:true,json:async()=>{throw SyntaxError('broken')}}),async()=>({ok:true,json:async()=>[]})]){const out=await loadJusticeData(fetcher,ports);assert.equal(out.ready,false);assert.equal(out.realms,null);assert.equal(justiceReady({justice:true}),false);}});
+test('a hung data request times out and leaves justice unavailable',async()=>{const start=Date.now();const out=await loadJusticeData(()=>new Promise(()=>{}),ports,20);assert.equal(out.ready,false);assert.ok(Date.now()-start<500);});

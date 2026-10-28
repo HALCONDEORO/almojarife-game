@@ -1,4 +1,4 @@
-import { setJusticeData } from "../src/game/justicewire.mjs";
+import { loadJusticeData } from "../src/game/justicehost.mjs";
 import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
@@ -119,9 +119,13 @@ const TW = { es: { title: "Atalayas", none: "Sin atalayas", count: "{n} de {m} a
 const CLOSE_ICON = `<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`;
 const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString(lang), fmtM = (n) => (Math.round(n * 100) / 100).toLocaleString(lang, { maximumFractionDigits: 2 }); // fmtM: money, cents shown when they exist; integers render the same as fmt
 const world = buildWorld(await (await fetch("../data/world.json")).json());
-if (PIRACY_DAILY_ENABLED) { const [rl, pc] = await Promise.all([fetch("../data/realms.json").then(r => r.ok ? r.json() : null).catch(() => null), fetch("../data/peaces.json").then(r => r.ok ? r.json() : null).catch(() => null)]); if (rl && pc) installMarqueDaily(DAILY_HOOKS, rl, pc); }
-const [justiceRealms, justiceCourts] = await Promise.all(["realms", "courts"].map(async name => { const r = await fetch(`../data/${name}.json`); if (!r.ok) throw new Error(`Cannot load ${name}`); return r.json(); }));
-setJusticeData(justiceRealms, justiceCourts);
+
+const justiceData = await loadJusticeData(fetch,world.cities.map(c=>c.id));
+const justiceRealms = justiceData.realms, justiceCourts = justiceData.courts;
+if (PIRACY_DAILY_ENABLED && justiceData.ready) {
+  const pc = await Promise.race([fetch("../data/peaces.json").then(r=>r.ok?r.json():null).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve(null),2500))]);
+  if (pc) installMarqueDaily(DAILY_HOOKS,justiceRealms,pc);
+}
 const nodes = Object.values(world.nodes);
 const lons = nodes.map((n) => n.lon), lats = nodes.map((n) => n.lat);
 const [x0, x1, y0, y1] = [Math.min(...lons) - 1, Math.max(...lons) + 1, Math.min(...lats) - 1, Math.max(...lats) + 1];
@@ -739,7 +743,7 @@ function render() {
       h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
       h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisaPct > 0 ? "+" : "") + hv.sisaPct + "%").replace("{p}", (hv.portazgoPct > 0 ? "+" : "") + hv.portazgoPct + "%")}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
-      h += justiceStatusHtml(g, lang);
+      h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);
@@ -1475,6 +1479,7 @@ function showTitle() {
   el.innerHTML = titleBookHtml({ lang, saved: saved && { house: saved.company || t.defCo }, backup: prev, dayLabel: saved ? `${t.day} ${saved.g.day}` : "", coinsLabel: saved ? `${fmt(saved.g.cash)} ${lang === "es" ? "monedas" : "coins"}` : "" });
   el.hidden = false;
   fitTitleBook();
+  if (!justiceData.ready) { const warning=document.createElement("p"); warning.id="justice-startup-warning"; warning.style.cssText="position:fixed;bottom:8px;left:10%;right:10%;background:#fff2cf;padding:10px;z-index:2000;color:#542c15"; warning.textContent=lang==="es"?"Justicia no disponible: sus datos no cargaron. Tus cargos guardados se conservan. Recarga para reintentar.":"Justice unavailable: its data did not load. Saved charges are preserved. Reload to retry."; const retry=document.createElement("button");retry.textContent=lang==="es"?"Reintentar":"Retry";retry.onclick=()=>location.reload();warning.append(retry);el.append(warning); }
   $("t-start").onclick = () => showCreate(t.defCo);
   $("t-cont").onclick = () => { const cur = loadSaved() ?? saved; if (!cur) return; music.leaveTitle(); g = cur.g; company = cur.company; /* re-read: an import may have replaced the save since this title was drawn */ sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true; if(!ship().voyage)open3d(ship()); };
   $("t-rest").onclick = () => {
