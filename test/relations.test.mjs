@@ -7,7 +7,7 @@ import { repOf } from "../src/game/rank.mjs";
 import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 test("relations are symmetric, stable and of the right kinds", () => {
   for (const a of world.cities) for (const b of world.cities) {
     assert.equal(relationOf(world, a.id, b.id), relationOf(world, b.id, a.id));

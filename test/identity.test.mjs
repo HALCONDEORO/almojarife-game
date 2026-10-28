@@ -23,7 +23,7 @@ test("traits read from what the city is: sea trades make a marinera city, size m
   }
 });
 test("flag off: no state, no notices, no tab field, and the game trades as always", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5 });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5 });
   assert.equal(g.cityIdentity, undefined); assert.equal(g.identitySeen, undefined);
   assert.equal(arrivalIdentity(g, "cadiz"), null);
   assert.equal(hallView(g, "cadiz").identity, undefined);
@@ -31,7 +31,7 @@ test("flag off: no state, no notices, no tab field, and the game trades as alway
   assert.equal(doBuy(g, s, "salt", 1).ok, true);
 });
 test("flag on: the home port introduces itself on day one, and each new port only once", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityIdentity: true });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, cityIdentity: true });
   assert.equal(g.cityIdentity, true);
   const home = inbox(g).filter((m) => /Cádiz/.test(JSON.stringify(m)));
   assert.equal(home.length, 1, JSON.stringify(inbox(g)));
@@ -44,13 +44,13 @@ test("flag on: the home port introduces itself on day one, and each new port onl
   assert.equal(inbox(g).length, n0 + 1);
 });
 test("the Ayuntamiento tab carries one sentence of character, ES and EN, only with the flag on", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityIdentity: true });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, cityIdentity: true });
   const id = hallView(g, "cadiz").identity;
   assert.deepEqual(id.traits, cityTraits(world, "cadiz"));
   assert.match(id.txt.es, /^Cádiz es una ciudad /); assert.match(id.txt.en, /^Cádiz is a /);
 });
 test("the greetings survive a save and reload: no repeat, and the flag persists", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityIdentity: true });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, cityIdentity: true });
   arrivalIdentity(g, "lisboa");
   const h = deserialize(JSON.parse(JSON.stringify(serialize(g, "T"))), world).g;
   assert.equal(h.cityIdentity, true);
@@ -59,7 +59,7 @@ test("the greetings survive a save and reload: no repeat, and the flag persists"
 });
 test("identityLine is null for an unknown city, and identity moves no money", () => {
   assert.equal(identityLine(world, "nowhere"), null);
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityIdentity: true });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, cityIdentity: true });
   const cash = g.cash; arrivalIdentity(g, "porto");
   assert.equal(g.cash, cash);
 });

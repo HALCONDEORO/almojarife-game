@@ -6,7 +6,7 @@ import { growthMul, growthTick, growthLine, GROWTH_MIN, GROWTH_MAX, GROWTH_STEP 
 import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 const starveFood = (g, city) => { for (const good of ["grain", "fish", "meat"]) { const e = g.market[city][good]; if (e) e.stock = Math.max(1, Math.floor(e.target / 8)); } };
 const feedFood = (g, city) => { for (const good of ["grain", "fish", "meat"]) { const e = g.market[city][good]; if (e) e.stock = e.target * 4; } };
 test("flag off: multiplier is 1, no state, no tab line, drift is a no-op", () => {

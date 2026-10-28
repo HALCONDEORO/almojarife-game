@@ -7,7 +7,7 @@ import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 const partyNotices = (g) => inbox(g).filter((m) => /la fiesta de|festival/.test(JSON.stringify(m)));
 test("every city keeps one stable festival day of the year", () => {
   for (const c of world.cities) {

@@ -8,7 +8,7 @@ import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 const fameNotices = (g) => inbox(g).filter((m) => /se hace nombre|making a name/.test(JSON.stringify(m)));
 test("flag off: buys leave no trace and no tab field", () => {
   const g = mk({});

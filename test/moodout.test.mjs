@@ -7,7 +7,7 @@ import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, ...opts });
 test("flag off: no state, no notices, no tab field, trade unchanged", () => {
   const g = mk({});
   assert.equal(g.cityMoodOut, undefined); assert.equal(g.moodSeen, undefined);

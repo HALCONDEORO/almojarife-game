@@ -10,7 +10,7 @@ import { hallView } from "../src/view/townhallview.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const inbox = (g) => g.inbox ?? g.ledger?.inbox ?? [];
-const mk = (opts) => newGame(world, "cadiz", { freePlay: true, seed: 5, embargo: false, ...opts });
+const mk = (opts) => newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, embargo: false, freePlay: true, seed: 5, ...opts });
 const starve = (g, city) => { const e = g.market[city].grain; e.stock = Math.max(1, Math.floor(e.target / 4)); }; // scarcity >= 4
 test("flag off: no state, deeds are no-ops, respect untouched, tab shows nothing", () => {
   const g = mk({});
@@ -118,7 +118,7 @@ test("bot deeds fade like yours and surface as the ambient Ayuntamiento line", (
 
 test("an old save with botGrievance as a single number does not break new deeds", () => {
   const world = loadWorld();
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 5, cityMemory: true });
+  const g = newGame(world, "cadiz", { cityIdentity: false, cityMoodOut: false, citySeasons: false, cityCrafts: false, cityFestivals: false, cityMemory: false, cityRelations: false, cityGrowth: false, freePlay: true, seed: 5, cityMemory: true });
   g.memoryDeeds = { cadiz: { favor: [], grievance: [], botGrievance: 7 } };
   memoryDeed(g, "cadiz", "botGrievance", 30);
   memoryDeed(g, "cadiz", "favor", 20);
