@@ -1,3 +1,4 @@
+import {shipNameForm} from './shipnameform.mjs';
 import {shipDisplayName} from '../sim/shipnames.mjs';
 // Ship window (design: docs/design/ship-window.md): one floating window per ship with
 // Cargo / Crew / Data tabs, using the shared .pwin component. Pure HTML strings: main.mjs
@@ -95,7 +96,7 @@ export function shipWindowHtml(g, s, lang, tab, hp) {
   const t = SW[lang] ?? SW.es, fmt = hp.fmt, fmtM = hp.fmtM, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
-  return swCard(g, s, lang, t, hp) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt, fmtM) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
+  return swCard(g, s, lang, t, hp) + shipNameForm(s,lang) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt, fmtM) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
 }
 
 function cargoTab(g, s, t, hp, gn, cn) {

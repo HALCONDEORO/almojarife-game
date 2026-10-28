@@ -1,3 +1,5 @@
+import {renameShip} from '../src/game/shipnames.mjs';
+import {wireShipNames} from '../src/view/shipnameform.mjs';
 import {shipDisplayName} from "../src/sim/shipnames.mjs";
 import { forecastData, forecastHtml } from "../src/view/forecastview.mjs";
 import { noticeData, noticeHtml } from "../src/view/noticeview.mjs";
@@ -223,13 +225,13 @@ function drawShips() {
     let el = shipEls.get(id);
     if (el && el.parentNode !== layer) layer.appendChild(el); // render() rebuilt the map: re-attach the preserved element, keeping its identity and listeners (recreating it here would re-break real clicks)
     const hullBand = (sh.hull ?? 100) >= 70 ? 2 : (sh.hull ?? 100) >= 30 ? 1 : 0; // icon content bands: position and heading are attributes, not content
-    const ckey = `${sh.type}|${mine}|${mine ? g.ships.indexOf(sh) : ""}|${sh.id}|${isSel}|${weaponCount(sh)}|${gunCond(sh) < 50 ? 0 : 1}|${hullBand}`;
+    const ckey = `${sh.type}|${mine}|${mine ? g.ships.indexOf(sh) : ""}|${sh.id}|${sh.name}|${isSel}|${weaponCount(sh)}|${gunCond(sh) < 50 ? 0 : 1}|${hullBand}`;
     if (el && el._ckey !== ckey) { el.remove(); shipEls.delete(id); el = null; }
     if (!el) {
       el = document.createElementNS("http://www.w3.org/2000/svg", "g");
       el._ckey = ckey;
       if (mine) { el.setAttribute("data-ship", g.ships.indexOf(sh)); el.style.cursor = "pointer"; el.setAttribute("pointer-events", "all"); }
-      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0, weapons: weaponCount(sh), maxGuns: maxCannons(sh), gun: gunCond(sh), hull: sh.hull ?? 100 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${sh.id}</text>` : ""}`;
+      el.innerHTML = `${shipSvg(sh.type, { mine, heading: 0, weapons: weaponCount(sh), maxGuns: maxCannons(sh), gun: gunCond(sh), hull: sh.hull ?? 100 })}${mine ? `<text x="9" y="-8" font-size="11" fill="${isSel ? "#a00" : "#300"}">${esc(shipDisplayName(sh,T[lang].types))}</text>` : ""}`;
       if (mine) {
         el.onclick = () => {
           const a = shipClickAction(g, +el.dataset.ship); // docked: enter the city; at sea: select + floating card
@@ -511,6 +513,7 @@ function render() {
   renderRightTabs();
   $("fleet").querySelector('summary').textContent=`${lang==='en'?'Fleet':'Flota'} (${g.ships.length})`;
   $("fleet-body").innerHTML=fleetHtml(g,sel,{lang,filter:fleetFilter,search:fleetSearch,cityName,types:T[lang].types});
+  wireShipNames($("fleet-body"),g,renameShip,act,lang);
   if($("fleet-filter"))$("fleet-filter").onchange=e=>{fleetFilter=e.target.value;render();};
   if($("fleet-search"))$("fleet-search").oninput=e=>{const pos=e.target.selectionStart;fleetSearch=e.target.value;render();const input=$("fleet-search");input.focus();input.setSelectionRange(pos,pos);};
   $("fleet-body").querySelectorAll('[data-fleet-ship]').forEach(button=>button.onclick=()=>{sel=Number(button.dataset.fleetShip);target=null;shipWin={tab:'data'};render();});
@@ -609,7 +612,7 @@ function render() {
     el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
     el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
   });
-  $("log").innerHTML = logHtml(g.log,t,lang,cityName);
+  $("log").innerHTML = logHtml(g.log,t,lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id);
   // panel: in navigation mode the map stands alone (P3); the panel only pops up for a pending
   // event. In the city view it carries the port services inside the city window.
   let h = "";
@@ -750,7 +753,7 @@ function render() {
         const sellable = g.ships.filter((x) => x.at === s.at && !x.voyage);
         h += `<h3>${t.almSellShipTitle}</h3><p>${t.almSellShipInfo}</p>`;
         h += sellable.length
-          ? sellable.map((x) => `<div class="card"><b>${t.types[x.type]} ${x.id}</b> · ${t.cap}: ${cargoUsed(x)}/${SHIP_TYPES[x.type].capacity} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
+          ? sellable.map((x) => `<div class="card"><b>${esc(shipDisplayName(x,t.types))}</b> · ${t.cap}: ${cargoUsed(x)}/${SHIP_TYPES[x.type].capacity} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
           : `<p><i>${t.almSellShipNone}</i></p>`;
       }
     } else if (tab === "buildings") {
@@ -936,7 +939,7 @@ function render() {
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
     const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
     el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
-    el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+(T[lang].types[s.type]??s.type)+" "+s.id;
+    el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+shipDisplayName(s,T[lang].types);
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
   });
@@ -1086,6 +1089,7 @@ function renderShipWin() {
   handle.onpointermove = (e) => { if (drag) move(e.clientX / winZoom() - drag[0], e.clientY / winZoom() - drag[1]); };
   handle.onpointerup = handle.onpointercancel = () => drag = null;
   handle.onkeydown = (e) => { if (e.target !== handle) return; const keys = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const v = keys[e.key]; if (v) { e.preventDefault(); e.stopPropagation(); move(d.offsetLeft + v[0], d.offsetTop + v[1]); } };
+  wireShipNames(d,g,renameShip,act,lang);
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
   d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { if (shipWin.tab !== e.dataset.swtab) sfx("click"); shipWin.tab = e.dataset.swtab; render(); });
   d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
@@ -1305,7 +1309,7 @@ $("new").onclick = () => showMenu();
 }
 function ledgerBodyHtml(kind) {
   const styled = ui2dEnabled(location.search);
-  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
+  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
   const body = () => kind === "rep" ? reportBody() : styled ? inbox2dHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k) : inboxHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k);
   return body();
 }

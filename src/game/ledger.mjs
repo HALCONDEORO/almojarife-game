@@ -30,7 +30,7 @@ export const dueNow = (g) => r2(accruedTotal(g) + tollsDue(g) + overdraftInteres
 /** Put a message in the inbox (newest first). Kinds: report, arrival, event, order, info, warn, debt. */
 export function post(g, kind, p = {}) {
   const box = (g.inbox ??= []);
-  box.unshift({ id: (g.nextMsg = (g.nextMsg ?? 0) + 1), day: g.day, kind, read: false, ...p });
+  box.unshift({ id: (g.nextMsg = (g.nextMsg ?? 0) + 1), day: g.day, kind, read: false, ...(g.ships?.find(s=>s.id===p.ship)?.name?{shipName:g.ships.find(s=>s.id===p.ship).name}:{}), ...p });
   if (box.length > MAX_INBOX) box.pop();
 }
 export const unread = (g) => (g.inbox ?? []).filter((m) => !m.read).length;
@@ -69,7 +69,7 @@ function takeWeekTrades(g) {
 export function settleWeek(g) {
   if (!g.day || g.day % SETTLE_EVERY !== 0) return null;
   const a = (g.accrued ??= { ships: {} });
-  const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round((cost+(a.captains?.[ship]??0)) * 100) / 100, captain: r2(a.captains?.[ship]??0), ...splitCost(cost, a.cannons?.[ship] ?? 0, a.wages?.[ship] ?? null) }));
+  const lines = Object.entries(a.ships).map(([ship, cost]) => ({ ship: Number(ship), ...(g.ships.find(s=>s.id===Number(ship))?.name?{shipName:g.ships.find(s=>s.id===Number(ship)).name}:{}), type: g.ships.find((s) => s.id === Number(ship))?.type ?? "?", cost: Math.round((cost+(a.captains?.[ship]??0)) * 100) / 100, captain: r2(a.captains?.[ship]??0), ...splitCost(cost, a.cannons?.[ship] ?? 0, a.wages?.[ship] ?? null) }));
   const tolls = tollsDue(g), week = accruedTotal(g), carried = g.cash < 0 ? r2(-g.cash) : 0, interest = overdraftInterest(g), lint = r2(loanInterestRaw(g) + (g.weekLoanInterest ?? 0)), owed = r2(week + tolls + interest + lint);
   g.cash = r2(g.cash - owed);
   accrueWeeklyLoanInterest(g); // each open loan records the interest it just paid (payment reputation, flag credit)

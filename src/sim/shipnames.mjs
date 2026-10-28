@@ -11,3 +11,6 @@ export function fillShipNames(ships){
  return ships;
 }
 export const shipDisplayName=(s,types={})=>(typeof s?.name==='string'&&s.name.trim())||`${types[s?.type]??s?.type??''} ${s?.id??''}`.trim();
+
+// Prefer current owned names; retain snapshots for ships that have left the fleet.
+export function recordedShipName(g,id,snapshot,type){return g.ships?.find(s=>s.id===id)?.name||snapshot||`${type?type+' ':''}${id}`;}

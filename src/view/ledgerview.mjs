@@ -1,3 +1,4 @@
+import {recordedShipName} from '../sim/shipnames.mjs';
 // Reports and messages as HTML strings (no DOM access), so they can be tested. Text is escaped.
 import { SHIP_TYPES } from "../sim/trade.mjs";
 import { rankName, RESPECT_NAMES } from "./rankview.mjs";
@@ -26,7 +27,7 @@ export function reportsHtml(g, lang, fmt, goodName = (k) => k) {
   if (!rs.length) return h + `<p>${t.none}</p>`;
   for (const r of rs.slice(0, 12)) {
     h += `<div class="card"><b>${t.week} ${r.week}</b> (${t.day} ${r.day})<table><tr><th>${t.ship}</th><th>${t.cost}</th><th>${t.crew}</th><th>${t.guns}</th><th>${t.captain}</th></tr>` +
-      r.lines.map((l) => `<tr><td>${esc(typeName(lang, l.type))} ${l.ship}</td><td>${fmt(l.cost)}</td><td>${l.wages ? fmt(l.wages) : "–"}</td><td>${l.cannons ? fmt(l.cannons) : "–"}</td><td>${l.captain ? fmt(l.captain) : "–"}</td></tr>`).join("") + `</table>` +
+      r.lines.map((l) => `<tr><td>${esc(recordedShipName(g,l.ship,l.shipName,typeName(lang,l.type)))}</td><td>${fmt(l.cost)}</td><td>${l.wages ? fmt(l.wages) : "–"}</td><td>${l.cannons ? fmt(l.cannons) : "–"}</td><td>${l.captain ? fmt(l.captain) : "–"}</td></tr>`).join("") + `</table>` +
       `<small>${t.upkeep}: ${fmt(r.upkeep)}` + (r.carried ? ` · ${t.carried}: ${fmt(r.carried)}` : "") + (r.tolls ? ` · ${t.tolls}: ${fmt(r.tolls)}` : "") + (r.interest ? ` · ${t.interest}: ${fmt(r.interest)}` : "") + (r.household ? ` · ${t.household}: ${fmt(r.household)}` : "") + (r.loanInterest ? ` · ${t.loanInt}: ${fmt(r.loanInterest)}` : "") + (r.loanPrincipal ? ` · ${t.loanPrin}: ${fmt(r.loanPrincipal)}` : "") + ` · ${t.paid}: ${fmt(r.paid)}` + (r.debt ? ` · <b>${t.debt}: ${fmt(r.debt)}</b>` : "") + (r.negMargin?.length ? ` · <b>${t.negMargin}: ${r.negMargin.map(esc).join(", ")}</b>` : "") + ` · ${t.cashAfter}: ${fmt(r.cashAfter)}</small>` + tradeTable(r, t, fmt, goodName) + `</div>`;
   }
   return h;
@@ -47,7 +48,8 @@ export function messageText(m, lang, fmt, cityName = (x) => x, goodName = (x) =>
 }
 export function inboxHtml(g, lang, fmt, cityName, goodName) {
   const t = LT[lang], en = lang === "en", box = g.inbox ?? [];
-  const text = (m) => messageText(m, lang, fmt, cityName, goodName);
+  const named = m => ({...m,ship:recordedShipName(g,m.ship,m.shipName)});
+  const text = (m) => messageText(named(m), lang, fmt, cityName, goodName);
   const acts = box.filter((m) => msgClass(m) === "action"), notices = box.filter((m) => msgClass(m) === "notice");
   let h = `<h2>${t.messages}</h2>`;
   if (!acts.length && !notices.length) return h + `<p>${t.noMsg}</p>`;
@@ -58,7 +60,7 @@ export function inboxHtml(g, lang, fmt, cityName, goodName) {
     const groups = groupNotices(notices, text);
     const row = (e) => {
       const unread = "", days = e.oldest === e.day ? `${t.day} ${e.day}` : `${t.day} ${e.oldest}-${e.day}`;
-      if (e.kind === "routeLeg") return `<div class="msg">${unread}<small>${days}</small> ${en ? `Ship ${e.first.ship}: ${e.n} route sale${e.n > 1 ? "s" : ""}, profit ${fmt(e.profit)}` : `Barco ${e.first.ship}: ${e.n} venta${e.n > 1 ? "s" : ""} de ruta, ganancia ${fmt(e.profit)}`}</div>`;
+      if (e.kind === "routeLeg") return `<div class="msg">${unread}<small>${days}</small> ${en ? `Ship ${esc(recordedShipName(g,e.first.ship,e.first.shipName))}: ${e.n} route sale${e.n > 1 ? "s" : ""}, profit ${fmt(e.profit)}` : `Barco ${esc(recordedShipName(g,e.first.ship,e.first.shipName))}: ${e.n} venta${e.n > 1 ? "s" : ""} de ruta, ganancia ${fmt(e.profit)}`}</div>`;
       return `<div class="msg" data-msg="${e.ids[0]}">${unread}<small>${days}</small> ${esc(text(e.first))}${e.n > 1 ? ` <b>×${e.n}</b>` : ""}</div>`;
     };
     h += `<details class="msg-notices"><summary><b>${en ? "Notices" : "Avisos"} (${notices.length})</b> <small>${en ? "grouped, nothing to do" : "agrupados, sin nada que hacer"}</small></summary>${groups.map(row).join("")}</details>`;
