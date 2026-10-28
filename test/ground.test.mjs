@@ -79,3 +79,25 @@ test('the city scene paints ground from the shared module',async()=>{
  assert.match(s,/fieldPatches\(bounds\)/);
  assert.match(s,/drawLandmass\(\)/);
 });
+
+// Pin the pre-optimization geometry and count allocations instead of asserting wall time.
+test('scrub generation reuses farmland rectangles without changing geometry',t=>{
+ const allocations=t.mock.method(Array,'from');
+ const actual=scrubPatches(bounds);
+ const farmlandBuilds=allocations.mock.calls.filter(c=>c.arguments[0]?.length===9).length;
+ assert.equal(farmlandBuilds,1,'build the nine farmland rectangles once per scrub generation');
+ assert.deepEqual(actual,[
+  {"x":-33.64268451416865,"y":9.67942865844816,"rx":5.872106558876112,"ry":8.54166975012049},
+  {"x":-53.34211447602138,"y":34.05225009424612,"rx":12.594675636617467,"ry":6.910421922104433},
+  {"x":20.62693857308477,"y":-42.48282985948026,"rx":10.94505887804553,"ry":7.843050446826965},
+  {"x":-8.584181298036128,"y":-43.79741215938702,"rx":13.777806505095214,"ry":5.763199065811932},
+  {"x":4.204724762123078,"y":-48.190140939783305,"rx":7.527084588073194,"ry":7.958510996541008},
+  {"x":-51.22282765246928,"y":-49.74810755904764,"rx":5.521694324212149,"ry":8.618983927415684},
+  {"x":46.69366693450138,"y":-56.341070832684636,"rx":11.199443665100262,"ry":6.508216520072892},
+  {"x":-51.591908967122436,"y":32.95312501024455,"rx":5.267426621867344,"ry":7.218939805403352},
+  {"x":-8.599600072950125,"y":-53.92758088000119,"rx":8.47198977181688,"ry":10.392893461044878},
+  {"x":27.50959813548252,"y":-33.69557751622051,"rx":6.825812644558027,"ry":5.345751641783863},
+  {"x":29.041441649198532,"y":-49.447520811110735,"rx":5.5192359099164605,"ry":6.598137402208522},
+  {"x":-41.8380562402308,"y":-28.687246666755527,"rx":10.298302409471944,"ry":5.329649521037936},
+ ]);
+});
