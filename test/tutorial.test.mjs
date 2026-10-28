@@ -19,8 +19,8 @@ test("steps go buy -> sell -> sail -> route -> hall -> done, in order only", () 
   assert.equal(tutorialStep(g), "buy");
   assert.equal(tutorialNote(g, "buy"), true);
   assert.equal(tutorialStep(g), "sell");
-  assert.equal(tutorialNote(g, "sail"), false);
-  assert.equal(tutorialNote(g, "sell"), true);
+  assert.equal(tutorialNote(g, "route"), false);
+  assert.equal(tutorialNote(g, "sell", {profit:1,spent:10}), true);
   assert.equal(tutorialStep(g), "sail");
   assert.equal(tutorialNote(g, "hall"), false); // the council visit only counts after the route
   assert.equal(tutorialNote(g, "route"), false);
@@ -52,7 +52,7 @@ test("skip: one click finishes the tutorial from any step, only while it runs", 
   assert.equal(skipTutorial(g), false); // already skipped: nothing left to skip
   assert.equal(tutorialNote(g, "buy"), false); // a skipped tutorial does not come back
   assert.equal(skipTutorial({}), false); // no tutorial: nothing to skip
-  const done = {}; initTutorial(done); for (const k of ["buy", "sell", "sail", "route", "hall"]) tutorialNote(done, k);
+  const done = {}; initTutorial(done); for (const k of ["buy", "sell", "sail", "route", "hall"]) tutorialNote(done, k, {profit:1,spent:10});
   assert.equal(skipTutorial(done), false); // already done on its own
 });
 test("every step has es and en text, no leftover placeholders", () => {
@@ -73,12 +73,17 @@ test("a real game: off by default, on with opts.tutorial, advances on real trade
   assert.ok(good, "bought something");
   assert.equal(tutorialStep(g), "sell");
   assert.ok(doSell(g, ship, good, 1).ok);
-  assert.equal(tutorialStep(g), "sail");
-  const to = world.cities.find((c) => c.id !== ship.at).id;
-  const r = doSail(g, ship, to);
-  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(tutorialStep(g), "sell");
+  assert.ok(doBuy(g,ship,good,1).ok);
+  // Carry paid cargo to a genuinely scarce port, then sell at a gain.
+  const to = "huelva";
+  assert.ok(doSail(g, ship, to).ok);
+  for (let i=0;ship.voyage && i<20;i++) advanceDay(g);
+  assert.equal(ship.at,to);
+  g.market[to][good].stock = 0; // deterministic shortage fixture, not a playthrough claim
+  assert.ok(doSell(g, ship, good, ship.cargo[good]).ok);
   assert.equal(tutorialStep(g), "route");
-  assert.ok(setRoute(g, ship, to, ship.at, good).ok);
+  assert.ok(setRoute(g, ship, to, "cadiz", good).ok);
   assert.equal(tutorialStep(g), "hall");
   assert.equal(tutorialNote(g, "hall"), true); // the UI fires this when the player opens the Town hall tab
   assert.equal(tutorialStep(g), "done");
@@ -116,7 +121,8 @@ test("free navigation counts as sailing", () => {
   const node = world.nodes.w_cadiz_off; // a sea point next to Cadiz, not a port
   const r = doGoTo(g, ship, node.lat, node.lon);
   assert.ok(r.ok && !r.toPort, JSON.stringify(r));
-  assert.equal(tutorialStep(g), "route"); // sailing done; the route and council steps remain
+  assert.equal(g.tut.sailed,true);
+  assert.equal(tutorialStep(g), "sell"); // voyage is remembered but a losing sale still does not teach profit
 });
 
 import { cleanProfile, startOptions } from "../src/game/profile.mjs";
@@ -159,3 +165,11 @@ test("automated trading (standing routes) does not advance the tutorial", () => 
   assert.ok(g.cash !== cash0 || ship.route?.legs > 0, "the route really traded");
   assert.equal(tutorialStep(g), "buy");
 });
+
+ test("v2 sale needs finite positive profit and known cost; v1 stays compatible",()=>{
+ const g={};initTutorial(g);tutorialNote(g,"buy");
+ for(const trade of [{},{profit:0,spent:1},{profit:-1,spent:1},{profit:Infinity,spent:1},{profit:1,spent:0},{profit:1,spent:NaN}])assert.equal(tutorialNote(g,"sell",trade),false);
+ assert.equal(tutorialNote(g,"sail"),true);assert.equal(tutorialStep(g),"sell");
+ assert.equal(tutorialNote(g,"sell",{profit:1,spent:10}),true);assert.equal(tutorialStep(g),"route");
+ assert.equal(tutorialNote({tut:{bought:true}},"sell"),true);
+ });

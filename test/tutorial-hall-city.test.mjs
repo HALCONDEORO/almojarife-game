@@ -23,3 +23,8 @@ test('both town-hall paths feed the same tutorial step', () => {
   // The civic-building click from the city iframe routes to openCityPanel("hall").
   assert.ok(src.includes('e.data.id==="hall"||e.data.id==="lonja")'), 'civic click opens the hall panel');
 });
+
+ test('hall progress is saved immediately on both entry paths', () => {
+ assert.ok(src.includes('if (tb === "hall") autosave();'));
+ assert.ok(src.includes('if (tab === "hall") autosave();'));
+ });

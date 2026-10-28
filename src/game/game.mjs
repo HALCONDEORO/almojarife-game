@@ -293,7 +293,7 @@ export function doSell(g, ship, good, qty) {
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
   if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; } // victory is checked right after a sale
-  if (r.ok) tutorialNote(g, "sell");
+  if (r.ok) tutorialNote(g, "sell", r);
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
