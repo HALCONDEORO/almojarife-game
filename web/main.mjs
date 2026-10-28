@@ -1348,7 +1348,7 @@ $("new").onclick = () => showMenu();
 }
 function ledgerBodyHtml(kind) {
   const styled = ui2dEnabled(location.search);
-  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
+  const reportBody=()=>{const activity=`<h3>${lang==="es"?"Historial de operaciones":"Activity history"}</h3><div class="activity-history">${logHtml(g.log,T[lang],lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id)||`<p>${lang==="es"?"Aún no hay operaciones.":"No activity yet."}</p>`}</div>`,weekly=reportsHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k,cityName),chronicle=chronicleHtml(g,lang,fmtM,(k)=>T[lang].goods[k]??k),voyages=`<h3>${voyagesTitle(lang)}</h3>`+voyagesHtml(g,lang,fmtM,cityName),encounters=encountersHtml(g,lang);return activity+(styled?reports2dHtml(weekly,chronicle,voyages,encounters,lang):weekly+chronicle+voyages+encounters);};
   const body = () => kind === "rep" ? reportBody() : styled ? inbox2dHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k) : inboxHtml(g,lang,fmtM,cityName,(k)=>T[lang].goods[k]??k);
   return body();
 }
