@@ -45,5 +45,8 @@ export function applyEncounter(g,ship,outcome){
 export function encounterText(e,lang='es'){
  const es=lang==='es',kind=e.kind==='pirates'?(es?'Piratas':'Pirates'):(es?'Tormenta':'Storm');
  const result=e.result==='escaped'?(es?'huida lograda':'escaped'):e.result==='repelled'?(es?'rechazados':'repelled'):e.result==='raided'?(es?'asalto sufrido':'raided'):e.result==='severe'?(es?'fuerte':'severe'):(es?'superada':'weathered');
- return es?`${kind}: ${result}. Casco -${e.hullLost}; carga perdida ${e.cargoLost}; retraso ${e.delay} ${e.delay===1?'día':'días'}.`:`${kind}: ${result}. Hull -${e.hullLost}; cargo lost ${e.cargoLost}; delay ${e.delay} ${e.delay===1?'day':'days'}.`;
+ const damage=e.hullLost===0?(es?'Sin daños en el casco':'No hull damage'):(es?`Casco -${e.hullLost}`:`Hull -${e.hullLost}`);
+ const cargo=e.cargoLost===0?(es?'sin pérdidas de carga':'no cargo lost'):(es?`carga perdida ${e.cargoLost}`:`cargo lost ${e.cargoLost}`);
+ const retreat=e.result==='escaped'&&e.delay>0?(es?' El retraso puede hacer retroceder el progreso mostrado del viaje.':' The delay can set the displayed voyage progress back.') : '';
+ return (es?`${kind}: ${result}. ${damage}; ${cargo}; retraso ${e.delay} ${e.delay===1?'día':'días'}.`:`${kind}: ${result}. ${damage}; ${cargo}; delay ${e.delay} ${e.delay===1?'day':'days'}.`)+retreat;
 }

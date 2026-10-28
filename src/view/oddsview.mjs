@@ -36,6 +36,6 @@ export function pirateOdds(g, lang = "es") {
   const lose = encounterOutcome(ship, "pirates", 0.999, escort), won = encounterOutcome(ship, "pirates", 0, escort);
   const loseTxt = effectText({ cargoLossPct: lose.cargoLossPct, days: lose.delay }, lang) + (en ? `, hull -${lose.hullLoss}` : `, casco -${lose.hullLoss}`);
   const fightTxt = `${exact ? "" : "≈ "}${pct(win)} ${en ? `you repel them (hull -${won.hullLoss})` : `los rechazas (casco -${won.hullLoss})`} · ${exact ? "" : "≈ "}${pct(1 - win)} ${loseTxt}`;
-  const fleeTxt = `${pct(flee)} ${en ? "you escape, 1 day later, no losses" : "escapas, 1 día más, sin pérdidas"} · ${pct(1 - flee)} ${en ? "your crew fights (see Fight)" : "tu tripulación lucha (mira Luchar)"}`;
+  const fleeTxt = `${pct(flee)} ${en ? "escape, +1 day" : "escapas, +1 día"} · ${pct(1 - flee)} ${en ? "escape fails: combat" : "no logras huir: combate"}`;
   return { flee: fleeTxt, fight: fightTxt };
 }
