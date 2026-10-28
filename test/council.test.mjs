@@ -1,3 +1,4 @@
+// Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 // Concejo treasury and tax votes (phase B1): caja accounting, bounded discrete tax steps,
 // deterministic meetings, and news only where the player is known.
 import test from "node:test";
@@ -16,7 +17,7 @@ import { AUCTION_EVERY, SHIP_EVERY, HOUSE_EVERY, GOODS_EVERY, PERMIT_EVERY, maxS
 import { establishmentValue } from "../src/game/almoneda.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
-const fresh = () => newGame(world, "cadiz", { cash: 30000 });
+const fresh = () => newGame(world, "cadiz", { cash: 30000, embargo: false });
 const runTo = (g, day) => { while (g.day < day && !g.over) advanceDay(g); };
 
 test("chests start at their target reserve; steps start neutral", () => {

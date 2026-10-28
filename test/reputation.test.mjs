@@ -1,3 +1,4 @@
+// Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,doBuy,doSell,repairShip,repairCost,repairPrice} from '../src/game/game.mjs';
@@ -6,7 +7,7 @@ import {FEE} from '../src/sim/trade.mjs';
 import {houseHtml} from '../src/view/rankview.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 const world=loadWorld();
-const mk=()=>{const g=newGame(world);const s=g.ships[0];return{g,s};};
+const mk=()=>{const g=newGame(world,"cadiz",{embargo:false});const s=g.ships[0];return{g,s};};
 const scarce=(g,city,good='grain')=>{const e=g.market[city][good];e.stock=1;return scarcityOf(e);}; // stock 1: critically short
 test('selling what the port lacks earns reputation; a balanced sale earns none',()=>{
  const{g,s}=mk();const r=scarce(g,'cadiz');
