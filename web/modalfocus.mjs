@@ -1,6 +1,7 @@
 // Focus and background isolation for the title-hosted in-game dialogs.
 export function installModalFocus(host, active) {
   const held = new Map();
+  let wasOpen = false;
   const sync = () => {
     const open = active() && !host.hidden;
     if (open) {
@@ -12,7 +13,9 @@ export function installModalFocus(host, active) {
     } else {
       for (const [el, inert] of held) el.inert = inert;
       held.clear();
+      if (wasOpen && active()) (document.querySelector('#v3d [data-city-menu]') ?? document.getElementById('new'))?.focus();
     }
+    wasOpen = open;
   };
   new MutationObserver(sync).observe(host, {attributes:true, attributeFilter:['hidden'], childList:true});
   new MutationObserver(sync).observe(document.body, {childList:true});
