@@ -5,6 +5,7 @@ import {buyLetter} from "../src/game/marque.mjs";
 import {attackTrader,settlePrize} from "../src/game/privateering.mjs";
 import {pardonHtml} from "../src/view/pardonview.mjs";
 import {buyPardon} from "../src/game/pardon.mjs";
+import {worldSystemsHtml} from "../src/view/worldsystems.mjs";
 import { justiceStatusHtml } from "../src/view/justicestatus.mjs";
 import {convoyNameInput} from '../src/view/convoyname.mjs';
 import {renameConvoy} from '../src/game/convoys.mjs';
@@ -759,6 +760,7 @@ function render() {
       h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
       h += privateeringReady ? privateeringHallHtml(g,s,justiceRealms,privateeringPeaces,lang) : `<p data-privateering-unavailable>${lang === "es" ? "Corso no disponible: faltan datos de tribunales o paces. Recarga para reintentarlo." : "Privateering unavailable: court or peace data is missing. Reload to retry."}</p>`;
       if (justiceData.ready) h += pardonHtml(g,justiceRealms,s.at,lang);
+      h += worldSystemsHtml(g,s.at,lang);
       if (g.townIndustry === true) { // the weekly town auction (flag on only): one card per lot on today's table
         const lots = lotsOfDay(g, s.at);
         h += `<h3>${t.almTitle}</h3><p>${t.almInfo}</p>` + (lots.length ? `<p><b>${t.almToday}</b></p>` : `<p><b>${t.almNext.replace("{d}", nextAuctionDay(s.at, g.day))}</b></p>`);

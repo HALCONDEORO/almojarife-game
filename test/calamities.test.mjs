@@ -14,7 +14,7 @@ const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, c
 const withBuildings = (g, cityId, defs) => { g.buildings ??= {}; g.buildings[cityId] = Object.fromEntries(defs.map(([type, level], i) => [`${cityId}:${i + 1}`, { type, level, state: "active" }])); };
 
 test("flag OFF: no state, no rolls, no effect", () => {
-  const g = newGame(world, "cadiz", { freePlay: true, seed: 7 });
+  const g = newGame(world, "cadiz", { freePlay: true, seed: 7, calamities: false });
   assert.equal(g.calamities, undefined);
   for (let i = 0; i < 60; i++) advanceDay(g);
   assert.equal(g.calamities, undefined);
