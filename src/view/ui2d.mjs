@@ -1,3 +1,4 @@
+import {recordedShipName} from '../sim/shipnames.mjs';
 // Default ON (owner order 23/10); ?ui2d=0 opts out.
 import { LT, messageText } from './ledgerview.mjs';
 import { msgClass, groupNotices, actionUnread } from './msgclass.mjs';
@@ -14,10 +15,11 @@ export function messageCategory(kind){
  if(kind==='report')return ['report','▤'];
  return ['house','✉'];
 }
+export function routeLegText(g,m,lang,fmt){return (lang==='en'?`Ship ${recordedShipName(g,m.ship,m.shipName)}: ${m.count} route sale${m.count>1?'s':''}, profit ${fmt(m.leg.profit)}`:`Barco ${recordedShipName(g,m.ship,m.shipName)}: ${m.count} venta${m.count>1?'s':''} de ruta, ganancia ${fmt(m.leg.profit)}`);}
 export function inbox2dHtml(g,lang,fmt,cityName,goodName){
- const t=LT[lang],c=categories[lang],all=g.inbox??[],txt=m=>messageText(m,lang,fmt,cityName,goodName),acts=all.filter(m=>msgClass(m)==='action'),groups=groupNotices(all.filter(m=>msgClass(m)==='notice'),txt),box=[...acts,...groups.map(e=>({...e.first,read:true,day:e.day,count:e.n,leg:e.kind==='routeLeg'?e:null}))],n=actionUnread(g);
+ const t=LT[lang],c=categories[lang],all=g.inbox??[],txt=m=>messageText({...m,ship:recordedShipName(g,m.ship,m.shipName)},lang,fmt,cityName,goodName),acts=all.filter(m=>msgClass(m)==='action'),groups=groupNotices(all.filter(m=>msgClass(m)==='notice'),txt),box=[...acts,...groups.map(e=>({...e.first,read:true,day:e.day,count:e.n,leg:e.kind==='routeLeg'?e:null}))],n=actionUnread(g);
  return `<div class="ui2d-intro"><p>${c.intro}</p><span class="ui2d-count">${n} ${t.unreadWord}</span></div>`+
- (box.length?`<div class="ui2d-tools"><button id="l-all"${n?'':' disabled'}>${t.markAll}</button></div><div class="ui2d-messages">`+box.map(m=>{const [cat,icon]=messageCategory(m.kind);return `<button type="button" class="ui2d-message${m.read?'':' is-unread'}" data-msg="${Number(m.id)}"><span class="ui2d-seal" aria-hidden="true">${icon}</span><span class="ui2d-letter"><span class="ui2d-message-meta"><b>${c[cat]}</b><span>${t.day} ${esc(m.day)}</span><span class="ui2d-read">${m.read?c.read:c.new}</span></span><span class="ui2d-message-text">${esc(m.leg?(lang==='en'?`Ship ${m.ship}: ${m.count} route sale${m.count>1?'s':''}, profit ${fmt(m.leg.profit)}`:`Barco ${m.ship}: ${m.count} venta${m.count>1?'s':''} de ruta, ganancia ${fmt(m.leg.profit)}`):txt(m))}${m.count>1&&!m.leg?` <b>×${m.count}</b>`:''}</span></span></button>`;}).join('')+`</div>`:`<div class="ui2d-empty"><span aria-hidden="true">✉</span><p>${t.noMsg}</p></div>`);
+ (box.length?`<div class="ui2d-tools"><button id="l-all"${n?'':' disabled'}>${t.markAll}</button></div><div class="ui2d-messages">`+box.map(m=>{const [cat,icon]=messageCategory(m.kind);return `<button type="button" class="ui2d-message${m.read?'':' is-unread'}" data-msg="${Number(m.id)}"><span class="ui2d-seal" aria-hidden="true">${icon}</span><span class="ui2d-letter"><span class="ui2d-message-meta"><b>${c[cat]}</b><span>${t.day} ${esc(m.day)}</span><span class="ui2d-read">${m.read?c.read:c.new}</span></span><span class="ui2d-message-text">${esc(m.leg?routeLegText(g,m,lang,fmt):txt(m))}${m.count>1&&!m.leg?` <b>×${m.count}</b>`:''}</span></span></button>`;}).join('')+`</div>`:`<div class="ui2d-empty"><span aria-hidden="true">✉</span><p>${t.noMsg}</p></div>`);
 }
 
 /** Town-hall presentation consumes the existing view model, including optional city lines. */

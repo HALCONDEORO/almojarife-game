@@ -101,7 +101,7 @@ test("view: reports screen shows the next payment, each ship line and both langu
   const g = idle(); for (let d = 0; d < 9; d++) advanceDay(g);
   for (const lang of ["es", "en"]) {
     const h = reportsHtml(g, lang, fmt);
-    assert.ok(h.includes(LT[lang].reports)); assert.ok(h.includes(LT[lang].types.cog + " 1")); assert.ok(h.includes(LT[lang].nextIn.replace("{n}", 5)));
+    assert.ok(h.includes(LT[lang].reports)); assert.ok(h.includes(g.ships[0].name)); assert.ok(h.includes(LT[lang].nextIn.replace("{n}", 5)));
   }
   assert.ok(reportsHtml(idle(), "es", fmt).includes(LT.es.none));
 });
