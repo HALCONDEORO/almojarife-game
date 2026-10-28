@@ -1,5 +1,6 @@
 import { confirmDialog } from "./confirmdialog.mjs";
 import { installModalFocus } from "./modalfocus.mjs";
+import { armoryBlock } from "../src/sim/armory.mjs";
 import { newFollow, toggleFollow, stopFollow, isFollowing, followAfterInput, pruneFollow, followStep, followButtonHtml, followText } from "../src/view/follow.mjs";
 import { installMapControls } from "./mapcontrols.mjs";
 import { installRoutePreview, mapDestination } from "./routepreview.mjs";
@@ -46,7 +47,7 @@ import { shipWindowHtml, SW } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
 import { createMenuGuard } from "../src/view/menuguard.mjs";
-import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponsOf, weaponCount, weaponPower, buyGear } from "../src/game/crew.mjs";
+import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits, crewOf, speedFactor, HIRE_FEE, WEAPON_TYPES, weaponsOf, weaponCount, weaponPower, buyGear, armoryPrice } from "../src/game/crew.mjs";
 import { goodIcon } from "./icons.mjs";
 import { titleBookHtml } from "./titlebook.mjs";
 import { lonjaEnabled, lonjaHtml } from "../src/view/lonjaview.mjs";
@@ -409,7 +410,10 @@ function act(fn) {
 
 function armFailNote(reason) { // an armory rejection names its cause on the hint line, then the next render restores it
   const h = $("hint"); if (!h) return;
-  h.textContent = (SW[lang] ?? SW.es).armWhy?.[reason] ?? reason;
+  const message = (SW[lang] ?? SW.es).armWhy?.[reason] ?? reason;
+  h.textContent = message;
+  const panel = $("v3d")?.querySelector("#panel");
+  if (panel) { let note = panel.querySelector("#arm-fail-note"); if (!note) { note=document.createElement("p"); note.id="arm-fail-note"; note.setAttribute("role","status"); panel.prepend(note); } note.textContent=message; }
   setTimeout(() => render(), 2500);
 }
 
@@ -561,9 +565,9 @@ function render() {
     $("ships").textContent = "0"; return;
   }
   $("fleet-loss-overlay")?.remove();
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}});
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,sail:(()=>{const s=ship(),te=target&&!s.voyage?travelEstimate(world,s,target,legWindEst(s.at,target)):null;return te?.ok?{city:cityName(target),hours:hoursOf(te.ticks)}:null;})(),eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:shipCapacity(ship())}});
   $("voyage-sail")?.addEventListener("click", sailToTarget);
-  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:SHIP_TYPES[ship().type].capacity}}); // this second render is the one that sticks: keep the resolve-event button (542)
+  $("voyage-card").innerHTML=voyageCardHtml(ship(),{lang,cityName,eventPending:!!pendingEvent(g),eta:s=>etaPlain(g.tick+s.voyage.ticksLeft),cargo:{used:cargoUsed(ship()),cap:shipCapacity(ship())}}); // this second render is the one that sticks: keep the resolve-event button (542)
   $("cash-card").innerHTML = cashCardHtml({ lang, owed: loansOwed(g), ships: g.ships, selected: ship(), cityName, fmtM: fmt, fin: financeSummary(g, { settleEvery: SETTLE_EVERY, dueNow: dueNow(g) }), stats: routeStats(ship()?.route) });
   $("voyage-event")?.addEventListener("click", () => { shipWin = null; document.getElementById("shipwin")?.remove(); render(); const b = document.querySelector("#panel [data-ev]"); b?.scrollIntoView({ block: "center" }); b?.focus(); });
   $("route-repeat")?.addEventListener("click", () => act(() => repeatRoute(g, ship())));
@@ -747,7 +751,7 @@ function render() {
       }
       h += `</div></div><div class="mkt-qtybar"><span>${esc(t.qtyAll)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
     } else if (tab === "route") {
-      const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
+      const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, routePorts = world.cities.filter((c) => isDiscovered(g, c.id)), others = routePorts.filter((c) => c.id !== s.at);
       h += `<p>${t.routeInfo}</p>`;
       if (rt?.v === 2) {
         h += `<div class="card rpath-card">${t.routeNow2.replace("{n}", rt.stops.length).replace("{l}", rt.legs).replace("{m}", rt.minCash)}` +
@@ -759,7 +763,7 @@ function render() {
       h += `<p><b>${t.routeAdv}</b></p><p>${t.routeAdvInfo}</p>`;
       h += `<table class="route-table route-editor"><thead><tr><th></th><th>${t.routeColCity}</th><th>${t.routeBuyIf}</th><th>≤</th><th>${t.routeSellIf}</th><th>≥</th><th></th></tr></thead><tbody>` +
         d.stops.map((st, i) => {
-          const cityOpts = others.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
+          const cityOpts = routePorts.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
           const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join("");
           return `<tr><td>${i + 1}</td><td><select id="rts-city-${i}">${cityOpts}</select></td><td><select id="rts-bg-${i}">${goodOpts(st.buyGood)}</select></td><td><input id="rts-bp-${i}" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"></td><td><select id="rts-sg-${i}">${goodOpts(st.sellGood)}</select></td><td><input id="rts-sp-${i}" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"></td><td><button id="rts-del-${i}" title="${t.routeDelStop}" aria-label="${t.routeDelStop}" class="rt-x">✕</button></td></tr>`;
         }).join("") + `</tbody></table>`;
@@ -825,7 +829,7 @@ function render() {
         const sellable = g.ships.filter((x) => x.at === s.at && !x.voyage);
         h += `<h3>${t.almSellShipTitle}</h3><p>${t.almSellShipInfo}</p>`;
         h += sellable.length
-          ? sellable.map((x) => `<div class="card"><b>${esc(shipDisplayName(x,t.types))}</b> · ${t.cap}: ${cargoUsed(x)}/${SHIP_TYPES[x.type].capacity} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
+          ? sellable.map((x) => `<div class="card"><b>${esc(shipDisplayName(x,t.types))}</b> · ${t.cap}: ${cargoUsed(x)}/${shipCapacity(x)} <button data-sellship-id="${x.id}" ${g.ships.length <= 1 || cargoUsed(x) > 0 ? "disabled" : ""}>${t.sellShip.replace("{p}", fmt(shipValue(x)))}</button></div>`).join("")
           : `<p><i>${t.almSellShipNone}</i></p>`;
       }
     } else if (tab === "buildings") {
@@ -944,7 +948,12 @@ function render() {
         h += sec(`${en ? "Your ship" : "Tu barco"}: ${esc(shipDisplayName(s,t.types))}`,
           `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
           `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
-          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => `<button data-weapon="${k}" ${away || s.voyage || weaponCount(s) >= maxCannons(s) || g.cash < w.price ? "disabled" : ""} title="${t.weaponPowerLbl.replace('{p}', w.power)}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(w.price))}</button>`).join("")}</div>`);
+          `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => {
+            const price = armoryPrice(g, s.at, w.price), why = away ? "not in this port" : weaponCount(s) >= maxCannons(s) ? "full" : armoryBlock(g, s, w.weight, price, g.cash);
+            const reason = why === "not in this port" ? (en ? "Dock this ship here first." : "Atraca este barco aquí primero.") : (SW[lang] ?? SW.es).armWhy[why];
+            return `<span><button data-weapon="${k}" ${why ? "disabled" : ""} title="${esc(reason ?? t.weaponPowerLbl.replace('{p}', w.power))}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(price))}</button>${why ? `<small class="yd-arm-reason">${esc(reason ?? why)}</small>` : ""}</span>`;
+          }).join("")}</div>`);
+
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
         if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
@@ -1499,8 +1508,9 @@ document.addEventListener("keydown", (e) => { // M mutes or unmutes all sound, a
 });
 document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if (inTitle && e.key === "Enter") { const tg = e.target; if (tg && tg.closest && tg.closest("input,select,textarea,button")) return; const c = $("t-cont"), b = c && !c.disabled ? c : $("t-start"); if (b) { e.preventDefault(); b.click(); } return; } if (e.key === "Escape") { const el = $("title"); if (el.hidden) showMenu(); else if ($("m-res")) $("m-res").click(); else if ($("l-close")) $("l-close").click(); else if($("cap-cancel"))$("cap-cancel").click(); } });
 // freeNav defaults ON for new games (Marco 23/10: all flags on); existing saves keep their own flag.
+let createDraft = null; // kept only in memory until a new campaign starts
 function showCreate(name) {
-  t = T[lang]; let freeNav = true; const el = $("title"), pf = defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  t = T[lang]; let freeNav = createDraft?.freeNav ?? true; const el = $("title"), pf = createDraft?.profile ?? defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
@@ -1518,11 +1528,11 @@ function showCreate(name) {
     el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
     el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
     for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
-    $("p-back").onclick = () => showTitle();
+    $("p-back").onclick = () => { read(); createDraft = {profile: pf, freeNav}; showTitle(); };
     $("p-go").onclick = () => {
       read();
       const raw = localStorage.getItem(SAVE_KEY), prev = raw && isValidSaveText(raw) ? raw : null; // a corrupt current save is not worth protecting
-      const launch = () => { music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
+      const launch = () => { createDraft = null; music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; start(pf, true, { freeNav }); el.hidden = true; if(ship()&&!ship().voyage)open3d(ship()); };
       if (!prev) return launch(); // nothing saved: nothing to protect
       // A saved game exists: ask first, and park it in the backup slot before the new game's autosave replaces it (same rotation as Import).
       const old = unpackGame(JSON.parse(prev), world), sum = `${esc(old.company || t.defCo)} · ${t.day} ${old.g.day} · ${fmtM(old.g.cash)}`;
@@ -1534,7 +1544,7 @@ function showCreate(name) {
         const keep = localStorage.getItem(SAVE_KEY) ?? prev;
         start(pf, false, { freeNav }); // builds the new game in memory; autosave stays off while inTitle is true
         try { restoreRotate(localStorage, SAVE_KEY, keep, JSON.stringify(packGame(g, company))); } catch { $("r-msg").textContent = t.errB; return; } // fail-closed: if either write fails the saved game is untouched and we stay here
-        music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
+        createDraft = null; music.leaveTitle(); playing = false; progress = 0; tickAcc = 0; inTitle = false; el.hidden = true; if(ship()&&!ship().voyage)open3d(ship());
       };
     };
   };

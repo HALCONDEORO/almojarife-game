@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';const src=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');
+test('voyage card and owned ship auction use effective capacity, not empty-hull specifications',()=>{assert.equal((src.match(/cap:shipCapacity\(ship\(\)\)/g)||[]).length,2);assert.match(src,/cargoUsed\(x\)\}\/\$\{shipCapacity\(x\)/);});
+test('map fullscreen icon uses SVG rather than a missing font glyph',()=>{const html=readFileSync(new URL('../web/index.html',import.meta.url),'utf8');assert.match(html,/id="fs"[^>]*><svg/);assert.doesNotMatch(html,/⛶/);});

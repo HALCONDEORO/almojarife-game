@@ -22,7 +22,11 @@ test("a ship that is not docked here gets a one-line explanation, in both langua
 });
 test("away from this port: repair, gun repair and weapons are disabled in the shipyard", () => {
   assert.ok(yard.includes("const away = inCity && city3dId && s.at !== city3dId"));
-  for (const a of ['data-repair="1" ${away', 'data-gunrepair="1" ${away', 'data-weapon="${k}" ${away']) assert.ok(yard.includes(a), a);
+  for (const a of ['data-repair="1" ${away', 'data-gunrepair="1" ${away']) assert.ok(yard.includes(a), a);
+  // Weapon controls now combine the location guard with slot, cash and cargo blockers.
+  // Keep the location-to-disabled chain covered instead of matching its old inline spelling.
+  assert.ok(yard.includes('why = away ? "not in this port" :'), "away feeds the weapon blocker");
+  assert.ok(yard.includes('data-weapon="${k}" ${why ? "disabled" : ""}'), "weapon blocker disables its control");
 });
 test("at sea: the note is rendered outside the docked-only block", () => {
   const i = src.indexOf('tab === "yard" && s.voyage'); assert.ok(i > src.indexOf('tab === "lonja"'), "after the docked chain");
