@@ -747,7 +747,7 @@ function render() {
       }
       h += `</div></div><div class="mkt-qtybar"><span>${esc(t.qtyAll)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
     } else if (tab === "route") {
-      const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, others = world.cities.filter((c) => c.id !== s.at && isDiscovered(g, c.id));
+      const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, routePorts = world.cities.filter((c) => isDiscovered(g, c.id)), others = routePorts.filter((c) => c.id !== s.at);
       h += `<p>${t.routeInfo}</p>`;
       if (rt?.v === 2) {
         h += `<div class="card rpath-card">${t.routeNow2.replace("{n}", rt.stops.length).replace("{l}", rt.legs).replace("{m}", rt.minCash)}` +
@@ -759,7 +759,7 @@ function render() {
       h += `<p><b>${t.routeAdv}</b></p><p>${t.routeAdvInfo}</p>`;
       h += `<table class="route-table route-editor"><thead><tr><th></th><th>${t.routeColCity}</th><th>${t.routeBuyIf}</th><th>≤</th><th>${t.routeSellIf}</th><th>≥</th><th></th></tr></thead><tbody>` +
         d.stops.map((st, i) => {
-          const cityOpts = others.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
+          const cityOpts = routePorts.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
           const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join("");
           return `<tr><td>${i + 1}</td><td><select id="rts-city-${i}">${cityOpts}</select></td><td><select id="rts-bg-${i}">${goodOpts(st.buyGood)}</select></td><td><input id="rts-bp-${i}" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"></td><td><select id="rts-sg-${i}">${goodOpts(st.sellGood)}</select></td><td><input id="rts-sp-${i}" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"></td><td><button id="rts-del-${i}" title="${t.routeDelStop}" aria-label="${t.routeDelStop}" class="rt-x">✕</button></td></tr>`;
         }).join("") + `</tbody></table>`;
