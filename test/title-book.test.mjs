@@ -104,7 +104,15 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     await click("t-lang"); await sleep(300);
     assert.equal(await get("lang"), "en"); assert.equal(await get(K), live); assert.equal(await get(B), save1);
     await click("t-exp"); await sleep(300); assert.equal(await get(K), live);
-    await ev("window.confirm = () => true"); await click("t-rest"); await sleep(600);
+    await click("t-rest");
+    assert.equal(await ev("document.activeElement.id"), "confirm-cancel");
+    await click("confirm-cancel");
+    assert.equal(await get(K), live); assert.equal(await get(B), save1);
+    await click("t-rest");
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    assert.equal(await ev("document.activeElement.id"), "confirm-accept");
+    await click("confirm-accept"); await sleep(600);
     assert.equal(await get(K), save1); assert.equal(await get(B), live);
     // import through the book's file input: current save is parked, imported one becomes live
     await call("function (text) { const dt = new DataTransfer(); dt.items.add(new File([text], 'x.json')); const i = document.getElementById('t-file'); i.files = dt.files; i.dispatchEvent(new Event('change')); }", live); await sleep(2500);
