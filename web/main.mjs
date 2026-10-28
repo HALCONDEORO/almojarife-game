@@ -1,3 +1,4 @@
+import { installRoutePreview, mapDestination } from "./routepreview.mjs";
 import { loadJusticeData, optionalJson } from "../src/game/justicehost.mjs";
 import {fleetSelection,fleetLossHtml} from "../src/view/fleetloss.mjs";
 import {privateeringHallHtml,privateeringSeaHtml} from "../src/view/privateeringview.mjs";
@@ -309,6 +310,7 @@ function frame(now) {
     progress = (g.tick % TICKS_PER_DAY + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // view only: how much of the current day has elapsed
   }
   drawShips();
+  routeHover.refresh();
   requestAnimationFrame(frame);
 }
 let fleetFilter="all",fleetSearch="";
@@ -1300,9 +1302,9 @@ mapEl.addEventListener("contextmenu", (ev) => {
   ev.preventDefault(); ev.stopPropagation(); closeMenu();
   const cityEl = ev.target.closest?.("g.city"), s0 = ship(); if (!s0) return;
   if (cityEl && cityEl.dataset.explored !== "true") return; // chart-only ports do not become free-nav destinations
-  let lat, lon;
-  if (cityEl && world.nodes[cityEl.dataset.c]) ({ lat, lon } = world.nodes[cityEl.dataset.c]);
-  else { const p = mapEl.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const ctm = mapEl.getScreenCTM(), q = p.matrixTransform(ctm.inverse()); const tol = 48 / (ctm.a || 1); let snap = null, snapD = tol; mapEl.querySelectorAll('g.city[data-explored="true"]').forEach((el) => { const d = Math.hypot(Number(el.dataset.mx) - q.x, Number(el.dataset.my) - q.y); if (d < snapD) { snapD = d; snap = el.dataset.c; } }); if (snap && world.nodes[snap]) ({ lat, lon } = world.nodes[snap]); else { lon = q.x / sc + x0; lat = y1 - q.y / (sc * 1.25); } } // missing the small port dot by a few screen px must not send the ship to open sea (24/10 human playtest: 3 near-port clicks missed, one routed 759 km away); snap within 48 screen px, zoom-independent via the CTM
+  const dest = mapDestination(mapEl, ev, world, { inverse: q => ({ lon: q.x / sc + x0, lat: y1 - q.y / (sc * 1.25) }) });
+  if (!dest) return;
+  const { lat, lon } = dest;
   let r; act(() => { r = doGoTo(g, s0, lat, lon); });
   if (r && !r.ok && r.reason !== "already there") { const h = $("hint"); h.textContent = r.reason === "no sea there" ? t.navNoSea : t.navCannot; setTimeout(() => render(), 2500); }
   else target = null, render();
@@ -1531,6 +1533,11 @@ function showTitle() {
   };
 }
 showTitle(); // title first: it must paint instantly
+const routeHover = installRoutePreview({
+  map: mapEl, world, state: () => g, selected: () => ship(), locale: () => lang, name: cityName,
+  project: p => [X(p.lon),Y(p.lat)], inverse: q => ({ lon: q.x / sc + x0, lat: y1 - q.y / (sc * 1.25) }),
+  blocked: () => inTitle || ptrs.size > 0 || !$('title').hidden || !!document.querySelector('#ctx,#v3d,#sea-modal,#fleet-loss-overlay')
+});
 requestAnimationFrame(frame);
 setTimeout(() => start(null, false), 0); // background game behind the title screen; it never overwrites a save (deferred: the warmup sim must not delay the title)
 
