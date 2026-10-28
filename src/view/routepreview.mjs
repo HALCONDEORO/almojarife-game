@@ -60,5 +60,5 @@ export function previewText(preview, { lang = 'es', destination = '' } = {}) {
     if (preview.reason === 'port only') return lang === 'es' ? 'Elige un puerto para ver la ruta.' : 'Choose a port to preview its route.';
     return lang === 'es' ? 'Ese barco no puede cambiar de rumbo ahora.' : 'That ship cannot change course now.';
   }
-  return `${destination || (lang === 'es' ? 'Mar abierto' : 'Open sea')} · ${preview.days} ${lang === 'es' ? 'días' : 'days'} · ${preview.km} km`;
+  return `${destination || (lang === 'es' ? 'Mar abierto' : 'Open sea')} · ${preview.days} ${lang === 'es' ? (preview.days === 1 ? 'día' : 'días') : (preview.days === 1 ? 'day' : 'days')} · ${preview.km} km`;
 }

@@ -50,3 +50,8 @@ test('under-crewed ship and unknown type fail safely without issuing orders',()=
   assert.equal(routePreview(g,s,{port:'lisboa'}).ok,false);
   s.type='unknown';assert.equal(routePreview(g,s,{lat:36,lon:-7}).reason,'unavailable');
 });
+test('one-day preview uses singular units in both locales',()=>{
+  const p={ok:true,days:1,km:76};
+  assert.equal(previewText(p,{lang:'es',destination:'Cádiz'}),'Cádiz · 1 día · 76 km');
+  assert.equal(previewText(p,{lang:'en',destination:'Cadiz'}),'Cadiz · 1 day · 76 km');
+});
