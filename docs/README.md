@@ -1,5 +1,7 @@
 # Documents
 
+Player guide in Spanish: [Cómo jugar](COMO-JUGAR.md).
+
 Platform: the game is desktop-only (Windows, Mac and Linux browsers, keyboard and mouse); phones and tablets are out of scope. See DESIGN.md.
 
 - `DESIGN.md`: concept, story, modes, mechanics, map decision.

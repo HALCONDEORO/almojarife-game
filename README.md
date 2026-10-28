@@ -1,167 +1,94 @@
-<p align="center">
-  <img src="docs/images/banner.svg" alt="The Almojarife: ships sailing between ports on a 15th-century sea chart" width="900">
-</p>
+<p align="center"><img src="docs/images/banner.svg" alt="El Almojarife: barcos y puertos en una carta de navegación" width="900"></p>
 
-<h1 align="center">El Almojarife</h1>
-<p align="center"><em>An open-source sea-trading game on the Iberian and Mediterranean coast, 15th-16th century.</em><br>
-<a href="https://halcondeoro.github.io/almojarife-game/"><b>Play in your desktop browser</b></a></p>
-<p align="center"><a href="https://github.com/HALCONDEORO/almojarife-game/releases/latest"><img src="https://img.shields.io/github/v/release/HALCONDEORO/almojarife-game?display_name=tag&label=release" alt="Latest release"></a></p>
+# El Almojarife
 
-<p align="center"><img src="docs/img/map.png" alt="The sea chart with ports, routes and ships" width="780"></p>
+Un juego de comercio marítimo: funda una casa mercantil, compra mercancías, navega entre puertos y vende con beneficio. Administra barcos, tripulaciones, rutas automáticas, edificios y las cuentas de tu casa.
 
-You are a small merchant with one cog and a few coins in a harbour town. Buy cheap where a good is plentiful, sail the sea lanes, sell dear where it is scarce, grow a fleet, and rise to the top rank: the **almojarife**, the royal treasurer who ran a port's trade (say it: al-mo-ha-REE-fay).
+**Para ordenador**, con teclado y ratón, en Windows, macOS o Linux. No está diseñado ni probado para móviles o tabletas. Interfaz en español e inglés. La partida funciona localmente en el navegador, sin cuenta.
 
-**Status: public beta.** The first public beta (v0.5.0-beta.2) is published as the latest release, with installers for Windows, Mac and Linux (see Downloads). The game is playable and free, but rough.
+- [Jugar en el navegador](https://halcondeoro.github.io/almojarife-game/).
+- [Guía de cómo jugar en español](docs/COMO-JUGAR.md).
+- [Versiones y descargas](https://github.com/HALCONDEORO/almojarife-game/releases).
 
-**Platform: desktop only.** El Almojarife is a desktop game: it is played in a Windows, Mac or Linux browser with keyboard and mouse. It is not designed for or tested on phones or tablets.
+## Estado real de esta versión
 
+Este documento describe el código integrado en `main` hasta `6102bc80fa981d44cca8bfe0ceb02ab10c14be95`, no garantiza que la web o una descarga contengan ese mismo código. Los PR abiertos no se presentan como funciones publicadas.
 
-## Downloads
+- [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) es una **pre-release de código fuente**, publicada el 28 de octubre de 2026, fijada en `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No tiene instaladores adjuntos y no incluye los cambios posteriores de navegación de este README.
+- `v0.5.0-beta.2` sigue marcada como `Latest`. Para instalar, comprueba los archivos realmente adjuntos a la versión elegida y sus notas; no supongas que cada beta contiene binarios o `SHA256SUMS.txt`.
+- La firma, la instalación y las pruebas de los paquetes tienen sus propios límites: consulta [la política de firma](docs/code-signing-policy.md) y [la verificación de versiones](docs/release-signing.md). No desactives las protecciones del sistema para instalar una beta.
+- Es una beta en desarrollo. El equilibrio, la campaña y la presentación siguen cambiando. Conserva una exportación de tus partidas; no se promete migración de todos los guardados antiguos.
 
-Get the latest release from [GitHub Releases](https://github.com/HALCONDEORO/almojarife-game/releases/latest):
+## Cómo jugar: primeros pasos
 
-- **Windows**: `El.Almojarife.Setup.<version>.exe` (installer) or `El.Almojarife.<version>.exe` (portable).
-- **Mac (Apple Silicon)**: `El.Almojarife-<version>-arm64.dmg` (installer image) or `El.Almojarife-<version>-arm64-mac.zip` (zipped app).
-- **Linux**: `El.Almojarife-<version>.AppImage` (any distribution) or `almojarife-desktop_<version>_amd64.deb` (Debian/Ubuntu).
+1. Elige **Nueva partida**, el nombre de tu casa, tu personaje y el puerto de origen. La partida nueva abre la ciudad y el tutorial.
+2. Entra en el **Mercado**, elige la cantidad y compra una mercancía. Consulta el precio, la carga disponible y el dinero antes de confirmar.
+3. Pulsa **Volver al mapa**. Con tu barco seleccionado, haz **clic derecho** sobre un puerto explorado para ordenar el viaje en las partidas nuevas con navegación libre. El clic izquierdo no es una orden de zarpar.
+4. Deja avanzar el reloj con **Reanudar**; usa el control de velocidad si hace falta. Al llegar, vende en el Mercado del destino. El tutorial exige una venta con beneficio de carga comprada, no una simple reventa con pérdida en el mismo puerto.
+5. En la ciudad, **Barcos** abre las rutas. Configura una ruta automática con **Fijar ruta** y visita después el **Ayuntamiento** para terminar el tutorial actual de cinco pasos.
+6. Reserva dinero para gastos y liquidaciones. **Informes** reúne historial de operaciones y cuentas; **Mensajes** muestra avisos y sucesos.
 
-Every release includes `SHA256SUMS.txt` to verify the downloads. You can also [play in your desktop browser](https://halcondeoro.github.io/almojarife-game/) without installing anything.
+[La guía completa](docs/COMO-JUGAR.md) explica también los guardados, la navegación libre, las rutas y los controles. Las partidas antiguas pueden conservar reglas, objetivos o tutoriales anteriores.
 
-## Why you might like it
+## Controles del mapa
 
-- **A living market.** 33 ports, 22 goods, prices that move with supply and demand. A 4-step signal next to each stock tells you at a glance how full the market is. Selling a big load crashes the price. AI traders compete with you.
-- **A real sea chart.** Pan and zoom a hand-styled map built from public-domain Natural Earth data. Ships sail the lanes in real time. Ports you have not visited stay hidden until you buy a chart for them.
-- **Your own trading house.** Name your company and character, pick a portrait, design a coat of arms and house colours, choose a home port and a background.
-- **A full port.** Market, shipyard (pick a ship class on an illustrated slipway, build it, repair, sell), warehouse with a steward who keeps standing buy/sell orders, tavern (hire captains, buy news), bank (loans with weekly interest and a cap that grows with your rank), the town hall (council duties, respect, time-limited delivery contracts), and your buildings: buy city plots and raise anything from houses, workshops and warehouses to farms, mines, fisheries and workshops of a dozen trades, with upkeep and staffing.
-- **A guided rise.** A mission engine drives a growing campaign: an opening chain that teaches the trade, plus optional side missions with deadlines and rewards.
-- **Trade while you sleep.** Send a ship on an automatic route between ports, with optional price guards and a cash brake, and it keeps trading on its own.
-- **Weekly books.** Ship upkeep is not charged on the spot. It is settled once a week, so you can plan prices and cash. Open **Reports** for the weekly ledger and **Messages** for your inbox (settlements, warnings).
-- **Captains and the sea.** Captains with navigation, weather and defence skills change how a ship sails, weathers storms and fights pirates. Storms, pirates, fair winds and drifting cargo bring choices at sea; win a pirate fight and you may keep the enemy ship as a prize. Prices of ports you have not visited are rumours with an age and an error margin.
-- **Ranks and respect.** Climb ranks by net worth (they unlock bigger loans and better ships), and earn respect port by port to open offices.
-- **Your port, drawn.** Every city is drawn as a 2D plan built from the live game state: plots, buildings, shoreline and the working quay. A three.js harbour prototype (docked ships, warehouse, time of day) remains available with `?city2d=0`. Desktop first.
-- **Saves.** Autosave every day, Continue from the title screen, export and import your save as a file. Until launch the save format can change without migration: test saves from earlier builds are not preserved.
-- **The game is playable in English and Spanish** from day one. No account, no server, no ads: it runs in your desktop browser.
-- **Open and clean.** MIT code, CC BY art, every asset credited. Nothing copied from other games.
+| Acción | Control |
+| --- | --- |
+| Dar una orden de navegación libre | Clic derecho sobre un destino navegable; puerto explorado o mar permitido |
+| Ver la previsión de un destino | Mover el puntero sobre el mapa: recorrido y tiempo estimado; el aviso rojo indica destino inválido |
+| Acercar / alejar | Rueda del ratón; `+` / `-`; gesto de pinza compatible |
+| Mover la vista | Arrastrar; flechas o `W`, `A`, `S`, `D` |
+| Centrar barco / puerto | Botones del mapa; `Inicio` / `C` |
+| Mover la vista desde el minimapa | Clic o arrastre dentro del minimapa, visible al acercar |
+| Restablecer la vista | Doble clic |
+| Pausar / reanudar | Botón del reloj; espacio en el mapa, fuera de campos de texto |
+| Cerrar una ventana o cancelar selección | `Esc`; para guardado y ajustes, usa **Menú** |
 
-## Documentation and release status
+Los atajos de cámara no escriben en los campos de texto. Acercar o centrar no da una orden al barco. La leyenda del mapa distingue red tenue, viaje activo, automática, plan y destino no válido. En la ventana del barco, **Seguir barco** activa el seguimiento de cámara; **Dejar de seguir** lo desactiva. `Esc`, arrastrar o mover manualmente la vista lo cancelan; la rueda conserva el seguimiento. No cambia la simulación ni se guarda.
 
-This README describes merged source at the documentation checkpoint, not a deployment guarantee. [Current state](docs/CURRENT-STATE.md) separates integrated work from the release candidate. Generated wiki tables come from the game; update them through their generator.
+## La ciudad y la casa mercantil
 
-## Screenshots
+- La ciudad es una vista 2D con edificios seleccionables y ventanas. **Volver al mapa** regresa a la carta; **Barcos**, **Informes**, **Mensajes** y **Menú** están a mano.
+- Mercado: compra y vende, compara existencias y precios. Los precios cambian; una estimación o rumor no garantiza beneficio.
+- Astillero: construcción y reparación. La venta de barcos está en la **almoneda del Ayuntamiento**, no en el astillero; se rechaza vender el último barco o uno con carga.
+- Almacén y mayordomo, taberna, banco, edificios, contratos y concejo añaden decisiones a la campaña. Costes, requisitos y disponibilidad se muestran en cada ventana.
+- Las rutas automáticas comercian según su configuración; las opciones avanzadas añaden escalas, límites de compra/venta y reserva de dinero. Revisa resultados, no des por hecho que una ruta siempre sea rentable.
+- El nombre de un barco se cambia desde el desplegable **Renombrar** de Flota o desde su ventana.
 
-_Five real-game captures were added or refreshed on 28 Oct 2026 from merged `main` 99c299bc16c822fb7a570853dde5d6383d31b9a9, at desktop 1280x720 with the Spanish UI: title, pause menu, city, messages and activity history. Messages and activity history use the existing day-804 campaign; title, pause menu and city use the title/new-game flow. The other seven captures retain their earlier provenance: merged `main` b24895a1c3783861354f8a5e594ef4e7d7df72b0, desktop 1440x900, isolated synthetic campaign (including synthetic warehouse ownership). No unmerged map-navigation changes are shown. Refresh screenshots when the UI changes._
+## Capturas y prueba jugada
 
-| Start your trading house | Save and adjust your game |
-|---|---|
-| ![Pantalla inicial de Almojarife, con el libro de la casa mercantil y las opciones de partida](docs/img/title.png) | ![Menú de pausa con guardado, ranuras, ajustes y regreso al título](docs/img/pause-menu.png) |
-| **The city plan** | **Trade in the market** |
-| ![Ciudad de Cádiz y sus edificios con los controles de construcción, barcos e informes](docs/img/city2d.png) | ![Market with prices, charts and cheap/dear arrows](docs/img/market.png) |
-| **The sea chart** | **Build ships at the shipyard** |
-| ![Sea chart with ports, routes and the port panel](docs/img/map.png) | ![Shipyard tab with the ship classes and their orders](docs/img/shipyard.png) |
-| **Messages from port and house** | **Activity history** |
-| ![Mensajes del puerto y de la casa en una partida avanzada, día 804](docs/img/messages.png) | ![Historial de compras, ventas y viajes de una casa mercantil en el día 804](docs/img/activity-history.png) |
-| **Tavern: captains and news** | **Bank: loans and interest** |
-| ![Tavern tab](docs/img/tavern.png) | ![Bank tab](docs/img/bank.png) |
-| **Warehouse and steward** | **Create your house** |
-| ![Warehouse tab](docs/img/warehouse.png) | ![Character and coat of arms](docs/img/create.png) |
+Estas tres capturas son de una **partida nueva real**, en español a 1280×720, jugada en `main` `ace71d6` el 28 de octubre de 2026. Sin inyección de estado: compra en Cádiz, viaje a Huelva, venta con beneficio, ruta automática y Ayuntamiento. La prueba completó los cinco pasos y verificó **Continuar** tras recargar. No certifica una instalación ni la versión desplegada.
 
-## How to play
+| Mercado al llegar | Configurar una ruta |
+| --- | --- |
+| ![Mercado de Huelva durante una venta de la partida de prueba](docs/img/player-guide/market.png) | ![Ventana de Barcos y rutas en la ciudad](docs/img/player-guide/routes.png) |
 
-1. Pick a name and a home port, then **Start**.
-2. A new game starts with the tutorial and mission campaign. There is no fixed coin goal or deadline (games started before this change keep their 50,000 coins / 365 days goal). Going bankrupt still ends the game.
-3. In the **Market** tab, look for the green ▼ (cheap: buy) and red ▲ (dear: sell) arrows.
-4. Click a port on the map, or a **Sail to** button, then press **Sail** to move time. Your ship takes days to arrive.
-5. Sell where the price is high. Build a second ship in the **Shipyard**. Press **Esc** for the menu.
-6. Once a week ship upkeep is settled. Check **Reports** for the numbers and **Messages** for what happened. Keep cash for that day.
+![Ayuntamiento de Huelva durante el paso 4/5, antes de fijar la ruta y de la visita final](docs/img/player-guide/council.png)
 
-Controls on the map: mouse wheel or pinch to zoom, drag to pan, double click to reset.
+Las capturas antiguas de `docs/img/` se conservan para no romper referencias, pero ya no se usan aquí como prueba de la interfaz actual.
 
-## What remains before the first beta release
+## Ejecutarlo localmente
 
-Changes are reviewed in focused pull requests and grouped into larger release batches. The first GitHub pre-release is being prepared as proposed version `v0.5.0-beta.1`, not yet published. The intended audience is public; publication remains pending final owner approval, integrated documentation, polish and Playtest approval. See [release process](docs/RELEASE.md) and [draft notes](docs/RELEASE-NOTES-DRAFT.md).
+Node 20 o posterior y Python 3 para el servidor de desarrollo:
 
-**Still missing or in progress:**
+```sh
+npm run serve
+# Abrir http://localhost:8080/web/index.html
+sh tools/fetch_data.sh  # Datos de costa necesarios para las pruebas del mundo
+npm test
+```
 
-- **The campaign.** The mission engine and the first missions (an opening main chain and two side missions) are playable. The full arc - varied requirements, narrative, more side missions and rewards - is being added mission by mission.
-- **A richer city-centred interface.** Clicking a port already opens a city view with market, buildings, council and office tabs; more of the interface is moving city-side, piece by piece.
-- **A balance pass.** We measure the game with an internal simulation harness (dozens of bot playthroughs) and fixes keep landing: loans now carry real risk (foreclosure), the bankruptcy flow is kinder, and production respects staffing. The opening goal is still easier than intended for optimal play; tuning continues behind the harness.
-- **Release readiness.** The current batch, documentation review, exact-commit deployment and desktop playtest are still being checked. Open PRs are not shipped features.
-- **Presentation and content.** Sound, campaign coverage, historical map presentation and city polish still need a release-readiness review. The tutorial exists; it is not an unstarted feature.
-- **The name** "Almojarife" is provisional.
+La prueba de tutorial por interfaz está en `test/browser/tutorial-playthrough.mjs`; requiere Playwright proporcionado por quien la ejecuta y una instancia local indicada con `BASE_URL`. No se ejecuta por el mero hecho de abrir el juego.
 
-The historical milestone plan records an alpha target of 14 Jul 2027 and 1.0 of 28 Feb 2028. Those milestones are not a date announcement for the proposed early `0.x` pre-release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/DESIGN.md`](docs/DESIGN.md).
+## Documentación y colaboración
 
-## Run it yourself
+- [Documentación](docs/README.md), [estado de desarrollo](docs/CURRENT-STATE.md), [diseño](docs/DESIGN.md) y [hoja de ruta](docs/ROADMAP.md).
+- [Referencia del juego en español](docs/wiki/es/README.md). Las tablas generadas se actualizan con `node tools/gen_wiki.mjs`, no a mano.
+- [Contribuir](CONTRIBUTING.md), [código de conducta](CODE_OF_CONDUCT.md), [traducciones](TRANSLATING.md).
+- Para trabajar en el código: [AGENTS.md](AGENTS.md) y [política de modelos](docs/politica-modelos.md).
 
-You need Node 20 or newer and any static web server:
+`src/sim/`: simulación; `src/game/`: reglas y guardados; `src/view/`: presentación; `web/`: interfaz; `data/`: contenido; `assets/`: recursos; `test/`: pruebas.
 
-    npm run serve        # then open http://localhost:8080/web/index.html
-    sh tools/fetch_data.sh   # first: download coastline data needed by world tests
-    npm test             # simulation, AI traders, game logic, saves, ledger, scenes
+## Licencias
 
-The sea-chart background is rebuilt by `tools/build_background.py` from the Natural Earth raster; the finished image is in `assets/map/`.
-
-The README banner and the social preview in `docs/images/` are drawn by `tools/build_banner.py` from `data/world.json` and the sea chart. Run `python3 tools/build_banner.py --png` after changing ports or lanes; `--check` fails in CI when they are out of date. The ships on the banner follow the real lanes and are listed in `ROUTES` at the top of the script.
-
-## Repository map
-
-`src/sim/` simulation core · `src/game/` game rules, saves, profile · `src/view/` map camera · `web/` browser UI · `data/` ports, lanes, goods · `assets/` art (each file credited in [`CREDITS.md`](CREDITS.md)) · `docs/` design, roadmap, decisions · `test/` tests.
-
-## Working with AI coding agents
-
-See [AGENTS.md](AGENTS.md) and the [model policy](docs/politica-modelos.md).
-
-## Contribute
-
-Ideas, bug reports, historical corrections and translations are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`TRANSLATING.md`](TRANSLATING.md). Open an issue before large changes. Every change goes through a pull request with tests and review. Good first steps: pick an item from [`docs/BACKLOG.md`](docs/BACKLOG.md), fix a translation string, or report a price that feels wrong.
-
-## Licence and credits
-
-- Code and game data: MIT ([`LICENSE`](LICENSE)).
-- Original art and documents: CC BY 4.0 ([`LICENSE-ART.md`](LICENSE-ART.md)).
-- Third-party material is limited to public domain, CC0 and CC BY; every file is listed with its source in [`CREDITS.md`](CREDITS.md). Map data: Made with Natural Earth.
-- The name "Almojarife" is provisional. A free trademark search found no conflict (19 Oct 2026); this is not legal advice.
-- Ideas and mechanics from other trading games are studied; no art, text, names, data or code are copied.
-
-## Desktop app beta preparation
-
-The Electron build packages the same game for Windows, macOS and Linux. The
-`Desktop builds` workflow produces unsigned NSIS and portable `.exe`, Apple
-Silicon `.dmg`/`.zip`, and Linux x64 `.AppImage`/`.deb` files. Candidate artifacts
-are not automatically published as releases. Download only assets attached to
-an approved release of this repository.
-
-### Code signing policy
-
-Release provenance and signing status are described in the
-[code signing policy](docs/code-signing-policy.md); verification steps are in
-[release signing](docs/release-signing.md).
-
-### Installation of unsigned packages
-
-- **Windows:** run the installer or portable executable. If SmartScreen shows
-  an unsigned-app warning, use **More info > Run anyway** only after checking
-  that the file came from the intended release. Installation and SmartScreen
-  acceptance have not been tested by the automated smoke check.
-- **macOS:** open the DMG and copy the app to Applications. For an unsigned-app
-  warning, try **right-click > Open**. Gatekeeper may require a separate
-  confirmation in Privacy & Security. The app is not signed or notarized;
-  do not disable system-wide security. Current CI packages target Apple Silicon.
-- **Linux:** make the AppImage executable with `chmod +x <file>.AppImage`, then
-  run it. AppImage/FUSE and sandbox requirements vary by distribution. Do not
-  disable the Chromium sandbox as a general installation workaround. A `.deb`
-  is also built; installing that package has not yet been verified.
-
-### What has actually been checked
-
-| Platform | Evidence so far | Not yet verified |
-| --- | --- | --- |
-| Windows | Installer and portable builds completed; packaged app reached the title menu on a Windows CI runner. | Installer flow, SmartScreen, a full play session and final release assets. |
-| macOS (Apple Silicon) | DMG/ZIP builds completed; packaged app reached the title menu on a macOS CI runner. | DMG installation, Gatekeeper, Intel Macs, a full play session and final release assets. |
-| Linux x64 | AppImage/deb builds completed. An extracted diagnostic AppImage ran under Xvfb: title, new game, manual save, return to title and Continue; campaign data matched after reload. | FUSE launch, deb installation, ordinary desktop sandbox setup and final release assets. |
-
-The Linux interaction check above used candidate `d9299e97ff9d14b75fb53cba93bd660b81dcc64d` (package
-version `0.5.0-beta.1`), with `--disable-setuid-sandbox` for the test container. It is
-not certification of the final beta. Native-runner title-menu smoke checks passed on Windows, macOS and Linux for
-that candidate in workflow run `40398516752`. New presentation changes require
-a fresh final-candidate build and Playtest. Final
-release records must name the tested candidate and retain these limitations.
+Código y datos: [MIT](LICENSE). Arte y documentos originales: [CC BY 4.0](LICENSE-ART.md). Créditos y licencias de terceros: [CREDITS.md](CREDITS.md). Cartografía: Natural Earth. El nombre "Almojarife" es provisional.
