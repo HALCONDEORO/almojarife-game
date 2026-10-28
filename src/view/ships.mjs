@@ -1,5 +1,16 @@
 // Ship drawing helpers. Own artwork, drawn in code: a top-down hull with sails, seen from above.
 // Pure functions (no DOM) so they are testable; the page only inserts the strings.
+// City family: buildingsview.mjs BWI/BOI wood, plaster and terracotta; city2d's
+// warehouse sprite / scene.mjs waterfront supply warm light and darker lower faces.
+// Original vector interiors; hull boundaries and all map transforms stay unchanged.
+const INK = "#6e4a22", WOOD = "#a8733a", DECK = "#c9a35e", LIGHT = "#f6e9cc";
+// Lower hull faces follow the existing outline exactly: no added marker footprint.
+const HULL_SHADE = {
+  barca: "M-8 0 H8.5 C6.8 1.4 5 2.6 2 3 C-3 3.6 -7.6 2.4 -8 0 Z",
+  cog: "M-11 0 H12.5 C9 3 5 5 0 5.2 C-6 5.4 -10.5 3.4 -11 0 Z",
+  caravel: "M-12 0 H14.5 C10 2.2 6 4 0 4.2 C-6 4.4 -11.5 2.8 -12 0 Z",
+  nao: "M-14 0 H15 C11 3.4 7 6 0 6.2 C-7 6.4 -13.5 4.2 -14 0 Z",
+};
 /** Direction of travel in degrees on screen (0 = right, 90 = down). Null if the points coincide. */
 export function headingDeg(a, b) {
   const dx = b.x - a.x, dy = b.y - a.y;
@@ -33,14 +44,14 @@ const SAIL = {
 };
 const sailPath = ([x, hw, d, sk]) => `M${x} ${-hw} C${r1(x + 2.8 * d)} ${r1(-hw * 0.75)} ${r1(x + sk + 2.8 * d)} ${r1(hw * 0.75)} ${x + sk} ${hw} Z`; // flat at the yard, belly towards the bow
 const sailBits = ([x, hw, d, sk], f) => { // yard line, seam lines and mast top for one sail
-  let h = `<line x1="${x - 0.2}" y1="${-hw - 0.6}" x2="${x + sk + 0.2}" y2="${hw + 0.6}" stroke="#3a2a1a" stroke-width=".5" stroke-linecap="round"/>`;
-  for (const k of [-0.5, 0, 0.5]) h += `<line x1="${r1(x + sk * (k + 1) / 2)}" y1="${r1(k * hw)}" x2="${r1(x + sk * (k + 1) / 2 + d * 2 * (1 - k * k) * 0.8)}" y2="${r1(k * hw)}" stroke="#3a2a1a" stroke-width=".18" opacity=".55"/>`;
-  return h + `<circle cx="${r1(x + d * 0.55)}" cy="0" r=".7" fill="#3a2a1a" stroke="#2a1d10" stroke-width=".2"/>`;
+  let h = `<line x1="${x - 0.2}" y1="${-hw - 0.6}" x2="${x + sk + 0.2}" y2="${hw + 0.6}" stroke="${INK}" stroke-width=".5" stroke-linecap="round"/>`;
+  for (const k of [-0.5, 0, 0.5]) h += `<line x1="${r1(x + sk * (k + 1) / 2)}" y1="${r1(k * hw)}" x2="${r1(x + sk * (k + 1) / 2 + d * 2 * (1 - k * k) * 0.8)}" y2="${r1(k * hw)}" stroke="${INK}" stroke-width=".18" opacity=".55"/>`;
+  return h + `<circle cx="${r1(x + d * 0.55)}" cy="0" r=".7" fill="${INK}" stroke="${INK}" stroke-width=".2"/>`;
 };
 const sailShade = ([x, hw, d, sk]) => { // leeward half of the sail in a soft shadow: de Casteljau split of the belly curve at t = .5
   const P = [[x, -hw], [x + 2.8 * d, -hw * 0.75], [x + sk + 2.8 * d, hw * 0.75], [x + sk, hw]], mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   const B = mid(P[1], P[2]), E = mid(B, mid(P[2], P[3])), M = mid(mid(mid(P[0], P[1]), B), E), C = mid(P[2], P[3]);
-  return `<path d="M${r1(M[0])} ${r1(M[1])} C${r1(E[0])} ${r1(E[1])} ${r1(C[0])} ${r1(C[1])} ${x + sk} ${hw} L${x} 0 Z" fill="#2a1d10" opacity=".1"/>`;
+  return `<path d="M${r1(M[0])} ${r1(M[1])} C${r1(E[0])} ${r1(E[1])} ${r1(C[0])} ${r1(C[1])} ${x + sk} ${hw} L${x} 0 Z" fill="#b9b09a" opacity=".6"/>`;
 };
 // Sail wear: tan cloth patches and ragged tears (a patch is mended cloth, a tear is a hole: neither occurs on a sound sail).
 const CLOTH = "#b7a273";
@@ -59,23 +70,28 @@ const PATCH1 = "M-5.5 -2.4 h3.4 v3.2 h-3.4 Z"; // plank patch: hull damage (shap
 const PATCH2 = "M2 -0.5 h3.4 v3.2 h-3.4 Z";
 const BOW_X = { barca: 8.5, cog: 12.5, caravel: 14.5, nao: 15 };
 const STERN_X = { barca: -8, cog: -11, caravel: -12, nao: -14 }; // hull stern tip per type
-/** SVG markup for one ship, bow pointing along +x. `mine` colours it red, rivals grey.
+/** SVG markup for one ship, bow pointing along +x. `mine` adds terracotta hull sides and a red pennant; rivals use ochre wood.
  *  weapons/gun/hull come from the ship record (weaponCount / gunCond / hull); defaults draw the intact ship. */
 export function shipSvg(type, { mine = false, heading = 0, weapons = 0, maxGuns, gun = 100, hull = 100 } = {}) {
-  const hullP = HULL[type] ?? HULL.cog, fill = mine ? "#7a2a1c" : "#55493a", sailFill = mine ? "#f6ecd2" : "#d8cfba";
+  const hullP = HULL[type] ?? HULL.cog, fill = mine ? "#a8533a" : WOOD, sailFill = mine ? LIGHT : "#e8e2d0";
   const key = HULL[type] ? type : "cog", sails = SAIL[key];
   const band = hull < 30 ? 2 : hull < 70 ? 1 : 0; // 0 intact, 1 hull patch + torn sail + mast leaning, 2 two patches, battered stern, holed sails, list
   const sx0 = STERN_X[key], wrap = (t, c) => t ? `<g transform="${t}">${c}</g>` : c;
   const list = band === 2 ? "translate(0 .5) scale(1 .94)" : "", lean = band === 2 ? "rotate(3)" : band === 1 ? "rotate(1.2)" : ""; // hull rolls to one side, rig leans the other way
-  let a = `<path d="${hullP}" fill="${fill}" stroke="#2a1d10" stroke-width=".9" stroke-linejoin="round"/>`;
-  a += `<path d="M${sx0 + 1.6} 0 L${BOW_X[key] - 2.5} 0" stroke="#3a2a1a" stroke-width=".35" opacity=".6" fill="none"/>`; // deck centreline
-  a += `<path d="${hullP}" transform="scale(.86)" fill="none" stroke="#8a6a44" stroke-width=".5"/>`; // inner rail
-  a += `<path d="${hullP}" transform="scale(.94)" fill="none" stroke="#e9d9b0" stroke-width=".22" opacity=".4"/>`; // sheer highlight on the gunwale
-  if (key === "barca") a += `<path d="M${sx0 + 1.2} 0.3 L${sx0 - 1.6} 1.7" stroke="#3a2a1a" stroke-width=".5" stroke-linecap="round"/>`; // steering oar
-  for (const c of CASTLE[key] ?? []) a += `<path d="${c}" fill="#8a6a44" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/>`;
+  let a = `<path d="${hullP}" fill="${fill}" stroke="${INK}" stroke-width=".9" stroke-linejoin="round"/>`;
+  a += `<path d="${HULL_SHADE[key]}" fill="${INK}" opacity=".3"/>`; // shaded lower strake
+  a += `<path d="${hullP}" transform="scale(.76 .68)" fill="${DECK}" stroke="${INK}" stroke-width=".4"/>`; // inset golden deck
+  a += `<path d="M${sx0 + 1.6} 0 L${BOW_X[key] - 2.5} 0" stroke="${INK}" stroke-width=".35" opacity=".6" fill="none"/>`;
+  a += `<path d="${hullP}" transform="scale(.86)" fill="none" stroke="${DECK}" stroke-width=".5"/>`; // raised wooden rail
+  a += `<path d="${hullP}" transform="scale(.94)" fill="none" stroke="${LIGHT}" stroke-width=".22" opacity=".7"/>`; // lit gunwale
+  if (key === "barca") a += `<path d="M${sx0 + 1.2} 0.3 L${sx0 - 1.6} 1.7" stroke="${INK}" stroke-width=".5" stroke-linecap="round"/>`;
+  for (const c of CASTLE[key] ?? []) {
+    a += `<path d="${c}" fill="${WOOD}" stroke="${INK}" stroke-width=".6" stroke-linejoin="round"/>`;
+    a += `<path d="${c}" transform="scale(.92 .72)" fill="${DECK}" stroke="${LIGHT}" stroke-width=".2"/>`; // raised castle deck, no buildings on the boat
+  }
   const main = sails.reduce((m, sl, i) => sl[1] > sails[m][1] ? i : m, 0);
-  const rig = sails.map((sl, i) => `<path d="${sailPath(sl)}" fill="${sailFill}" stroke="#2a1d10" stroke-width=".6" stroke-linejoin="round"/>${sailShade(sl)}${sailBits(sl)}${band && (band === 2 || i === main) ? sailWear(sl, band, i === main) : ""}`).join("");
-  let f = `<line x1="${sx0 + 2.4}" y1="0" x2="${sx0 + 2.4}" y2="-2.6" stroke="#2a1d10" stroke-width=".35"/><path d="M${sx0 + 2.4} -2.6 L${sx0 + 0.3} -2.2 L${sx0 + 2.4} -1.5 Z" fill="${mine ? "#7a2a1c" : "#3a2a1a"}"/>`; // tiny stern flag
+  const rig = sails.map((sl, i) => `<path d="${sailPath(sl)}" fill="${sailFill}" stroke="${INK}" stroke-width=".6" stroke-linejoin="round"/>${sailShade(sl)}${sailBits(sl)}${band && (band === 2 || i === main) ? sailWear(sl, band, i === main) : ""}`).join("");
+  let f = `<line x1="${sx0 + 2.4}" y1="0" x2="${sx0 + 2.4}" y2="-2.6" stroke="${INK}" stroke-width=".35"/><path d="M${sx0 + 2.4} -2.6 L${sx0 + 0.3} -2.2 L${sx0 + 2.4} -1.5 Z" fill="${mine ? "#b2403f" : INK}"/>`; // tiny stern flag
   let g = "";
   const cap = Math.max(0, Math.floor(maxGuns ?? VIS_MAX_GUNS[type] ?? 3)), n = Math.max(0, Math.min(Math.floor(weapons) || 0, cap));
   if (n > 0) { // gunports along both rails, one pair per mounted piece; worn pieces (gunCond < 50) render as half-width marks
