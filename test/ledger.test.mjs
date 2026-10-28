@@ -146,3 +146,9 @@ test("view: warning and debt messages read well in both languages", () => {
   assert.equal(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "en", fmt), "Cash is negative: you owe 12. Every week 2% interest is charged on that debt. Past 3000, you go bankrupt.");
   assert.ok(messageText({ kind: "debt", owed: 12, rate: 2, limit: 3000 }, "es", fmt).includes("debes 12"));
 });
+test('view: next weekly payment uses singular for one day and plural otherwise in ES/EN',()=>{
+ const g=idle();g.day=804;
+ assert.match(reportsHtml(g,'es',fmt),/en 1 día<\/b>/);assert.doesNotMatch(reportsHtml(g,'es',fmt),/en 1 días/);
+ assert.match(reportsHtml(g,'en',fmt),/in 1 day<\/b>/);assert.doesNotMatch(reportsHtml(g,'en',fmt),/in 1 days/);
+ g.day=803;assert.match(reportsHtml(g,'es',fmt),/en 2 días/);assert.match(reportsHtml(g,'en',fmt),/in 2 days/);
+});
