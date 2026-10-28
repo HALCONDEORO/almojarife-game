@@ -11,21 +11,21 @@ Status: candidate only. No beta.3 tag, release or packaged build is announced by
 | Council pardon and grain embargo defaults | #637 | 7c54025fb433c29b324ebb0037c348fafadb2223 |
 | Eight living-city defaults | #636 | 0e8e6e3b30041aa73ab0a9fc3262a50b82b5b0ad |
 | Household, calamity and regional-rival defaults | #639 | 9f525b13bf85a41851d19b02a3b3f611452a2eda |
+| Profitable tutorial sale, remembered voyage, reachable route controls and immediate council save | #640 | 1d91313db20b625bfd35c40e4dd709476b4bd7da |
 
-The source checkpoint is `9f525b13bf85a41851d19b02a3b3f611452a2eda`. Pages deployment run [40676422895](https://github.com/HALCONDEORO/almojarife-game/actions/runs/40676422895) succeeded for that SHA. A live read of `src/game/game.mjs` confirmed the household, calamity and regional-rival defaults. This is not evidence that a desktop binary contains this batch.
+The source checkpoint is `1d91313db20b625bfd35c40e4dd709476b4bd7da`. Pages deployment run [40678824304](https://github.com/HALCONDEORO/almojarife-game/actions/runs/40678824304) succeeded for that SHA. A live read of `src/game/tutorial.mjs` confirmed the new paid-cargo profit criterion. A live read of `src/game/game.mjs` confirmed the household, calamity and regional-rival defaults. This is not evidence that a desktop binary contains this batch.
 
 ## Candidate fixes, NOT integrated or shipped
 
-- [#640](https://github.com/HALCONDEORO/almojarife-game/pull/640): profitable tutorial sale, retain the prior voyage, visible/scrolled route controls and immediate council-visit save.
 - [#641](https://github.com/HALCONDEORO/almojarife-game/pull/641): free-navigation port order dispatches the docked convoy through the existing convoy operation.
 
-Neither is release scope until exact-head independent review, CI/Balance, merge and a final integrated playthrough. Do not tag this checkpoint before those decisions.
+Only #641 remains a code candidate. It is not release scope until exact-head independent review, CI/Balance, merge and a final integrated playthrough. Do not tag this checkpoint before those decisions.
 
 ## Evidence and limits
 
 1. Real Spanish desktop play on the published game: create a new trading house; buy 10 salt in Cádiz for 193.8; sail to Huelva; arrive with cargo; sell for 342.02; cash approximately 2448 after travel; save and reload in Huelva with empty cargo. The town hall displays justice, letters of marque and a Portuguese peace restriction. No state/save injection was used.
-2. Published-game failures found: a losing same-port sale advances the tutorial; the prior voyage is forgotten when the profitable sale happens afterward; the route window extends offscreen at 1280x720; council progress is not immediately saved. #640 is a candidate fix, not a retrospective PASS for the published game.
-3. Real local #640 candidate play completes the five-step tutorial through actual market, map, route and council controls, then reloads to check persistence. Its browser regression also rejects the losing round-trip and asserts viewport containment. Unit/affected tests: 56 PASS. This run does not replace final integrated or live verification.
+2. Pre-#640 published-game failures found: a losing same-port sale advances the tutorial; the prior voyage is forgotten when the profitable sale happens afterward; the route window extends offscreen at 1280x720; council progress is not immediately saved. #640 fixes are now merged and deployed. Their source and deployment checks do not retrospectively turn the failed pre-fix playtest into PASS.
+3. Real local #640 play completes the five-step tutorial through actual market, map, route and council controls, then reloads to check persistence. Its browser regression also rejects the losing round-trip and asserts viewport containment. Unit/affected tests: 56 PASS. This run does not replace final integrated or live verification.
 4. Real #641 before/after play orders a barque, lets the real clock reach construction day 8, forms a two-ship convoy and right-clicks Huelva. Before: both stay docked with a refusal. Candidate: both depart for Huelva with equal remaining ticks.42 affected tests PASS. This crosses the first weekly settlement; it does not certify every calamity, pirate encounter or a long-lived convoy.
 5. #639 balance PASS is under the new conservative L2 builder and same-horizon NPC ON/OFF 0.25-4x policy. It is NOT a PASS under the retired absolute 30x growth criterion and does NOT establish L3 robustness. The legacy L3 bankruptcies remain recorded in `docs/evidence/world-systems`.
 
@@ -33,7 +33,7 @@ No private saves, credentials or customer data belong in release assets. Screens
 
 ## Remaining gates before publication
 
-- Resolve #640/#641 against exact-head independent review and green CI/Balance; re-review any changed head.
+- Resolve #641 against exact-head independent review and green CI/Balance; re-review any changed head.
 - Refresh this table, CHANGELOG and release notes to the final integrated source SHA. Review the documentation independently.
 - Repeat the real Spanish desktop paths on the final integrated candidate and verify the exact Pages deployment. Keep any incomplete scenario explicit rather than converting it into PASS.
 - Show the final short scope, version, SHA and limits before publication. The release owner decides whether remaining limits are acceptable.

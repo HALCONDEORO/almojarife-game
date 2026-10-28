@@ -9,7 +9,8 @@ The next proposed batch is `v0.5.0-beta.3`; it has not been tagged or published 
 - Letters of marque and prize handling (#635), council pardon and grain embargo defaults (#637).
 - Eight living-city defaults (#636); household, calamity and regional-rival defaults (#639).
 - Balance caveat: #639 passes the new conservative L2 and same-horizon NPC ON/OFF policy, not the retired absolute 30x criterion; legacy L3 bankruptcies remain visible.
-- Tutorial/layout #640 and free-navigation convoy #641 are still candidates, not integrated or shipped at this checkpoint.
+- Profitable tutorial sales, remembered voyages, reachable route controls and immediate council-visit saving (#640), merged and deployed at 1d91313db20b625bfd35c40e4dd709476b4bd7da.
+- Free-navigation convoy #641 is still a candidate, not integrated or shipped at this checkpoint.
 
 ### Integrated source batch, 26 October 2026
 - Route and finance cards, missions, tabs, port details and notices in the right panel.
