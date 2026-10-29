@@ -1550,9 +1550,9 @@ function showCreate(name) {
       `<p><label><input type="checkbox" id="p-freenav" ${freeNav ? "checked" : ""}> ${t.freeNavLbl}</label> <small>${t.freeNavInfo}</small></p><p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
     $("p-co").value = pf.company; $("p-ch").value = pf.character; // set as values, never parsed as HTML
     const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; freeNav = $("p-freenav").checked === true; };
-    el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); });
-    el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); pf.crest[b.dataset.k] = b.dataset.v; draw(); });
-    for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); };
+    el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); el.querySelector(`[data-p="${pf.portrait}"]`)?.focus(); });
+    el.querySelectorAll(".sw").forEach((b) => b.onclick = () => { read(); const key = b.dataset.k, value = b.dataset.v; pf.crest[key] = value; draw(); el.querySelector(`.sw[data-k="${key}"][data-v="${value}"]`)?.focus(); });
+    for (const [id, set] of [["p-home", (v) => pf.home = v], ["p-bg", (v) => pf.background = v], ["p-df", (v) => pf.difficulty = v], ["p-sh", (v) => pf.crest.shield = v], ["p-dv", (v) => pf.crest.division = v], ["p-cg", (v) => pf.crest.charge = v]]) $(id).onchange = (e) => { read(); set(e.target.value); draw(); $(id)?.focus(); };
     $("p-back").onclick = () => { read(); createDraft = {profile: pf, freeNav}; showTitle(); };
     $("p-go").onclick = () => {
       read();
