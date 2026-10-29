@@ -951,7 +951,7 @@ function render() {
           `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => {
             const price = armoryPrice(g, s.at, w.price), why = away ? "not in this port" : weaponCount(s) >= maxCannons(s) ? "full" : armoryBlock(g, s, w.weight, price, g.cash);
             const reason = why === "not in this port" ? (en ? "Dock this ship here first." : "Atraca este barco aquí primero.") : (SW[lang] ?? SW.es).armWhy[why];
-            return `<span><button data-weapon="${k}" ${why ? "disabled" : ""} title="${esc(reason ?? t.weaponPowerLbl.replace('{p}', w.power))}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(price))}</button>${why ? `<small class="yd-arm-reason">${esc(reason ?? why)}</small>` : ""}</span>`;
+            return `<span><button data-weapon="${k}" ${why ? "disabled" : ""} title="${esc(reason ?? t.weaponPowerLbl.replace('{p}', w.power))}">${t.weaponBuy.replace("{w}", t.weaponNames[k]).replace("{p}", fmt(price))}</button><small class="yd-arm-weight">${en ? `Uses ${w.weight} cargo space` : `Ocupa ${w.weight} de bodega`}</small>${why ? `<small class="yd-arm-reason">${esc(reason ?? why)}</small>` : ""}</span>`;
           }).join("")}</div>`);
 
         // 2. convoy, only when it applies
