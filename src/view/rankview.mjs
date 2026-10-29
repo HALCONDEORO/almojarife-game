@@ -1,3 +1,4 @@
+import { originHouseHtml } from "./originview.mjs";
 // Rank and respect text (ES/EN) and the "House" panel. No game rules here.
 import { RANKS, RESPECT, nextRank, respectIndex, repOf, loanCapFor, heldRank, ensureRep } from "../game/rank.mjs";
 import { REP_TIERS, repTierIndex, portRep, REP_FEE_MUL, REP_REPAIR_MUL } from "../game/reputation.mjs";
@@ -26,6 +27,7 @@ export function houseHtml(g, lang, worth, fmt, cityName, loanBase = 5000) {
   let h = `<div class="of"><section class="of-hero"><h3>${t.title}</h3><div class="of-big"><span><small>${t.rank}</small><b>${rankName(lang, RANKS[i].id)}</b></span><span><small>${t.worth}</small><b>${fmt(worth)}</b></span></div>`;
   h += `<div class="of-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${t.next.replace("{r}", n ? rankName(lang, n.rank.id) : "").replace("{m}", n ? fmt(n.missing) : "")}"><i style="width:${pct}%"></i></div>`;
   h += `<p class="of-next">${n ? t.next.replace("{r}", rankName(lang, n.rank.id)).replace("{m}", fmt(n.missing)) : t.top}</p></section>`;
+  h += originHouseHtml(g,lang,cityName);
   // Rank ladder as steps: reached, current, ahead.
   h += `<ol class="of-steps" aria-label="${t.ladder}">` + RANKS.map((r, k) => `<li class="${k < i ? "done" : k === i ? "now" : "ahead"}"${k === i ? ' aria-current="step"' : ""}><b>${rankName(lang, r.id)}</b><small>${t.from} ${fmt(r.from)}</small></li>`).join("") + `</ol>`;
   // Perks as cards.
