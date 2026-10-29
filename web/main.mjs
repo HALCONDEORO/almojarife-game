@@ -1,3 +1,4 @@
+import { crestColorChoices } from "../src/view/crestcolors.mjs";
 import { portraitChoices } from "../src/view/portraitchoices.mjs";
 import {syncTradeCardVisibility} from "../src/view/tradecardvisibility.mjs";
 import { syncFullscreenButtons } from "./fullscreen.mjs";
@@ -66,7 +67,7 @@ import { buildWorld } from "../src/sim/world.mjs";
 import { shipPosition } from "../src/sim/position.mjs";
 import { serialize as packGame, deserialize as unpackGame, cleanCompany } from "../src/game/gamesave.mjs";
 import { DIFFICULTY_IDS } from "../src/game/difficulty.mjs";
-import { defaultProfile, cleanProfile, startBonus, startOptions, crestSvg, portraitSvg, flagSvg, PALETTE, DIVISIONS, CHARGES, SHIELDS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
+import { defaultProfile, cleanProfile, startBonus, startOptions, crestSvg, portraitSvg, flagSvg, DIVISIONS, CHARGES, SHIELDS, BACKGROUNDS, NAMES } from "../src/game/profile.mjs";
 import { previewBuy, previewSell, FEE } from "../src/sim/trade.mjs";
 import { stockLevel } from "../src/game/stocklevel.mjs";
 import { listSlots, readSlot, writeSlot, clearSlot } from "../src/game/saveslots.mjs";
@@ -1534,7 +1535,7 @@ document.addEventListener("keydown", (e) => { if (e.defaultPrevented) return; if
 // freeNav defaults ON for new games (Marco 23/10: all flags on); existing saves keep their own flag.
 let createDraft = null; // kept only in memory until a new campaign starts
 function showCreate(name) {
-  t = T[lang]; let freeNav = createDraft?.freeNav ?? true; const el = $("title"), pf = createDraft?.profile ?? defaultProfile(name || t.defCo), swatch = (key) => PALETTE.map((c) => `<button class="sw ${pf.crest[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  t = T[lang]; let freeNav = createDraft?.freeNav ?? true; const el = $("title"), pf = createDraft?.profile ?? defaultProfile(name || t.defCo), swatch = (key) => crestColorChoices(pf.crest, key, lang);
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
     el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
