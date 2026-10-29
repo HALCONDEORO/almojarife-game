@@ -1,3 +1,4 @@
+import { initOrigin } from "./origin.mjs";
 import {regionalHousePlan,regionalRivalStep} from "./rivalhouses.mjs";
 // M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
 import { setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, processRoutes } from "./routes.mjs";
@@ -126,6 +127,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.tutorial === true) initTutorial(g); // first-voyage tutorial, any difficulty; OFF by default: no key in an off game (saves stay identical)
   refreshIntel(g);
   startingChart(g, start); // a new trader knows his home coast
+  if (opts.originConnections === true) initOrigin(g); // new-profile starts only; never replayed by save loading
   return g;
 }
 const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
