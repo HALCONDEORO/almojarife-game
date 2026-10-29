@@ -1,3 +1,4 @@
+import {routeKind,remainingRoute} from '../src/view/navmarks.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -70,11 +71,11 @@ function renderRoutes({ voyage = null, automatic = false, estimate = null } = {}
   const s = { at: "a", voyage, route: automatic ? { v: 2 } : null };
   const before = JSON.stringify({ world, s, estimate });
   const html = runInNewContext(fragment, {
-    world, s, target: "b", g: {}, cityIdSet: new Set(["a", "b", "hidden"]),
+    world, s, target: "b", g: {ships:[s]}, cityIdSet: new Set(["a", "b", "hidden"]),
     isDiscovered: (_, id) => id !== "hidden", X: x => x, Y: y => y,
     shipPosition: () => ({ lon: 1.5, lat: 2.5 }), tickAcc: 0, tickDurationMs: () => 1,
     travelEstimate: () => estimate, legWindEst: () => 1,
-    routeStrokeAttrs, routeLineSvg, chartOrnamentSvg:()=>"", location:{search:""}, URLSearchParams, mapMode:"geographic", lang:"es",
+    routeKind,remainingRoute,chartLabels:()=>new Map(),routeStrokeAttrs, routeLineSvg, chartOrnamentSvg:()=>"", location:{search:""}, URLSearchParams, mapMode:"geographic", lang:"es",
   });
   assert.equal(JSON.stringify({ world, s, estimate }), before, "rendering must not mutate game inputs");
   assert.equal((html.match(/<line /g) ?? []).length, 1, "hidden lanes stay hidden");
@@ -82,8 +83,8 @@ function renderRoutes({ voyage = null, automatic = false, estimate = null } = {}
   return html;
 }
 
-test("main renders selected voyages solid, automatic voyages thinner, with unchanged points", () => {
-  const voyage = { path: ["b"] };
+test("main renders selected voyages solid, automatic voyages thinner, with remaining waypoints and main styles", () => {
+  const voyage = { path: ["a","b"], totalTicks:10,ticksLeft:10,km:1 };
   assert.ok(renderRoutes({ voyage }).includes(routeLineSvg("1.5,2.5 3,4", "active")));
   assert.ok(renderRoutes({ voyage, automatic: true }).includes(routeLineSvg("1.5,2.5 3,4", "automatic")));
 });
