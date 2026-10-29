@@ -1,3 +1,4 @@
+import { originChoiceHtml, originTavernHtml } from "../src/view/originview.mjs";
 import { startSummaryHtml } from "../src/view/startsummary.mjs";
 import { foundingHarbor } from "../src/view/foundingharbor.mjs";
 import { crestColorChoices } from "../src/view/crestcolors.mjs";
@@ -948,6 +949,7 @@ function render() {
       const ls = g.loans ?? [];
       h += ls.length ? ls.map((l) => `<div class="card">${t.bankLoan.replace("{d}", l.taken).replace("{l}", fmtM(l.left)).replace("{u}", l.due)}<br><button data-repay="${l.id}:all" ${g.cash > 0 ? "" : "disabled"}>${t.bankRepay}</button> <button data-repay="${l.id}:100" ${g.cash >= 100 ? "" : "disabled"}>${t.bankRepay100}</button></div>`).join("") : `<p><i>${t.bankNone}</i></p>`;
     } else if (tab === "tavern") {
+      h += originTavernHtml(g,s.at,lang);
       h += tavernCaptainsHtml(g,s,lang);
       const unk = world.cities.filter((c) => !isLive(g, c.id));
       h += `<p>${t.tavernInfo}</p>` + (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}">${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
@@ -1545,7 +1547,7 @@ function showCreate(name) {
       `<label>${t.company}<input id="p-co" maxlength="30" autocomplete="off"></label><label>${t.character}<input id="p-ch" maxlength="30" autocomplete="off"></label>` +
       `<div class="founding-label">${t.portrait}</div><div class="ports" role="group" aria-label="${t.portrait}">${portraitChoices(pf.portrait, pf.crest.c1, lang)}</div>` +
       `<label>${t.home}<select id="p-home">${opt(cityIds, pf.home, (id) => cityName(id))}</select></label>` +
-      `<label>${t.background}<select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small class="founding-bonus">${t.bgInfo[pf.background]}</small></section>` +
+      `<label>${t.background}<select id="p-bg" aria-describedby="founding-origin">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small class="founding-bonus">${t.bgInfo[pf.background]}</small>${originChoiceHtml(world,pf,lang,cityName)}</section>` +
       `<section class="founding-section"><h3><span>II</span> ${t.crest}</h3><label>${t.shield}<select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label><label>${t.division}<select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label><label>${t.charge}<select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
       `<div class="founding-label">${t.c1}</div><div class="founding-swatches" role="group" aria-label="${t.c1}">${swatch("c1")}</div><div class="founding-label">${t.c2}</div><div class="founding-swatches" role="group" aria-label="${t.c2}">${swatch("c2")}</div>` +
       `<label>${t.difficulty}<select id="p-df" aria-describedby="founding-difficulty">${opt(DIFFICULTY_IDS, pf.difficulty, (d) => t.diffName[d])}</select></label><small id="founding-difficulty">${t.diffInfo}</small>${startSummaryHtml(pf, START_CASH, lang)}</section></div></div>` +
