@@ -7,7 +7,8 @@ A maritime trading game set around Iberia and North Africa in the 15th-16th cent
 **Desktop only:** keyboard and mouse on Windows, macOS or Linux. Phones and tablets are not supported. The interface is available in English and Spanish. Browser saves stay on your device; no player account is needed.
 
 - [Play in a desktop browser](https://halcondeoro.github.io/almojarife-game/).
-- [Releases and downloads](https://github.com/HALCONDEORO/almojarife-game/releases).
+- [Source releases and release notes](https://github.com/HALCONDEORO/almojarife-game/releases).
+- [Desktop packages: beta.2 (older build)](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2). Newer source-only releases do not include installers.
 - [Detailed player guide (Spanish)](docs/COMO-JUGAR.md).
 
 ## Version and beta status
@@ -16,9 +17,9 @@ This README describes integrated source through `d17fa192b868f5635ac9121c962a449
 
 | Checkpoint | What it contains |
 | --- | --- |
-| [v0.5.0-beta.4](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.4) | Source-only pre-release, published 28 October 2026 at immutable commit `b4abf57dc565b5858bdb30149627ae70e9c95af8`. No attached desktop packages. The later shipyard cargo-cost explanation (#671) is not in this tag. |
+| [v0.5.0-beta.4](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.4) | Source-only checkpoint, published 28 October 2026 at immutable commit `b4abf57dc565b5858bdb30149627ae70e9c95af8`. No attached desktop packages. The later shipyard cargo-cost explanation (#671) is not in this tag. |
 | [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) | Source-only pre-release, published 28 October 2026 at immutable commit `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No attached desktop packages. Later main-branch navigation and Settings fixes are not in this tag. |
-| [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) | Still marked Latest at this check. Six desktop packages and `SHA256SUMS.txt`, published 27 October 2026. These packages do not contain later main-branch work. |
+| [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) | Desktop binary checkpoint. Six desktop packages and `SHA256SUMS.txt`, published 27 October 2026. These packages do not contain later main-branch work. |
 | Current source | Includes navigation and Settings fixes, keyboard-safe pause/save dialogs, save-failure recovery, creation-form draft retention, effective cargo labels and visible shipyard weapon cargo costs. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
 
 The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **1/20 since beta.4**, excluding merges into non-main branches. This is a dated count, not a live counter or a promise of another release. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
@@ -97,7 +98,7 @@ Older images remain in `docs/img/` to preserve existing links; they are not pres
 
 ## Desktop downloads
 
-Open the [release page](https://github.com/HALCONDEORO/almojarife-game/releases) and read the notes for the version you choose. **Do not assume every beta has binaries, checksums or signatures.** Beta.3 and beta.4 are source-only. Beta.2 currently offers:
+For the currently available desktop packages, open [beta.2 downloads](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2), an older build. For source checkpoints and notes, open [all releases](https://github.com/HALCONDEORO/almojarife-game/releases). Read the notes for the version you choose. **Do not assume every beta has binaries, checksums or signatures.** Beta.3 and beta.4 are source-only. Beta.2 currently offers:
 
 | Platform | Beta.2 assets |
 | --- | --- |
