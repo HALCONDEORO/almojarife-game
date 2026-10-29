@@ -12,15 +12,16 @@ A maritime trading game set around Iberia and North Africa in the 15th-16th cent
 
 ## Version and beta status
 
-This README describes integrated source through `cb71610b112655cdf5e26dabd29862b3aca2443b` on 28 October 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
+This README describes integrated source through `d17fa192b868f5635ac9121c962a4493b0a34daa` on 29 October 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
 
 | Checkpoint | What it contains |
 | --- | --- |
+| [v0.5.0-beta.4](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.4) | Source-only pre-release, published 28 October 2026 at immutable commit `b4abf57dc565b5858bdb30149627ae70e9c95af8`. No attached desktop packages. The later shipyard cargo-cost explanation (#671) is not in this tag. |
 | [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) | Source-only pre-release, published 28 October 2026 at immutable commit `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No attached desktop packages. Later main-branch navigation and Settings fixes are not in this tag. |
 | [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) | Still marked Latest at this check. Six desktop packages and `SHA256SUMS.txt`, published 27 October 2026. These packages do not contain later main-branch work. |
-| Current source | Includes map previews, camera centering/minimap, ship following and Settings Escape/large-text viewport fixes. See the [changes since beta.3](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.3...main); this comparison advances as main changes. |
+| Current source | Includes navigation and Settings fixes, keyboard-safe pause/save dialogs, save-failure recovery, creation-form draft retention, effective cargo labels and visible shipyard weapon cargo costs. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
 
-The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **16/20 since beta.3**, excluding merges into non-main branches. This is a dated count, not a live counter or a claim that beta.4 exists. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
+The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **1/20 since beta.4**, excluding merges into non-main branches. This is a dated count, not a live counter or a promise of another release. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
 
 This is an unfinished beta. Campaign completion, economy balance, save migration, accessibility and browser coverage are not declared complete. Export a save backup before trying another version. Compatibility with every older save is not promised.
 
@@ -28,7 +29,7 @@ This is an unfinished beta. Campaign completion, economy balance, save migration
 
 English button names are used below; the screenshots show the Spanish interface.
 
-1. Choose **New game**, name your merchant house and character, and choose a home port. A new game opens the city and tutorial.
+1. Choose **New game**, name your merchant house and character, and choose a home port. A new game opens the city and tutorial. Returning with Back keeps the form draft until a campaign starts (not across a browser reload).
 2. Open **Market**, choose a quantity and buy a good. Check the price, your coins and available cargo space before buying.
 3. Use **Back to map**. With your ship selected, **right-click** an explored port to sail in a new free-navigation game. Left-clicking is not a sail order. A charted but unexplored port is not the same as an explored destination.
 4. Press **Resume** so time advances. At the destination, sell in its Market. The tutorial requires a manual, profitable sale of purchased cargo, not selling at a loss or letting an automatic route do it for you.
@@ -64,7 +65,7 @@ Older saves without free navigation keep the older destination-selection and **S
 The current base world data contains **33 cities and 20 goods**. These are game data, not a claim of historically exact populations, borders or production.
 
 - **Trading and information:** changing markets, cargo and warehouses, paid rumors/reports and incomplete knowledge of other ports. A price estimate is not a guaranteed profit.
-- **Ships and crews:** construction, hull repairs, equipment, captains and convoys. Rename a ship from the Fleet dropdown or its window. Sell ships at the **Town hall auction**, not the Shipyard; the last ship and ships with cargo cannot be sold.
+- **Ships and crews:** construction, hull repairs, equipment, captains and convoys. Weapons occupy cargo space; the Shipyard shows each weapon's cargo cost before purchase. Rename a ship from the Fleet dropdown or its window. Sell ships at the **Town hall auction**, not the Shipyard; the last ship and ships with cargo cannot be sold.
 - **Automatic routes:** simple return routes or advanced multi-stop buy/sell rules, price limits and a cash reserve. Routes can stall when stock, money or conditions are missing. Read their feedback and accounts rather than assuming steady profit.
 - **Cities and your house:** a 2D city with selectable buildings, plots, warehouses, stewards, workshops, banking, contracts and council services. Costs and requirements are shown in each window; some buildings are scenery without services.
 - **Voyage and campaign decisions:** weather, sea events, pirates, ranks, missions and council/justice systems. Availability depends on the game state; this is not a claim that the campaign has been fully playtested.
@@ -72,13 +73,13 @@ The current base world data contains **33 cities and 20 goods**. These are game 
 
 ## Saves and recovery
 
-Open **Menu** to save, manage slots, export/import or change Settings. **Continue** on the title screen loads the saved game. Browser storage does not sync across browsers or devices. Export before clearing site data or changing builds.
+Open **Menu** to save, manage slots, export/import or change Settings. **Continue** on the title screen loads the saved game. Browser storage does not sync across browsers or devices. Export before clearing site data or changing builds. Slot overwrite, load, delete and backup restore use in-game confirmation dialogs; Cancel is focused first. If storage is full or saving fails, the game reports the failure and offers export of the current campaign rather than claiming it was saved.
 
 The game attempts additional autosaves every three minutes and when the page is hidden or left, when campaign data has changed. Browser lifecycle saves are best effort, not protection against every crash. Keep an exported copy of a campaign you care about.
 
 ## Real gameplay screenshots
 
-These are from a **real new game**, in Spanish at 1280×720, played on source `ace71d6` on 28 October 2026, without injecting campaign state: buy in Cádiz, sail to Huelva, sell profitably, set an automatic route and visit Town hall. The playthrough completed all five tutorial flags and verified **Continue** after reload. It does not certify an installer or the deployed site. Later camera and Settings checks are separate from this screenshot checkpoint.
+These are from a **real new game**, in Spanish at 1280×720, played on source `ace71d6` on 28 October 2026, without injecting campaign state: buy in Cádiz, sail to Huelva, sell profitably, set an automatic route and visit Town hall. The playthrough completed all five tutorial flags and verified **Continue** after reload. These older market, route and council captures remain an explicitly dated playthrough, not a current-build or installer certification. The shipyard capture below is a separate current-source checkpoint.
 
 | Market after arrival | Setting a route |
 | --- | --- |
@@ -86,11 +87,17 @@ These are from a **real new game**, in Spanish at 1280×720, played on source `a
 
 ![Huelva Town hall at step 4/5, before setting the route and making the final visit](docs/img/player-guide/council.png)
 
+### Current shipyard cargo costs
+
+![Spanish shipyard showing weapon purchase prices and cargo-space costs before purchase](docs/img/player-guide/shipyard-weight.png)
+
+Captured from the public browser game at source `d17fa192b868f5635ac9121c962a4493b0a34daa` on 29 October 2026, in a real new campaign at 1280×720. The hosted JavaScript and HTML matched that commit. A Balista purchase was separately checked to reduce available cargo space from 60 to 59; weapon costs are 1/2/3/5 cargo units. No private campaign data or injected campaign state. This is not a packaged-app or full-campaign certification.
+
 Older images remain in `docs/img/` to preserve existing links; they are not presented here as evidence of the current interface.
 
 ## Desktop downloads
 
-Open the [release page](https://github.com/HALCONDEORO/almojarife-game/releases) and read the notes for the version you choose. **Do not assume every beta has binaries, checksums or signatures.** Beta.3 is source-only. Beta.2 currently offers:
+Open the [release page](https://github.com/HALCONDEORO/almojarife-game/releases) and read the notes for the version you choose. **Do not assume every beta has binaries, checksums or signatures.** Beta.3 and beta.4 are source-only. Beta.2 currently offers:
 
 | Platform | Beta.2 assets |
 | --- | --- |
