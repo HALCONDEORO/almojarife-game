@@ -1,3 +1,4 @@
+import {syncTradeCardVisibility} from "../src/view/tradecardvisibility.mjs";
 import { confirmDialog } from "./confirmdialog.mjs";
 import { installModalFocus } from "./modalfocus.mjs";
 import { armoryBlock } from "../src/sim/armory.mjs";
@@ -303,6 +304,7 @@ function drawShips() {
   }
   for (const [id, el] of shipEls) if (!seen.has(id)) { el.remove(); shipEls.delete(id); }
   wakesEl.innerHTML = wakes; scaleMarkers();
+  syncTradeCardVisibility($("map"));
 }
 function stepTicks(n) {
   for (let i = 0; i < n; i++) {
