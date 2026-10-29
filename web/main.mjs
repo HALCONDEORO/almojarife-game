@@ -1,3 +1,4 @@
+import { foundingHarbor } from "../src/view/foundingharbor.mjs";
 import { crestColorChoices } from "../src/view/crestcolors.mjs";
 import { portraitChoices } from "../src/view/portraitchoices.mjs";
 import {syncTradeCardVisibility} from "../src/view/tradecardvisibility.mjs";
@@ -104,7 +105,7 @@ import { pendingEvent, resolveEvent } from "../src/game/events.mjs";
 import { travelEstimate, cityMenu, shipForKey } from "../src/view/nav.mjs";
 import { doGoTo } from "../src/game/game.mjs";
 import { contactsOf, hireContact, fireContact, CONTACT_PRICE, CONTACT_MAX } from "../src/game/contacts.mjs";
-import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR } from "../src/sim/clock.mjs"; // TICKS_PER_DAY comes via game.mjs
+import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR, START_YEAR } from "../src/sim/clock.mjs"; // TICKS_PER_DAY comes via game.mjs
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
@@ -1538,16 +1539,16 @@ function showCreate(name) {
   t = T[lang]; let freeNav = createDraft?.freeNav ?? true; const el = $("title"), pf = createDraft?.profile ?? defaultProfile(name || t.defCo), swatch = (key) => crestColorChoices(pf.crest, key, lang);
   const opt = (list, cur, label, key) => list.map((v) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label(v)}</option>`).join("");
   const draw = () => {
-    el.innerHTML = `<div class="box wide"><h2>${t.create}</h2><div class="cols"><div>` +
-      `<label>${t.company}<br><input id="p-co" maxlength="30"></label><label>${t.character}<br><input id="p-ch" maxlength="30"></label>` +
-      `<div>${t.portrait}</div><div class="ports">${portraitChoices(pf.portrait, pf.crest.c1, lang)}</div>` +
-      `<label>${t.home}<br><select id="p-home">${opt(cityIds, pf.home, (id) => cityName(id))}</select></label>` +
-      `<label>${t.difficulty}<br><select id="p-df">${opt(DIFFICULTY_IDS, pf.difficulty, (d) => t.diffName[d])}</select></label><small>${t.diffInfo}</small>` +
-      `<label>${t.background}<br><select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small>${t.bgInfo[pf.background]}</small></div>` +
-      `<div><div>${t.crest}</div><div class="prev">${crestSvg(pf.crest, 96, "prev")}${portraitSvg(pf.portrait, pf.crest.c1, 96)}</div>` +
-      `<label>${t.shield} <select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label> <label>${t.division} <select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label> <label>${t.charge} <select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
-      `<div>${t.c1}</div><div>${swatch("c1")}</div><div>${t.c2}</div><div>${swatch("c2")}</div></div></div>` +
-      `<p><label><input type="checkbox" id="p-freenav" ${freeNav ? "checked" : ""}> ${t.freeNavLbl}</label> <small>${t.freeNavInfo}</small></p><p><button id="p-back">${t.back}</button> <button id="p-go">${t.start}</button></p></div>`;
+    const es = lang === "es";
+    el.innerHTML = `<section class="box wide founding" role="dialog" aria-modal="true" aria-labelledby="founding-title" lang="${lang}"><header class="founding-heading"><div><small>${es ? "REGISTRO DE LA CASA MERCANTIL" : "REGISTER OF THE MERCHANT HOUSE"}</small><h2 id="founding-title">${t.create}</h2></div><span class="founding-year">${START_YEAR}</span></header><div class="founding-body"><aside class="founding-preview">${foundingHarbor(cityName(pf.home), lang)}<div class="founding-seal"><div class="prev">${crestSvg(pf.crest, 84, "founding")}${portraitSvg(pf.portrait, pf.crest.c1, 84)}</div><p>${es ? "Tu nombre, tus colores, tu puerto." : "Your name, your colours, your port."}</p></div><div class="founding-goods" aria-hidden="true"><img src="icons-img/timber.webp" alt=""><img src="icons-img/cloth.webp" alt=""><img src="icons-img/grain.webp" alt=""></div></aside><div class="founding-form"><section class="founding-section"><h3><span>I</span> ${es ? "El mercader" : "The merchant"}</h3>` +
+      `<label>${t.company}<input id="p-co" maxlength="30" autocomplete="organization"></label><label>${t.character}<input id="p-ch" maxlength="30" autocomplete="name"></label>` +
+      `<div class="founding-label">${t.portrait}</div><div class="ports" role="group" aria-label="${t.portrait}">${portraitChoices(pf.portrait, pf.crest.c1, lang)}</div>` +
+      `<label>${t.home}<select id="p-home">${opt(cityIds, pf.home, (id) => cityName(id))}</select></label>` +
+      `<label>${t.background}<select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small class="founding-bonus">${t.bgInfo[pf.background]}</small></section>` +
+      `<section class="founding-section"><h3><span>II</span> ${t.crest}</h3><label>${t.shield}<select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label><label>${t.division}<select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label><label>${t.charge}<select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
+      `<div class="founding-label">${t.c1}</div><div class="founding-swatches" role="group" aria-label="${t.c1}">${swatch("c1")}</div><div class="founding-label">${t.c2}</div><div class="founding-swatches" role="group" aria-label="${t.c2}">${swatch("c2")}</div>` +
+      `<label>${t.difficulty}<select id="p-df" aria-describedby="founding-difficulty">${opt(DIFFICULTY_IDS, pf.difficulty, (d) => t.diffName[d])}</select></label><small id="founding-difficulty">${t.diffInfo}</small></section></div></div>` +
+      `<footer class="founding-footer"><details class="founding-navigation"><summary>${t.freeNavLbl}</summary><label><input type="checkbox" id="p-freenav" ${freeNav ? "checked" : ""}> ${t.freeNavLbl}</label><small>${t.freeNavInfo}</small></details><div class="founding-actions"><button id="p-back">${t.back}</button><button id="p-go">${t.start} <span aria-hidden="true">›</span></button></div></footer></section>`;
     $("p-co").value = pf.company; $("p-ch").value = pf.character; // set as values, never parsed as HTML
     const read = () => { pf.company = $("p-co").value; pf.character = $("p-ch").value; freeNav = $("p-freenav").checked === true; };
     el.querySelectorAll(".pt").forEach((b) => b.onclick = () => { read(); pf.portrait = +b.dataset.p; draw(); el.querySelector(`[data-p="${pf.portrait}"]`)?.focus(); });
