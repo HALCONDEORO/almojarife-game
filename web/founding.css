@@ -31,3 +31,6 @@
 /* Two deliberate rows, not a lone portrait wrapped onto a second line. */
 .founding .ports{display:grid;grid-template-columns:repeat(4,max-content);gap:6px;margin-bottom:12px}
 .founding .pt{padding:0}
+.founding-seal #founding-person-name{display:block;font-size:19px;font-weight:400;margin-top:12px;overflow-wrap:anywhere;color:var(--ink,#302719)}
+.founding-seal #founding-house-name{display:block;margin-top:4px;font-size:13px;overflow-wrap:anywhere;color:var(--ink-soft,#5a4a32)}
+@media(max-height:760px){.founding-seal #founding-person-name{font-size:17px;margin-top:8px}.founding-seal p{display:none}}
