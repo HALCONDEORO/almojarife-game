@@ -1,4 +1,5 @@
 import {syncTradeCardVisibility} from "../src/view/tradecardvisibility.mjs";
+import { syncFullscreenButtons } from "./fullscreen.mjs";
 import { confirmDialog } from "./confirmdialog.mjs";
 import { installModalFocus } from "./modalfocus.mjs";
 import { armoryBlock } from "../src/sim/armory.mjs";
@@ -619,7 +620,7 @@ function render() {
   $("play").textContent = playing ? t.pause : t.play; $("spd").textContent = `${speed}x`; $("play").title = t.tipHdrPlay; $("spd").title = t.tipHdrSpeed;
   { const pn = $("pausenote"); if (pn) { const ps = !playing && pauseNote && !g.pending && !g.encounterReport && !g.over ? g.ships.find((x) => x.id === pauseNote.ship) : null;
     pn.textContent = ps ? t.pauseArrive.replace("{ship}", ps.name ?? `${T[lang].types[ps.type] ?? ps.type} ${ps.id}`).replace("{city}", cityName(pauseNote.city)) : ""; } }
-  $("new").textContent = t.menu; { const fl = lang === "es" ? "Pantalla completa" : "Fullscreen"; $("fs").title = fl; $("fs").setAttribute("aria-label", fl); } $("lang").textContent = lang === "es" ? "EN" : "ES";
+  $("new").textContent = t.menu; syncFullscreenButtons([$("fs")], !!document.fullscreenElement, lang); $("lang").textContent = lang === "es" ? "EN" : "ES";
   syncCityControls();
   syncMissionEcho();
   const objMin = localStorage.getItem("missionMin") === "1", objLine = g.over ? "" : hudObjectiveLines().join(" \u00b7 "); // the objective line stays visible on the map too, even under sail, unless minimised
@@ -1281,7 +1282,7 @@ function syncCityControls() {
   set("menu", lang === "es" ? "Menú" : "Menu");
   set("back", lang === "es" ? "Volver al mapa" : "Back to map");
   const fsb = $("fs"), cfs = d.querySelector('[data-corner="fs"]');
-  if (cfs && fsb) { cfs.hidden = fsb.hidden; cfs.title = fsb.title; cfs.setAttribute("aria-label", fsb.getAttribute("aria-label") ?? "Fullscreen"); }
+  if (cfs && fsb) { cfs.hidden = fsb.hidden; cfs.title = fsb.title; syncFullscreenButtons([cfs], !!document.fullscreenElement, lang); }
   const cl = d.querySelector('[data-corner="lang"]'); if (cl) { cl.textContent = lang === "es" ? "EN" : "ES"; cl.title = t.tipLang; }
   const w = d.querySelector(".city-window");
   if (w && !w.hidden && w.dataset.cityPanel) {
@@ -1409,7 +1410,13 @@ $("new").onclick = () => showMenu();
   const de = document.documentElement, fsb = $("fs");
   if (fsb && document.fullscreenEnabled && de.requestFullscreen) {
     fsb.hidden = false;
-    fsb.onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else de.requestFullscreen().catch(() => {}); };
+    fsb.onclick = () => {
+      const request = document.fullscreenElement ? document.exitFullscreen() : de.requestFullscreen();
+      request.catch(() => {}); // Unsupported or denied requests leave the actual state unchanged.
+    };
+    document.addEventListener("fullscreenchange", () => {
+      syncFullscreenButtons([fsb, $("v3d")?.querySelector('[data-corner="fs"]')], !!document.fullscreenElement, lang);
+    });
   }
 }
 function ledgerBodyHtml(kind) {
