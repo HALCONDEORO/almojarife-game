@@ -1,3 +1,4 @@
+import { startSummaryHtml } from "../src/view/startsummary.mjs";
 import { foundingHarbor } from "../src/view/foundingharbor.mjs";
 import { crestColorChoices } from "../src/view/crestcolors.mjs";
 import { portraitChoices } from "../src/view/portraitchoices.mjs";
@@ -109,7 +110,7 @@ import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR, START_YEAR } 
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
-import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
+import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, START_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
 import { offerOf, activeContracts, acceptContract } from "../src/game/contracts.mjs";
 import { contractMaxFor } from "../src/game/rankperks.mjs";
@@ -1547,7 +1548,7 @@ function showCreate(name) {
       `<label>${t.background}<select id="p-bg">${opt(Object.keys(BACKGROUNDS), pf.background, (b) => NAMES[lang][b])}</select></label><small class="founding-bonus">${t.bgInfo[pf.background]}</small></section>` +
       `<section class="founding-section"><h3><span>II</span> ${t.crest}</h3><label>${t.shield}<select id="p-sh">${opt(SHIELDS, pf.crest.shield, (v) => t.sh[v])}</select></label><label>${t.division}<select id="p-dv">${opt(DIVISIONS, pf.crest.division, (v) => t.dv[v])}</select></label><label>${t.charge}<select id="p-cg">${opt(CHARGES, pf.crest.charge, (v) => t.ch[v])}</select></label>` +
       `<div class="founding-label">${t.c1}</div><div class="founding-swatches" role="group" aria-label="${t.c1}">${swatch("c1")}</div><div class="founding-label">${t.c2}</div><div class="founding-swatches" role="group" aria-label="${t.c2}">${swatch("c2")}</div>` +
-      `<label>${t.difficulty}<select id="p-df" aria-describedby="founding-difficulty">${opt(DIFFICULTY_IDS, pf.difficulty, (d) => t.diffName[d])}</select></label><small id="founding-difficulty">${t.diffInfo}</small></section></div></div>` +
+      `<label>${t.difficulty}<select id="p-df" aria-describedby="founding-difficulty">${opt(DIFFICULTY_IDS, pf.difficulty, (d) => t.diffName[d])}</select></label><small id="founding-difficulty">${t.diffInfo}</small>${startSummaryHtml(pf, START_CASH, lang)}</section></div></div>` +
       `<footer class="founding-footer"><details class="founding-navigation"><summary>${t.freeNavLbl}</summary><label><input type="checkbox" id="p-freenav" ${freeNav ? "checked" : ""}> ${t.freeNavLbl}</label><small>${t.freeNavInfo}</small></details><div class="founding-actions"><button id="p-back">${t.back}</button><button id="p-go">${t.start} <span aria-hidden="true">›</span></button></div></footer></section>`;
     $("p-co").value = pf.company; $("p-ch").value = pf.character; // set as values, never parsed as HTML
     const previewNames = () => {
