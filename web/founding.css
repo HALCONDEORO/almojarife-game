@@ -1,0 +1,33 @@
+/* Founding a merchant house: the same wood, brass, parchment and city art as play. */
+#title .box.wide.founding{width:min(1120px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 40px);padding:0;border:3px solid var(--wood,#6b4f2a);border-radius:4px;outline:1px solid var(--brass,#c9a35f);outline-offset:-6px;box-shadow:0 20px 70px #0009;display:flex;flex-direction:column;overflow:hidden;text-align:left;background:var(--paper,#f4ead0);color:var(--ink,#302719)}
+.founding-heading{flex:none;justify-content:space-between;flex-wrap:nowrap;padding:16px 28px;background:linear-gradient(var(--wood-hi,#6d543a),var(--wood-lo,#3d2d1b));color:var(--gold-cream,#fff0cd);border-bottom:2px solid var(--brass,#c9a35f)}
+.founding-heading small{font-size:11px;letter-spacing:2px;color:var(--brass,#c9a35f)}
+#title .founding-heading h2{margin:4px 0 0;font-size:28px;font-weight:400;line-height:1.2}
+.founding-year{font-size:24px;color:var(--brass,#c9a35f);border:1px solid var(--brass,#c9a35f);padding:6px 12px}
+.founding-body{display:grid;grid-template-columns:260px 1fr;min-height:0;overflow:auto}
+.founding-preview{padding:20px 16px;background:linear-gradient(90deg,#ded0aa88,transparent),var(--paper-sunken,#e5d7b7);border-right:1px solid var(--line-strong,#bba373);display:flex;flex-direction:column;justify-content:space-between;gap:16px}
+.founding-harbor{margin:0;border:1px solid var(--line-strong,#bba373);background:var(--paper-raised,#fff6e0);box-shadow:0 3px 8px #6b4f2a22}
+.founding-scene{height:190px;position:relative;overflow:hidden;background:linear-gradient(#eadbb4,#d3d0ad 60%,#7b9c96)}
+.founding-sea{position:absolute;inset:70px -50px -45px;background:repeating-linear-gradient(170deg,transparent 0 18px,#ede5c433 19px 20px),#71958e;transform:rotate(-10deg);border-top:20px solid #d4c399}
+.founding-scene img{position:absolute;object-fit:contain;filter:drop-shadow(0 5px 3px #30271933)}
+.founding-quay{width:240px;left:-12px;top:35px}.founding-store{width:120px;left:5px;top:0}.founding-house{width:112px;right:0;top:-14px}.founding-ship{width:140px;right:-2px;bottom:-28px}
+.founding-harbor figcaption{padding:12px;text-align:center;border-top:1px solid var(--line,#c5ae80)}
+.founding-harbor figcaption small{display:block;font-size:12px;color:var(--ink-soft,#5a4a32)}
+.founding-harbor strong{font-size:24px;font-weight:400;display:block;overflow-wrap:anywhere}
+.founding-seal{text-align:center}.founding-seal .prev{align-items:center;gap:16px}.founding-seal svg{width:84px;background:none;border-radius:0}.founding-seal .crest{height:101px}.founding-seal .portrait{height:84px}.founding-seal p{font-size:13px;color:var(--ink-soft,#5a4a32);margin:12px 0 0}
+.founding-goods{display:flex;justify-content:center;gap:12px;border-top:1px solid var(--line,#c5ae80);padding-top:12px}.founding-goods img{width:48px;height:48px;object-fit:contain}
+.founding-form{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;padding:20px 28px 24px;min-width:0}
+.founding-section{min-width:0}.founding-section h3{margin:0 0 16px;font-size:21px;font-weight:400;color:var(--green,#405e4a);border-bottom:1px solid var(--line-strong,#bba373);padding-bottom:8px}.founding-section h3 span{font-size:14px;color:var(--ink-soft,#5a4a32);margin-right:8px}
+#title .founding label{font-size:13px;color:var(--ink-soft,#5a4a32);margin:0 0 12px}.founding-label{font-size:13px;margin:12px 0 6px;color:var(--ink-soft,#5a4a32)}
+#title .founding input:not([type=checkbox]),#title .founding select{display:block;width:100%;box-sizing:border-box;min-height:32px;padding:4px 8px;margin:4px 0 0;font:15px Georgia,serif;color:var(--ink,#302719);background:var(--paper-raised,#fff6e0);border:1px solid var(--line-strong,#bba373);border-radius:2px}
+.founding .ports{gap:6px}.founding .pt{margin:0;border-color:var(--line,#c5ae80);background:var(--paper-raised,#fff6e0);border-radius:3px;flex:none}.founding .pt.on{border-color:var(--green,#405e4a);box-shadow:0 0 0 1px var(--green,#405e4a)}.founding .pt svg{display:block;width:42px;height:42px;background:none}
+.founding-swatches{display:flex;flex-wrap:wrap;gap:6px;padding:2px}.founding .sw{width:24px;height:24px;min-height:24px;margin:0;border:2px solid var(--wood,#6b4f2a)}.founding .sw.on{outline:2px solid var(--green,#405e4a);outline-offset:2px}
+.founding-section small{font-size:12px;line-height:1.5;color:var(--ink-soft,#5a4a32);display:block}.founding-bonus{margin-top:-6px}
+.founding-footer{display:flex;gap:20px;align-items:center;justify-content:space-between;padding:12px 28px;background:var(--paper-sunken,#e5d7b7);border-top:1px solid var(--line-strong,#bba373);flex:none;max-height:170px;overflow:auto}.founding-navigation{font-size:12px;max-width:610px}.founding-navigation summary{cursor:pointer;color:var(--ink-soft,#5a4a32);padding:4px 0}.founding-navigation small{display:block;line-height:1.4}#title .founding-navigation label{margin:6px 0;font-size:12px}
+.founding-actions{display:flex;gap:8px;flex:none}.founding-actions button{min-height:38px;padding:8px 20px;margin:0}.founding-actions #p-back{background:var(--paper-raised,#fff6e0);color:var(--ink,#302719);border:1px solid var(--line-strong,#bba373)}.founding-actions #p-go{background:linear-gradient(var(--wood-hi,#6d543a),var(--wood-lo,#3d2d1b));border:1px solid var(--brass,#c9a35f);color:var(--gold-cream,#fff0cd)}.founding-actions #p-go span{margin-left:12px}
+#title .founding :is(button,input,select,summary):focus-visible{outline:3px solid var(--green,#405e4a);outline-offset:3px;box-shadow:none}
+@media(max-width:1150px){.founding-body{grid-template-columns:210px 1fr}.founding-form{padding:16px 20px;gap:20px}.founding-preview{padding:16px 12px}.founding-scene{height:160px}.founding-heading{padding:12px 20px}.founding-footer{padding:12px 20px}}
+@media(max-height:760px){.founding-body{grid-template-columns:190px 1fr}.founding-preview{gap:8px}.founding-scene{height:125px}.founding-seal svg{width:64px}.founding-seal .crest{height:77px}.founding-seal .portrait{height:64px}.founding-goods{display:none}.founding-form{padding:12px 20px;gap:20px}.founding-section h3{margin-bottom:8px}#title .founding label{margin-bottom:8px}.founding-label{margin-top:8px}.founding .pt svg{width:36px;height:36px}.founding-heading{padding:12px 20px}#title .founding-heading h2{font-size:24px}.founding-footer{padding:8px 20px}}
+/* Two deliberate rows, not a lone portrait wrapped onto a second line. */
+.founding .ports{display:grid;grid-template-columns:repeat(4,max-content);gap:6px;margin-bottom:12px}
+.founding .pt{padding:0}
