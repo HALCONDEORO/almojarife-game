@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      # Required only to mint GitHub provenance, not release/content mutation.
       id-token: write
       attestations: write
     env:
@@ -38,17 +39,17 @@ jobs:
       SOURCE_SHA: ${{ inputs.expected_sha }}
       CONFIRMATION: ${{ inputs.confirmation }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           path: tooling
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.expected_sha }}
           path: source
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -73,10 +74,10 @@ jobs:
         run: |
           sudo chown root:root source/desktop/dist/linux-unpacked/chrome-sandbox
           sudo chmod 4755 source/desktop/dist/linux-unpacked/chrome-sandbox
-      - name: Smoke packaged title and first game
+      - name: Smoke packaged title menu only
         working-directory: source/desktop
         run: node smoke-packaged.cjs
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3 (peeled commit)
         with:
           subject-path: |
             source/desktop/dist/*.AppImage
@@ -84,7 +85,7 @@ jobs:
             source/desktop/dist/*.dmg
             source/desktop/dist/*.zip
             source/desktop/dist/*.exe
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: exact-beta-${{ matrix.os }}
           path: |
@@ -102,10 +103,11 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      # Required only to mint GitHub provenance, not release/content mutation.
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           pattern: exact-beta-*
           path: dist
@@ -140,10 +142,10 @@ jobs:
           for f in *.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt; do
             printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor --output "$f.asc" "$f"
           done
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3 (peeled commit)
         with:
           subject-path: dist/SHA256SUMS.txt
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: reviewed-beta-package-set
           path: dist/
