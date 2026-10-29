@@ -34,3 +34,5 @@
 .founding-seal #founding-person-name{display:block;font-size:19px;font-weight:400;margin-top:12px;overflow-wrap:anywhere;color:var(--ink,#302719)}
 .founding-seal #founding-house-name{display:block;margin-top:4px;font-size:13px;overflow-wrap:anywhere;color:var(--ink-soft,#5a4a32)}
 @media(max-height:760px){.founding-seal #founding-person-name{font-size:17px;margin-top:8px}.founding-seal p{display:none}}
+.founding-start-summary{display:grid;gap:4px;padding:8px 12px;margin-top:12px;border:1px solid var(--line-strong,#bba373);border-left:4px solid var(--green,#405e4a);background:var(--paper-raised,#fff6e0);font-size:13px}.founding-start-summary>strong{font-size:14px;color:var(--green,#405e4a)}.founding-start-summary small{font-size:11px;line-height:1.35}
+@media(max-height:760px){.founding-start-summary{padding:6px 8px;margin-top:8px;gap:2px;font-size:12px}.founding-start-summary>strong{font-size:13px}}
