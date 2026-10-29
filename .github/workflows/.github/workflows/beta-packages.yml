@@ -1,0 +1,150 @@
+name: Build exact beta packages
+# Manual preparation only: never upload to a release or publish by itself.
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Existing approved immutable beta tag'
+        required: true
+        type: string
+      expected_sha:
+        description: 'Full source SHA of that tag'
+        required: true
+        type: string
+      confirmation:
+        description: 'After approval: tag@SHA exactly'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: exact-beta-packages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      SOURCE_TAG: ${{ inputs.source_tag }}
+      SOURCE_SHA: ${{ inputs.expected_sha }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.expected_sha }}
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/desktop/package-lock.json
+      - name: Verify immutable source and overlay the exact package version
+        shell: bash
+        run: node tooling/tools/release/package-version.mjs source "$SOURCE_TAG" "$SOURCE_SHA" "$CONFIRMATION" > packaging-source.json
+      - name: Record build run identity
+        shell: bash
+        run: node -e 'const fs=require("fs"),p=JSON.parse(fs.readFileSync("packaging-source.json"));p.runId=process.env.GITHUB_RUN_ID;p.toolingSha=process.env.GITHUB_SHA;fs.writeFileSync("packaging-source.json",JSON.stringify(p,null,2))'
+      - run: npm ci
+        working-directory: source/desktop
+      - run: npm test
+        working-directory: source/desktop
+      - name: Build unsigned packages from the source checkpoint
+        working-directory: source/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist
+      - name: Configure Linux packaged sandbox
+        if: runner.os == 'Linux'
+        run: |
+          sudo chown root:root source/desktop/dist/linux-unpacked/chrome-sandbox
+          sudo chmod 4755 source/desktop/dist/linux-unpacked/chrome-sandbox
+      - name: Smoke packaged title and first game
+        working-directory: source/desktop
+        run: node smoke-packaged.cjs
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            source/desktop/dist/*.AppImage
+            source/desktop/dist/*.deb
+            source/desktop/dist/*.dmg
+            source/desktop/dist/*.zip
+            source/desktop/dist/*.exe
+      - uses: actions/upload-artifact@v7
+        with:
+          name: exact-beta-${{ matrix.os }}
+          path: |
+            source/desktop/dist/*.AppImage
+            source/desktop/dist/*.deb
+            source/desktop/dist/*.dmg
+            source/desktop/dist/*.zip
+            source/desktop/dist/*.exe
+            source/desktop/dist/smoke/*
+            packaging-source.json
+          if-no-files-found: error
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: exact-beta-*
+          path: dist
+          merge-multiple: true
+      - name: Require all six packages and generate checksums
+        working-directory: dist
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(*.AppImage *.deb *.dmg *.zip *.exe)
+          test "${#files[@]}" -eq 6
+          for f in "${files[@]}"; do [[ "$f" == *"${SOURCE_TAG#v}"* ]]; done
+          node -e 'const p=require("./packaging-source.json");if(p.tag!==process.env.SOURCE_TAG||p.sha!==process.env.SOURCE_SHA)process.exit(1)'
+          sha256sum -- "${files[@]}" > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - name: Sign only if an existing GPG key is configured
+        working-directory: dist
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GPG_PRIVATE_KEY:-}" ]; then
+            echo 'No configured GPG key: packages remain unsigned; no new key is created.'
+            exit 0
+          fi
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          shopt -s nullglob
+          for f in *.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt; do
+            printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor --output "$f.asc" "$f"
+          done
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: reviewed-beta-package-set
+          path: dist/
+          if-no-files-found: error
