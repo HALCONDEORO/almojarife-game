@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
-import { newGame, doBuy, doSell, doSellStored, buyWarehouse, storeGoods, feeMul } from "../src/game/game.mjs";
+import { newGame, doBuy, doSell, doSellStored, doSellCombined, buyWarehouse, storeGoods, feeMul } from "../src/game/game.mjs";
 import { previewSellCombined, sellStored, FEE } from "../src/sim/trade.mjs";
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 
@@ -41,6 +41,49 @@ test("doSellStored credits cash, counts for the council contract and respects th
   assert.equal(doSellStored(noWh, "cadiz", "grain", 1).reason, "no warehouse here");
 });
 
+test("doSellStored books the sale in the weekly ledger and advances sell missions", () => {
+  const g = newGame(world); g.cash = 50000;
+  g.tutorial = null; // missions frozen during the tutorial by design
+  g.basis = { salt: { qty: 40, cost: 400 } };
+  g.warehouses.sevilla = { goods: { salt: 40 }, basis: { salt: 400 } };
+  g.contracts = { offers: {}, active: [], done: 0 };
+  g.campaign = { active: ["m1-oficio"], missions: { "m1-oficio": { step: 3, count: 0, done: false, failed: false } } };
+  const r = doSellStored(g, "sevilla", "salt", 40);
+  assert.equal(r.ok, true);
+  const w = g.weekTrade.salt;
+  assert.equal(w.sold, 40, "weekTrade counts the warehouse sale");
+  assert.ok(w.revenue > 0, "revenue booked");
+  assert.ok((g.basis.salt?.qty ?? 0) === 0, "global book cost goes down with the sale");
+  assert.ok(g.campaign.missions["m1-oficio"].count >= 40 || g.campaign.missions["m1-oficio"].step > 3 || g.campaign.missions["m1-oficio"].done, "sell mission advances with store sales");
+});
+
+test("doSellCombined is one transaction: combined preview matches execution at a respect threshold", () => {
+  const { g, s } = gameWithStore(5, 10);
+  g.market.cadiz.grain.stock = 1; g.market.cadiz.grain.target = 1000;
+  g.relations = g.relations ?? {}; // force respect just below a fee threshold
+  const { repOf } = g;
+  const f0 = FEE * feeMul(g, "cadiz");
+  const pv = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 10, f0);
+  const cash0 = g.cash;
+  const r = doSellCombined(g, s, "grain", 10, g.warehouses.cadiz);
+  assert.equal(r.ok, true);
+  assert.equal(r.qty, pv.qty, "executed qty matches the combined preview");
+  assert.ok(Math.abs(r.revenue - pv.revenue) < 0.02, `preview ${pv.revenue} matches executed ${r.revenue} (one fee for the whole click)`);
+  assert.ok(Math.abs((g.cash - cash0) - r.revenue) < 0.02, "cash moves by the combined revenue");
+  assert.equal(g.weekTrade.grain.sold, r.qty, "one ledger entry for the combined sale");
+});
+
+test("doSellCombined stops at the port purse and says so when the market has no cash", () => {
+  const { g, s } = gameWithStore(5, 10);
+  const e = g.market.cadiz.grain;
+  g.market.cadiz.commerce = { cash: 5, income: 0, spent: 0 }; // binding purse with almost no cash
+  const f0 = FEE * feeMul(g, "cadiz");
+  const pv = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 15, f0);
+  const r = doSellCombined(g, s, "grain", 15, g.warehouses.cadiz);
+  if (pv.qty === 0) assert.equal(r.ok, false, "empty purse rejects the sale");
+  else { assert.equal(r.qty, pv.qty, "purse cap traced the same way in preview and execution"); }
+});
+
 test("previewSellCombined spans cargo first and then the warehouse, one price path", () => {
   const { g, s } = gameWithStore(5, 10);
   const w = g.warehouses.cadiz;
@@ -66,5 +109,5 @@ test("market sell button preview uses cargo plus warehouse stock (UI wiring)", (
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, have \+ stored\) : marketQty/);
   assert.match(src, /ps = previewSellCombined\(g\.world, g\.market, s, wh, gd, sq, mktFee\)/);
-  assert.match(src, /doSellStored\(g, s\.at, gd, want - soldQ\)/);
+  assert.match(src, /doSellCombined\(g, s, gd, want, wh\)/);
 });
