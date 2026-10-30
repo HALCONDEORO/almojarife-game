@@ -324,13 +324,13 @@ export function doSellCombined(g, ship, good, qty, store) {
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, city); // one fee for the whole click: respect must not move the price mid-sale
-  const r1 = sell(g.world, g.market, ship, good, Math.min(qty, have), f);
-  let r2 = { ok: true, qty: 0, revenue: 0 };
+  const r1 = Math.min(qty, have) > 0 ? sell(g.world, g.market, ship, good, Math.min(qty, have), f) : { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 };
+  let r2 = { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 };
   if (r1.ok && qty - r1.qty > 0 && stored > 0) r2 = sellStored(g.world, g.market, city, store, good, qty - r1.qty, f);
   const n = (r1.ok ? r1.qty : 0) + (r2.ok ? r2.qty : 0);
   if (n <= 0) return r1.ok ? r2 : r1;
   const revenue = Math.round(((r1.ok ? r1.revenue : 0) + (r2.ok ? r2.revenue : 0)) * 100) / 100;
-  const r = { ok: true, qty: n, revenue };
+  const r = { ok: true, qty: n, revenue, profit: Math.round(((r1.profit ?? 0) + (r2.profit ?? 0)) * 100) / 100, spent: Math.round(((r1.spent ?? 0) + (r2.spent ?? 0)) * 100) / 100 }; /* profit/spent across both parts: the tutorial sell step needs a real gain */
   noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); relationsOnSale(g, city, good, n, revenue); g.cash += revenue; creditCaja(g, city, Math.round(revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, revenue); if (r1.ok && r1.qty > 0) recordSale(g, ship, r1.qty, r1.revenue, r1.profit); /* the voyage record only tracks the hold part */ logSell(g, good, n, revenue); /* one ledger entry for the combined sale */ contractOnSale(g, city, good, n); /* council contracts count warehouse sales too */ if (addRespect(g, city, revenue)) post(g, "respect", { city }); say(g, "sell", { qty: n, good, sum: revenue }); campaignEvent(g, { kind: "sell", good, qty: n, city }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; // victory is checked right after a sale
   tutorialNote(g, "sell", r);
   return r;
