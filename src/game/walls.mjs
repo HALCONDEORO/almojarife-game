@@ -119,7 +119,13 @@ export function councilWallsVote(g) {
     const rec = g.walls[id];
     if (underConstruction(g, id) || wallsLevel(g, id) >= WALL_MAX_LEVEL) continue; // a live petition waits for the next meeting
     const q = quoteWalls(g, id);
-    if (!q.ok) continue;
+    if (!q.ok) {
+      if (rec?.petition) { // the petition is voted and refused today, with its cause: the market cannot supply the work
+        delete rec.petition;
+        post(g, "council", { city: id, txt: { es: `El concejo de ${cityName(g, id)} rechaza tu petición de muralla: faltan materiales en el mercado.`, en: `The council of ${cityName(g, id)} turns down your wall petition: the market lacks the materials.` } });
+      }
+      continue;
+    }
     const caja = cajaOf(g, id);
     if (rec?.petition) {
       delete rec.petition; // voted today, one way or the other
@@ -144,7 +150,8 @@ export function tickWalls(g) {
   }
 }
 
-/** Daily upkeep from the town chest; walls the caja cannot pay stand but their bonus suspends, with the buildings' restart hysteresis. The player's cash and weekly book are never touched (Marco 30/10: "lo mantengan ellos"). */
+/** Daily upkeep from the town chest; walls the caja cannot pay stand but their bonus suspends, with the buildings' restart hysteresis. The player's cash and weekly book are never touched (Marco 30/10: "lo mantengan ellos").
+ *  Migration exception (Main 30/10): upkeep an old save already accrued under accrued.buildings["walls:<city>"] is settled once at the next weekly - never condoned, never charged again. */
 export function accrueWalls(g, priorCommitted = 0) {
   if (!g.walls) return priorCommitted; // flag OFF: nothing
   for (const [cityId, w] of Object.entries(g.walls)) {
