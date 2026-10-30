@@ -70,6 +70,24 @@ test("a hold full of an unrelated good does not shuttle without trading", () => 
   assert.ok(!s.voyage, "stays in port");
   assert.ok(g.inbox.some((m) => m.kind === "routeStuck"));
 });
+test("stalled by a full hold, the notice names the hold (playtest 30/10: it read 'no cash or no stock')", () => {
+  const g = game(), s = g.ships[0], [a, b] = pair(g), good = goodAt(g, a);
+  const other = Object.keys(world.goods).find((k) => k !== good);
+  s.cargo = { [other]: SHIP_CAP(s) }; g.cash = 1e6; // cash is NOT the problem
+  setRoute(g, s, a, b, good);
+  run(g, 2);
+  const m = g.inbox.find((x) => x.kind === "routeStuck");
+  assert.equal(m.cause, "no_space", "the real cause travels with the notice");
+  const f = (n) => String(Math.round(n));
+  assert.ok(messageText(m, "es", f, () => "Puerto", () => "Lana").includes("la bodega está llena"), "the Spanish text says the hold is full");
+  assert.ok(messageText(m, "en", f, () => "Port", () => "Wool").includes("the hold is full"));
+});
+test("stalled with an empty purse, the notice still names the cash", () => {
+  const g = game(), s = g.ships[0], [a, b] = pair(g), good = goodAt(g, a);
+  setRoute(g, s, a, b, good); g.cash = 0;
+  run(g, 2);
+  assert.equal(g.inbox.find((x) => x.kind === "routeStuck").cause, "no cash");
+});
 
 test("route tab source: goods is declared before the advanced-route editor uses it (TDZ regression)", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
