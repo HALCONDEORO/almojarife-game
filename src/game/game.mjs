@@ -319,12 +319,13 @@ export function doSellCombined(g, ship, good, qty, store) {
   const city = ship.at;
   if (portClosed(g, city)) return { ok: false, reason: "port closed" };
   const have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
-  if (prizeLocked(g, ship, good) > 0 && qty > have - prizeLocked(g, ship, good) + stored) return { ok: false, reason: "prize" }; // prize goods wait for a court (flag off: never)
-  qty = Math.min(qty, have + stored);
+  const locked = prizeLocked(g, ship, good), avail = have - locked; // prize goods wait for a court: they stay in the hold (flag off: never locked)
+  if (locked > 0 && qty > avail + stored) return { ok: false, reason: "prize" };
+  qty = Math.min(qty, avail + stored);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, city); // one fee for the whole click: respect must not move the price mid-sale
-  const r1 = Math.min(qty, have) > 0 ? sell(g.world, g.market, ship, good, Math.min(qty, have), f) : { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 };
+  const r1 = Math.min(qty, avail) > 0 ? sell(g.world, g.market, ship, good, Math.min(qty, avail), f) : { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 }; // the hold leg only touches sellable cargo, never prize lots
   let r2 = { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 };
   if (r1.ok && qty - r1.qty > 0 && stored > 0) r2 = sellStored(g.world, g.market, city, store, good, qty - r1.qty, f);
   const n = (r1.ok ? r1.qty : 0) + (r2.ok ? r2.qty : 0);
