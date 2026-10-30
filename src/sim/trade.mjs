@@ -183,22 +183,23 @@ export function sellStored(world, market, city, store, good, qty, fee = FEE) {
 }
 /** What a sale of qty would do taken from the ship's hold FIRST and then from the port warehouse,
  *  one market simulation so the price moves across both parts. No mutation. */
-export function previewSellCombined(world, market, ship, store, good, qty, fee = FEE) {
+export function previewSellCombined(world, market, ship, store, good, qty, fee = FEE, holdAvail) {
   const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
-  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have + stored <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const avail = Math.min(have, holdAvail ?? have); // sellable hold: locked prize goods never enter the preview, exactly like doSellCombined()
+  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || avail + stored <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
   const sim = { ...e }; let revenue = 0;
   const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sellStored()
   const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
   let pvCents = 0;
   let n = 0;
-  while (n < Math.min(qty, have + stored)) {
+  while (n < Math.min(qty, avail + stored)) {
     sim.stock += 1;
     const unit = floor2(price(world, sim, good) * (1 - fee));
     if (pvPurse && pvCents + Math.round(unit * 100) > pvCashCents) { sim.stock -= 1; break; }
     pvCents += Math.round(unit * 100); revenue += unit; n++;
   }
   if (n === 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
-  const fromCargo = Math.min(n, have), fromStore = n - fromCargo;
+  const fromCargo = Math.min(n, avail), fromStore = n - fromCargo;
   const paidC = ship.basis?.[good] ?? 0, paidS = store?.basis?.[good] ?? 0;
   const spent = (fromCargo === have ? paidC : Math.round(paidC * fromCargo / Math.max(1, have)))
     + (fromStore === stored ? paidS : Math.round(paidS * fromStore / Math.max(1, stored)));
