@@ -88,11 +88,11 @@ for (const h of H) {
 }
 
 const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bot ?? {};
-// NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs on main 3bf5cae.
-// The NPC economy is deterministic in scenario A (seeds give identical runs) and oscillates between about 22k and 709k over 100 years,
-// so each band is set from the measured values within +-2 years of the horizon: low = 0.5 x the minimum, high = 4 x the maximum.
-// It catches a collapse or a runaway, not a drift. Recalibrate when the measured window moves.
-// 365 recalibrated 26/10 on the household-purses head with the documented rule below (tools/sim_npc_worth_bands.mjs 100 0 -> window years 1..3 = min 281268 / max 609370; the purse cap on discretionary retail leaves luxury stock on the shelf, NPC arbitrage margins grow, y1 worth 277679 -> 459320: trajectories reach the old head's y3 values about a year earlier, not a runaway); previous value [32934, 357228].
+// NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs
+// on scenario A's exact configuration (seed 0, every flag ON): the NPC economy oscillates between about
+// 206k and 5.7M over 100 years. Each band is set from the measured values within +-2 years of the horizon:
+// low = 0.5 x the minimum, high = 4 x the maximum. It catches a collapse or a runaway, not a drift.
+// Recalibrate when the measured window moves.
 const NPC_WORTH_BAND = { 365: [103199, 1982492], 1825: [247812, 4110688], 3650: [565549, 6272164], 10950: [1529976, 13258576], 18250: [2075616, 17096684], 36500: [2740520, 22611680] }; // recalibrated 30/10 on the world-systems head (#639: household, calamities and regional rivals ON by default; expected drift, ON/OFF 30y ratio 1.37x inside the 0.25-4x policy): same documented rule (low = 0.5 x min, high = 4 x max of the +-2y window, windows clamped at year 1; fractional lows round UP), measured on scenario A's exact configuration (seed 0) with tools/sim_npc_worth_bands.mjs 100 0 (series sampled per game year, save/load chunks verified identical to a straight run at year 32); supersedes the 24/10 plague-head bands, which predate the world-systems defaults
 
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
