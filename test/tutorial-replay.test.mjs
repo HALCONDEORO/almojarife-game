@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { initTutorial, restartTutorial, tutorialStep, tutorialActive } from "../src/game/tutorial.mjs";
 import { settingsHtml } from "../src/view/settingsview.mjs";
 
-const finished = () => { const g = {}; initTutorial(g); Object.assign(g.tut, { bought: true, sold: true, sailed: true, routed: true, hall: true }); return g; };
+const finished = () => { const g = {}; initTutorial(g); Object.assign(g.tut, { bought: true, sold: true, sailed: true, routed: true, hall: true, contract: true }); return g; };
 
 test("a finished tutorial restarts from step one and runs again", () => {
   const g = finished();

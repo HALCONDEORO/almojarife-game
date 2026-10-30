@@ -5,6 +5,7 @@
 // Own design; inspired by the contract boards of the genre, not copied from any of them. No DOM here.
 import { seeded } from "../view/cityscene.mjs";
 import { post } from "./ledger.mjs";
+import { tutorialNote } from "./tutorial.mjs";
 import { addRespect } from "./rank.mjs";
 import { contractMaxFor } from "./rankperks.mjs";
 import { addRep, scarcityOf } from "./reputation.mjs";
@@ -47,6 +48,7 @@ export function acceptContract(g, city) {
   b.active.push({ ...offer, city, delivered: 0 });
   delete b.offers[city];
   post(g, "contractAccept", { city, good: offer.good, qty: offer.qty, dueDay: offer.dueDay });
+  tutorialNote(g, "contract"); // taking a council contract is the last tutorial step
   return { ok: true };
 }
 
