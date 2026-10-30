@@ -16,7 +16,7 @@ import { settleWeek } from "../src/game/ledger.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts }); // walls flag is ON by default
-const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100; g.cash = 1e6; buyOffice(g, cityId); };
+const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100 * 100; g.cash = 1e6; buyOffice(g, cityId); }; // rep is stored in coins sold: 10000 coins = 100 respect
 
 test("flag OFF (false or 1): no state, quote says unknown, ticks and accruals no-op", () => {
   for (const off of [false, 1]) {
@@ -55,12 +55,35 @@ test("levels cap at WALL_MAX_LEVEL and one build at a time per city", () => {
   assert.equal(quoteWalls(g, "cadiz").reason, "max level");
 });
 
-test("office required, unknown city, game over, no cash", () => {
-  const g = game(); rich(g);
-  assert.equal(quoteWalls(g, "lisboa").reason, "office required");
+test("respect required (council works), unknown city, game over, no cash", () => {
+  const g = game();
+  assert.equal(quoteWalls(g, "cadiz").reason, "respect required", "the concejo does not take patronage from an unknown merchant, not even at home");
+  assert.equal(quoteWalls(g, "lisboa").reason, "respect required");
   assert.equal(quoteWalls(g, "nowhere").reason, "unknown city");
   g.over = true; assert.equal(startWalls(g, "cadiz").reason, "game over"); g.over = false;
-  g.cash = 0; assert.equal(startWalls(g, "cadiz").reason, "no cash");
+  rich(g); g.cash = 0; assert.equal(startWalls(g, "cadiz").reason, "no cash");
+  const g2 = game(); (g2.rep ??= {}).cadiz = 100 * 100; // known (100 respect), but no office anywhere
+  assert.ok(quoteWalls(g2, "cadiz").ok, "respect alone unlocks council patronage: no office needed");
+});
+
+// rep is stored as coins sold (repV 2), 100 coins = 1 respect point; set repV so ensureRep does not treat the value as legacy points.
+const withRespect = (g, cityId, coins) => { g.repV = 2; (g.rep ??= {})[cityId] = coins; return g; };
+
+test("respect bar is exactly 20: 19.99 blocked, 20 and 20.01 pass (kills the WALL_MIN_RESPECT +1 mutant)", () => {
+  for (const [coins, ok] of [[1999, false], [2000, true], [2001, true]]) {
+    const g = withRespect(game(), "lisboa", coins); // non-home: no founding respect nudge, no memory flag
+    assert.equal(quoteWalls(g, "lisboa").ok, ok, `respect ${coins / 100} at the bar`);
+    if (!ok) assert.equal(quoteWalls(g, "lisboa").need, 20, "the quote says what the concejo asks");
+  }
+});
+
+test("non-home port without office: respect alone unlocks (the old office gate would refuse here)", () => {
+  const g = withRespect(game(), "lisboa", 2000); // home is cadiz; no office bought anywhere
+  assert.ok(!g.offices?.includes("lisboa"), "no office in lisboa");
+  const q = quoteWalls(g, "lisboa");
+  assert.ok(q.ok, `respect 20 unlocks lisboa without office (got ${q.reason})`);
+  const g2 = withRespect(game(), "lisboa", 1999);
+  assert.equal(quoteWalls(g2, "lisboa").reason, "respect required", "19.99 respect is not enough away from home either");
 });
 
 test("legacy plague.walls=1 reads as level 1; new construction lands on level 2", () => {
