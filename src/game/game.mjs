@@ -17,7 +17,7 @@ import { route } from "../sim/world.mjs";
 import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { previewSell, previewSellCombined, makeShip, tickShip, sailTick, sail, buy, sell, sellStored, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { seaWearDay, hullSpeedFactor, hullWarning } from "./seawear.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
@@ -296,6 +296,58 @@ export function doSell(g, ship, good, qty) {
   const r = sell(g.world, g.market, ship, good, qty, f);
   if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; } // victory is checked right after a sale
   if (r.ok) tutorialNote(g, "sell", r);
+  return r;
+}
+/** Sell from the port warehouse into the local market: same market effects as a hold sale (fee, respect,
+ *  council contract, the port's purse), minus the ship-only ones (prizes, the ship's own record). */
+export function doSellStored(g, city, good, qty) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (portClosed(g, city)) return { ok: false, reason: "port closed" };
+  const w = warehouseOf(g, city);
+  if (!w) return { ok: false, reason: "no warehouse here" };
+  const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
+  const f = FEE * feeMul(g, city);
+  const r = sellStored(g.world, g.market, city, w, good, qty, f);
+  if (r.ok) { noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); logSell(g, good, r.qty, r.revenue); /* the warehouse sale counts in the weekly trade ledger and lowers the book cost, exactly like a hold sale */ contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city }, MISSION); /* campaign sell missions advance with store sales too */ if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
+  if (r.ok) tutorialNote(g, "sell", r);
+  return r;
+}
+/** Sellable hold of a good on a ship: the cargo minus the prize lots awaiting a court.
+ *  The market UI (MAX, tooltip, sell-all) and doSellCombined() must all use this exact figure. */
+export function sellableHold(g, ship, good) {
+  return Math.max(0, (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good));
+}
+/** Quantity a sell button may request: clamped to the sellable hold plus the store stock,
+ *  so a fixed-quantity click never asks for locked prize goods (the UI and doSellCombined() agree). */
+export function sellRequestQty(g, ship, good, qty, store) {
+  return Math.min(qty, sellableHold(g, ship, good) + (store?.goods?.[good] ?? 0));
+}
+/** Combined sell preview with the same sellable hold, fee and purse the execution will use. */
+export function previewSellCombinedPort(g, ship, good, qty, store) {
+  return previewSellCombined(g.world, g.market, ship, store, good, qty, FEE * feeMul(g, ship.at), sellableHold(g, ship, good));
+}
+/** One sale click that empties the hold first and then the port warehouse, as a single transaction:
+ *  one fee (computed before any respect gain), one effects pass, and a total that matches previewSellCombined(). */
+export function doSellCombined(g, ship, good, qty, store) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const city = ship.at;
+  if (portClosed(g, city)) return { ok: false, reason: "port closed" };
+  const have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
+  const avail = sellableHold(g, ship, good), locked = have - avail; // prize goods wait for a court: they stay in the hold (flag off: never locked); the UI previews with the same sellableHold()
+  if (locked > 0 && qty > avail + stored) return { ok: false, reason: "prize" };
+  qty = Math.min(qty, avail + stored);
+  if (qty <= 0) return { ok: false, reason: "nothing to sell" };
+  const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
+  const f = FEE * feeMul(g, city); // one fee for the whole click: respect must not move the price mid-sale
+  const r1 = Math.min(qty, avail) > 0 ? sell(g.world, g.market, ship, good, Math.min(qty, avail), f) : { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 }; // the hold leg only touches sellable cargo, never prize lots
+  let r2 = { ok: true, qty: 0, revenue: 0, profit: 0, spent: 0 };
+  if (r1.ok && qty - r1.qty > 0 && stored > 0) r2 = sellStored(g.world, g.market, city, store, good, qty - r1.qty, f);
+  const n = (r1.ok ? r1.qty : 0) + (r2.ok ? r2.qty : 0);
+  if (n <= 0) return r1.ok ? r2 : r1;
+  const revenue = Math.round(((r1.ok ? r1.revenue : 0) + (r2.ok ? r2.revenue : 0)) * 100) / 100;
+  const r = { ok: true, qty: n, revenue, profit: Math.round(((r1.profit ?? 0) + (r2.profit ?? 0)) * 100) / 100, spent: Math.round(((r1.spent ?? 0) + (r2.spent ?? 0)) * 100) / 100 }; /* profit/spent across both parts: the tutorial sell step needs a real gain */
+  noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); relationsOnSale(g, city, good, n, revenue); g.cash += revenue; creditCaja(g, city, Math.round(revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, revenue); if (r1.ok && r1.qty > 0) recordSale(g, ship, r1.qty, r1.revenue, r1.profit); /* the voyage record only tracks the hold part */ logSell(g, good, n, revenue); /* one ledger entry for the combined sale */ contractOnSale(g, city, good, n); /* council contracts count warehouse sales too */ if (addRespect(g, city, revenue)) post(g, "respect", { city }); say(g, "sell", { qty: n, good, sum: revenue }); campaignEvent(g, { kind: "sell", good, qty: n, city }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; // victory is checked right after a sale
+  tutorialNote(g, "sell", r);
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
