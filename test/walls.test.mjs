@@ -11,7 +11,7 @@ import { wallsLevel, wallsKeptLevel, quoteWalls, startWalls, proposeWall, counci
 import { accrueBuildings } from "../src/game/buildings.mjs";
 import { wallsAllow } from "../src/game/plague.mjs";
 import { settleWeek } from "../src/game/ledger.mjs";
-import { cajaOf, creditCaja, cajaTarget, meetingDay, nextMeetingDay } from "../src/game/council.mjs";
+import { cajaOf, meetingDay, nextMeetingDay } from "../src/game/council.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts }); // walls flag is ON by default
@@ -24,10 +24,10 @@ const runTo = (gm, day) => { while (gm.day < day) advanceDay(gm); };
 test("flag OFF (false or 1): no state, quote says unknown, ticks and accruals no-op", () => {
   for (const off of [false, 1]) {
     const gm = newGame(world, "cadiz", { freePlay: true, seed: 7, walls: off });
-    assert.equal(gm.walls, undefined, "off game keeps no key");
+    assert.ok(!("walls" in gm), "off game keeps no key");
     assert.equal(quoteWalls(gm, "cadiz").reason, "unknown");
     tickWalls(gm); accrueWalls(gm); councilWallsVote(gm); // must not throw, must not create state
-    assert.equal(gm.walls, undefined);
+    assert.ok(!("walls" in gm), "walls ticks create no state");
     assert.equal(wallsLevel(gm, "cadiz"), 0);
   }
 });
