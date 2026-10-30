@@ -6,13 +6,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newGame } from "../src/game/game.mjs";
+import { newGame, advanceDay } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { quoteUnits } from "../src/sim/recipes.mjs";
 import { quoteWork, workScore, workOf, worksBoard, proposeWork, councilWorksVote, worksDay, WORKS_MIN_RESPECT, WORKS_CAJA_FLUSH, WORKS_MIN_SCORE, WORKS_MAX_LEVEL, WORKS_AUTONOMOUS } from "../src/game/works.mjs";
 import { cajaOf, nextMeetingDay } from "../src/game/council.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
+const r2 = (x) => Math.round(x * 100) / 100; // assert money at cents, the module's own rounding
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts }); // works flag is ON by default
 const richCaja = (gm, cityId = "cadiz") => { (gm.hallCaja ??= {})[cityId] = 1e6; return gm; }; // a chest that can pay any work
 const withRespect = (gm, cityId, coins) => { gm.repV = 2; (gm.rep ??= {})[cityId] = coins; return gm; }; // rep is stored as coins sold (repV 2), 100 coins = 1 respect point
@@ -163,14 +164,37 @@ test("the daily charges sum to the exact fee and completion closes the record on
   assert.equal(cajaOf(gm, "cadiz"), cajaBefore - 150 - 2, "standing upkeep 1/day from the chest afterwards");
 });
 
-test("an indivisible fee squares to the cent on the last day (kills both rounding directions)", () => {
-  const gm = withRespect(richCaja(buildingPozo(game(), { feeTotal: 151, delivered: { timber: 2, bricks: 6, ironware: 1 } })), "cadiz", 5000);
-  const cajaBefore = cajaOf(gm, "cadiz");
-  for (let i = 0; i < 4; i++) worksDay(gm);
-  assert.equal(cajaOf(gm, "cadiz"), cajaBefore - 120.8, "4 x 30.2");
-  worksDay(gm);
-  assert.equal(cajaOf(gm, "cadiz"), cajaBefore - 151, "the final day charges 30.2, not 30.19 or 30.21");
-  assert.equal(workOf(gm, "cadiz", "pozo").level, 1);
+test("a fee with a REAL remainder: every intermediate charge and the final settle pinned to cents (150.01/5 kills the ceil mutant, 150.04/5 kills the floor mutant, the exact total kills the no-settle mutant)", () => {
+  for (const [feeTotal, mid, final] of [[150.01, 30, 30.01], [150.04, 30.01, 30]]) {
+    const gm = withRespect(richCaja(buildingPozo(game(), { feeTotal, delivered: { timber: 2, bricks: 6, ironware: 1 } })), "cadiz", 5000);
+    let prev = cajaOf(gm, "cadiz");
+    for (let i = 0; i < 4; i++) {
+      worksDay(gm);
+      const now = cajaOf(gm, "cadiz");
+      assert.equal(r2(prev - now), mid, `fee ${feeTotal}: day ${i + 1} charges exactly ${mid}`);
+      prev = now;
+    }
+    assert.equal(workOf(gm, "cadiz", "pozo").state, "building", "one day short of done after 4 of 5");
+    worksDay(gm);
+    assert.equal(r2(prev - cajaOf(gm, "cadiz")), final, `fee ${feeTotal}: the last day settles exactly ${final}, not the running share`);
+    assert.equal(workOf(gm, "cadiz", "pozo").level, 1, "the work completes on the settled day");
+    assert.equal(workOf(gm, "cadiz", "pozo").state, "active");
+  }
+});
+
+test("integration through the real dayTick: petition -> meeting vote -> per-day build -> completion, all via advanceDay (kills the worksDay and councilWorksVote hook-deletion mutants)", () => {
+  const gm = withRespect(richCaja(game()), "cadiz", 5000);
+  for (const [good, n] of Object.entries({ timber: 60, bricks: 60, ironware: 20 })) gm.market.cadiz[good].stock = n;
+  const cajaBefore = cajaOf(gm, "cadiz"); // the exact cash accounting is pinned in the unit tests above; here the hooks are the point
+  assert.equal(proposeWork(gm, "cadiz", "pozo").ok, true);
+  const meet = nextMeetingDay(world, "cadiz", gm.day);
+  while (gm.day < meet) advanceDay(gm);
+  assert.equal(workOf(gm, "cadiz", "pozo")?.state, "building", "the meeting-day vote only happens if councilWorksVote is hooked into dayTick");
+  for (let i = 0; i < 10 && workOf(gm, "cadiz", "pozo")?.level !== 1; i++) advanceDay(gm);
+  assert.equal(workOf(gm, "cadiz", "pozo")?.level, 1, "the work only finishes if worksDay is hooked into dayTick");
+  assert.equal(workOf(gm, "cadiz", "pozo")?.state, "active");
+  assert.equal(lastPosts(gm, /Obra terminada/).length, 1, "the completion post lands once through the real loop");
+  assert.ok(cajaOf(gm, "cadiz") < cajaBefore, "the chest paid the work through the real loop");
 });
 
 test("a thin chest pauses instead of rejecting; the resume needs two days of cost (hysteresis, both boundaries pinned)", () => {
