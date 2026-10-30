@@ -52,6 +52,7 @@ import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, houseClass
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
 import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, councilWallsVote, WALL_POP } from "./walls.mjs";
+import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
@@ -112,6 +113,7 @@ export function newGame(world, start = "cadiz", opts = {}) {
   if (opts.captainXp !== false && opts.captainXp !== 1) g.captainXp = true; // captain-experience flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.plague !== false && opts.plague !== 1) g.plague = initPlague(); // plague flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.walls !== false && opts.walls !== 1) g.walls = initWalls(); // walls flag, ON by default: only false or 1 turns it off (an off game keeps no key, saves stay identical)
+  configureWorks(g, opts); // works flag, ON by default: the council works department (civic works voted and paid per day from the chest)
   if (opts.towers !== false && opts.towers !== 1) g.towers = initTowers(); // towers flag, ON by default (owner order 24/10 12:08: every flag ships ON): only false or 1 turns it off (an off game keeps no key, saves stay identical)
   if (opts.cityIdentity !== false) g.cityIdentity = true; // city-identity flag, ON by default: no key in an off game (saves stay identical)
   if (opts.cityMoodOut !== false) g.cityMoodOut = true; // visible-mood flag, ON by default: no key in an off game
@@ -184,6 +186,8 @@ function dayTick(g) {
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
   councilWallsVote(g); // and on meeting days they vote the walls the chest can afford (Marco 30/10: the concejo votes, pays and maintains them)
+  worksDay(g); // the works department delivers materials, charges the chest per day worked and finishes works (Marco 30/10 20:04)
+  councilWorksVote(g); // and on meeting days it votes the petitions the chest can start
   processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => repairShip(g, s)), repairQuote: (s) => repairPrice(g, s) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
