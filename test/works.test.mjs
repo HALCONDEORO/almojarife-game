@@ -1,12 +1,8 @@
-// Council works department (Marco 30/10 20:04: "implementa las obras del concejo con cobro por
-// día según el diseño propuesto"): the concejo votes civic works, pays them out of the town
-// chest PER DAY WORKED, takes partial material deliveries from the local market, pauses on a
-// thin chest instead of rejecting, and keeps the finished works with a daily upkeep. The
-// player never pays: at most a known merchant (respect 20, "Conocido") hands in a petition.
+// Council works: own design, paid by the town chest, never the player.
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newGame, advanceDay } from "../src/game/game.mjs";
+import { newGame, advanceDay, advanceTick, TICKS_PER_DAY } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { quoteUnits } from "../src/sim/recipes.mjs";
 import { quoteWork, workScore, workOf, worksBoard, proposeWork, councilWorksVote, worksDay, WORKS_MIN_RESPECT, WORKS_CAJA_FLUSH, WORKS_MIN_SCORE, WORKS_MAX_LEVEL, WORKS_AUTONOMOUS } from "../src/game/works.mjs";
@@ -130,6 +126,28 @@ test("partial deliveries: stock shortfall keeps the remainder pending and charge
   assert.equal(gm.market.cadiz.timber.stock, 0);
 });
 
+test("a thin chest delivers the affordable whole unit, preserves the remainder, then pauses with an explicit cause", () => {
+  const gm = withRespect(buildingPozo(game(), { need: { timber: 2 } }), "cadiz", 5000);
+  setStock(gm, "cadiz", "timber", 10);
+  gm.market.cadiz.timber.target = 1000; // scarcity cap: one timber costs exactly 76.50
+  gm.hallCaja = { cadiz: 76.5 };
+  assert.equal(quoteUnits(world, gm.market, "cadiz", { timber: 1 }).cost, 76.5);
+  const cash = gm.cash;
+  worksDay(gm);
+  const rec = workOf(gm, "cadiz", "pozo");
+  assert.deepEqual(rec.delivered, { timber: 1 });
+  assert.equal(gm.market.cadiz.timber.stock, 9);
+  assert.equal(cajaOf(gm, "cadiz"), 0);
+  assert.equal(rec.workedDays, 0);
+  assert.equal(rec.state, "building", "a partial delivery is progress, not a refusal");
+  worksDay(gm);
+  assert.equal(rec.state, "paused", "no affordable unit and no labour means pause");
+  assert.equal(lastPosts(gm, /no alcanza para una unidad/).length, 1);
+  assert.deepEqual(rec.delivered, { timber: 1 }, "pausing loses no delivered material");
+  assert.equal(gm.market.cadiz.timber.stock, 9);
+  assert.equal(gm.cash, cash);
+});
+
 test("the day the last pending unit lands consumes one labour unit in the same pass", () => {
   const gm = withRespect(richCaja(buildingPozo(game())), "cadiz", 5000);
   setStock(gm, "cadiz", "timber", 1); setStock(gm, "cadiz", "bricks", 6); setStock(gm, "cadiz", "ironware", 1);
@@ -195,6 +213,28 @@ test("integration through the real dayTick: petition -> meeting vote -> per-day 
   assert.equal(workOf(gm, "cadiz", "pozo")?.state, "active");
   assert.equal(lastPosts(gm, /Obra terminada/).length, 1, "the completion post lands once through the real loop");
   assert.ok(cajaOf(gm, "cadiz") < cajaBefore, "the chest paid the work through the real loop");
+});
+
+test("real advanceTick boundaries vote on the meeting day and debit one work day only on the next boundary", () => {
+  const gm = withRespect(richCaja(game()), "cadiz", 5000);
+  const meet = nextMeetingDay(world, "cadiz", gm.day);
+  gm.day = meet - 1;
+  gm.tick = meet * TICKS_PER_DAY - 1;
+  assert.equal(proposeWork(gm, "cadiz", "pozo").ok, true);
+  advanceTick(gm);
+  assert.equal(gm.day, meet);
+  const rec = workOf(gm, "cadiz", "pozo");
+  assert.equal(rec?.state, "building", "deleting councilWorksVote must fail here");
+  assert.equal(rec.workedDays, 0, "the vote does not retroactively charge a labour day");
+  rec.delivered = { ...rec.need }; // isolate labour debit from the staggered market
+  gm.hallTax.cadiz = { sisa: 0, portazgo: 0 }; // neutral council income equals watch cost
+  gm.ai = []; // no unrelated trading revenue in the chest
+  const caja = cajaOf(gm, "cadiz");
+  gm.tick = (meet + 1) * TICKS_PER_DAY - 1;
+  advanceTick(gm);
+  assert.equal(gm.day, meet + 1);
+  assert.equal(rec.workedDays, 1, "deleting worksDay must fail here");
+  assert.equal(r2(caja - cajaOf(gm, "cadiz")), 30, "one exact labour debit on the following day");
 });
 
 test("a thin chest pauses instead of rejecting; the resume needs two days of cost (hysteresis, both boundaries pinned)", () => {
