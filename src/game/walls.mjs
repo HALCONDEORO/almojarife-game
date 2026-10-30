@@ -84,8 +84,8 @@ export function startWalls(g, cityId) {
   const q = quoteWalls(g, cityId);
   if (!q.ok) return q;
   if (cajaOf(g, cityId) < q.cost) return { ok: false, reason: "caja short", cost: q.cost };
-  const c = consumeUnits(g.world, g.market, cityId, q.missing, cajaOf(g, cityId) - q.fee);
-  if (!c.ok) return c; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
+  const consumed = consumeUnits(g.world, g.market, cityId, q.missing, cajaOf(g, cityId) - q.fee);
+  if (!consumed.ok) return consumed; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
   creditCaja(g, cityId, -q.cost);
   const base = wallsLevel(g, cityId); // includes the legacy read, so an old wall never drops during the work
   const rec = (g.walls[cityId] ??= { level: base, state: "construction" });
@@ -118,8 +118,8 @@ export function councilWallsVote(g) {
     if (!meetingDay(g.world, id, g.day)) continue;
     const rec = g.walls[id];
     if (underConstruction(g, id) || wallsLevel(g, id) >= WALL_MAX_LEVEL) continue; // a live petition waits for the next meeting
-    const q = quoteWalls(g, id);
-    if (!q.ok) {
+    const quote = quoteWalls(g, id);
+    if (!quote.ok) {
       if (rec?.petition) { // the petition is voted and refused today, with its cause: the market cannot supply the work
         delete rec.petition;
         post(g, "council", { city: id, txt: { es: `El concejo de ${cityName(g, id)} rechaza tu petición de muralla: faltan materiales en el mercado.`, en: `The council of ${cityName(g, id)} turns down your wall petition: the market lacks the materials.` } });
@@ -129,12 +129,12 @@ export function councilWallsVote(g) {
     const caja = cajaOf(g, id);
     if (rec?.petition) {
       delete rec.petition; // voted today, one way or the other
-      if (caja < q.cost) {
-        post(g, "council", { city: id, txt: { es: `El concejo de ${cityName(g, id)} rechaza tu petición de muralla: la caja no llega (${q.cost}).`, en: `The council of ${cityName(g, id)} turns down your wall petition: the chest cannot cover it (${q.cost}).` } });
+      if (caja < quote.cost) {
+        post(g, "council", { city: id, txt: { es: `El concejo de ${cityName(g, id)} rechaza tu petición de muralla: la caja no llega (${quote.cost}).`, en: `The council of ${cityName(g, id)} turns down your wall petition: the chest cannot cover it (${quote.cost}).` } });
         continue;
       }
       startWalls(g, id);
-    } else if (WALL_AUTONOMOUS && caja >= q.cost * WALL_CAJA_FLUSH) {
+    } else if (WALL_AUTONOMOUS && caja >= quote.cost * WALL_CAJA_FLUSH) {
       startWalls(g, id); // flush chest: the concejo walls the town on its own motion (disabled: see WALL_AUTONOMOUS)
     }
   }
