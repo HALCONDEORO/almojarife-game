@@ -450,7 +450,14 @@ export const HOUSE_TYPES_ALL = Object.freeze(["house", "house_poor", "house_comf
 export const HOUSE_POP_BY_TYPE = Object.freeze({ house: HOUSE_POP_PER_LEVEL, house_poor: 60, house_comfortable: HOUSE_POP_PER_LEVEL, house_rich: 40 });
 /** Class of residents a house type shelters (the legacy generic house stays mixed, split by the town's shares). */
 export const HOUSE_CLASS = Object.freeze({ house_poor: "poor", house_comfortable: "middle", house_rich: "rich" });
-export const housePopBonus = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" ? (HOUSE_POP_BY_TYPE[b.type] ?? 0) * b.level : 0), 0);
+/** Two distinct housing sets, named after the P3 housing study (Estudios P3-05, 30/10):
+ *  RESIDENTS are the people an active house shelters - a halted house keeps its residents
+ *  (unpaid upkeep never evicts). ROOM is the shelter only an active AND KEPT house offers
+ *  newcomers. Mixing the two sets is what let a lost house silently wipe neighbours (#737). */
+export const HOUSE_ROOM_PER_LEVEL = 100; // newcomers each kept house level can shelter (on top of the hands it already staffs)
+export const houseResidents = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" ? (HOUSE_POP_BY_TYPE[b.type] ?? 0) * b.level : 0), 0);
+export const housingRoom = (g, cityId) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && HOUSE_TYPES_ALL.includes(b.type) ? b.level : 0), 0) * HOUSE_ROOM_PER_LEVEL;
+export const housePopBonus = houseResidents; // every existing caller reads the residents set
 /** Residents of each class sheltered by the TYPED houses (legacy houses excluded: they stay in the
  *  shared pool). The market adds their demand class by class instead of re-splitting by town shares. */
 export function houseClassPop(g, cityId) {

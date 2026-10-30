@@ -10,7 +10,7 @@
 // first principles. No internal figure is ever shown to the player.
 import { CLASSES, PER_1000, classShares } from "../sim/classes.mjs";
 import { activeShocks } from "./shocks.mjs";
-import { housePopBonus, HOUSE_TYPES_ALL } from "./buildings.mjs";
+import { housePopBonus, housingRoom } from "./buildings.mjs";
 import { plagueActive, PLAGUE_MOOD } from "./plague.mjs";
 import { calamityMoodHit } from "./calamities.mjs";
 
@@ -33,7 +33,6 @@ const HUNGER_CAP = 35;        // mood target ceiling while staple coverage is po
 const HUNGER_LINE = 0.6;      // staple coverage below this counts as hunger
 const ACUTE_HUNGER_LINE = 0.4; // staple coverage below this is an acute famine (people actually leave)
 const GROWTH_MIN_FRACTION = 0.5; // a city can shrink at most to half its base population (people leave; no mortality is coded)
-const ROOM_PER_HOUSE_LEVEL = 100; // newcomers each active house level can shelter (on top of the 50 hands it already staffs)
 const POSITO_BUFFER = 0.1;    // staple coverage each active posito level adds to the reading (its stores fill the gap)
 const POSITO_EMIGRATION_BRAKE = 0.5; // share of hunger emigration a posito absorbs (it feeds the city in a crisis)
 const HOSPITAL_MOOD = 4;      // per active level, poor class only; doubles in hard times
@@ -105,7 +104,7 @@ export function citylifeDay(g) {
     const city = (cl.cities[c.id] ??= { animo: { poor: START_MOOD, middle: START_MOOD, rich: START_MOOD }, extra: 0 });
     for (const cls of CLASSES) city.animo[cls] += (moodTarget(g, c.id, cls) - city.animo[cls]) / MOOD_MEMORY;
     if (g.day % 7 === 0) { // weekly drift: content cities draw newcomers, miserable ones lose people
-      const base = c.pop ?? 8000, room = HOUSE_TYPES_ALL.reduce((a, t) => a + workingLevels(g, c.id, t), 0) * ROOM_PER_HOUSE_LEVEL; // every house class shelters newcomers
+      const base = c.pop ?? 8000, room = housingRoom(g, c.id); // only kept houses shelter newcomers; a halted house keeps its residents (#737)
       let drift = Math.round((base + city.extra) * DRIFT_PER_WEEK * (meanMood(g, c.id) - MOOD_NEUTRAL) / (100 - MOOD_NEUTRAL));
       // Only an ACUTE crisis empties a city: famine or an active shock. Chronic dearth (coverage between
       // ACUTE and HUNGER lines) stagnates it - the hunger-capped mood already blocks growth - but people stayed put
