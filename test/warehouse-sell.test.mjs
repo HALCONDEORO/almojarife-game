@@ -109,6 +109,21 @@ test("preview and sale fall back to the warehouse when the hold is empty", () =>
   assert.equal(r2.ok, true); assert.equal(g.warehouses.cadiz.goods.grain ?? 0, 0); // a sold-out good leaves no entry, same as the hold
 });
 
+test("doSellCombined never sells or drains locked prize goods", () => {
+  const { g, s } = gameWithStore(5, 10);
+  g.marque = true; s.prizeLots = [{ goods: { grain: 5 } }]; // the whole hold is prize cargo awaiting a court
+  const cash0 = g.cash;
+  const r = doSellCombined(g, s, "grain", 5, g.warehouses.cadiz);
+  assert.equal(r.ok, true); assert.equal(r.qty, 5); // the sale still works: the 5 come from the store
+  assert.equal(s.cargo.grain, 5, "prize cargo untouched");
+  assert.equal(s.prizeLots[0].goods.grain, 5, "prize lot untouched");
+  assert.equal(g.warehouses.cadiz.goods.grain, 5, "store leg carried the whole sale");
+  assert.ok(g.cash > cash0, "cash credited from the store sale");
+  const r2 = doSellCombined(g, s, "grain", 11, g.warehouses.cadiz); // 0 sellable hold + 5 store left
+  assert.equal(r2.ok, false); assert.equal(r2.reason, "prize");
+  assert.equal(s.cargo.grain, 5, "still untouched after the rejected sale");
+});
+
 test("market sell button preview uses cargo plus warehouse stock (UI wiring)", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, have \+ stored\) : marketQty/);
