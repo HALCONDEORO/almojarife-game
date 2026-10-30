@@ -28,8 +28,19 @@ test('the render chain fills every template token, including the reward',()=>{
 test('rendered line: no token survives and the premium is visible',()=>{
  const x = {good: 'grain', delivered: 12, qty: 20, dueDay: 40, reward: 500};
  for (const tpl of templates) {
-   const line = tpl.replace('{g}', x.good).replace('{n}', fmt(x.delivered)).replace('{q}', fmt(x.qty)).replace('{d}', x.dueDay).replace('{r}', fmt(x.reward));
+   const line = tpl.replace('{g}', x.good).replace('{n}', fmt(x.delivered)).replace('{q}', fmt(x.qty)).replace('{d}', x.dueDay).replace('{l}', fmt(Math.max(0, x.dueDay - 33))).replace('{r}', fmt(x.reward));
    assert.ok(!/\{[a-z]\}/.test(line), `no placeholder left: ${line}`);
    assert.ok(line.includes('500'), `premium shown: ${line}`);
+ }
+});
+
+test('the days left come from the due day minus the game day, never negative',()=>{
+ assert.ok(chain.includes('x.dueDay - g.day'), 'the chain computes days left from the clock');
+ assert.ok(chain.includes('Math.max(0,'), 'an overdue line never shows negative days');
+ const left = (due, day) => Math.max(0, due - day);
+ for (const tpl of templates) {
+   const line = tpl.replace('{g}', 'grain').replace('{n}', '12').replace('{q}', '20').replace('{d}', '40').replace('{l}', fmt(left(40, 33))).replace('{r}', '500');
+   assert.ok(!/\{[a-z]\}/.test(line), `no placeholder left: ${line}`);
+   assert.ok(line.includes('7'), `days left shown: ${line}`);
  }
 });
