@@ -22,17 +22,20 @@ test('city right panel: actions only, building tabs stay out', () => {
   assert.ok((nav.match(/CC_ICONS\./g) ?? []).length >= 6, 'icons');
 });
 
-test('corner bar carries time, view and settings, top-right, with no duplicates', () => {
-  assert.ok(js.includes('class="city-corner"'), 'corner bar');
-  for (const c of ['play', 'speed', 'fit', 'zoom-in', 'zoom-out', 'motion', 'construct', 'fs', 'lang'])
-    assert.ok(js.includes(`data-corner="${c}"`), c);
-  // View controls only exist with the 2D city; the iframe's own toolbar hides via chrome=0.
+test('city view controls live in the top bar; no floating bar over the city map (Marco 30/10)', () => {
+  assert.ok(!js.includes('class="city-corner"'), 'corner bar gone from the city overlay');
+  assert.ok(!css.includes('.city-corner{'), 'corner bar styles gone');
+  // The top bar keeps the same controls as outside the city (play/speed/reports/messages + fullscreen/lang/menu).
+  assert.ok(!css.includes('body.in-city-3d #ctl button'), 'header buttons no longer hidden in city');
+  // The city-only view buttons ride the header, visible only in city view, and drive the iframe via the cmd bridge.
+  for (const c of ['fit', 'zoom-in', 'zoom-out', 'motion', 'construct'])
+    assert.ok(css.includes(`data-corner="${c}"`), c);
+  assert.ok(css.includes('<span id="cityview-ctl">'), 'header group');
+  assert.match(css, /#cityview-ctl\{display:none\}body\.in-city-3d #cityview-ctl\{display:inline\}/, 'group only in city view');
+  assert.ok(js.includes('wireCityViewControls(cornerCmd)'), 'header buttons wired to the iframe');
   assert.ok(js.includes('{ chrome: "0" }'), 'chrome param');
   assert.ok(js.includes('kind:"city2d-cmd"'), 'cmd bridge');
   assert.ok(js.includes('e.data?.kind==="city2d-view"'), 'view-state back');
-  // One pause control only: the corner bar.
-  assert.ok(js.includes('cp.textContent = playing ? "⏸" : "▶"'), 'corner pause live');
-  assert.match(css, /\.city-corner\{[^}]*top:38px;right:242px/, 'corner position');
   const scene = readFileSync('web/city2d/scene.mjs', 'utf8');
   assert.ok(scene.includes("q.get('chrome')==='0'"), 'scene reads chrome');
   assert.ok(scene.includes("e.data?.kind!=='city2d-cmd'"), 'scene cmd guard');
@@ -43,31 +46,29 @@ test('corner bar carries time, view and settings, top-right, with no duplicates'
 test('panel labels stay live from the same values as the header', () => {
   assert.ok(js.includes('function syncCityControls()'), 'sync fn');
   assert.ok(js.includes('syncCityControls();\n'), 'called from render');
-  assert.ok(js.includes('cs.textContent = `${speed}x`'), 'speed label live');
+  assert.ok(js.includes('$("spd").textContent = `${speed}x`'), 'speed label live in the header');
   assert.ok(js.includes('set("msgs", LT[lang].messages)'), 'message label live');
   assert.ok(js.includes('[data-cc-badge="msgs"]') && js.includes('unread(g)'), 'unread badge pill live');
   assert.ok(js.includes('[data-cc-badge="ships"]') && js.includes('x.at === city3dId && !x.voyage'), 'docked ships badge live');
   assert.ok(js.includes('set("section2", lang === "es" ? "Actividad" : "Activity")'), 'activity section live');
   for (const h of [
     '[data-city-msgs]").onclick=()=>showLedger("msg")',
-    '[data-corner="play"]\').onclick=()=>toggleClock()',
-    '[data-corner="fs"]\').onclick=()=>$("fs")?.click()',
-    '[data-corner="lang"]\').onclick=()=>$("lang")?.click()',
+    '#cityview-ctl [data-corner="${k}"]',
   ]) assert.ok(js.includes(h), h);
 });
 
-test('open window keeps clear of the corner bar as well as the mission chip', () => {
-  const i = js.indexOf('The open window keeps clear of the mission chip and the corner bar');
-  assert.ok(i > 0, 'unified keep-clear comment');
+test('open window keeps clear of the mission chip', () => {
+  const i = js.indexOf('The open window keeps clear of the mission chip');
+  assert.ok(i > 0, 'keep-clear comment');
   const body = js.slice(i, i + 900);
-  assert.ok(body.includes('for (const el of [chip, cbar])'), 'chip and bar both considered');
+  assert.ok(body.includes('for (const el of [chip])'), 'chip considered');
   assert.ok(body.includes('need = Math.max(need, (cr.bottom - vt + 6) / winZoom())'), 'deepest blocker wins');
   assert.ok(body.includes('win.style.top = Math.min(need,'), 'pushed below the deepest blocker');
 });
 
 test('city header data centred and enriched; top bar buttons hidden only in city view', () => {
   assert.match(css, /\.city-header\{[^}]*justify-content:center/, 'centred');
-  assert.match(css, /body\.in-city-3d #ctl button,body\.in-city-3d #hdr-right\{display:none\}/, 'header buttons hidden in city');
+  assert.ok(!css.includes('body.in-city-3d #ctl button') && !css.includes('body.in-city-3d #hdr-right{display:none}'), 'header buttons stay visible in city (Marco 30/10)');
   assert.ok(css.includes('id="hdr-right"'), 'header right span id');
   assert.ok(js.includes('Murallas'), 'walls badge');
   assert.ok(js.includes('extra.push(t.tabOffice)'), 'office badge');
@@ -107,9 +108,9 @@ test('inhabitants detail: true state composition, no decorative figures (Marco 2
   assert.ok(js.includes('cityPopEff: "Effective population: {p} citizens"'), 'en string');
 });
 
-test('corner bar never covers the city window title row (Main pixel review 25/10)', () => {
+test('top chrome never covers the city window title row (Main pixel review 25/10)', () => {
   assert.match(css, /\.city-window\{position:absolute;right:238px;top:84px/, 'window home below bar');
-  assert.ok(js.includes('for(const el of [d.querySelector(".city-corner"),$("city-mission-wrap"),$("mission-max")])'), 'drag clamp reads bar, chip and minimised flag');
+  assert.ok(js.includes('for(const el of [$("city-mission-wrap"),$("mission-max")])'), 'drag clamp reads chip and minimised flag');
   assert.ok(js.includes('p.top=Math.min((bb+6)/wz,'), 'drag clamps below them');
 });
 
@@ -125,15 +126,14 @@ test('city intro grounds basket vs live prices, no contradiction with the cards'
   assert.ok(js.includes('«sin dinero para…»'), 'es points at live priced-out list');
 });
 
-test('language toggle also re-labels corner toolbar and panel section', () => {
+test('language toggle also re-labels the header view group and panel section', () => {
   assert.ok(js.includes('set("section", lang === "es" ? "Ciudad" : "City")'), 'section live');
   assert.ok(js.includes('data-cc="section"'), 'section bound');
-  assert.ok(js.includes('bar2.setAttribute("aria-label", lang === "es" ? "Controles de tiempo'), 'corner aria live');
+  assert.ok(js.includes('cvc.setAttribute("aria-label", lang === "es" ? "Controles de vista de la ciudad'), 'header group aria live');
 });
 
-test('mission line docks below the corner bar when they would overlap (600px catch)', () => {
-  assert.ok(js.includes('mr.right > br.left - 8'), 'overlap test');
-  assert.ok(js.includes('top = (br.bottom - vt + 6) + "px"'), 'dock below bar');
+test('mission line docks below the city header strip', () => {
+  assert.ok(js.includes('top = (hh.getBoundingClientRect().bottom - vt + 6) + "px"'), 'dock below header');
 });
 
 test('mission stays visible while the tutorial runs: stacked, mission first (Marco 25/10)', () => {
