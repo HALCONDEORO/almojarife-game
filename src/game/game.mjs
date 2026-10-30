@@ -17,7 +17,7 @@ import { route } from "../sim/world.mjs";
 import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, sellStored, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { seaWearDay, hullSpeedFactor, hullWarning } from "./seawear.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
@@ -296,6 +296,19 @@ export function doSell(g, ship, good, qty) {
   const r = sell(g.world, g.market, ship, good, qty, f);
   if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; } // victory is checked right after a sale
   if (r.ok) tutorialNote(g, "sell", r);
+  return r;
+}
+/** Sell from the port warehouse into the local market: same market effects as a hold sale (fee, respect,
+ *  council contract, the port's purse), minus the ship-only ones (prizes, the ship's own record). */
+export function doSellStored(g, city, good, qty) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (portClosed(g, city)) return { ok: false, reason: "port closed" };
+  const w = warehouseOf(g, city);
+  if (!w) return { ok: false, reason: "no warehouse here" };
+  const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
+  const f = FEE * feeMul(g, city);
+  const r = sellStored(g.world, g.market, city, w, good, qty, f);
+  if (r.ok) { noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
