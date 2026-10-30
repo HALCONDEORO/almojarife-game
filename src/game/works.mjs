@@ -59,8 +59,8 @@ export function quoteWork(g, cityId, type, level) {
 export function workScore(g, cityId, type) {
   const level = workOf(g, cityId, type)?.level ?? 0;
   if (level >= WORKS_MAX_LEVEL) return null;
-  const q = quoteWork(g, cityId, type, level + 1);
-  return q.ok ? WORK_WEIGHTS[type] / q.estimate : null; // no rounding: the floor lives below 0.001 and r2 would collapse it to 0.00
+  const quote = quoteWork(g, cityId, type, level + 1);
+  return quote.ok ? WORK_WEIGHTS[type] / quote.estimate : null; // no rounding: the floor lives below 0.001 and r2 would collapse it to 0.00
 }
 
 /** Panel data seam (urban panel UI is a follow-up PR): candidates with level, state, priority, estimate and the gold the chest still lacks to start each one. */
@@ -71,10 +71,10 @@ export function worksBoard(g, cityId) {
     city: cityId, caja,
     candidates: WORK_TYPES.map((type) => {
       const rec = workOf(g, cityId, type), level = rec?.level ?? 0;
-      const q = level >= WORKS_MAX_LEVEL ? null : quoteWork(g, cityId, type, level + 1);
+      const quote = level >= WORKS_MAX_LEVEL ? null : quoteWork(g, cityId, type, level + 1);
       return {
-        type, level, state: rec?.state ?? "active", score: q?.ok ? workScore(g, cityId, type) : null,
-        estimate: q?.estimate ?? null, missingGold: q?.ok ? r2(Math.max(0, r2(q.estimate * WORKS_CAJA_FLUSH) - caja)) : null,
+        type, level, state: rec?.state ?? "active", score: quote?.ok ? workScore(g, cityId, type) : null,
+        estimate: quote?.estimate ?? null, missingGold: quote?.ok ? r2(Math.max(0, r2(quote.estimate * WORKS_CAJA_FLUSH) - caja)) : null,
       };
     }),
   };
@@ -149,23 +149,7 @@ export function worksDay(g) {
     for (const type of WORK_TYPES) {
       const rec = recs[type];
       if (!rec) continue;
-      if (rec.level > 0) { // the standing levels keep costing their upkeep, whatever the work state
-        const cost = BUILDING_TYPES[type].upkeep * rec.level, caja = cajaOf(g, id);
-        if (rec.unkept) {
-          if (caja >= cost * 2) { // hysteresis: resume only with two days of cost in the chest
-            rec.unkept = false;
-            post(g, "info", { txt: { es: `La caja de ${cityName(g, id)} vuelve a mantener ${buildingName(type, "es")}.`, en: `The chest of ${cityName(g, id)} keeps ${buildingName(type, "en")} again.` } });
-          } else continue; // unkept and still thin: no charge, no progress either
-        }
-        if (!rec.unkept) {
-          if (cajaOf(g, id) < cost) {
-            rec.unkept = true;
-            post(g, "council", { city: id, txt: { es: `La caja de ${cityName(g, id)} no paga el mantenimiento: ${buildingName(type, "es")} queda sin efecto.`, en: `The chest of ${cityName(g, id)} cannot pay the upkeep: ${buildingName(type, "en")} lapses.` } });
-            continue;
-          }
-          creditCaja(g, id, -cost);
-        }
-      }
+      if (!keepWork(g, id, type, rec)) continue;
       if (rec.state === "paused") {
         if (cajaOf(g, id) >= 2 * dayCost(rec)) { // resume with the same hysteresis as the walls' watch
           rec.state = "building";
@@ -173,18 +157,7 @@ export function worksDay(g) {
         } else continue; // paused consumes no labour and no materials
       }
       if (rec.state !== "building") continue;
-      let deliveredToday = 0;
-      for (const [good, needQty] of Object.entries(rec.need)) {
-        const pending = needQty - (rec.delivered[good] ?? 0);
-        if (pending <= 0) continue;
-        const take = affordableDelivery(g, id, good, pending);
-        if (take <= 0) continue;
-        const delivery = consumeUnits(g.world, g.market, id, { [good]: take }, cajaOf(g, id));
-        if (!delivery.ok) continue; // the effect point requotes; never record an unpaid delivery
-        creditCaja(g, id, -delivery.cost);
-        rec.delivered[good] = (rec.delivered[good] ?? 0) + take;
-        deliveredToday += take;
-      }
+      const deliveredToday = deliverMaterials(g, id, rec);
       const complete = Object.entries(rec.need).every(([good, n]) => (rec.delivered[good] ?? 0) >= n);
       if (!complete) {
         if (deliveredToday === 0) {
@@ -193,22 +166,7 @@ export function worksDay(g) {
         }
         continue; // no labour before all materials land; a partial delivery is real progress
       }
-      const cost = dayCost(rec);
-      if (cajaOf(g, id) < cost) { // a thin chest PAUSES instead of rejecting
-        rec.state = "paused";
-        if (repOf(g, id) > 0) post(g, "council", { city: id, txt: { es: `La obra de ${buildingName(type, "es")} en ${cityName(g, id)} se pausa: la caja no paga la jornada (${cost}).`, en: `The ${buildingName(type, "en")} works in ${cityName(g, id)} pause: the chest cannot pay the day (${cost}).` } });
-        continue;
-      }
-      creditCaja(g, id, -cost);
-      rec.paidFee = r2(rec.paidFee + cost);
-      rec.workedDays += 1;
-      if (rec.workedDays >= rec.needDays) { // completion closes the work record exactly once, save/load safe
-        rec.level = rec.nextLevel;
-        rec.state = "active";
-        rec.unkept = false;
-        delete rec.nextLevel; delete rec.needDays; delete rec.workedDays; delete rec.paidFee; delete rec.feeTotal; delete rec.need; delete rec.delivered;
-        if (repOf(g, id) > 0) post(g, "council", { city: id, txt: { es: `Obra terminada: ${cityName(g, id)} ya tiene ${buildingName(type, "es")} (nivel ${rec.level}), pagado por la ciudad.`, en: `Works complete: ${cityName(g, id)} now has ${buildingName(type, "en")} (level ${rec.level}), paid by the city.` } });
-      }
+      workLabour(g, id, type, rec);
     }
   }
 }
@@ -224,4 +182,65 @@ function affordableDelivery(g, id, good, pending) {
     else high = trial - 1;
   }
   return low;
+}
+
+/** Apply strict flag semantics outside newGame's feature setup. */
+export function configureWorks(g, opts) {
+  if (opts.works !== false && opts.works !== 1) g.works = initWorks();
+}
+
+function keepWork(g, id, type, rec) {
+      if (rec.level > 0) { // the standing levels keep costing their upkeep, whatever the work state
+        const cost = BUILDING_TYPES[type].upkeep * rec.level, caja = cajaOf(g, id);
+        if (rec.unkept) {
+          if (caja >= cost * 2) { // hysteresis: resume only with two days of cost in the chest
+            rec.unkept = false;
+            post(g, "info", { txt: { es: `La caja de ${cityName(g, id)} vuelve a mantener ${buildingName(type, "es")}.`, en: `The chest of ${cityName(g, id)} keeps ${buildingName(type, "en")} again.` } });
+          } else return false; // unkept and still thin: no charge, no progress either
+        }
+        if (!rec.unkept) {
+          if (cajaOf(g, id) < cost) {
+            rec.unkept = true;
+            post(g, "council", { city: id, txt: { es: `La caja de ${cityName(g, id)} no paga el mantenimiento: ${buildingName(type, "es")} queda sin efecto.`, en: `The chest of ${cityName(g, id)} cannot pay the upkeep: ${buildingName(type, "en")} lapses.` } });
+            return false;
+          }
+          creditCaja(g, id, -cost);
+        }
+      }
+  return true;
+}
+
+function deliverMaterials(g, id, rec) {
+      let deliveredToday = 0;
+      for (const [good, needQty] of Object.entries(rec.need)) {
+        const pending = needQty - (rec.delivered[good] ?? 0);
+        if (pending <= 0) continue;
+        const take = affordableDelivery(g, id, good, pending);
+        if (take <= 0) continue;
+        const delivery = consumeUnits(g.world, g.market, id, { [good]: take }, cajaOf(g, id));
+        if (!delivery.ok) continue; // the effect point requotes; never record an unpaid delivery
+        creditCaja(g, id, -delivery.cost);
+        rec.delivered[good] = (rec.delivered[good] ?? 0) + take;
+        deliveredToday += take;
+      }
+  return deliveredToday;
+}
+
+function workLabour(g, id, type, rec) {
+      const cost = dayCost(rec);
+      if (cajaOf(g, id) < cost) { // a thin chest PAUSES instead of rejecting
+        rec.state = "paused";
+        if (repOf(g, id) > 0) post(g, "council", { city: id, txt: { es: `La obra de ${buildingName(type, "es")} en ${cityName(g, id)} se pausa: la caja no paga la jornada (${cost}).`, en: `The ${buildingName(type, "en")} works in ${cityName(g, id)} pause: the chest cannot pay the day (${cost}).` } });
+        return;
+      }
+      creditCaja(g, id, -cost);
+      rec.paidFee = r2(rec.paidFee + cost);
+      rec.workedDays += 1;
+      if (rec.workedDays >= rec.needDays) { // completion closes the work record exactly once, save/load safe
+        rec.level = rec.nextLevel;
+        rec.state = "active";
+        rec.unkept = false;
+        delete rec.nextLevel; delete rec.needDays; delete rec.workedDays; delete rec.paidFee; delete rec.feeTotal; delete rec.need; delete rec.delivered;
+        if (repOf(g, id) > 0) post(g, "council", { city: id, txt: { es: `Obra terminada: ${cityName(g, id)} ya tiene ${buildingName(type, "es")} (nivel ${rec.level}), pagado por la ciudad.`, en: `Works complete: ${cityName(g, id)} now has ${buildingName(type, "en")} (level ${rec.level}), paid by the city.` } });
+      }
 }
