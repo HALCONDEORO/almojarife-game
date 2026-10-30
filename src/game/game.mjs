@@ -317,6 +317,11 @@ export function doSellStored(g, city, good, qty) {
 export function sellableHold(g, ship, good) {
   return Math.max(0, (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good));
 }
+/** Quantity a sell button may request: clamped to the sellable hold plus the store stock,
+ *  so a fixed-quantity click never asks for locked prize goods (the UI and doSellCombined() agree). */
+export function sellRequestQty(g, ship, good, qty, store) {
+  return Math.min(qty, sellableHold(g, ship, good) + (store?.goods?.[good] ?? 0));
+}
 /** Combined sell preview with the same sellable hold, fee and purse the execution will use. */
 export function previewSellCombinedPort(g, ship, good, qty, store) {
   return previewSellCombined(g.world, g.market, ship, store, good, qty, FEE * feeMul(g, ship.at), sellableHold(g, ship, good));
