@@ -64,7 +64,26 @@ test("skip: one click finishes the tutorial from any step, only while it runs", 
 test("every step has es and en text, no leftover placeholders", () => {
   for (const l of ["es", "en"]) for (const k of ["buy", "sell", "sail", "route", "hall", "contract", "done"]) assert.match(TUT_TEXT[l][k], /\S{3}/), assert.doesNotMatch(TUT_TEXT[l][k], /[{}]/);
   const g = {}; initTutorial(g);
-  assert.equal(tutorialHint(g, "xx"), TUT_TEXT.es.buy);
+  assert.equal(tutorialHint(g, "xx"), "Tutorial 1/6: " + TUT_TEXT.es.buy);
+});
+test("the step counter follows the save's tutorial version", () => {
+  const g3 = {}; initTutorial(g3);
+  assert.match(tutorialHint(g3, "es"), /^Tutorial 1\/6: /);
+  assert.match(tutorialHint(g3, "en"), /^Tutorial 1\/6: /);
+  const g2hall = { tut: { v: 2, bought: true, sold: true, sailed: true, routed: true } };
+  assert.match(tutorialHint(g2hall, "es"), /^Tutorial 5\/5: /); // a v2 save at its last step shows 5/5, never 5/6
+  const g2route = { tut: { v: 2, bought: true, sold: true, sailed: true } };
+  assert.match(tutorialHint(g2route, "en"), /^Tutorial 4\/5: /);
+  const g1sail = { tut: { bought: true, sold: true } };
+  assert.match(tutorialHint(g1sail, "es"), /^Tutorial 3\/3: /);
+  const g1buy = { tut: {} };
+  assert.match(tutorialHint(g1buy, "es"), /^Tutorial 1\/3: /);
+});
+test("the contract step asks only to accept: completion fires on acceptance, not delivery", () => {
+  assert.doesNotMatch(TUT_TEXT.es.contract, /entrg/i);
+  assert.doesNotMatch(TUT_TEXT.en.contract, /deliver/i);
+  const g = {}; initTutorial(g); for (const k of ["buy", "sell", "sail", "route", "hall"]) tutorialNote(g, k, {profit:1,spent:10});
+  assert.match(tutorialHint(g, "es"), /^Tutorial 6\/6: /);
 });
 
 import { loadWorld } from "../src/sim/world.mjs";
