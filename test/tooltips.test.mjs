@@ -14,8 +14,9 @@ test("market quantity buttons carry an explaining tooltip", () => {
   assert.match(src, /<button data-market-qty="\$\{v\}" title="\$\{esc\(t\.tipQty\)\}"/);
 });
 
-test("city rail and corner buttons get tooltips", () => {
+test("city rail and header view controls get tooltips", () => {
   assert.match(src, /\[data-city-reports\]", t\.tipReports/);
   assert.match(src, /\[data-map\]", t\.tipBack/);
-  assert.match(src, /cl\.title = t\.tipLang/);
+  for (const k of ["fit", "zoom-in", "zoom-out", "motion", "construct"]) assert.match(src, new RegExp(`\\["${k}"`), `${k} tooltip entry`);
+  assert.match(src, /b\.title = lang === "es" \? es : en/);
 });
