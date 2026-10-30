@@ -60,8 +60,7 @@ test("doSellStored books the sale in the weekly ledger and advances sell mission
 test("doSellCombined is one transaction: combined preview matches execution at a respect threshold", () => {
   const { g, s } = gameWithStore(5, 10);
   g.market.cadiz.grain.stock = 1; g.market.cadiz.grain.target = 1000;
-  g.relations = g.relations ?? {}; // force respect just below a fee threshold
-  const { repOf } = g;
+  g.portRep = { cadiz: 19.99 }; // a hair under the respect tier: the cargo sale alone would cross it and move the fee
   const f0 = FEE * feeMul(g, "cadiz");
   const pv = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 10, f0);
   const cash0 = g.cash;
@@ -69,6 +68,7 @@ test("doSellCombined is one transaction: combined preview matches execution at a
   assert.equal(r.ok, true);
   assert.equal(r.qty, pv.qty, "executed qty matches the combined preview");
   assert.ok(Math.abs(r.revenue - pv.revenue) < 0.02, `preview ${pv.revenue} matches executed ${r.revenue} (one fee for the whole click)`);
+  assert.ok(r.profit > 0 && r.spent > 0, "combined result carries the gain parts (tutorial sell step needs them)");
   assert.ok(Math.abs((g.cash - cash0) - r.revenue) < 0.02, "cash moves by the combined revenue");
   assert.equal(g.weekTrade.grain.sold, r.qty, "one ledger entry for the combined sale");
 });
@@ -76,7 +76,7 @@ test("doSellCombined is one transaction: combined preview matches execution at a
 test("doSellCombined stops at the port purse and says so when the market has no cash", () => {
   const { g, s } = gameWithStore(5, 10);
   const e = g.market.cadiz.grain;
-  g.market.cadiz.commerce = { cash: 5, income: 0, spent: 0 }; // binding purse with almost no cash
+  e.commerce = { cash: 5, income: 0, spent: 0 }; // binding purse with almost no cash (commerceOf reads the good entry)
   const f0 = FEE * feeMul(g, "cadiz");
   const pv = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 15, f0);
   const r = doSellCombined(g, s, "grain", 15, g.warehouses.cadiz);
@@ -99,10 +99,14 @@ test("previewSellCombined spans cargo first and then the warehouse, one price pa
 
 test("preview and sale fall back to the warehouse when the hold is empty", () => {
   const { g, s } = gameWithStore(0, 6);
-  const ps = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 4, FEE);
+  const ps = previewSellCombined(g.world, g.market, s, g.warehouses.cadiz, "grain", 4, FEE * feeMul(g, "cadiz"));
   assert.equal(ps.qty, 4); assert.equal(ps.fromCargo, 0); assert.equal(ps.fromStore, 4);
-  const r = doSellStored(g, "cadiz", "grain", 4);
-  assert.equal(r.ok, true); assert.equal(g.warehouses.cadiz.goods.grain, 2);
+  const r = doSellCombined(g, s, "grain", 4, g.warehouses.cadiz); // the UI route: must not trip on the empty hold
+  assert.equal(r.ok, true); assert.equal(r.qty, 4);
+  assert.ok(Math.abs(r.revenue - ps.revenue) < 0.02, "execution matches the store-only preview");
+  assert.equal(g.warehouses.cadiz.goods.grain, 2);
+  const r2 = doSellStored(g, "cadiz", "grain", 2);
+  assert.equal(r2.ok, true); assert.equal(g.warehouses.cadiz.goods.grain ?? 0, 0); // a sold-out good leaves no entry, same as the hold
 });
 
 test("market sell button preview uses cargo plus warehouse stock (UI wiring)", () => {
