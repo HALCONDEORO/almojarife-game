@@ -1,6 +1,7 @@
 // City calamities (own design; block C3): famine, fire and port sanitation scares in the
 // same frame as the plague module (weekly seeded roll, building mitigations, ES/EN info
-// messages). Flag `calamities`, OFF by default: no state, no rolls, no change without it.
+// messages). Flag `calamities`, ON by default (opts.calamities false/1 keeps an off game): no state,
+// no rolls, no change without it.
 // No probability or duration is documented: every number is our own tuning (inference).
 // No mortality and no destruction of property are coded: fire HALTS buildings for a while
 // (they reopen by themselves), famine raises food demand, a sanitation scare slackens trade.
