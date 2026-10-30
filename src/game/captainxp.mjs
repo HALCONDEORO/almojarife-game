@@ -1,5 +1,6 @@
 // Captain experience (backlog 7). Own design: the three existing skills (navigation = manoeuvre, weather, defence) grow with what the captain lives through.
-// Flag g.captainXp (default off): off, every function is a no-op and nothing is saved. Levels stay 0-3 so every reader of the skills is unchanged.
+// Flag g.captainXp (ON by default; opts.captainXp false/1 keeps an off game): off, every function is
+// a no-op and nothing is saved. Levels stay 0-3 so every reader of the skills is unchanged.
 import { captainPrice } from "./captains.mjs";
 export const XP_AT = [0, 5, 15, 35]; // cumulative experience needed for level 0..3 (our own numbers, to be measured)
 export const SKILLS = ["navigation", "weather", "defence"];
