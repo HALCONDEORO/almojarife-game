@@ -16,7 +16,7 @@ import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 }; // same descriptor the buildings suite uses
 const KEY = "cadiz/cadiz:7";
-const DAILY = BUILDING_TYPES.workshop.upkeep * 1 + JOBS_PER_LEVEL.workshop * 1 * WAGE_PER_WORKER; // level 1 fixed cost
+const DAILY = BUILDING_TYPES.workshop.upkeep + JOBS_PER_LEVEL.workshop * WAGE_PER_WORKER; // level 1 fixed cost
 
 function fundedWorkshop(level = 1) {
   const gm = newGame(world, "cadiz", { cash: 50000 });
@@ -67,6 +67,16 @@ test("halt and restart hysteresis: no cash halts and stops the accrual, one day 
   assert.equal(accrueBuildings(gm), DAILY, "two days of cash restarts it and the day accrues in full");
   assert.equal(buildingAt(gm, "cadiz", PLOT.id).halted, false, "back at work");
   assert.equal(gm.accrued.buildings[KEY], DAILY, "exactly one day accrued after the restart");
+});
+
+test("cash exactly at the daily line pays the day in full and the building stays active", () => {
+  const gm = fundedWorkshop(1);
+  woolTown(gm, 0); // keep production out of the picture
+  gm.cash = DAILY; // exactly one day of cost in hand, on an active (not halted) workshop
+  const committed = accrueBuildings(gm);
+  assert.equal(committed, DAILY, "the charge is payable: cash == cost is not a short purse");
+  assert.equal(gm.accrued.buildings[KEY], DAILY, "the day accrues in full");
+  assert.equal(buildingAt(gm, "cadiz", PLOT.id).halted ?? false, false, "a paid day does not halt the building");
 });
 
 test("partial staffing spreads fractional batches across days deterministically, charges full cost every day, and save/load mid-cycle changes nothing", () => {
