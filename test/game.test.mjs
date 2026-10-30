@@ -9,6 +9,13 @@ test("a new game starts with 2000, one cog, day 0", () => {
   const g = newGame(world);
   assert.equal(g.cash, 2000); assert.equal(g.ships.length, 1); assert.equal(g.day, 0);
 });
+test("each new day sweeps float noise off cash (Marco 30/10: decimals only in taxes and upkeep)", () => {
+  const g = newGame(world);
+  g.cash = 0.1 + 0.2 + 0.4; // the float drift the playtest saw in the topbar (4.991.984,8200)
+  advanceDay(g);
+  assert.equal(g.cash, 0.7);
+});
+
 test("buy, sail, arrive, sell: cash and cargo stay consistent", () => {
   const g = newGame(world), s = g.ships[0];
   const b = doBuy(g, s, "salt", 20); assert.ok(b.ok); assert.equal(g.cash, 2000 - b.cost);
