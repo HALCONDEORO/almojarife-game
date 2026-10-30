@@ -17,7 +17,7 @@ import { route } from "../sim/world.mjs";
 import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
-import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, sellStored, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { previewSell, previewSellCombined, makeShip, tickShip, sailTick, sail, buy, sell, sellStored, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
 import { seaWearDay, hullSpeedFactor, hullWarning } from "./seawear.mjs";
 import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
 import { captainSpeed } from "./captains.mjs";
@@ -312,6 +312,15 @@ export function doSellStored(g, city, good, qty) {
   if (r.ok) tutorialNote(g, "sell", r);
   return r;
 }
+/** Sellable hold of a good on a ship: the cargo minus the prize lots awaiting a court.
+ *  The market UI (MAX, tooltip, sell-all) and doSellCombined() must all use this exact figure. */
+export function sellableHold(g, ship, good) {
+  return Math.max(0, (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good));
+}
+/** Combined sell preview with the same sellable hold, fee and purse the execution will use. */
+export function previewSellCombinedPort(g, ship, good, qty, store) {
+  return previewSellCombined(g.world, g.market, ship, store, good, qty, FEE * feeMul(g, ship.at), sellableHold(g, ship, good));
+}
 /** One sale click that empties the hold first and then the port warehouse, as a single transaction:
  *  one fee (computed before any respect gain), one effects pass, and a total that matches previewSellCombined(). */
 export function doSellCombined(g, ship, good, qty, store) {
@@ -319,7 +328,7 @@ export function doSellCombined(g, ship, good, qty, store) {
   const city = ship.at;
   if (portClosed(g, city)) return { ok: false, reason: "port closed" };
   const have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
-  const locked = prizeLocked(g, ship, good), avail = have - locked; // prize goods wait for a court: they stay in the hold (flag off: never locked)
+  const avail = sellableHold(g, ship, good), locked = have - avail; // prize goods wait for a court: they stay in the hold (flag off: never locked); the UI previews with the same sellableHold()
   if (locked > 0 && qty > avail + stored) return { ok: false, reason: "prize" };
   qty = Math.min(qty, avail + stored);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
