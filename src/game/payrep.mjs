@@ -1,4 +1,4 @@
-// Payment reputation (flag `credit`, default OFF): the lender's memory of how a house pays, per city.
+// Payment reputation (flag `credit`, ON by default (opts.credit false turns it off)): the lender's memory of how a house pays, per city.
 // Sources: docs in Estudio's "Credito y ligas 1480-1600", section 3 (merchant credit rested on the fame of paying; a defaulter was recorded).
 // The numbers below are tuning knobs, NOT historical rates (interest rates and discounts by place and year are not verified).
 // Internal: the player sees only the terms (room, rate, refusal), never the level. With the flag OFF nothing here runs.
