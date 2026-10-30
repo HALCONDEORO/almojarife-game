@@ -2,13 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld, route } from "../src/sim/world.mjs";
 import { buyRumor } from "../src/game/game.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, quote, GOAL_CASH } from "../src/game/game.mjs";
+import { newGame, advanceDay, advanceTick, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, quote, GOAL_CASH } from "../src/game/game.mjs";
 const world = loadWorld();
 
 test("a new game starts with 2000, one cog, day 0", () => {
   const g = newGame(world);
   assert.equal(g.cash, 2000); assert.equal(g.ships.length, 1); assert.equal(g.day, 0);
 });
+test("the real tick loop sweeps float noise at the day boundary, before the day-change autosave (Auditoria #718)", () => {
+  const g = newGame(world);
+  g.cash = 0.1 + 0.2 + 0.4; // 0.7000000000000001: the drift the playtest saw
+  for (let i = 0; i < 240; i++) advanceTick(g); // TICKS_PER_DAY: the web loop's own path
+  assert.equal(g.day, 1);
+  assert.equal(g.cash, 0.7);
+});
+
 test("each new day sweeps float noise off cash (Marco 30/10: decimals only in taxes and upkeep)", () => {
   const g = newGame(world);
   g.cash = 0.1 + 0.2 + 0.4; // the float drift the playtest saw in the topbar (4.991.984,8200)
