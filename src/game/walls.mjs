@@ -1,13 +1,15 @@
 // City walls (edificios push, lane B): three wall levels per port, matching the
-// wall/gate art (x3). COUNCIL WORKS (30/10): the concejo raises the walls; the
-// player only finances them (full market cost of materials + labor fee) and
-// needs respect "Conocido" in the port. The player warehouse is never tapped.
+// wall/gate art (x3). COUNCIL WORKS (Marco 30/10 15:23: "hace falta que el concejo
+// vote, lo paguen ellos y lo mantengan ellos"): the concejo VOTES the walls at its
+// meetings, pays the works out of the town chest (caja) and pays the watch the same
+// way. The player never pays: at most, a merchant the port knows (respect
+// "Conocido") can hand in a petition the concejo votes on at its next meeting.
 // Construction follows the buildings pattern (labor fee, exact readyTick),
 // the old wall keeps serving until the upgrade completes (reference: P3
-// official manual 11.5.3, construction gate - no health effect). Upkeep
-// accrues daily into the weekly book under accrued.buildings["walls:<city>"];
-// unpaid walls stand but their growth bonus suspends until the watch is paid
-// again (buildings halt hysteresis). Kept walls add effective population at
+// official manual 11.5.3, construction gate - no health effect). Upkeep is
+// paid daily from the town chest (Marco 30/10: "lo mantengan ellos"); walls
+// whose watch the caja cannot pay stand but their growth bonus suspends until
+// the chest covers the watch again (buildings halt hysteresis). Kept walls add effective population at
 // the market, the P3 wall-growth role (houses and public buildings inside the
 // wall). Every number is own tuning (inference, no documented figure exists).
 // Flag `walls`, ON by default (strict semantics: only opts.walls === false or
@@ -16,6 +18,7 @@ import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { quoteUnits, consumeUnits } from "../sim/recipes.mjs";
 import { post } from "./ledger.mjs";
 import { repOf } from "./rank.mjs";
+import { cajaOf, creditCaja, meetingDay } from "./council.mjs";
 
 export const WALL_MAX_LEVEL = 3;                       // matches the wall/gate art levels
 export const WALL_RECIPE = Object.freeze({ bricks: 24, timber: 8, ironware: 2 }); // per level, own tuning, measured at hospital scale
@@ -23,6 +26,8 @@ export const WALL_FEE = 300;                           // labor per level, own t
 export const WALL_BUILD_DAYS = 10;                     // per level, own tuning
 export const WALL_UPKEEP = 2;                          // per active level and day, own tuning
 export const WALL_POP = 25;                            // effective population per KEPT level (half a house level), own tuning
+export const WALL_AUTONOMOUS = false;                        // own-motion builds DISABLED (Main decision 30/10 16:09): with them ON, 22 cities wall themselves in year 1 and the declared living-city balance baseline flips (lose/43022 -> win/50574); the chests' municipal income outgrows any flush bar. Flip to true to let flush concejos wall themselves.
+export const WALL_CAJA_FLUSH = 1.5;                        // own proposal (adjustable): when WALL_AUTONOMOUS, the concejo only starts a wall on its own when the chest covers 1.5x the work
 export const WALL_MIN_RESPECT = 20;                     // council works: the concejo only takes patronage from a merchant it knows ("Conocido", same bar as the office)
 
 /** Fresh state for a new game with the flag on: a bare level map per city. */
@@ -54,7 +59,6 @@ export function quoteWalls(g, cityId) {
   if (!g.walls) return { ok: false, reason: "unknown" }; // flag off: no state, no walls
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
-  if (repOf(g, cityId) < WALL_MIN_RESPECT) return { ok: false, reason: "respect required", need: WALL_MIN_RESPECT }; // the concejo raises the walls, not an unknown merchant (Marco 30/10)
   if (underConstruction(g, cityId)) return { ok: false, reason: "already building" };
   const level = wallsLevel(g, cityId) + 1;
   if (level > WALL_MAX_LEVEL) return { ok: false, reason: "max level" };
@@ -74,29 +78,60 @@ export function quoteWalls(g, cityId) {
   return { ok: true, level, cost, materials: q.cost, fee, rounding, ticks, inputs, fromStore, missing };
 }
 
-/** Pay and start the work. An upgrade keeps the old wall active until the new one completes (P3 11.5.3). */
+/** The concejo pays and starts the work, out of the town chest (Marco 30/10: "lo paguen ellos"). An upgrade keeps the old wall active until the new one completes (P3 11.5.3). */
 export function startWalls(g, cityId) {
   if (g.over) return { ok: false, reason: "game over" };
   const q = quoteWalls(g, cityId);
   if (!q.ok) return q;
-  if (g.cash < q.cost) return { ok: false, reason: "no cash", cost: q.cost };
-  const c = consumeUnits(g.world, g.market, cityId, q.missing, g.cash - q.fee);
+  if (cajaOf(g, cityId) < q.cost) return { ok: false, reason: "caja short", cost: q.cost };
+  const c = consumeUnits(g.world, g.market, cityId, q.missing, cajaOf(g, cityId) - q.fee);
   if (!c.ok) return c; // re-quoted inside; cannot fail after the checks above, but never mutate half-way
-  const w = g.warehouses?.[cityId];
-  for (const [good, qty] of Object.entries(q.fromStore)) {
-    if (!qty) continue;
-    const had = w.goods[good], transferred = Math.round((w.basis?.[good] ?? 0) * qty / had);
-    if (w.basis) w.basis[good] = (w.basis[good] ?? 0) - transferred;
-    w.goods[good] -= qty;
-    if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
-  }
-  g.cash -= q.cost;
+  creditCaja(g, cityId, -q.cost);
   const base = wallsLevel(g, cityId); // includes the legacy read, so an old wall never drops during the work
   const rec = (g.walls[cityId] ??= { level: base, state: "construction" });
   rec.state = base >= 1 ? "active" : "construction"; // the old defenses serve until the new level completes
   rec.nextLevel = q.level; rec.readyTick = g.tick + q.ticks;
-  post(g, "info", { txt: { es: `Comienzan las obras de las murallas de ${cityName(g, cityId)} (nivel ${q.level}).`, en: `Wall works begin at ${cityName(g, cityId)} (level ${q.level}).` } });
+  if (repOf(g, cityId) > 0) post(g, "council", { city: cityId, txt: { es: `El concejo de ${cityName(g, cityId)} vota levantar la muralla (nivel ${q.level}) y la paga de la caja de la ciudad.`, en: `The council of ${cityName(g, cityId)} votes to raise the wall (level ${q.level}) and pays for it out of the town chest.` } }); // the player only hears about councils that know them
   return { ok: true, ...q };
+}
+
+/** A merchant the port knows hands in a wall petition; the concejo votes on it at its next meeting (Marco 30/10: the player at most proposes). */
+export function proposeWall(g, cityId) {
+  if (!g.walls) return { ok: false, reason: "unknown" }; // flag off
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
+  if (repOf(g, cityId) < WALL_MIN_RESPECT) return { ok: false, reason: "respect required", need: WALL_MIN_RESPECT }; // the concejo only hears a merchant it knows ("Conocido", same bar as the office)
+  if (underConstruction(g, cityId)) return { ok: false, reason: "already building" };
+  if (wallsLevel(g, cityId) >= WALL_MAX_LEVEL) return { ok: false, reason: "max level" };
+  const rec = (g.walls[cityId] ??= { level: wallsLevel(g, cityId), state: wallsLevel(g, cityId) >= 1 ? "active" : "construction" });
+  if (rec.petition) return { ok: false, reason: "petition pending" };
+  rec.petition = true;
+  post(g, "council", { city: cityId, txt: { es: `Presentas al concejo de ${cityName(g, cityId)} una petición de muralla: se votará en la próxima reunión.`, en: `You hand the council of ${cityName(g, cityId)} a wall petition: it will be voted at the next meeting.` } });
+  return { ok: true };
+}
+
+/** Meeting-day wall vote, one city at a time, right after councilDay: a pending petition is voted (and consumed) first; without one the concejo builds only with a flush chest. */
+export function councilWallsVote(g) {
+  if (!g.walls) return; // flag OFF: nothing
+  for (const c of g.world.cities) {
+    const id = c.id;
+    if (!meetingDay(g.world, id, g.day)) continue;
+    const rec = g.walls[id];
+    if (underConstruction(g, id) || wallsLevel(g, id) >= WALL_MAX_LEVEL) continue; // a live petition waits for the next meeting
+    const q = quoteWalls(g, id);
+    if (!q.ok) continue;
+    const caja = cajaOf(g, id);
+    if (rec?.petition) {
+      delete rec.petition; // voted today, one way or the other
+      if (caja < q.cost) {
+        post(g, "council", { city: id, txt: { es: `El concejo de ${cityName(g, id)} rechaza tu petición de muralla: la caja no llega (${q.cost}).`, en: `The council of ${cityName(g, id)} turns down your wall petition: the chest cannot cover it (${q.cost}).` } });
+        continue;
+      }
+      startWalls(g, id);
+    } else if (WALL_AUTONOMOUS && caja >= q.cost * WALL_CAJA_FLUSH) {
+      startWalls(g, id); // flush chest: the concejo walls the town on its own motion (disabled: see WALL_AUTONOMOUS)
+    }
+  }
 }
 
 /** Construction finishes on its exact tick (hooked next to tickBuildings). */
@@ -109,26 +144,23 @@ export function tickWalls(g) {
   }
 }
 
-/** Daily upkeep into the weekly book; broke walls stand but their bonus suspends, with the buildings' restart hysteresis. */
+/** Daily upkeep from the town chest; walls the caja cannot pay stand but their bonus suspends, with the buildings' restart hysteresis. The player's cash and weekly book are never touched (Marco 30/10: "lo mantengan ellos"). */
 export function accrueWalls(g, priorCommitted = 0) {
   if (!g.walls) return priorCommitted; // flag OFF: nothing
-  let committed = priorCommitted; // buildings already reserved their upkeep against the same cash today
   for (const [cityId, w] of Object.entries(g.walls)) {
     if (w.state !== "active" || !w.level) continue;
-    const cost = WALL_UPKEEP * w.level;
+    const cost = WALL_UPKEEP * w.level, caja = cajaOf(g, cityId);
     if (w.unkept) {
-      if (g.cash - committed < cost * 2) continue; // hysteresis: resume only with two days of cost in hand
+      if (caja < cost * 2) continue; // hysteresis: resume only with two days of cost in the chest
       w.unkept = false;
       post(g, "info", { txt: { es: `La guardia vuelve a las murallas de ${cityName(g, cityId)}.`, en: `The watch returns to the walls of ${cityName(g, cityId)}.` } });
     }
-    if (g.cash - committed < cost) {
+    if (cajaOf(g, cityId) < cost) {
       w.unkept = true;
-      post(g, "info", { txt: { es: `Sin paga, la guardia abandona las murallas de ${cityName(g, cityId)}: la ciudad pierde su impulso.`, en: `Unpaid, the watch leaves the walls of ${cityName(g, cityId)}: the city loses its drive.` } });
+      post(g, "council", { city: cityId, txt: { es: `La caja de ${cityName(g, cityId)} no paga la guardia: las murallas pierden su impulso.`, en: `The chest of ${cityName(g, cityId)} cannot pay the watch: the walls lose their drive.` } });
       continue;
     }
-    const a = (g.accrued ??= { ships: {} });
-    (a.buildings ??= {})[`walls:${cityId}`] = (a.buildings[`walls:${cityId}`] ?? 0) + cost;
-    committed += cost;
+    creditCaja(g, cityId, -cost);
   }
-  return committed; // the towers' watch continues today's cash-budget chain
+  return priorCommitted; // the towers' watch continues today's cash-budget chain, unchanged: walls no longer draw on it
 }
