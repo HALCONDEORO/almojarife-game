@@ -8,7 +8,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { readFileSync } from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, advanceTick, doBuy, TICKS_PER_DAY } from "../src/game/game.mjs";
 import { calendarOf, dayOf, START_YEAR, LEGACY_START_YEAR } from "../src/sim/clock.mjs";
@@ -64,7 +63,7 @@ test("the year rolls over through the real loop: the shown date and the cycle co
 });
 
 test("the view reads the same single conversion, and an old save keeps its own epoch", () => {
-  const main = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+  const main = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   assert.match(main, /calendarOf\(g\.day, g\.startYear \?\? LEGACY_START_YEAR\)/, "the clock the player sees is calendarOf of the same day counter, not a parallel conversion");
   const gm = newGame(world);
   const save = JSON.parse(JSON.stringify(serialize(gm, "Reloj")));
