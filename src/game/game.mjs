@@ -162,7 +162,6 @@ export const DAILY_HOOKS = [];
 function dayTick(g) {
   almonedaDay(g); // the hammer falls at the END of the auction day, before the calendar turns: the player bids while the lot is on the block (flag off: nothing)
   g.day++;
-  g.cash = r2d(g.cash); // daily sweep at the common day boundary: trades sum 2-decimal coins and bare floats drift (0.1 + 0.2); the drift must never reach the autosave on the day change (Marco 30/10: decimals only in taxes and upkeep)
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
@@ -209,6 +208,7 @@ function dayTick(g) {
     if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
     else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
   }
+  g.cash = r2d(g.cash); // FINAL daily sweep, after every operation of the day (routes, weekly settlement, hooks): trades sum 2-decimal coins and bare floats drift (0.1 + 0.2), and the drift must never reach the autosave that fires on the day change (Marco 30/10: decimals only in taxes and upkeep)
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {
