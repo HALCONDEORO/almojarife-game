@@ -43,7 +43,6 @@ import { growthTick, growthMul } from "./growth.mjs";
 import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
 import { seasonOf } from "../sim/market.mjs";
 import { councilDay, creditCaja } from "./council.mjs";
-import { councilWallsVote } from "./walls.mjs";
 import { almonedaDay } from "./almoneda.mjs"; // the weekly town auction (flag-gated inside)
 import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
@@ -52,7 +51,7 @@ import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, houseClassPop, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
-import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, WALL_POP } from "./walls.mjs";
+import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, councilWallsVote, WALL_POP } from "./walls.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
