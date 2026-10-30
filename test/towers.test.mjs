@@ -11,6 +11,7 @@ import { buyOffice } from "../src/game/buildings.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { towersCount, towersKept, towersMax, quoteTowers, startTowers, tickTowers, accrueTowers, TOWERS_PER_WALL_LEVEL, TOWER_UPKEEP, TOWER_BUILD_DAYS } from "../src/game/towers.mjs";
 import { accrueWalls, WALL_UPKEEP } from "../src/game/walls.mjs";
+import { cajaOf } from "../src/game/council.mjs";
 import { calamityChance, calamityDays, CALAMITY, CHANCE_CAP } from "../src/game/calamities.mjs";
 import { settleWeek } from "../src/game/ledger.mjs";
 import { TICKS_PER_DAY } from "../src/sim/clock.mjs";
@@ -99,16 +100,19 @@ test("upkeep accrues into the weekly book and settleWeek pays it", () => {
   assert.ok(r && g.cash < before, "the weekly book collects tower upkeep");
 });
 
-test("cash-budget chain: walls are paid before towers on a short purse", () => {
+test("cash-budget chain: the chest pays the walls; the buildings' commitment still reaches the towers", () => {
   const g = game(); rich(g);
   g.walls.cadiz = { level: 2, state: "active" };
   g.towers.cadiz = { count: 2, state: "active" };
-  g.cash = 2 * WALL_UPKEEP; // exactly the walls' day, nothing left for the towers
-  const wallCommit = accrueWalls(g, 0) ?? 0;
-  assert.equal(wallCommit, 2 * WALL_UPKEEP, "accrueWalls reports its commitment down the chain");
+  (g.hallCaja ??= {}).cadiz = 1e6; // the chest covers the watch
+  const cajaBefore = cajaOf(g, "cadiz");
+  g.cash = 0; // an empty player purse: walls must not care, towers must
+  const wallCommit = accrueWalls(g, 3) ?? 3; // 3 = what accrueBuildings reported upstream that same day
+  assert.equal(wallCommit, 3, "walls add nothing and pass the buildings' commitment down the chain");
+  assert.equal(cajaOf(g, "cadiz"), cajaBefore - 2 * WALL_UPKEEP, "the chest pays the watch, not the player");
+  assert.equal(g.walls.cadiz.unkept, undefined, "walls stay kept on an empty player purse");
   accrueTowers(g, wallCommit);
-  assert.equal(g.walls.cadiz.unkept, undefined, "walls stay kept");
-  assert.equal(g.towers.cadiz.unkept, true, "towers go unmanned first");
+  assert.equal(g.towers.cadiz.unkept, true, "towers still answer to the player's purse and go unmanned");
   assert.equal(towersKept(g, "cadiz"), 0, "an unmanned tower watches nothing");
 });
 
