@@ -574,9 +574,9 @@ document.addEventListener("pointerup", endPress, true); document.addEventListene
 /** City walls confirm card (extracted from bldCard, same content): the concejo votes and pays;
  *  the respect gate is on the petition, not on the quote. */
 const wallQuoteCard = (gm, st, tt, ln) => {
-  const quote = quoteWalls(gm, st.at);
-  if (quote.ok) return { card: `<b>${tt.wallTitle} · ${tt.wallLevel.replace("{l}", quote.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${tt.bldCost.replace("{c}", fmt(quote.cost)).replace("{m}", fmt(quote.materials)).replace("{f}", fmt(quote.fee)+(quote.rounding>0?` + ${ln==='es'?'ajuste a moneda entera':'whole-coin adjustment'} ${fmt(quote.rounding)}`:'')).replace("{d}", Math.round(quote.ticks / TICKS_PER_DAY)).replace("{u}", quote.level * WALL_UPKEEP)}</small><br><small>${tt.wallCouncil}</small>`, canPay: repOf(gm, st.at) >= WALL_MIN_RESPECT, lockNote: repOf(gm, st.at) >= WALL_MIN_RESPECT ? "" : whyText(tt, "respect required", ln) };
-  return { card: `<b>${tt.wallTitle}</b><br><small style="color:#a11">${quote.reason === "max level" ? tt.bldMax : whyText(tt, quote.reason)}</small>`, canPay: false, lockNote: "" };
+  const wq = quoteWalls(gm, st.at);
+  if (wq.ok) return { card: `<b>${tt.wallTitle} · ${tt.wallLevel.replace("{l}", wq.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${tt.bldCost.replace("{c}", fmt(wq.cost)).replace("{m}", fmt(wq.materials)).replace("{f}", fmt(wq.fee)+(wq.rounding>0?` + ${ln==='es'?'ajuste a moneda entera':'whole-coin adjustment'} ${fmt(wq.rounding)}`:'')).replace("{d}", Math.round(wq.ticks / TICKS_PER_DAY)).replace("{u}", wq.level * WALL_UPKEEP)}</small><br><small>${tt.wallCouncil}</small>`, canPay: repOf(gm, st.at) >= WALL_MIN_RESPECT, lockNote: repOf(gm, st.at) >= WALL_MIN_RESPECT ? "" : whyText(tt, "respect required", ln) };
+  return { card: `<b>${tt.wallTitle}</b><br><small style="color:#a11">${wq.reason === "max level" ? tt.bldMax : whyText(tt, wq.reason)}</small>`, canPay: false, lockNote: "" };
 };
 /** City walls block of the buildings tab (extracted from render, same content): level, effect, upkeep,
  *  construction progress, unkept warning and the petition flow. */
