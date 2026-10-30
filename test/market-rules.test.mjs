@@ -15,11 +15,11 @@ const world = {
 const NO_LEDGERS = { needsLedger: false, commerceLedger: false };
 
 test("makeMarket: target, stock, rate, flags and pop follow the founding formulas", () => {
-  const m = makeMarket(world);
+  const market = makeMarket(world);
   // pop 10000 -> pop/100 = 100: makes x3, needs x1, neither x1.5; stock starts at target.
   // (Entries also carry a commerce ledger while COMMERCE_LEDGER_ENABLED is on; pinned in commerce.test.mjs.)
   assert.deepEqual(
-    Object.fromEntries(Object.entries(m.cadiz).map(([g, e]) => [g, (({ stock, target, makes, needs, rate, pop }) => ({ stock, target, makes, needs, rate, pop }))(e)])),
+    Object.fromEntries(Object.entries(market.cadiz).map(([good, entry]) => [good, (({ stock, target, makes, needs, rate, pop }) => ({ stock, target, makes, needs, rate, pop }))(entry)])),
     {
       grain: { stock: 300, target: 300, makes: true, needs: false, rate: 10, pop: 10000 },
       wine: { stock: 100, target: 100, makes: false, needs: true, rate: 10, pop: 10000 },
@@ -49,8 +49,8 @@ test("price: clamped to 3x base when scarce and 0.4x when glutted", () => {
 
 test("affordRatio is the same rounded price curve the player sees", () => {
   for (const stock of [1, 100, 150, 300, 450, 600, 1200, 30000]) {
-    const e = { stock, target: 300 };
-    assert.equal(Math.round(10 * affordRatio(e, 10)), price(world, e, "grain"), `stock ${stock}`);
+    const entry = { stock, target: 300 };
+    assert.equal(Math.round(10 * affordRatio(entry, 10)), price(world, entry, "grain"), `stock ${stock}`);
   }
   assert.equal(affordRatio({ stock: 300, target: 300 }, 10), 1); // parity ratio is exactly 1
 });
@@ -71,14 +71,14 @@ test("cityDemand: needs multiplies by 3, making it yourself multiplies by 0.3", 
 });
 
 test("cityDemandBy: class-typed house residents leave the mixed pool and buy by their own class", () => {
-  const e = { stock: 300, target: 300, pop: 1000, classExtra: { rich: 100 } };
-  const by = cityDemandBy(e, "grain", 10); // ratio 1 at parity stock
+  const entry = { stock: 300, target: 300, pop: 1000, classExtra: { rich: 100 } };
+  const byClass = cityDemandBy(entry, "grain", 10); // ratio 1 at parity stock
   const pool = demandBy(900, "grain", 1); // 1000 pop - 100 typed residents
   const extra = demandOf({ rich: 100 }, "grain", 1);
   // classCounts(900) = poor 720, middle 162, rich 18; grain 1.3/1.1/0.7 per 1000.
-  assert.equal(by.poor, pool.poor); // 720/1000*1.3 = 0.936
-  assert.equal(by.middle, pool.middle); // 162/1000*1.1 = 0.1782
-  assert.equal(by.rich, pool.rich + extra.rich); // 18/1000*0.7 + 100/1000*0.7 = 0.0126 + 0.07
+  assert.equal(byClass.poor, pool.poor); // 720/1000*1.3 = 0.936
+  assert.equal(byClass.middle, pool.middle); // 162/1000*1.1 = 0.1782
+  assert.equal(byClass.rich, pool.rich + extra.rich); // 18/1000*0.7 + 100/1000*0.7 = 0.0126 + 0.07
 });
 
 test("tick: producers add round(rate*2*season) and every good gets a round(rate*0.4) trickle", () => {
