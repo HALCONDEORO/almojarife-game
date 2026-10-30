@@ -26,52 +26,56 @@ test("two buys at different prices stack one lot: the basis is the sum of both c
   assert.equal(r2(sh.basis[good] / sh.cargo[good]), r2((first.cost + second.cost) / 20), "the average cost is the weighted average");
 });
 
-test("a partial sale settles the pro-rata share and the remainder keeps its cost; a full disposal settles every cent", () => {
+test("a partial sale settles the pro-rata share rounded to the coin and the remainder keeps its cost; a full disposal settles every cent", () => {
   const gm = game();
   const sh = gm.ships[0], good = "grain";
-  sh.cargo[good] = 40; sh.basis = { [good]: 320 }; // 8 per unit book cost
+  sh.cargo[good] = 7; sh.basis = { [good]: 100.55 }; // fractional book cost: 14.36 per unit and change
   let settled = 0;
-  const leg1 = doSellCombined(gm, sh, good, 10, null);
+  const leg1 = doSellCombined(gm, sh, good, 3, null);
   assert.ok(leg1.ok);
-  assert.equal(leg1.spent, 80, "first leg settles 10/40 of the 320 book cost");
-  assert.equal(sh.basis[good], 240, "the remainder keeps the rest of the cost");
+  assert.equal(leg1.spent, Math.round(100.55 * 3 / 7), "first leg settles the literal Math.round share of 100.55 x 3/7");
+  assert.equal(leg1.spent, 43, "43.09 rounds down to the coin (a ceil mutant dies here)");
+  assert.equal(r2(sh.basis[good]), 57.55, "the remainder keeps the rest of the cost, cents included");
   settled += leg1.spent;
-  const leg2 = doSellCombined(gm, sh, good, 10, null);
-  assert.equal(leg2.spent, 80, "second leg settles 10/30 of the remaining 240");
-  assert.equal(sh.basis[good], 160);
+  const leg2 = doSellCombined(gm, sh, good, 2, null);
+  assert.equal(leg2.spent, Math.round(57.55 * 2 / 4), "second leg settles the literal Math.round share of the remainder");
+  assert.equal(leg2.spent, 29, "28.775 rounds up to the coin (a floor mutant dies here)");
+  assert.equal(r2(sh.basis[good]), 28.55);
   settled += leg2.spent;
-  const leg3 = doSellCombined(gm, sh, good, 20, null);
-  assert.equal(leg3.spent, 160, "the final leg settles the exact remainder, no cent stranded");
+  const leg3 = doSellCombined(gm, sh, good, 2, null);
+  assert.equal(leg3.spent, 28.55, "the final leg settles the exact remainder to the cent, no rounding at all");
   settled += leg3.spent;
   assert.equal(sh.basis?.[good] ?? null, null, "a fully sold lot carries no basis");
-  assert.equal(settled, 320, "across all legs the settled cost is the original book cost, no more, no less");
+  assert.equal(r2(settled), 100.55, "across all legs the settled cost is the original book cost, no more, no less");
 });
 
-test("store and take move the basis with the goods: a transfer is never a sale", () => {
+test("store and take move the basis with the goods: a transfer is never a sale, and a deposit merges into an existing lot", () => {
   const gm = game();
   const sh = gm.ships[0], good = "grain";
-  const wh = { goods: {}, basis: {} };
+  const wh = { goods: { [good]: 3 }, basis: { [good]: 40.2 } }; // an existing lot at a different cost
   gm.warehouses = { cadiz: wh };
-  sh.cargo[good] = 40; sh.basis = { [good]: 320 };
+  sh.cargo[good] = 7; sh.basis = { [good]: 100.55 };
   const cash0 = gm.cash;
-  const st = storeGoods(gm, sh, good, 10);
-  assert.ok(st.ok);
-  assert.equal(sh.cargo[good], 30);
-  assert.equal(sh.basis[good], 240, "the ship keeps 30/40 of the cost");
-  assert.equal(wh.basis[good], 80, "the warehouse receives the transferred share");
-  const tk = takeGoods(gm, sh, good, 10);
-  assert.ok(tk.ok);
-  assert.equal(sh.cargo[good], 40);
-  assert.equal(sh.basis[good], 320, "taking the same units back restores the exact basis");
-  assert.equal(wh.basis[good] ?? 0, 0, "nothing left behind");
+  const st1 = storeGoods(gm, sh, good, 2);
+  assert.ok(st1.ok);
+  assert.equal(sh.basis[good], 71.55, "100.55 - 29: 28.73 rounds up (a floor mutant dies here)");
+  assert.equal(wh.goods[good], 5, "the units merge into the existing lot");
+  assert.equal(wh.basis[good], 69.2, "the basis MERGES: 40.20 + 29, not an overwrite (an overwrite mutant dies here)");
+  const st2 = storeGoods(gm, sh, good, 2);
+  assert.ok(st2.ok);
+  assert.equal(sh.basis[good], 42.55, "71.55 - Math.round(71.55 x 2/5) = 42.55");
+  assert.equal(wh.basis[good], 98.2, "69.20 + 29");
+  const tk1 = takeGoods(gm, sh, good, 3);
+  assert.ok(tk1.ok);
+  assert.equal(wh.basis[good], 56.2, "a PARTIAL take moves the literal Math.round share: 98.20 - Math.round(98.20 x 3/7) = 56.20 (a ceil mutant dies here)");
+  assert.equal(sh.basis[good], 84.55, "the taken share lands on the ship: 42.55 + 42");
   assert.equal(gm.cash, cash0, "no money moved: a transfer is not income");
-  const tall = storeGoods(gm, sh, good, 40);
-  assert.ok(tall.ok);
-  assert.equal(wh.basis[good], 320, "a full store settles the exact book cost in the warehouse");
-  assert.equal(sh.basis?.[good] ?? null, null);
-  const tallBack = takeGoods(gm, sh, good, 40);
-  assert.ok(tallBack.ok);
-  assert.equal(sh.basis[good], 320, "a full round trip conserves the book cost to the cent");
+  const tkAll = takeGoods(gm, sh, good, 4);
+  assert.ok(tkAll.ok);
+  assert.equal(sh.basis[good], 140.75, "taking the rest settles the exact remainder: 84.55 + 56.20");
+  assert.equal(wh.basis[good] ?? 0, 0, "nothing left behind");
+  assert.equal(wh.goods[good] ?? 0, 0);
+  assert.equal(r2(sh.basis[good]), r2(100.55 + 40.2), "a full round trip conserves both lots' book cost to the cent");
   assert.equal(gm.cash, cash0, "still no money moved");
 });
 
