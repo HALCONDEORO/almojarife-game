@@ -66,7 +66,7 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     // no save: the book starts a game without any dialog
     assert.equal(await ev("document.querySelector('#t-start').classList.contains('primary')"), true);
     await click("t-start"); await sleep(300);
-    await ev("document.getElementById('p-co').value='Casa Uno';document.getElementById('p-go').click()"); await sleep(2000);
+    await ev("document.getElementById('p-ch').value='Uno';document.getElementById('p-co').value='Casa Uno';document.getElementById('p-go').click()"); await sleep(2000);
     assert.equal(await ev("document.getElementById('title').hidden"), true);
     let save1 = await get(K); assert.ok(save1);
     await nav();
@@ -76,7 +76,7 @@ test("title book in a real browser: existing save is protected, rotation keeps i
     assert.equal(await ev("document.getElementById('t-cont').classList.contains('primary') && !document.getElementById('t-cont').disabled"), true);
     // a save exists: Start asks first, nothing is written yet
     await click("t-start"); await sleep(300);
-    await ev("document.getElementById('p-co').value='Casa Dos';document.getElementById('p-go').click()"); await sleep(500);
+    await ev("document.getElementById('p-ch').value='Dos';document.getElementById('p-co').value='Casa Dos';document.getElementById('p-go').click()"); await sleep(500);
     assert.equal(await ev("!!document.getElementById('r-go')"), true);
     assert.equal(await get(K), save1); assert.equal(await get(B), null);
     // cancel keeps the save; export keeps dialog and save
