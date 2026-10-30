@@ -276,7 +276,7 @@ test("bldOfferCard: a processor card shows drawing, investment, running costs an
   assert.match(html, new RegExp(String(offer.cost)));
   assert.match(html, new RegExp(offer.days + " días de obra"));
   assert.match(html, /mano de obra 300/); // labor fee = spec fee x level
-  assert.match(html, /mantenim\. 3\/día · salarios 8\/día/); // upkeep + JOBS_PER_LEVEL.workshop(8) x WAGE(1)
+  assert.match(html, /mantenimiento 3\/día · salarios 8\/día/); // upkeep + JOBS_PER_LEVEL.workshop(8) x WAGE(1)
   assert.match(html, /≈1\/día de media/); // average rate 0.5 batches/day x 2 cloth - labeled average, never a max (peak days make more)
   assert.match(html, /gasta ≈2\/día de media/);   // 0.5 batches/day x 4 wool
   assert.ok(!html.includes("según temporada")); // processors are not seasonal

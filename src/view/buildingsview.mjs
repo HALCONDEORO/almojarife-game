@@ -148,7 +148,7 @@ export const BW = {
 // Short visible captions under each stat cell: the card must explain itself without hover
 // (the old text line spelled every figure out); the full labels above stay in title/aria-label.
 export const BWL = {
-  es: { rate: "lotes/día", margin: "margen/lote", marginWarn: "racha en rojo", produced: "producidos", upkeep: "mantenim./día", jobs: "trabajadores", wages: "salarios/día", pop: "habitantes", cap: "depósito", toll: "peaje" },
+  es: { rate: "lotes/día", margin: "margen/lote", marginWarn: "racha en rojo", produced: "producidos", upkeep: "mantenimiento/día", jobs: "trabajadores", wages: "salarios/día", pop: "habitantes", cap: "depósito", toll: "peaje" },
   en: { rate: "batches/day", margin: "margin/batch", marginWarn: "losing streak", produced: "produced", upkeep: "upkeep/day", jobs: "workers", wages: "wages/day", pop: "citizens", cap: "storage", toll: "toll" },
 };
 // Own flat icons (CREDITS.md style, 24x24): card icons for non-producer types and small
@@ -220,7 +220,7 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
 export const BO = {
   es: {
     days: "{d} días de obra", fee: "mano de obra {p}", imported: "con importación",
-    ops: "mantenim. {u}/día", wages: "salarios {w}/día",
+    ops: "mantenimiento {u}/día", wages: "salarios {w}/día",
     makes: "≈{n}/día de media", uses: "gasta ≈{n}/día de media", seasonal: "según temporada",
     armory: "vende armas y equipo",
     civic: { posito: "estabiliza el grano", hospital: "contra la peste", alhondiga: "mercado cubierto", caminos: "saneamiento", pozo: "agua limpia", capilla: "amparo en calamidades", carniceria: "carne y pescado estables", molino: "asegura el grano", corral: "alegra la ciudad" },
