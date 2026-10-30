@@ -1,4 +1,4 @@
-// Plague and city calamities (own design; block C2). Flag `plague`, OFF by default:
+// Plague and city calamities (own design; block C2). Flag `plague`, ON by default:
 // with no g.plague state nothing rolls, nothing changes, and the game is untouched.
 // No probability or duration is documented anywhere: every number here is our own
 // tuning (marked as inference in the PR), never presented as a historical figure.
