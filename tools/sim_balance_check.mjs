@@ -89,7 +89,7 @@ for (const h of H) {
 
 const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bot ?? {};
 // NPC worth band per horizon (cash + cargo at base prices), measured with tools/sim_npc_worth_bands.mjs
-// on scenario A's exact configuration (seed 0, every flag ON): the NPC economy oscillates between about
+// on scenario A's exact configuration (seed 0, all default world-systems ON): the NPC economy oscillates between about
 // 206k and 5.7M over 100 years. Each band is set from the measured values within +-2 years of the horizon:
 // low = 0.5 x the minimum, high = 4 x the maximum. It catches a collapse or a runaway, not a drift.
 // Recalibrate when the measured window moves.
