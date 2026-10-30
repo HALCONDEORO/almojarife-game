@@ -62,6 +62,11 @@ test("completing M1 pays its reward and activates the whole branch with their in
   assert.deepEqual(g.respectLog, [["sevilla", 5]]);
   assert.deepEqual([...g.campaign.active].sort(), ["m1-oficio", "m2-nombre", "s1-gremio", "s2-caja"], "branches are the missions requiring the same parent");
   assert.equal(h.posts.length, 4, "done text plus three intros");
+  campaignEvent(g, { kind: "readReport" }, h);
+  campaignTick(g, h);
+  assert.equal(g.cash, 300, "a repeated event pays nothing twice");
+  assert.equal(g.respectLog.length, 1);
+  assert.equal(h.posts.length, 4, "no second done text, no re-offered intros");
 });
 
 test("missions are offered only when their requirements are done, never on day one", () => {
@@ -93,10 +98,12 @@ test("respectPorts progress counts only the ports that reach the bar", () => {
   assert.equal(g.campaign.missions["m2-nombre"].done, false, "one port is not two");
 });
 
-test("the home-port condition resolves 'home' through the profile", () => {
-  const g = seeded(), h = H({ repOf: (g, c) => (c === "cadiz" ? 25 : 0) });
-  campaignTick(g, h); campaignTick(g, h);
-  assert.equal(g.campaign.missions["s1-gremio"].done, true, "respect 20 at cadiz, the home port");
+test("the home-port condition resolves 'home' through the profile, bar inclusive at exactly 20", () => {
+  const at = (rep) => { const g = seeded(), h = H({ repOf: (gg, c) => (c === "cadiz" ? rep : 0) }); campaignTick(g, h); return { g, h }; };
+  assert.equal(at(19.99).g.campaign.missions["s1-gremio"]?.done ?? false, false, "19.99 at home is not enough");
+  const { g, h } = at(20);
+  campaignTick(g, h);
+  assert.equal(g.campaign.missions["s1-gremio"].done, true, "respect exactly 20 at cadiz, the home port, completes s1");
   assert.equal(g.cash, 200, "s1 pays coins, not respect");
   assert.equal(g.respectLog, undefined);
 });
