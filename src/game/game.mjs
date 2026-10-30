@@ -308,7 +308,31 @@ export function doSellStored(g, city, good, qty) {
   const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, city);
   const r = sellStored(g.world, g.market, city, w, good, qty, f);
-  if (r.ok) { noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
+  if (r.ok) { noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); logSell(g, good, r.qty, r.revenue); /* the warehouse sale counts in the weekly trade ledger and lowers the book cost, exactly like a hold sale */ contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city }, MISSION); /* campaign sell missions advance with store sales too */ if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
+  if (r.ok) tutorialNote(g, "sell", r);
+  return r;
+}
+/** One sale click that empties the hold first and then the port warehouse, as a single transaction:
+ *  one fee (computed before any respect gain), one effects pass, and a total that matches previewSellCombined(). */
+export function doSellCombined(g, ship, good, qty, store) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const city = ship.at;
+  if (portClosed(g, city)) return { ok: false, reason: "port closed" };
+  const have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
+  if (prizeLocked(g, ship, good) > 0 && qty > have - prizeLocked(g, ship, good) + stored) return { ok: false, reason: "prize" }; // prize goods wait for a court (flag off: never)
+  qty = Math.min(qty, have + stored);
+  if (qty <= 0) return { ok: false, reason: "nothing to sell" };
+  const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
+  const f = FEE * feeMul(g, city); // one fee for the whole click: respect must not move the price mid-sale
+  const r1 = sell(g.world, g.market, ship, good, Math.min(qty, have), f);
+  let r2 = { ok: true, qty: 0, revenue: 0 };
+  if (r1.ok && qty - r1.qty > 0 && stored > 0) r2 = sellStored(g.world, g.market, city, store, good, qty - r1.qty, f);
+  const n = (r1.ok ? r1.qty : 0) + (r2.ok ? r2.qty : 0);
+  if (n <= 0) return r1.ok ? r2 : r1;
+  const revenue = Math.round(((r1.ok ? r1.revenue : 0) + (r2.ok ? r2.revenue : 0)) * 100) / 100;
+  const r = { ok: true, qty: n, revenue };
+  noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); relationsOnSale(g, city, good, n, revenue); g.cash += revenue; creditCaja(g, city, Math.round(revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, revenue); if (r1.ok && r1.qty > 0) recordSale(g, ship, r1.qty, r1.revenue, r1.profit); /* the voyage record only tracks the hold part */ logSell(g, good, n, revenue); /* one ledger entry for the combined sale */ contractOnSale(g, city, good, n); /* council contracts count warehouse sales too */ if (addRespect(g, city, revenue)) post(g, "respect", { city }); say(g, "sell", { qty: n, good, sum: revenue }); campaignEvent(g, { kind: "sell", good, qty: n, city }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; // victory is checked right after a sale
+  tutorialNote(g, "sell", r);
   return r;
 }
 /** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
