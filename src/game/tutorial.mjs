@@ -72,7 +72,7 @@ export function tutorialActive(g) { const s = tutorialStep(g); return s !== null
 export const TUT_TEXT = {
   es: {
     buy: "Tutorial 1/5: compra un bien barato en el Mercado de la ciudad.",
-    sell: "Tutorial 2/5: vende la carga con beneficio donde escasee (en el Mercado de la ciudad).",
+    sell: "Tutorial 2/5: zarpa a un puerto donde escasee (clic derecho) y vende la carga con beneficio en el Mercado de la ciudad.",
     sail: "Tutorial 3/5: elige un puerto y zarpa (clic derecho).",
     route: "Tutorial 4/5: pon a tu barco una ruta automática (botón Barcos en la ciudad).",
     hall: "Tutorial 5/5: entra en el Ayuntamiento y conoce al concejo (pestaña Ayuntamiento).",
@@ -80,7 +80,7 @@ export const TUT_TEXT = {
   },
   en: {
     buy: "Tutorial 1/5: buy a cheap good at the city Market.",
-    sell: "Tutorial 2/5: sell the cargo at a profit where it is scarce (at the city Market).",
+    sell: "Tutorial 2/5: sail to a port where it is scarce (right-click) and sell the cargo at a profit at the city Market.",
     sail: "Tutorial 3/5: pick a port and sail (right-click).",
     route: "Tutorial 4/5: give your ship a standing route (Ships button in the city).",
     hall: "Tutorial 5/5: step into the Town hall and meet the council (Town hall tab).",
