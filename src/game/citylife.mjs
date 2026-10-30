@@ -120,7 +120,8 @@ export function citylifeDay(g) {
       if (drift < 0 && stapleCoverage(g, c.id) < HUNGER_LINE) // a posito feeds the city through the crisis and slows the leaving
         drift = Math.round(drift * (1 - POSITO_EMIGRATION_BRAKE * Math.min(3, workingLevels(g, c.id, "posito")) / 3));
       const floor = -Math.round(base * GROWTH_MIN_FRACTION); // never below half the base population
-      city.extra = Math.max(floor, Math.min(room, city.extra + drift)); // and never more newcomers than houses can shelter
+      const admitted = drift > 0 ? Math.min(drift, Math.max(0, room - city.extra)) : drift;
+      city.extra = Math.max(floor, city.extra + admitted); // room limits new arrivals, never silently removes existing neighbours
     }
   }
 }
