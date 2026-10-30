@@ -108,7 +108,9 @@ test("partial staffing spreads fractional batches across days deterministically,
   const restored = deserialize(JSON.parse(JSON.stringify(saved)), hamletWorld).g; // through the wire format, not a shared object
   assert.equal(buildingAt(restored, "cadiz", PLOT.id).produced, buildingAt(split, "cadiz", PLOT.id).produced, "the activity counter survives the round trip");
   assert.equal(restored.accrued.buildings[KEY], split.accrued.buildings[KEY], "the weekly book survives the round trip");
-  runDays(restored, 13, 19); // finish the 32 days after the reload
+  assert.equal(restored.tick, split.tick, "the clock survives the round trip: the cycle continues where it stopped, not from zero");
+  const nextDay = Math.floor(restored.tick / TICKS_PER_DAY) + 1; // the restored clock says when day 13 comes: nothing re-imposed
+  runDays(restored, nextDay, 32 - nextDay); // finish the 32 days after the reload
   assert.equal(buildingAt(restored, "cadiz", PLOT.id).produced, straightProduced, "no batch lost or duplicated across the save: the fractional remainder is the tick, not hidden state");
   assert.equal(restored.accrued.buildings[KEY], straightAccrued, "no day charged twice, no day missed");
 });
