@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { loadWorld, route } from "../src/sim/world.mjs";
 import { buyRumor } from "../src/game/game.mjs";
 import { newGame, advanceDay, advanceTick, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, netWorth, quote, GOAL_CASH } from "../src/game/game.mjs";
+import { setRoute } from "../src/game/routes.mjs";
 const world = loadWorld();
 
 test("a new game starts with 2000, one cog, day 0", () => {
@@ -15,6 +16,17 @@ test("the real tick loop sweeps float noise at the day boundary, before the day-
   for (let i = 0; i < 240; i++) advanceTick(g); // TICKS_PER_DAY: the web loop's own path
   assert.equal(g.day, 1);
   assert.equal(g.cash, 0.7);
+});
+
+test("the sweep is the LAST word of the day: route-trading noise never reaches the autosave either (Auditoria #718 v2)", () => {
+  for (const [start, want] of [[2000.1, 898.5], [4991984.82, 4990883.22]]) { // the exact Auditoria repros: salt route cadiz-sevilla, one day
+    const g = newGame(world);
+    g.cash = start; g.eventsOn = false; // events off: this pins only the route's arithmetic, not a random roll
+    assert.equal(setRoute(g, g.ships[0], "cadiz", "sevilla", "salt").ok, true);
+    for (let i = 0; i < 240; i++) advanceTick(g); // one full day through the web loop's own path (TICKS_PER_DAY)
+    assert.equal(g.day, 1);
+    assert.equal(g.cash, want, `exact cash after one route day from ${start}`);
+  }
 });
 
 test("each new day sweeps float noise off cash (Marco 30/10: decimals only in taxes and upkeep)", () => {
