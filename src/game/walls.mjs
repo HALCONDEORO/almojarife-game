@@ -1,6 +1,8 @@
 // City walls (edificios push, lane B): three wall levels per port, matching the
-// wall/gate art (x3). Construction follows the buildings pattern (warehouse
-// store first, market for the missing, labor fee, exact readyTick), phased so
+// wall/gate art (x3). COUNCIL WORKS (30/10): the concejo raises the walls; the
+// player only finances them (full market cost of materials + labor fee) and
+// needs respect "Conocido" in the port. The player warehouse is never tapped.
+// Construction follows the buildings pattern (labor fee, exact readyTick),
 // the old wall keeps serving until the upgrade completes (reference: P3
 // official manual 11.5.3, construction gate - no health effect). Upkeep
 // accrues daily into the weekly book under accrued.buildings["walls:<city>"];
@@ -13,6 +15,7 @@
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { quoteUnits, consumeUnits } from "../sim/recipes.mjs";
 import { post } from "./ledger.mjs";
+import { repOf } from "./rank.mjs";
 
 export const WALL_MAX_LEVEL = 3;                       // matches the wall/gate art levels
 export const WALL_RECIPE = Object.freeze({ bricks: 24, timber: 8, ironware: 2 }); // per level, own tuning, measured at hospital scale
@@ -20,6 +23,7 @@ export const WALL_FEE = 300;                           // labor per level, own t
 export const WALL_BUILD_DAYS = 10;                     // per level, own tuning
 export const WALL_UPKEEP = 2;                          // per active level and day, own tuning
 export const WALL_POP = 25;                            // effective population per KEPT level (half a house level), own tuning
+export const WALL_MIN_RESPECT = 20;                     // council works: the concejo only takes patronage from a merchant it knows ("Conocido", same bar as the office)
 
 /** Fresh state for a new game with the flag on: a bare level map per city. */
 /**
@@ -50,8 +54,7 @@ export function quoteWalls(g, cityId) {
   if (!g.walls) return { ok: false, reason: "unknown" }; // flag off: no state, no walls
   if (g.over) return { ok: false, reason: "game over" };
   if (!g.world.cities.some((c) => c.id === cityId)) return { ok: false, reason: "unknown city" };
-  const hasOffice = !Array.isArray(g.offices) || cityId === g.profile?.home || g.offices.includes(cityId); // same rule as construction
-  if (!hasOffice) return { ok: false, reason: "office required" };
+  if (repOf(g, cityId) < WALL_MIN_RESPECT) return { ok: false, reason: "respect required", need: WALL_MIN_RESPECT }; // the concejo raises the walls, not an unknown merchant (Marco 30/10)
   if (underConstruction(g, cityId)) return { ok: false, reason: "already building" };
   const level = wallsLevel(g, cityId) + 1;
   if (level > WALL_MAX_LEVEL) return { ok: false, reason: "max level" };
@@ -59,8 +62,8 @@ export function quoteWalls(g, cityId) {
   const store = g.warehouses?.[cityId]?.goods ?? {};
   for (const [good, qty] of Object.entries(WALL_RECIPE)) {
     inputs[good] = qty * level;
-    fromStore[good] = Math.min(inputs[good], Math.max(0, store[good] ?? 0));
-    missing[good] = inputs[good] - fromStore[good];
+    fromStore[good] = 0; // council works: the player's warehouse is never touched; everything is bought at the market
+    missing[good] = inputs[good];
   }
   const q = quoteUnits(g.world, g.market, cityId, missing);
   if (!q.ok) return q;
