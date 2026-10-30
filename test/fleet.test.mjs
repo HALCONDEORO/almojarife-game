@@ -21,3 +21,16 @@ test('search and filter appear only with more than 5 ships, and stale filters ar
   for(const n of [1,5]){const h=fleetHtml(mk(n),0,{filter:'sea',search:'zzz'});assert.ok(!h.includes('fleet-search')&&!h.includes('fleet-filter'));assert.equal((h.match(/fleet-row"/g)||[]).length,n);}
   const h6=fleetHtml(mk(6),0,{});assert.ok(h6.includes('id="fleet-search"')&&h6.includes('id="fleet-filter"'));
 });
+
+test('fleet rows show the arrival estimate for ships under way',()=>{
+ const g={tick:0,ships:[{id:1,type:'barca',at:'cadiz',hull:100,cargo:{},voyage:{from:'cadiz',to:'sevilla',ticksLeft:260}},{id:2,type:'barca',at:'huelva',hull:97,cargo:{}}]};
+ const es=fleetHtml(g,0,{lang:'es'}),en=fleetHtml(g,0,{lang:'en'});
+ assert.match(es,/En el mar · llega día 1, 02:00 · Carga/);assert.match(en,/At sea · arrives day 1, 02:00 · Cargo/);
+ assert.equal((es.match(/llega día/g)||[]).length,1,'docked ships show no estimate');
+});
+test('fleet rows: no estimate when anchored, without ticksLeft or without a clock',()=>{
+ const base={id:1,type:'barca',at:'cadiz',hull:100,cargo:{}};
+ assert.ok(!fleetHtml({tick:0,ships:[{...base,voyage:{from:'cadiz',to:'sevilla',ticksLeft:260,anchored:true}}]},0,{lang:'es'}).includes('llega'));
+ assert.ok(!fleetHtml({tick:0,ships:[{...base,voyage:{from:'cadiz',to:'sevilla'}}]},0,{lang:'es'}).includes('llega'));
+ assert.ok(!fleetHtml({ships:[{...base,voyage:{from:'cadiz',to:'sevilla',ticksLeft:260}}]},0,{lang:'es'}).includes('llega'));
+});
