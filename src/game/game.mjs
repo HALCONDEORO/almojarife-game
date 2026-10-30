@@ -51,7 +51,7 @@ import {automaticEncounter} from "./encounterdaily.mjs";
 import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, houseClassPop, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
 import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
-import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, WALL_POP } from "./walls.mjs";
+import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, councilWallsVote, WALL_POP } from "./walls.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
@@ -183,6 +183,7 @@ function dayTick(g) {
   if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
   decayRep(g); // reputation fades in ports not traded in for a month
   councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
+  councilWallsVote(g); // and on meeting days they vote the walls the chest can afford (Marco 30/10: the concejo votes, pays and maintains them)
   processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => repairShip(g, s)), repairQuote: (s) => repairPrice(g, s) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
