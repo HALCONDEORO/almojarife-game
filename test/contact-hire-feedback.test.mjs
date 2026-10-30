@@ -27,9 +27,11 @@ test("every rejection carries a named reason (the old bug was a silent no-op)", 
 test("the tavern hire button toasts the reason instead of failing silently", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
   assert.match(src, /if \(!r\.ok\) toast\(t\.ctaWhy\?\.\[r\.reason\] \?\? r\.reason\)/);
-  for (const lang of ["es", "en"]) {
+  const tables = [...src.matchAll(/ctaWhy: \{([^}]*)\}/g)];
+  assert.equal(tables.length, 2, "one ctaWhy table per language");
+  for (const [, table] of tables) {
     for (const reason of ["unknown port", "no ship here", "already hired", "too many contacts", "no cash"]) {
-      assert.match(src, new RegExp(`"${reason}"`), `${lang} ctaWhy covers ${reason}`);
+      assert.match(table, new RegExp(`"${reason}":`), `each language ctaWhy covers ${reason}`);
     }
   }
   assert.match(src, /ctaWhy: \{ "game over": "la partida terminó"/);
