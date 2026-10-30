@@ -260,3 +260,51 @@ test("a completed modern record subsumes the legacy marker; a stale marker never
   assert.equal(wallsKeptLevel(g, "cadiz"), 0, "no bonus while unpaid: the stale marker must not resurrect it");
   assert.equal(wallsLevel(g, "cadiz"), 2, "the wall still stands, only the bonus stops");
 });
+
+test("Auditoría #721: a petition voted with missing materials is consumed with a causal refusal, never left pending", () => {
+  const g = withRespect(game(), "sevilla", 2000); // respect 20, "Conocido"
+  g.day = nextMeetingDay(world, "sevilla", 1); // a sevilla meeting day, by the same seeded calendar
+  assert.ok(meetingDay(world, "sevilla", g.day), "test premise: sevilla meets today");
+  assert.ok(proposeWall(g, "sevilla").ok);
+  g.market.sevilla.bricks.stock = 0; // the market cannot supply the recipe (sevilla makes no bricks: one dayTick adds none)
+  const cajaBefore = cajaOf(g, "sevilla");
+  councilWallsVote(g); // direct call: no market drift inside a full dayTick
+  assert.ok(!g.walls.sevilla?.nextLevel, "no work starts without materials");
+  assert.equal(g.walls.sevilla.petition, undefined, "the petition is consumed by the refusal");
+  assert.equal(cajaOf(g, "sevilla"), cajaBefore, "the chest pays nothing");
+  const refusals = g.inbox.filter((m) => m.kind === "council" && m.txt?.es?.includes("rechaza tu petición de muralla: faltan materiales"));
+  assert.equal(refusals.length, 1, "exactly one causal refusal reaches the petitioner");
+  assert.ok(refusals[0].txt.en.includes("lacks the materials"), "ES+EN refusal");
+});
+
+test("same refusal through the real loop (advanceDay): petition consumed, cause posted", () => {
+  const g = withRespect(game(), "sevilla", 2000);
+  assert.ok(proposeWall(g, "sevilla").ok);
+  const meet = nextMeetingDay(world, "sevilla", g.day);
+  runTo(g, meet - 1);
+  g.market.sevilla.bricks.stock = 0;
+  advanceDay(g); // dayTick runs councilWallsVote on the meeting day
+  assert.ok(meetingDay(world, "sevilla", g.day), "premise: the day advanced onto the meeting day");
+  assert.ok(!g.walls.sevilla?.nextLevel, "no work starts");
+  assert.equal(g.walls.sevilla.petition, undefined, "the petition is consumed by the vote");
+  assert.ok(g.inbox.some((m) => m.kind === "council" && m.txt?.es?.includes("faltan materiales")), "the player hears why");
+});
+
+test("legacy save (JSON round-trip): upkeep accrued before the council model is settled once, never again (migration exception, Main 30/10)", () => {
+  let g = game();
+  g.walls.cadiz = { level: 1, state: "active" }; // an old save's wall, built when the player paid
+  (g.accrued ??= { ships: {} }).buildings = { "walls:cadiz": 14 }; // debt the old code accrued, not yet settled
+  g.day = 7; // settlement day (SETTLE_EVERY)
+  richCaja(g); // the chest pays the watch from here on
+  g = JSON.parse(JSON.stringify(g)); // the save load: plain objects, like an old slot
+  const cashBefore = g.cash;
+  const r = settleWeek(g);
+  assert.ok(r, "settlement runs on day 7");
+  assert.equal(g.cash, cashBefore - 14, "the old debt is settled exactly once (not condoned)");
+  assert.ok(r.buildings.some((b) => b.plot === "walls:cadiz" && b.cost === 14), "the weekly book shows the one-time walls line");
+  assert.equal(g.accrued.buildings["walls:cadiz"], undefined, "the bucket is cleared by the settlement");
+  const cashAfter = g.cash;
+  for (let i = 0; i < 7; i++) accrueWalls(g);
+  assert.equal(g.cash, cashAfter, "no new player charge: the chest pays the watch now");
+  assert.equal(g.accrued.buildings["walls:cadiz"], undefined, "walls never enter the weekly book again");
+});
