@@ -16,7 +16,7 @@ import { settleWeek } from "../src/game/ledger.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts }); // walls flag is ON by default
-const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100; g.cash = 1e6; buyOffice(g, cityId); };
+const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100 * 100; g.cash = 1e6; buyOffice(g, cityId); }; // rep is stored in coins sold: 10000 coins = 100 respect
 
 test("flag OFF (false or 1): no state, quote says unknown, ticks and accruals no-op", () => {
   for (const off of [false, 1]) {
@@ -55,12 +55,15 @@ test("levels cap at WALL_MAX_LEVEL and one build at a time per city", () => {
   assert.equal(quoteWalls(g, "cadiz").reason, "max level");
 });
 
-test("office required, unknown city, game over, no cash", () => {
-  const g = game(); rich(g);
-  assert.equal(quoteWalls(g, "lisboa").reason, "office required");
+test("respect required (council works), unknown city, game over, no cash", () => {
+  const g = game();
+  assert.equal(quoteWalls(g, "cadiz").reason, "respect required", "the concejo does not take patronage from an unknown merchant, not even at home");
+  assert.equal(quoteWalls(g, "lisboa").reason, "respect required");
   assert.equal(quoteWalls(g, "nowhere").reason, "unknown city");
   g.over = true; assert.equal(startWalls(g, "cadiz").reason, "game over"); g.over = false;
-  g.cash = 0; assert.equal(startWalls(g, "cadiz").reason, "no cash");
+  rich(g); g.cash = 0; assert.equal(startWalls(g, "cadiz").reason, "no cash");
+  const g2 = game(); (g2.rep ??= {}).cadiz = 100 * 100; // known (100 respect), but no office anywhere
+  assert.ok(quoteWalls(g2, "cadiz").ok, "respect alone unlocks council patronage: no office needed");
 });
 
 test("legacy plague.walls=1 reads as level 1; new construction lands on level 2", () => {
