@@ -25,7 +25,7 @@ export const weaponWeight = (ship) => Object.entries(weaponsOf(ship)).reduce((s,
 export const GEAR = [0, 60, 150, 300]; // total price to own level 0..3 (buying a level pays the difference)
 export const GEAR_MAX = 3, GEAR_DEFENCE = 0.1, GEAR_WEIGHT_PER_SAILOR = 0.1;
 export const gearOf = (ship) => { const l = Number(ship.gear); return Number.isInteger(l) ? Math.min(GEAR_MAX, Math.max(0, l)) : 0; };
-export const gearWeight = (ship) => Math.ceil(crewOf(ship) * GEAR_WEIGHT_PER_SAILOR * gearOf(ship) - 1e-9);
+export const gearWeight = (ship) => Math.ceil(crewOf(ship) * GEAR_WEIGHT_PER_SAILOR * gearOf(ship) - 1e-9) + 0; // +0: never return -0 for an unarmed crew
 /** Hold space taken by armament and gear. */
 export const loadWeight = (ship) => weaponWeight(ship) + gearWeight(ship);
 
