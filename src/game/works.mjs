@@ -1,5 +1,4 @@
-// Council works department (obras del concejo, Marco 30/10 20:04: "implementa las obras
-// del concejo con cobro por día según el diseño propuesto"): the concejo votes civic
+// Council works department (obras del concejo): the concejo votes civic
 // works (pozo, hospital, capilla, alhóndiga), pays them out of the town chest (caja)
 // PER DAY WORKED, and keeps them with a daily upkeep from the same chest. The walls
 // (#721) keep their own contract (full quote up front) and are NOT migrated here.
@@ -174,19 +173,26 @@ export function worksDay(g) {
         } else continue; // paused consumes no labour and no materials
       }
       if (rec.state !== "building") continue;
-      for (const [good, needQty] of Object.entries(rec.need)) { // partial deliveries from LOCAL market stock only (no import)
+      let deliveredToday = 0;
+      for (const [good, needQty] of Object.entries(rec.need)) {
         const pending = needQty - (rec.delivered[good] ?? 0);
         if (pending <= 0) continue;
-        const take = Math.min(pending, g.market[id]?.[good]?.stock ?? 0);
+        const take = affordableDelivery(g, id, good, pending);
         if (take <= 0) continue;
-        const q = quoteUnits(g.world, g.market, id, { [good]: take });
-        if (!q.ok || cajaOf(g, id) < q.cost) continue; // a thin chest waits for stock or gold: nothing consumed
-        consumeUnits(g.world, g.market, id, { [good]: take }, cajaOf(g, id));
-        creditCaja(g, id, -q.cost);
+        const delivery = consumeUnits(g.world, g.market, id, { [good]: take }, cajaOf(g, id));
+        if (!delivery.ok) continue; // the effect point requotes; never record an unpaid delivery
+        creditCaja(g, id, -delivery.cost);
         rec.delivered[good] = (rec.delivered[good] ?? 0) + take;
+        deliveredToday += take;
       }
       const complete = Object.entries(rec.need).every(([good, n]) => (rec.delivered[good] ?? 0) >= n);
-      if (!complete) continue; // a day without the full materials pending charges no labour (explicit rule)
+      if (!complete) {
+        if (deliveredToday === 0) {
+          rec.state = "paused";
+          if (repOf(g, id) > 0) post(g, "council", { city: id, txt: { es: `La obra de ${buildingName(type, "es")} en ${cityName(g, id)} se pausa: faltan materiales locales o la caja no alcanza para una unidad pendiente.`, en: `The ${buildingName(type, "en")} works in ${cityName(g, id)} pause: local materials are missing or the chest cannot afford one pending unit.` } });
+        }
+        continue; // no labour before all materials land; a partial delivery is real progress
+      }
       const cost = dayCost(rec);
       if (cajaOf(g, id) < cost) { // a thin chest PAUSES instead of rejecting
         rec.state = "paused";
@@ -205,4 +211,17 @@ export function worksDay(g) {
       }
     }
   }
+}
+
+/** Largest whole local delivery affordable at today's marginal prices. Quotes are read-only. */
+function affordableDelivery(g, id, good, pending) {
+  let low = 0, high = Math.max(0, Math.min(pending, g.market[id]?.[good]?.stock ?? 0));
+  const budget = cajaOf(g, id);
+  while (low < high) {
+    const trial = Math.ceil((low + high) / 2);
+    const quote = quoteUnits(g.world, g.market, id, { [good]: trial });
+    if (quote.ok && quote.cost <= budget) low = trial;
+    else high = trial - 1;
+  }
+  return low;
 }
