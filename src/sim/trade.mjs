@@ -151,3 +151,56 @@ export function previewSell(world, market, ship, good, qty, fee = FEE) {
   const spent = n === have ? (ship.basis?.[good] ?? 0) : Math.round((ship.basis?.[good] ?? 0) * n / have);
   return { qty: n, revenue, avg: Math.round(revenue / n * 100) / 100, profit: revenue - spent, hasBasis: ship.basis?.[good] != null, next: price(world, sim, good) };
 }
+
+/** Sell qty of a good from a warehouse's stored goods into the local market: same per-unit price impact,
+ *  purse cap and fee as sell(), but the goods (and their book cost) leave the warehouse, not a hold. */
+export function sellStored(world, market, city, store, good, qty, fee = FEE) {
+  if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
+  const e = market[city]?.[good];
+  if (!e) return { ok: false, reason: "no market" };
+  qty = Math.min(qty, store.goods?.[good] ?? 0);
+  if (qty <= 0) return { ok: false, reason: "nothing to sell" };
+  let revenue = 0;
+  const purse = WHOLESALE_PURSE_BINDING ? commerceOf(market[city]) : null; // a binding purse pays only what it holds
+  const cashCents = purse ? Math.round(purse.cash * 100) : 0;
+  let revenueCents = 0;
+  let n = 0;
+  while (n < qty) {
+    e.stock += 1;
+    const unit = floor2(price(world, e, good) * (1 - fee));
+    if (purse && revenueCents + Math.round(unit * 100) > cashCents) { e.stock -= 1; break; }
+    revenueCents += Math.round(unit * 100); revenue += unit; n++;
+  }
+  if (n === 0) return { ok: false, reason: "market has no cash" };
+  qty = n;
+  const had = store.goods[good], paid = store.basis?.[good] ?? 0;
+  const spent = qty === had ? paid : Math.round(paid * qty / had); // same book-cost share rule as sell()
+  store.goods[good] -= qty;
+  if (store.basis) store.basis[good] = paid - spent;
+  if (!store.goods[good]) { delete store.goods[good]; if (store.basis) delete store.basis[good]; }
+  recordWholesaleSale(market[city], good, qty, revenue); // telemetry: the port's purse paid the seller
+  return { ok: true, qty, revenue, profit: revenue - spent, spent };
+}
+/** What a sale of qty would do taken from the ship's hold FIRST and then from the port warehouse,
+ *  one market simulation so the price moves across both parts. No mutation. */
+export function previewSellCombined(world, market, ship, store, good, qty, fee = FEE) {
+  const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
+  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have + stored <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const sim = { ...e }; let revenue = 0;
+  const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sellStored()
+  const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
+  let pvCents = 0;
+  let n = 0;
+  while (n < Math.min(qty, have + stored)) {
+    sim.stock += 1;
+    const unit = floor2(price(world, sim, good) * (1 - fee));
+    if (pvPurse && pvCents + Math.round(unit * 100) > pvCashCents) { sim.stock -= 1; break; }
+    pvCents += Math.round(unit * 100); revenue += unit; n++;
+  }
+  if (n === 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const fromCargo = Math.min(n, have), fromStore = n - fromCargo;
+  const paidC = ship.basis?.[good] ?? 0, paidS = store?.basis?.[good] ?? 0;
+  const spent = (fromCargo === have ? paidC : Math.round(paidC * fromCargo / Math.max(1, have)))
+    + (fromStore === stored ? paidS : Math.round(paidS * fromStore / Math.max(1, stored)));
+  return { qty: n, fromCargo, fromStore, revenue, avg: Math.round(revenue / n * 100) / 100, profit: revenue - spent, hasBasis: ship.basis?.[good] != null || store?.basis?.[good] != null, next: price(world, sim, good) };
+}
