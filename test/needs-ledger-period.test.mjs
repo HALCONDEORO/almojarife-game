@@ -109,9 +109,10 @@ test("disabled telemetry records no period and does not change market cell outco
     tick(enabled, day);
     tickMarketCity(disabled, day, undefined, { needsLedger: false, commerceLedger: false });
   }
-  assert.equal(disabled.grain.needsLedger, undefined);
+  assert.ok(!Object.hasOwn(disabled.grain, "needsLedger"));
   for (const good of ["grain", "fish"]) {
-    const { needsLedger, ...entry } = enabled[good];
+    const entry = { ...enabled[good] };
+    delete entry.needsLedger;
     assert.deepEqual(entry, disabled[good]);
   }
 });
