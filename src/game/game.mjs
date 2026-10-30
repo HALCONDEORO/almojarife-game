@@ -208,6 +208,7 @@ function dayTick(g) {
     if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
     else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
   }
+  g.cash = r2d(g.cash); // FINAL daily sweep, after every operation of the day (routes, weekly settlement, hooks): trades sum 2-decimal coins and bare floats drift (0.1 + 0.2), and the drift must never reach the autosave that fires on the day change (Marco 30/10: decimals only in taxes and upkeep)
 }
 /** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
 function arrive(g, s) {

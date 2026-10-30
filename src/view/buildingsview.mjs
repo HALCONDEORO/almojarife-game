@@ -326,11 +326,11 @@ export function bldOfferCard(t, o, lang, fmt, fmtM, iconForGood, art) {
   else if (o.type === "dock" && t.bldFxD) { const x = t.bldFxD.replace("{n}", Math.round(DOCK_TOLL_DISCOUNT[level] * 100)); parts.push(escBw(x)); textParts.push(x); }
   else if (o.type === "armory") { parts.push(bo.armory); textParts.push(bo.armory); }
   else if (bo.civic[o.type]) { parts.push(bo.civic[o.type]); textParts.push(bo.civic[o.type]); }
-  const title = `${name}: ${fmtM(o.cost)} (${bo.days.replace("{d}", fmt(o.days))}, ${bo.fee.replace("{p}", fmtM(o.fee))}), ${ops.join(", ")}, ${textParts.join(", ")}`;
+  const title = `${name}: ${fmt(o.cost)} (${bo.days.replace("{d}", fmt(o.days))}, ${bo.fee.replace("{p}", fmt(o.fee))}), ${ops.join(", ")}, ${textParts.join(", ")}`;
   return `<span class="bldoffer" title="${escBw(title)}">${fig}<b class="bldoffer-name">${escBw(name)}</b>`
-    + `<span class="bldoffer-block"><span class="bldoffer-cost">${bwSvg(BWI.coin, 14)}<b>${fmtM(o.cost)}</b> · ${escBw(bo.days.replace("{d}", fmt(o.days)))}</span>`
+    + `<span class="bldoffer-block"><span class="bldoffer-cost">${bwSvg(BWI.coin, 14)}<b>${fmt(o.cost)}</b> · ${escBw(bo.days.replace("{d}", fmt(o.days)))}</span>`
     + `<span class="bldoffer-mats">${mats}</span>`
-    + `<span class="bldoffer-fee">${escBw(bo.fee.replace("{p}", fmtM(o.fee)))}${importedN > 0 ? ` · <i>${bo.imported}</i>` : ""}</span></span>`
+    + `<span class="bldoffer-fee">${escBw(bo.fee.replace("{p}", fmt(o.fee)))}${importedN > 0 ? ` · <i>${bo.imported}</i>` : ""}</span></span>`
     + `<span class="bldoffer-block bldoffer-ops">${ops.map((x) => escBw(x)).join(" · ")}</span>`
     + (parts.length ? `<span class="bldoffer-block bldoffer-prod">${parts.join(" ")}</span>` : "")
     + `</span>`;

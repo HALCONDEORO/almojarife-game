@@ -252,6 +252,19 @@ test("bldChipInner: icon + name + state, red when halted, percent when under con
   assert.ok(!dk.includes("undefined") && !dk.includes("NaN"), "no raw holes");
 });
 
+test("bldOfferCard: costs are whole coins with thousands separators, decimals only for production averages (Marco 30/10)", async () => {
+  const { bldOfferCard } = await import("../src/view/buildingsview.mjs");
+  const t = { bldTypes: { workshop: "Taller" }, goods: { cloth: "paño", wool: "lana", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
+  const g = funded();
+  buyPlot(g, "cadiz", PLOT);
+  const offer = buildOffers(g, "cadiz", PLOT.id).find((o) => o.ok && o.type === "workshop");
+  offer.cost = 12350.56; offer.fee = 300.4; // what float construction money looked like in the playtest
+  const fmt = (n) => Math.round(n).toLocaleString("es"), fmtM = (n) => (Math.round(n * 100) / 100).toLocaleString("es"); // the real web formatters
+  const html = bldOfferCard(t, offer, "es", fmt, fmtM, () => "<svg/>");
+  assert.ok(html.includes("12.351"), "cost rounded and grouped");
+  assert.ok(!html.includes("12350,56") && !html.includes("12.350,56") && !html.includes("300,4"), "no decimal coin figures");
+});
+
 test("bldOfferCard: a processor card shows drawing, investment, running costs and labeled base production", async () => {
   const { bldOfferCard, bldOfferGroup, BO } = await import("../src/view/buildingsview.mjs");
   const t = { bldTypes: { workshop: "Taller" }, goods: { cloth: "paño", wool: "lana", timber: "madera", bricks: "ladrillos", ironware: "hierro forjado" } };
