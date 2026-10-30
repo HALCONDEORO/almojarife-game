@@ -1,4 +1,5 @@
-// Foreclosure on a loan that falls due unpaid. Optional rule, default OFF (newGame flag `foreclosure === true`, g.foreclosure).
+// Foreclosure on a loan that falls due unpaid. Optional rule, ON by default (newGame stores g.foreclosure = true
+// unless opts.foreclosure is false; an off game carries no key).
 // Same function for the player and for a bot finance view (botcredit.mjs): it reads only cash, loans, ships, warehouses.
 // Design inference, no historical source yet: the lender may seize what the debtor holds in the lender's own port
 // (warehouse stock there and the cargo of his ships docked there), sold at half base value like a bankruptcy sale,
