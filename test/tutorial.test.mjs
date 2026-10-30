@@ -29,13 +29,19 @@ test("steps go buy -> sell -> sail -> route -> hall -> done, in order only", () 
   assert.equal(tutorialNote(g, "hall"), false);
   assert.equal(tutorialNote(g, "route"), true);
   assert.equal(tutorialStep(g), "hall");
+  assert.equal(tutorialNote(g, "contract"), false); // the contract step only counts after the council visit
   assert.equal(tutorialNote(g, "hall"), true);
+  assert.equal(tutorialStep(g), "contract");
+  assert.equal(tutorialNote(g, "contract"), true);
   assert.equal(tutorialStep(g), "done");
 });
 test("a completed v1 tutorial (bought/sold/sailed, no v field) stays complete", () => {
   assert.equal(tutorialStep({ tut: { bought: true, sold: true, sailed: true } }), "done");
   assert.equal(tutorialLine({ tut: { bought: true, sold: true, sailed: true } }), null);
   // a half-done v1 tutorial keeps its progress and finishes under the original three steps
+  // a v2 tutorial still ends at the council visit: the contract step belongs to v3 games
+  assert.equal(tutorialStep({ tut: { v: 2, bought: true, sold: true, sailed: true, routed: true, hall: true } }), "done");
+  assert.equal(tutorialNote({ tut: { v: 2, bought: true, sold: true, sailed: true, routed: true, hall: true } }, "contract"), false);
   const part = { tut: { bought: true, sold: true } };
   assert.equal(tutorialStep(part), "sail");
   assert.equal(tutorialNote(part, "route"), false); // v1 never had a route step
@@ -52,11 +58,11 @@ test("skip: one click finishes the tutorial from any step, only while it runs", 
   assert.equal(skipTutorial(g), false); // already skipped: nothing left to skip
   assert.equal(tutorialNote(g, "buy"), false); // a skipped tutorial does not come back
   assert.equal(skipTutorial({}), false); // no tutorial: nothing to skip
-  const done = {}; initTutorial(done); for (const k of ["buy", "sell", "sail", "route", "hall"]) tutorialNote(done, k, {profit:1,spent:10});
+  const done = {}; initTutorial(done); for (const k of ["buy", "sell", "sail", "route", "hall", "contract"]) tutorialNote(done, k, {profit:1,spent:10});
   assert.equal(skipTutorial(done), false); // already done on its own
 });
 test("every step has es and en text, no leftover placeholders", () => {
-  for (const l of ["es", "en"]) for (const k of ["buy", "sell", "sail", "route", "hall", "done"]) assert.match(TUT_TEXT[l][k], /\S{3}/), assert.doesNotMatch(TUT_TEXT[l][k], /[{}]/);
+  for (const l of ["es", "en"]) for (const k of ["buy", "sell", "sail", "route", "hall", "contract", "done"]) assert.match(TUT_TEXT[l][k], /\S{3}/), assert.doesNotMatch(TUT_TEXT[l][k], /[{}]/);
   const g = {}; initTutorial(g);
   assert.equal(tutorialHint(g, "xx"), TUT_TEXT.es.buy);
 });
@@ -64,6 +70,7 @@ test("every step has es and en text, no leftover placeholders", () => {
 import { loadWorld } from "../src/sim/world.mjs";
 import { difficultyOpts } from "../src/game/difficulty.mjs";
 import { advanceDay, newGame, doBuy, doSell, doSail, doGoTo, quote } from "../src/game/game.mjs";
+import { acceptContract } from "../src/game/contracts.mjs";
 const world = loadWorld();
 test("a real game: off by default, on with opts.tutorial, advances on real trades", () => {
   assert.equal(newGame(world, "cadiz").tut, undefined);
@@ -86,6 +93,9 @@ test("a real game: off by default, on with opts.tutorial, advances on real trade
   assert.ok(setRoute(g, ship, to, "cadiz", good).ok);
   assert.equal(tutorialStep(g), "hall");
   assert.equal(tutorialNote(g, "hall"), true); // the UI fires this when the player opens the Town hall tab
+  assert.equal(tutorialStep(g), "contract");
+  (g.contracts ??= { offers: {}, active: [], done: 0, failed: 0 }).offers[to] = { id: to + ":t", good: "salt", qty: 5, reward: 100, dueDay: g.day + 30 }; // standing-offer fixture, not a playthrough claim
+  assert.equal(acceptContract(g, to).ok, true); // accepting the council's contract closes the tutorial
   assert.equal(tutorialStep(g), "done");
 });
 test("failed actions do not advance the tutorial", () => {
