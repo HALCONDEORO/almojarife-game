@@ -1,10 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  WEAR_BASE_PER_DAY, HULL_FLOOR, HULL_SPEED_MIN, HULL_WARN_LOW, HULL_WARN_CRITICAL,
-  hullSpeedFactor, seaWearDay, hullWarning,
+  WEAR_BASE_PER_DAY, WEAR_WIND_PER_DAY, WEAR_STORM_PER_DAY, HULL_FLOOR, HULL_SPEED_MIN,
+  HULL_WARN_LOW, HULL_WARN_CRITICAL, hullSpeedFactor, seaWearDay, hullWarning,
 } from '../src/game/seawear.mjs';
 import { TICKS_PER_DAY } from '../src/sim/clock.mjs';
+import { windAt, inStorm } from '../src/sim/weather.mjs';
+import { haversineKm } from '../tools/geo.mjs';
+
+// Deterministic real-weather fixture: the centre of a storm cell in the cantabrico region,
+// found by scanning stormsAt(day, seed). If the weather model changes, these pinned values
+// fail loudly and the fixture must be re-found.
+const FIX = { lat: 43.7066, lon: -9.1097, day: 0, seed: 1, force: 0.8738283944316209 };
+// World with the ship mid-lane exactly at the fixture point (linear midpoint of the two nodes).
+const fixWorld = () => {
+  const na = { lat: FIX.lat - 0.05, lon: FIX.lon }, nb = { lat: FIX.lat + 0.05, lon: FIX.lon };
+  return { nodes: { na, nb }, km: haversineKm(na, nb) };
+};
+const fixShip = (hull, extraVoyage = {}) => {
+  const w = fixWorld();
+  return { hull, voyage: { path: ['na', 'nb'], km: w.km, totalTicks: 1000, ticksLeft: 500, ...extraVoyage } };
+};
+
+test('fixture still pins a storm cell with strong wind', () => {
+  assert.equal(windAt(FIX.lat, FIX.lon, FIX.day, FIX.seed).force, FIX.force);
+  assert.equal(inStorm(FIX.lat, FIX.lon, FIX.day, FIX.seed), true);
+});
 
 test('hullSpeedFactor is 1.0 at full hull, HULL_SPEED_MIN at 0, linear between', () => {
   assert.equal(hullSpeedFactor(100), 1);
@@ -38,25 +59,55 @@ test('forced arrival day without world charges base wear only', () => {
   assert.equal(ship.hull, 100 - WEAR_BASE_PER_DAY);
 });
 
-test('weather never sinks a ship: hull floors at HULL_FLOOR', () => {
-  const ship = { hull: 12, voyage: { ticksLeft: 100 } };
-  for (let i = 0; i < 50; i++) seaWearDay({}, ship, true);
-  assert.equal(ship.hull, HULL_FLOOR);
+test('seaWearDay couples real weather: wind and storm raise the wear', () => {
+  const g = { world: fixWorld(), day: FIX.day, seed: FIX.seed };
+  const ship = fixShip(100);
+  const r = seaWearDay(g, ship);
+  assert.equal(r.windForce, FIX.force);
+  assert.equal(r.storm, true);
+  const expectedWear = WEAR_BASE_PER_DAY + WEAR_WIND_PER_DAY * FIX.force + WEAR_STORM_PER_DAY;
+  assert.equal(r.wear, expectedWear);
+  assert.equal(ship.hull, 100 - expectedWear);
 });
 
-test('drag stretches an unescorted voyage and dragFrac stays fractional', () => {
-  const ship = { hull: 50, voyage: { ticksLeft: 1000 } };
-  const before = ship.voyage.ticksLeft;
-  for (let i = 0; i < 30; i++) seaWearDay({}, ship, true);
-  assert.ok(ship.voyage.ticksLeft > before, 'ticksLeft grew');
-  const frac = ship.voyage.dragFrac;
-  assert.ok(frac >= 0 && frac < 1, `dragFrac ${frac} in [0,1)`);
-  const expectedDragPerDay = TICKS_PER_DAY * (1 / hullSpeedFactor(ship.hull) - 1);
-  assert.ok(expectedDragPerDay > 0);
+test('weather never sinks a ship: hull floors at HULL_FLOOR, in a storm too', () => {
+  const calm = { hull: 12, voyage: { ticksLeft: 100 } };
+  for (let i = 0; i < 50; i++) seaWearDay({}, calm, true);
+  assert.equal(calm.hull, HULL_FLOOR);
+  const g = { world: fixWorld(), day: FIX.day, seed: FIX.seed };
+  const stormy = fixShip(12);
+  for (let i = 0; i < 10; i++) seaWearDay(g, stormy);
+  assert.equal(stormy.hull, HULL_FLOOR);
 });
 
-test('an escorted voyage keeps station: no drag applied', () => {
+test('drag accumulates exactly the per-day drag seaWearDay returns', () => {
+  const ship = { hull: 60, voyage: { ticksLeft: 1000 } };
+  let sum = 0;
+  for (let i = 0; i < 10; i++) sum += seaWearDay({}, ship, true).drag;
+  const carried = ship.voyage.ticksLeft + ship.voyage.dragFrac;
+  assert.ok(Math.abs(carried - (1000 + sum)) < 1e-9, `ticksLeft+dragFrac ${carried} vs 1000+drag ${1000 + sum}`);
+  assert.ok(ship.voyage.ticksLeft > 1000, 'whole ticks were added');
+});
+
+test('drag continues a fractional dragFrac carried in an old save', () => {
+  const ship = { hull: 60, voyage: { ticksLeft: 1000, dragFrac: 0.9 } };
+  const r = seaWearDay({}, ship, true);
+  const expectedDrag = TICKS_PER_DAY * (1 / hullSpeedFactor(60 - WEAR_BASE_PER_DAY) - 1);
+  assert.equal(r.drag, expectedDrag);
+  const total = 0.9 + expectedDrag, whole = Math.floor(total);
+  assert.equal(ship.voyage.ticksLeft, 1000 + whole);
+  assert.ok(Math.abs(ship.voyage.dragFrac - (total - whole)) < 1e-12);
+});
+
+test('an escorted voyage keeps station: no drag applied (escorted flag)', () => {
   const ship = { hull: 20, voyage: { ticksLeft: 1000, escorted: true } };
+  seaWearDay({}, ship, true);
+  assert.equal(ship.voyage.ticksLeft, 1000);
+  assert.equal(ship.voyage.dragFrac, undefined);
+});
+
+test('an escorted voyage keeps station: no drag applied (escortedBy)', () => {
+  const ship = { hull: 20, voyage: { ticksLeft: 1000, escortedBy: 'capitana-2' } };
   seaWearDay({}, ship, true);
   assert.equal(ship.voyage.ticksLeft, 1000);
   assert.equal(ship.voyage.dragFrac, undefined);
