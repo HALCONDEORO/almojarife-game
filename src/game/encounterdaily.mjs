@@ -54,7 +54,7 @@ export function resolvePirates(g,choice){
  const r=seeded(`sea-choice-v1:${g.seed??0}:${p.id}`);
  const escaped=choice==='flee'&&r()*100<p.escapeChance;
  const fight=(escaped||g.pirateFight!==true)?null:fightPirates(ship,g.seed,p.id,escortOf(g,ship)); // the pirates are a real seeded ship fought with the shared battle resolver; a convoy escort adds defence
- let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:fight?fight.outcome:encounterOutcome(ship,'pirates',r(),escortOf(g,ship)); // flag off (default): the old single-roll outcome, identical to before
+ let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:fight?fight.outcome:encounterOutcome(ship,'pirates',r(),escortOf(g,ship)); // flag off (pirateFight is ON by default): the old single-roll outcome, identical to before
  const applied=applyEncounter(g,ship,out);if(!applied.ok)return applied;
  const e={...applied,id:p.id,day:p.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
  (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
