@@ -1,12 +1,14 @@
-// Preview = execution (Estudios 1, Marco 30/10): what the market buttons and tooltips show is
-// exactly what the deal will do - executable quantity, total cost/revenue, consistent rounding.
-// These contracts pin previewBuy/previewSellCombinedPort against doBuy/doSellCombined on the
-// real game path, including the cases where a large operation cannot fill: stock-tier crossing,
-// hold room, cash, a binding port purse (partial sale) and cent rounding.
+// Preview = execution at engine level (Estudios 1, Marco 30/10): the numbers the engine's preview
+// functions return are exactly what the matching execution calls do - executable quantity, the
+// named limit (stock, hold room, cash, the port purse), total cost/revenue and the next price.
+// Scope: src/sim/trade.mjs + src/game/game.mjs only (engine rounding included); no renderer claims.
+// Contracts pin previewBuy/previewSellCombinedPort against doBuy/doSellCombined on the real game
+// path, including the cases where a large operation cannot fill: stock-tier crossing, stock-out,
+// hold room, cash, a binding port purse (partial combined sale) and cent rounding.
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newGame, doBuy, doSellCombined, sellableHold, previewSellCombinedPort, quote } from "../src/game/game.mjs";
+import { newGame, doBuy, doSellCombined, previewSellCombinedPort, quote } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { previewBuy, FEE } from "../src/sim/trade.mjs";
 import { feeMul, scarcityOf } from "../src/game/reputation.mjs";
@@ -37,19 +39,57 @@ test("stock-tier crossing: a large sale walks the price down across levels, and 
   assert.equal(r2(ps.next), r2(quote(gm, "cadiz", good)), "the previewed next price is the price after the deal");
 });
 
-test("insufficient hold room: the preview says how much of the request fits, and the buy fills exactly that", () => {
+test("insufficient hold room: the preview names room, fills exactly the free hold, and cash and cargo move by the preview", () => {
   const gm = game();
-  const sh = gm.ships[0], good = "wine";
-  const room = Math.max(0, 60 - 0); // cog capacity 60, empty hold
+  const sh = gm.ships[0], good = "fish"; // cheap and plentiful: with ample cash only the hold binds
+  gm.cash = 100000;
   const pb = previewBuy(gm.world, gm.market, sh, gm.cash, good, 9999, fee(gm, "cadiz"));
-  assert.ok(pb.qty <= room, "test premise: room binds before stock or cash");
+  assert.equal(pb.qty, 60, "the cog's free hold caps the deal at exactly 60 units");
+  assert.equal(pb.limit, "room", "the preview names hold room as the limit");
   const cash0 = gm.cash;
   const rs = doBuy(gm, sh, good, 9999);
   assert.ok(rs.ok);
+  assert.equal(rs.qty, 60, "the execution buys exactly the previewed 60");
   assert.equal(pb.qty, rs.qty, "preview quantity = executed quantity under the room cap");
   assert.equal(r2(pb.cost), r2(rs.cost), "preview cost = executed cost to the cent");
   assert.equal(r2(cash0 - gm.cash), r2(pb.cost), "the cash delta is the previewed cost");
-  assert.equal(pb.limit, room < rs.qty ? undefined : pb.limit, "limit reported when the request is cut");
+  assert.equal(sh.cargo[good], 60, "the cargo delta is the previewed quantity");
+  assert.equal(r2(pb.next), r2(quote(gm, "cadiz", good)), "the previewed next price is the price after the deal");
+});
+
+test("zero requests and stock-out: nothing previewed, nothing executed, nothing moved", () => {
+  const gm = game();
+  const sh = gm.ships[0], good = "grain";
+  const cash0 = gm.cash;
+  const pb0 = previewBuy(gm.world, gm.market, sh, gm.cash, good, 0, fee(gm, "cadiz"));
+  assert.equal(pb0.qty, 0, "a zero buy request previews zero units");
+  assert.equal(pb0.cost, 0, "a zero buy request previews zero cost");
+  const rb0 = doBuy(gm, sh, good, 0);
+  assert.equal(rb0.ok, false, "a zero buy request is refused");
+  sh.cargo[good] = 10; sh.basis = { [good]: 80 };
+  const ps0 = previewSellCombinedPort(gm, sh, good, 0, null);
+  assert.equal(ps0.qty, 0, "a zero sell request previews zero units");
+  assert.equal(ps0.revenue, 0, "a zero sell request previews zero revenue");
+  const rs0 = doSellCombined(gm, sh, good, 0, null);
+  assert.equal(rs0.ok, false, "a zero sell request is refused");
+  assert.equal(gm.cash, cash0, "no money moved on zero requests");
+  assert.equal(sh.cargo[good], 10, "no cargo moved on zero requests");
+
+  const gm2 = game(11);
+  const sh2 = gm2.ships[0];
+  gm2.cash = 100000; // room and cash abundant: only the shelf can bind
+  gm2.market.cadiz.wine.stock = 2;
+  const pb = previewBuy(gm2.world, gm2.market, sh2, gm2.cash, "wine", 500, fee(gm2, "cadiz"));
+  assert.equal(pb.qty, 2, "the preview counts exactly the units on the shelf");
+  assert.equal(pb.limit, "stock", "the preview names stock as the limit");
+  const cash1 = gm2.cash;
+  const rs = doBuy(gm2, sh2, "wine", 500);
+  assert.ok(rs.ok);
+  assert.equal(rs.qty, 2, "the execution buys exactly the two stocked units");
+  assert.equal(r2(pb.cost), r2(rs.cost), "preview cost = executed cost to the cent");
+  assert.equal(r2(cash1 - gm2.cash), r2(pb.cost), "the cash delta is the previewed cost");
+  assert.equal(gm2.market.cadiz.wine.stock, 0, "the shelf is empty after the deal");
+  assert.equal(r2(pb.next), r2(quote(gm2, "cadiz", "wine")), "the previewed next price is the price after the deal");
 });
 
 test("insufficient cash: the preview counts the affordable units, the execution buys exactly them", () => {
@@ -69,26 +109,34 @@ test("insufficient cash: the preview counts the affordable units, the execution 
   assert.ok(oneMore.qty < pb.qty || oneMore.qty === 0, "after the purchase the same request affords no more than before");
 });
 
-test("partial sale against a binding purse: preview and execution stop on the same unit", () => {
+test("binding purse across hold and warehouse: the purse pays the hold first, then the store, and every book moves", () => {
   const gm = game();
   const sh = gm.ships[0], good = "grain";
   sh.cargo[good] = 40; sh.basis = { [good]: 40 * 8 };
   const wh = { goods: { [good]: 40 }, basis: { [good]: 40 * 7 } };
   gm.warehouses = { cadiz: wh };
   const purse = commerceOf(gm.market.cadiz);
-  purse.cash = 60; // pays for a few units only, across BOTH the hold and the warehouse
+  const purse0 = 1150; // covers all 40 hold units (1102.50) and part of the store, never the whole 80
+  purse.cash = purse0;
   const ps = previewSellCombinedPort(gm, sh, good, 80, wh);
-  assert.ok(ps.qty > 0 && ps.qty < 80, "test premise: the purse cuts the sale");
+  assert.equal(ps.fromCargo, 40, "the preview sells the whole hold first");
+  assert.ok(ps.fromStore > 0, "the preview continues into the warehouse");
+  assert.ok(ps.qty < 80, "test premise: the purse cuts the combined sale short of 80");
   const cash0 = gm.cash;
   const rs = doSellCombined(gm, sh, good, 80, wh);
   assert.equal(rs.ok, true);
   assert.equal(ps.qty, rs.qty, "preview stops on the same unit the purse stops the execution");
   assert.equal(r2(ps.revenue), r2(rs.revenue));
   assert.equal(r2(gm.cash - cash0), r2(ps.revenue), "the cash delta is the previewed revenue");
+  assert.equal(r2(purse.cash), r2(purse0 - ps.revenue), "the port purse paid exactly the previewed revenue");
+  assert.equal(sh.cargo[good] ?? 0, 0, "the hold leg emptied the hold");
+  assert.equal(wh.goods[good], 40 - ps.fromStore, "the store leg took exactly the previewed store units");
+  assert.equal(sh.basis?.[good] ?? null, null, "a full hold sale settles the whole hold book cost");
+  assert.equal(wh.basis[good], 280 - 7 * ps.fromStore, "the store book cost leaves with the store units, pro rata");
   assert.equal(ps.fromCargo + ps.fromStore, ps.qty, "the preview still splits hold first, warehouse second");
 });
 
-test("consistent rounding: the whole-coin figure the button shows is the rounded executed delta, cents exact underneath", () => {
+test("consistent engine rounding: deals settle to cents and the whole-coin figure rounds the same number", () => {
   const gm = game();
   const sh = gm.ships[0], good = "silk"; // fee keeps cents on the price
   const pb = previewBuy(gm.world, gm.market, sh, gm.cash, good, 7, fee(gm, "cadiz"));
@@ -97,13 +145,13 @@ test("consistent rounding: the whole-coin figure the button shows is the rounded
   const rs = doBuy(gm, sh, good, 7);
   assert.ok(rs.ok && rs.qty === pb.qty);
   assert.equal(r2(cash0 - gm.cash), r2(pb.cost), "execution charges the previewed cents exactly");
-  assert.equal(Math.round(cash0 - gm.cash), Math.round(pb.cost), "the whole-coin display (web/main.mjs) rounds the same number");
+  assert.equal(Math.round(cash0 - gm.cash), Math.round(pb.cost), "whole-coin engine rounding rounds the same number");
   const ps = previewSellCombinedPort(gm, sh, good, rs.qty, null);
   const cash1 = gm.cash;
   const rs2 = doSellCombined(gm, sh, good, rs.qty, null);
   assert.ok(rs2.ok);
   assert.equal(r2(gm.cash - cash1), r2(ps.revenue), "sell side: execution credits the previewed cents exactly");
-  assert.equal(Math.round(gm.cash - cash1), Math.round(ps.revenue), "sell side: the whole-coin display rounds the same number");
+  assert.equal(Math.round(gm.cash - cash1), Math.round(ps.revenue), "sell side: whole-coin engine rounding rounds the same number");
 });
 
 test("the preview never mutates: market, ship, warehouse and cash survive it byte-identical", () => {
