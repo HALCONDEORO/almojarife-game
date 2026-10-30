@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
-import { newGame, doBuy, doSell, doSellStored, doSellCombined, buyWarehouse, storeGoods, feeMul } from "../src/game/game.mjs";
+import { newGame, doBuy, doSell, doSellStored, doSellCombined, sellableHold, previewSellCombinedPort, buyWarehouse, storeGoods, feeMul } from "../src/game/game.mjs";
 import { previewSellCombined, sellStored, FEE } from "../src/sim/trade.mjs";
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 
@@ -124,9 +124,38 @@ test("doSellCombined never sells or drains locked prize goods", () => {
   assert.equal(s.cargo.grain, 5, "still untouched after the rejected sale");
 });
 
+test("preview and MAX use the sellable hold: locked prizes stay out of the number the player sees", () => {
+  const { g, s } = gameWithStore(5, 10);
+  g.marque = true; s.prizeLots = [{ goods: { grain: 5 } }]; // whole hold locked
+  assert.equal(sellableHold(g, s, "grain"), 0);
+  const pv = previewSellCombinedPort(g, s, "grain", 15, g.warehouses.cadiz); // what MAX would offer
+  assert.equal(pv.qty, 10, "preview clamps to sellable hold + store, never the locked units");
+  assert.equal(pv.fromCargo, 0); assert.equal(pv.fromStore, 10);
+  const r = doSellCombined(g, s, "grain", pv.qty, g.warehouses.cadiz); // executing exactly the previewed click
+  assert.equal(r.ok, true);
+  assert.equal(r.qty, pv.qty);
+  assert.ok(Math.abs(r.revenue - pv.revenue) < 0.02, `execution ${r.revenue} matches preview ${pv.revenue}`);
+  assert.ok(Math.abs(r.profit - pv.profit) < 0.02, `execution profit ${r.profit} matches preview profit ${pv.profit} (no phantom cargo cost)`);
+  assert.ok(Math.abs(r.spent - pv.spent) < 0.02 || pv.spent === undefined, "spent matches when the preview reports it");
+});
+
+test("partially locked hold: preview and execution split the same way", () => {
+  const { g, s } = gameWithStore(5, 10);
+  g.marque = true; s.prizeLots = [{ goods: { grain: 2 } }]; // 3 sellable of 5 in the hold
+  assert.equal(sellableHold(g, s, "grain"), 3);
+  const pv = previewSellCombinedPort(g, s, "grain", 5, g.warehouses.cadiz);
+  assert.equal(pv.fromCargo, 3); assert.equal(pv.fromStore, 2);
+  const r = doSellCombined(g, s, "grain", 5, g.warehouses.cadiz);
+  assert.equal(r.ok, true);
+  assert.ok(Math.abs(r.revenue - pv.revenue) < 0.02 && Math.abs(r.profit - pv.profit) < 0.02, "preview parity with a partially locked hold");
+  assert.equal(s.cargo.grain, 2, "only the locked units remain");
+  assert.equal(s.prizeLots[0].goods.grain, 2, "prize lot untouched");
+});
+
 test("market sell button preview uses cargo plus warehouse stock (UI wiring)", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-  assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, have \+ stored\) : marketQty/);
-  assert.match(src, /ps = previewSellCombined\(g\.world, g\.market, s, wh, gd, sq, mktFee\)/);
+  assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, free \+ stored\) : marketQty/);
+  assert.match(src, /ps = previewSellCombined\(g\.world, g\.market, s, wh, gd, sq, mktFee, free\)/);
+  assert.match(src, /const want = v === "all" \? sellableHold\(g, s, gd\)/);
   assert.match(src, /doSellCombined\(g, s, gd, want, wh\)/);
 });
