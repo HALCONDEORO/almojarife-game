@@ -571,6 +571,26 @@ const renderFromClock = () => { if (uiPressed) renderQueued = true; else render(
 const endPress = () => { clearTimeout(pressTimer); setTimeout(() => { uiPressed = false; if (renderQueued) { renderQueued = false; render(); } }, 0); };
 document.addEventListener("pointerdown", (e) => { if (e.target?.closest?.(PRESS_SCOPE)) { uiPressed = true; clearTimeout(pressTimer); pressTimer = setTimeout(endPress, 1500); } }, true); // 1.5 s safety if the release never arrives
 document.addEventListener("pointerup", endPress, true); document.addEventListener("pointercancel", endPress, true);
+/** City walls confirm card (extracted from bldCard, same content): the concejo votes and pays;
+ *  the respect gate is on the petition, not on the quote. */
+const wallQuoteCard = (g, s, t, lang) => {
+  const o = quoteWalls(g, s.at);
+  if (o.ok) return { card: `<b>${t.wallTitle} · ${t.wallLevel.replace("{l}", o.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)+(o.rounding>0?` + ${lang==='es'?'ajuste a moneda entera':'whole-coin adjustment'} ${fmt(o.rounding)}`:'')).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.level * WALL_UPKEEP)}</small><br><small>${t.wallCouncil}</small>`, canPay: repOf(g, s.at) >= WALL_MIN_RESPECT, lockNote: repOf(g, s.at) >= WALL_MIN_RESPECT ? "" : whyText(t, "respect required", lang) };
+  return { card: `<b>${t.wallTitle}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : whyText(t, o.reason)}</small>`, canPay: false, lockNote: "" };
+};
+/** City walls block of the buildings tab (extracted from render, same content): level, effect, upkeep,
+ *  construction progress, unkept warning and the petition flow. */
+const wallsCityCard = (g, s, t, lang) => {
+  const wl = wallsLevel(g, s.at), wk = wallsKeptLevel(g, s.at), wr = g.walls[s.at], wq = quoteWalls(g, s.at);
+  let h = `<h3>${t.wallTitle}</h3><p><b>${wl ? t.wallLevel.replace("{l}", wl).replace("{m}", WALL_MAX_LEVEL) : t.wallNone}</b>${wk ? ` · ${t.bldFxH.replace("{n}", fmt(wk * WALL_POP))}` : ""}${wl ? ` · ${t.bldUpkeep.replace("{u}", wl * WALL_UPKEEP)}` : ""}</p><p><small>${t.wallInfo.replace("{p}", WALL_POP)}</small></p>`;
+  if (wr?.nextLevel && wr.readyTick > g.tick) h += `<p>${t.bldState.construction} ${wr.nextLevel} · ${t.bldReady.replace("{d}", Math.ceil(wr.readyTick / TICKS_PER_DAY)).replace("{p}", Math.max(0, Math.min(99, Math.round(100 * (1 - (wr.readyTick - g.tick) / (WALL_BUILD_DAYS * wr.nextLevel * TICKS_PER_DAY))))))}</p>`;
+  if (wr?.unkept) h += `<p><b style="color:#a11">${t.wallUnkept}</b></p>`;
+  if (wr?.petition) h += `<p><small>${t.wallPetitionPending}</small></p>`;
+  else if (wq.ok) h += `<p><button data-wallact="1">${t.wallPetition.replace("{l}", wq.level)}</button></p>`;
+  else if (wq.reason === "max level") h += `<p><small>${t.bldMax}</small></p>`;
+  else if (!wr?.nextLevel) h += `<p><small>${whyText(t, wq.reason)}</small></p>`; // works under way already show their progress line above
+  return h;
+};
 function render() {
   sel = fleetSelection(g, sel);
   if (sel < 0) {
@@ -742,7 +762,7 @@ function render() {
       const layA = plotsCache[s.at];
       let card = "", canPay = false, lockNote = "";
       if (bldAction.kind === "towers") { const o = quoteTowers(g, s.at), tw3 = TW[lang] ?? TW.es; if (o.ok) { card = `<b>${tw3.title} · ${tw3.cardN.replace("{n}", o.count).replace("{m}", towersMax(g, s.at))}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.count * TOWER_UPKEEP)}</small>`; canPay = g.cash >= o.cost; } else { card = `<b>${tw3.title}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : (tw3.why[o.reason] ?? whyText(t, o.reason))}</small>`; } }
-      if (bldAction.kind === "walls") { const o = quoteWalls(g, s.at); if (o.ok) { card = `<b>${t.wallTitle} · ${t.wallLevel.replace("{l}", o.level).replace("{m}", WALL_MAX_LEVEL)}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)+(o.rounding>0?` + ${lang==='es'?'ajuste a moneda entera':'whole-coin adjustment'} ${fmt(o.rounding)}`:'')).replace("{d}", Math.round(o.ticks / TICKS_PER_DAY)).replace("{u}", o.level * WALL_UPKEEP)}</small><br><small>${t.wallCouncil}</small>`; canPay = repOf(g, s.at) >= WALL_MIN_RESPECT; if (!canPay) lockNote = whyText(t, "respect required", lang); } else { card = `<b>${t.wallTitle}</b><br><small style="color:#a11">${o.reason === "max level" ? t.bldMax : whyText(t, o.reason)}</small>`; } }
+      if (bldAction.kind === "walls") { const wqc = wallQuoteCard(g, s, t, lang); card = wqc.card; canPay = wqc.canPay; lockNote = wqc.lockNote; }
       else if (bldAction.kind === "buy") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); if (o) { card = `<b>${t.bldBuy.replace("{p}", fmt(o.price))}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small>`; canPay = g.cash >= o.price; } }
       else if (bldAction.kind === "buypermit") { const o = plotOffers(world, g, s.at, Array.isArray(layA) ? layA : []).find((x) => x.id === bldAction.plotId); const pn = g.almonedaPermits?.[s.at] ?? 0; const pbc = { es: { usePermit: "Usar permiso de obra", permitCost: "El permiso paga el solar: 0 monedas (te quedaran {n}).", noPermit: "No te quedan permisos de obra en este puerto." }, en: { usePermit: "Use building permit", permitCost: "The permit pays for the plot: 0 coins ({n} left afterwards).", noPermit: "You have no building permits left in this port." } }[lang] ?? {}; if (o) { card = `<b>${pbc.usePermit}</b> <small>${t.bldTypes[o.type] ?? o.type} · ${o.w}×${o.d}</small><br><small>${pn ? pbc.permitCost.replace("{n}", pn - 1) : pbc.noPermit}</small>`; canPay = pn > 0; } }
       else if (bldAction.kind === "build") { const o = buildOffers(g, s.at, bldAction.plotId).find((x) => x.type === bldAction.type); if (o?.ok) { card = `<b>${t.bldTypes[bldAction.type]}</b><br><small>${t.bldCost.replace("{c}", fmt(o.cost)).replace("{m}", fmt(o.materials)).replace("{f}", fmt(o.fee)).replace("{d}", o.days).replace("{u}", o.upkeep)}</small>` + impNote(t, o); canPay = o.affordable; } else if (o) { card = `<b>${t.bldTypes[bldAction.type]}</b><br><small style="color:#a11">${whyText(t, o.reason, lang)}</small>`; } }
@@ -868,16 +888,7 @@ function render() {
       h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.pop + eff.popBonus)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
       if (eff.jobs) h += `<p><b>${t.bldJobsLine.replace("{j}", fmt(eff.jobs)).replace("{f}", fmt(eff.free)).replace("{s}", Math.round(eff.staffing * 100))}</b></p>` + (eff.staffing < 1 ? `<p><b style="color:#a11">${t.bldJobsShort.replace("{s}", Math.round(eff.staffing * 100))}</b></p>` : "");
       h += bldCard();
-      if (g.walls) { // city walls (flag on): city-level works, no plot needed
-        const wl = wallsLevel(g, s.at), wk = wallsKeptLevel(g, s.at), wr = g.walls[s.at], wq = quoteWalls(g, s.at);
-        h += `<h3>${t.wallTitle}</h3><p><b>${wl ? t.wallLevel.replace("{l}", wl).replace("{m}", WALL_MAX_LEVEL) : t.wallNone}</b>${wk ? ` · ${t.bldFxH.replace("{n}", fmt(wk * WALL_POP))}` : ""}${wl ? ` · ${t.bldUpkeep.replace("{u}", wl * WALL_UPKEEP)}` : ""}</p><p><small>${t.wallInfo.replace("{p}", WALL_POP)}</small></p>`;
-        if (wr?.nextLevel && wr.readyTick > g.tick) h += `<p>${t.bldState.construction} ${wr.nextLevel} · ${t.bldReady.replace("{d}", Math.ceil(wr.readyTick / TICKS_PER_DAY)).replace("{p}", Math.max(0, Math.min(99, Math.round(100 * (1 - (wr.readyTick - g.tick) / (WALL_BUILD_DAYS * wr.nextLevel * TICKS_PER_DAY))))))}</p>`;
-        if (wr?.unkept) h += `<p><b style="color:#a11">${t.wallUnkept}</b></p>`;
-        if (wr?.petition) h += `<p><small>${t.wallPetitionPending}</small></p>`;
-        else if (wq.ok) h += `<p><button data-wallact="1">${t.wallPetition.replace("{l}", wq.level)}</button></p>`;
-        else if (wq.reason === "max level") h += `<p><small>${t.bldMax}</small></p>`;
-        else if (!wr?.nextLevel) h += `<p><small>${whyText(t, wq.reason)}</small></p>`; // works under way already show their progress line above
-      }
+      if (g.walls) h += wallsCityCard(g, s, t, lang); // city walls (flag on): city-level works, no plot needed
       if (g.towers) { // watchtowers (flag on): mounted on the wall, no plot needed (issue #363, lane C; strings local while the EN sweep owns T.es/T.en)
         const tw2 = TW[lang] ?? TW.es, tc = towersCount(g, s.at), tk = towersKept(g, s.at), tm = towersMax(g, s.at), tr2 = g.towers[s.at], tq = quoteTowers(g, s.at);
         h += `<h3>${tw2.title}</h3><p><b>${tc ? tw2.count.replace("{n}", tc).replace("{m}", tm) : tw2.none}</b>${tk ? ` · ${tw2.watch.replace("{n}", tk)}` : ""}${tc ? ` · ${tw2.upkeep.replace("{u}", fmt(tc * TOWER_UPKEEP))}` : ""}</p><p><small>${tw2.info}</small></p>`;
