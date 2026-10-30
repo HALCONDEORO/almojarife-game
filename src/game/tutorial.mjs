@@ -12,7 +12,7 @@
 // v2 remembers a voyage after buying, even before the profitable sale at its destination.
 // v3 adds the contract step; v1 and v2 games keep their own last step, exactly as before.
 
-/** Start the tutorial on a game. v3 marks the six-step progressive format (a council contract closes it). */
+/** Start the tutorial on a game. v3 marks the six-step progressive format (accepting a council contract closes it). */
 export const initTutorial = (g) => { g.tut = { v: 3, bought: false, sold: false, sailed: false, routed: false, hall: false, contract: false, skipped: false }; return g.tut; };
 
 const live = (g) => { const t = g?.tut; return t !== null && typeof t === "object" && !Array.isArray(t) ? t : null; }; // a damaged save key (true, 5, "x", [], null) counts as tutorial off, never throws
@@ -76,29 +76,38 @@ export function tutorialActive(g) { const s = tutorialStep(g); return s !== null
 
 export const TUT_TEXT = {
   es: {
-    buy: "Tutorial 1/6: compra un bien barato en el Mercado de la ciudad.",
-    sell: "Tutorial 2/6: zarpa a un puerto donde escasee (clic derecho) y vende la carga con beneficio en el Mercado de la ciudad.",
-    sail: "Tutorial 3/6: elige un puerto y zarpa (clic derecho).",
-    route: "Tutorial 4/6: pon a tu barco una ruta automática (botón Barcos en la ciudad).",
-    hall: "Tutorial 5/6: entra en el Ayuntamiento y conoce al concejo (pestaña Ayuntamiento).",
-    contract: "Tutorial 6/6: acepta un encargo del concejo (pestaña Ayuntamiento) y entrégalo a tiempo.",
+    buy: "compra un bien barato en el Mercado de la ciudad.",
+    sell: "zarpa a un puerto donde escasee (clic derecho) y vende la carga con beneficio en el Mercado de la ciudad.",
+    sail: "elige un puerto y zarpa (clic derecho).",
+    route: "pon a tu barco una ruta automática (botón Barcos en la ciudad).",
+    hall: "entra en el Ayuntamiento y conoce al concejo (pestaña Ayuntamiento).",
+    contract: "acepta un encargo del concejo (pestaña Ayuntamiento).",
     done: "Tutorial completado. Tu casa comercial es tuya: gana monedas antes del plazo.",
   },
   en: {
-    buy: "Tutorial 1/6: buy a cheap good at the city Market.",
-    sell: "Tutorial 2/6: sail to a port where it is scarce (right-click) and sell the cargo at a profit at the city Market.",
-    sail: "Tutorial 3/6: pick a port and sail (right-click).",
-    route: "Tutorial 4/6: give your ship a standing route (Ships button in the city).",
-    hall: "Tutorial 5/6: step into the Town hall and meet the council (Town hall tab).",
-    contract: "Tutorial 6/6: accept a council contract (Town hall tab) and deliver it on time.",
+    buy: "buy a cheap good at the city Market.",
+    sell: "sail to a port where it is scarce (right-click) and sell the cargo at a profit at the city Market.",
+    sail: "pick a port and sail (right-click).",
+    route: "give your ship a standing route (Ships button in the city).",
+    hall: "step into the Town hall and meet the council (Town hall tab).",
+    contract: "accept a council contract (Town hall tab).",
     done: "Tutorial complete. Your trading house is yours: earn coins before the deadline.",
   },
 };
 
-/** Hint line for the UI; unknown language falls back to Spanish. null when the tutorial is off. */
+/** Step number of each step id. */
+const TUT_NUM = { buy: 1, sell: 2, sail: 3, route: 4, hall: 5, contract: 6 };
+/** Step total for the save's tutorial version: v1 had 3 steps, v2 had 5, v3 has 6. */
+const TUT_TOTAL = (t) => (v3(t) ? 6 : v2(t) ? 5 : 3);
+
+/** Hint line for the UI, with the "Tutorial n/N: " prefix for the save's own version;
+ *  unknown language falls back to Spanish. null when the tutorial is off. */
 export function tutorialHint(g, lang = "es") {
   const s = tutorialStep(g);
-  return s ? (TUT_TEXT[lang] ?? TUT_TEXT.es)[s] : null;
+  if (!s) return null;
+  const body = (TUT_TEXT[lang] ?? TUT_TEXT.es)[s];
+  if (s === "done") return body;
+  return "Tutorial " + TUT_NUM[s] + "/" + TUT_TOTAL(live(g)) + ": " + body;
 }
 
 /** The line the UI shows while the tutorial runs; null when it is off, damaged, skipped or finished. */
