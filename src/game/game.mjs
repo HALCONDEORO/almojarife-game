@@ -162,6 +162,7 @@ export const DAILY_HOOKS = [];
 function dayTick(g) {
   almonedaDay(g); // the hammer falls at the END of the auction day, before the calendar turns: the player bids while the lot is on the block (flag off: nothing)
   g.day++;
+  g.cash = r2d(g.cash); // daily sweep at the common day boundary: trades sum 2-decimal coins and bare floats drift (0.1 + 0.2); the drift must never reach the autosave on the day change (Marco 30/10: decimals only in taxes and upkeep)
   for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
   // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
   for (const s of g.ships) {
@@ -231,7 +232,6 @@ export function advanceDay(g) {
     advanceTick(g);
     if (atSea.size && g.ships.some((s) => atSea.has(s.id) && !s.voyage)) break; // a ship of yours just arrived
   } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
-  g.cash = r2d(g.cash); // daily sweep: trades sum 2-decimal coins and bare floats drift (0.1 + 0.2); the drift must never reach the save (Marco 30/10: decimals only in taxes and upkeep)
 }
 /** The slot inside the day at which port i ticks its market (P3-style stagger: updates spread through the day). */
 export const marketSlot = (world, i) => Math.floor(i * TICKS_PER_DAY / world.cities.length);
