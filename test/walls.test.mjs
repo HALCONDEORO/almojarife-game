@@ -1,29 +1,32 @@
-// Walls module (edificios push, lane B): levels 0..3 with x3 wall/gate art,
-// construction on the buildings pattern, weekly-book upkeep, save-safe legacy
-// read of plague.walls=1 as level 1. Every number is own tuning (inference,
-// no documented figure exists); flag OFF = untouched game. Contract:
-// walls-contract-v1.md; D1/D2/D3 ruled by Estudio before this runs.
+// Council walls (Marco 30/10 15:23: "hace falta que el concejo vote, lo paguen ellos y lo mantengan ellos"):
+// the concejo votes the walls at its meetings, pays the works and the watch out of the town chest (caja).
+// The player never pays; at most a known merchant (respect 20, "Conocido") hands in a petition.
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newGame, advanceDay, advanceTick } from "../src/game/game.mjs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { buyOffice, buyPlot, quoteConstruction } from "../src/game/buildings.mjs";
-import { wallsLevel, wallsKeptLevel, quoteWalls, startWalls, tickWalls, accrueWalls, WALL_MAX_LEVEL, WALL_POP, WALL_UPKEEP } from "../src/game/walls.mjs";
+import { wallsLevel, wallsKeptLevel, quoteWalls, startWalls, proposeWall, councilWallsVote, tickWalls, accrueWalls, WALL_MAX_LEVEL, WALL_POP, WALL_UPKEEP, WALL_AUTONOMOUS } from "../src/game/walls.mjs";
 import { accrueBuildings } from "../src/game/buildings.mjs";
 import { wallsAllow } from "../src/game/plague.mjs";
 import { settleWeek } from "../src/game/ledger.mjs";
+import { cajaOf, creditCaja, cajaTarget, meetingDay, nextMeetingDay } from "../src/game/council.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const game = (opts = {}) => newGame(world, "cadiz", { freePlay: true, seed: 7, ...opts }); // walls flag is ON by default
-const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100 * 100; g.cash = 1e6; buyOffice(g, cityId); }; // rep is stored in coins sold: 10000 coins = 100 respect
+const richCaja = (g, cityId = "cadiz") => { (g.hallCaja ??= {})[cityId] = 1e6; return g; }; // a chest that can pay any work
+const rich = (g, cityId = "cadiz") => { (g.rep ??= {})[cityId] = 100 * 100; g.cash = 1e6; buyOffice(g, cityId); return g; }; // player-side setup: respect 100 (stored as coins sold), office, cash
+// rep is stored as coins sold (repV 2), 100 coins = 1 respect point; set repV so ensureRep does not treat the value as legacy points.
+const withRespect = (g, cityId, coins) => { g.repV = 2; (g.rep ??= {})[cityId] = coins; return g; };
+const runTo = (g, day) => { while (g.day < day) advanceDay(g); };
 
 test("flag OFF (false or 1): no state, quote says unknown, ticks and accruals no-op", () => {
   for (const off of [false, 1]) {
     const g = newGame(world, "cadiz", { freePlay: true, seed: 7, walls: off });
     assert.equal(g.walls, undefined, "off game keeps no key");
     assert.equal(quoteWalls(g, "cadiz").reason, "unknown");
-    tickWalls(g); accrueWalls(g); // must not throw, must not create state
+    tickWalls(g); accrueWalls(g); councilWallsVote(g); // must not throw, must not create state
     assert.equal(g.walls, undefined);
     assert.equal(wallsLevel(g, "cadiz"), 0);
   }
@@ -34,13 +37,15 @@ test("flag ON by default: absent and true both create the state", () => {
   assert.notEqual(game({ walls: true }).walls, undefined, "explicit true: ON");
 });
 
-test("happy path: quote, pay with money identity, activate on the exact readyTick", () => {
-  const g = game(); rich(g);
+test("concejo pays: caja debit identity, player cash untouched, active on the exact readyTick", () => {
+  const g = richCaja(game());
   const q = quoteWalls(g, "cadiz");
   assert.ok(q.ok && q.level === 1 && q.ticks > 0, JSON.stringify(q));
-  const before = g.cash, readyTick = g.tick + q.ticks;
+  const cashBefore = g.cash, cajaBefore = cajaOf(g, "cadiz"), readyTick = g.tick + q.ticks;
   const r = startWalls(g, "cadiz");
-  assert.ok(r.ok && g.cash === before - q.cost, "money identity on the start");
+  assert.ok(r.ok, "the concejo starts the work");
+  assert.equal(g.cash, cashBefore, "the player never pays (Marco 30/10)");
+  assert.equal(cajaOf(g, "cadiz"), cajaBefore - q.cost, "the chest pays the whole quote");
   assert.equal(wallsLevel(g, "cadiz"), 0, "not active until the tick lands");
   while (g.tick < readyTick) advanceTick(g);
   assert.equal(wallsLevel(g, "cadiz"), 1, "active exactly at readyTick");
@@ -48,46 +53,89 @@ test("happy path: quote, pay with money identity, activate on the exact readyTic
 });
 
 test("levels cap at WALL_MAX_LEVEL and one build at a time per city", () => {
-  const g = game(); rich(g);
+  const g = richCaja(game());
   assert.equal(startWalls(g, "cadiz").ok, true);
   assert.equal(startWalls(g, "cadiz").reason, "already building");
   g.walls.cadiz = { level: WALL_MAX_LEVEL, state: "active" };
   assert.equal(quoteWalls(g, "cadiz").reason, "max level");
 });
 
-test("respect required (council works), unknown city, game over, no cash", () => {
-  const g = game();
-  assert.equal(quoteWalls(g, "cadiz").reason, "respect required", "the concejo does not take patronage from an unknown merchant, not even at home");
-  assert.equal(quoteWalls(g, "lisboa").reason, "respect required");
+test("the quote is the concejo's: no respect gate, no player cash gate; the chest must cover it", () => {
+  const g = game(); // respect 0, cash 2000: both irrelevant to the quote now
+  assert.ok(quoteWalls(g, "cadiz").ok, "the concejo quotes its own works regardless of who asks");
   assert.equal(quoteWalls(g, "nowhere").reason, "unknown city");
   g.over = true; assert.equal(startWalls(g, "cadiz").reason, "game over"); g.over = false;
-  rich(g); g.cash = 0; assert.equal(startWalls(g, "cadiz").reason, "no cash");
-  const g2 = game(); (g2.rep ??= {}).cadiz = 100 * 100; // known (100 respect), but no office anywhere
-  assert.ok(quoteWalls(g2, "cadiz").ok, "respect alone unlocks council patronage: no office needed");
+  (g.hallCaja ??= {}).cadiz = 0;
+  assert.equal(startWalls(g, "cadiz").reason, "caja short", "an empty chest cannot start works");
 });
 
-// rep is stored as coins sold (repV 2), 100 coins = 1 respect point; set repV so ensureRep does not treat the value as legacy points.
-const withRespect = (g, cityId, coins) => { g.repV = 2; (g.rep ??= {})[cityId] = coins; return g; };
-
-test("respect bar is exactly 20: 19.99 blocked, 20 and 20.01 pass (kills the WALL_MIN_RESPECT +1 mutant)", () => {
+test("petition bar is exactly 20 respect: 19.99 rejected, 20 and 20.01 pass (kills the WALL_MIN_RESPECT +1 mutant)", () => {
   for (const [coins, ok] of [[1999, false], [2000, true], [2001, true]]) {
     const g = withRespect(game(), "lisboa", coins); // non-home: no founding respect nudge, no memory flag
-    assert.equal(quoteWalls(g, "lisboa").ok, ok, `respect ${coins / 100} at the bar`);
-    if (!ok) assert.equal(quoteWalls(g, "lisboa").need, 20, "the quote says what the concejo asks");
+    assert.equal(proposeWall(g, "lisboa").ok, ok, `respect ${coins / 100} at the bar`);
+    if (!ok) assert.equal(proposeWall(g, "lisboa").need, 20, "the refusal says what the concejo asks");
   }
 });
 
-test("non-home port without office: respect alone unlocks (the old office gate would refuse here)", () => {
-  const g = withRespect(game(), "lisboa", 2000); // home is cadiz; no office bought anywhere
+test("petition needs no office and no cash; one petition at a time per city", () => {
+  const g = withRespect(game(), "lisboa", 2000); // home is cadiz; no office bought anywhere; cash 2000
   assert.ok(!g.offices?.includes("lisboa"), "no office in lisboa");
-  const q = quoteWalls(g, "lisboa");
-  assert.ok(q.ok, `respect 20 unlocks lisboa without office (got ${q.reason})`);
-  const g2 = withRespect(game(), "lisboa", 1999);
-  assert.equal(quoteWalls(g2, "lisboa").reason, "respect required", "19.99 respect is not enough away from home either");
+  assert.ok(proposeWall(g, "lisboa").ok, "a known merchant petitions away from home without an office");
+  assert.equal(proposeWall(g, "lisboa").reason, "petition pending", "a second petition is refused while one waits");
+});
+
+test("autonomous builds are OFF (documented constant): a flush chest alone builds nothing, the wall needs a petition", () => {
+  assert.equal(WALL_AUTONOMOUS, false, "shipping config: own-motion builds disabled (year-1 balance: 22 cities walled themselves)");
+  const g = game();
+  const meet = nextMeetingDay(world, "sevilla", g.day);
+  runTo(g, meet - 1);
+  g.hallCaja = { sevilla: 1e6 }; // flush chest, no petition
+  advanceDay(g); // councilWallsVote runs inside dayTick on the meeting day
+  assert.ok(!g.walls.sevilla?.nextLevel && !(g.walls.sevilla?.level >= 1), "no petition, no wall, however flush the chest");
+  assert.equal(g.walls.sevilla, undefined, "no state is even created");
+});
+
+test("meeting-day vote with petition: thin chest below the quote rejects it", () => {
+  const g = withRespect(game(), "sevilla", 2000);
+  g.day = nextMeetingDay(world, "sevilla", 1); // a sevilla meeting day, by the same seeded calendar
+  assert.ok(meetingDay(world, "sevilla", g.day), "test premise: sevilla meets today");
+  assert.ok(proposeWall(g, "sevilla").ok);
+  g.hallCaja = { sevilla: 1 }; // one coin: the chest cannot cover any quote
+  councilWallsVote(g); // direct call: no market drift or municipal income inside a full dayTick
+  assert.ok(!g.walls.sevilla?.nextLevel, "thin chest: petition rejected");
+  assert.equal(g.walls.sevilla.petition, undefined, "the petition is consumed by the refusal");
+});
+
+test("petition voted at the next meeting: builds at exact chest cost; rejected (and consumed) when the chest falls short", () => {
+  const g = withRespect(game(), "sevilla", 2000);
+  const meet = nextMeetingDay(world, "sevilla", g.day);
+  assert.ok(proposeWall(g, "sevilla").ok);
+  runTo(g, meet - 1);
+  const q = quoteWalls(g, "sevilla");
+  g.hallCaja = { sevilla: q.cost }; // exactly the quote, below the flush bar: the petition carries it
+  advanceDay(g);
+  assert.ok(g.walls.sevilla?.nextLevel, "the petitioned wall starts even below the flush bar");
+  assert.equal(g.walls.sevilla.petition, undefined, "the petition is consumed by the vote");
+  const g2 = withRespect(game(), "sevilla", 2000);
+  const meet2 = nextMeetingDay(world, "sevilla", g2.day);
+  assert.ok(proposeWall(g2, "sevilla").ok);
+  runTo(g2, meet2 - 1);
+  g2.hallCaja = { sevilla: 0 };
+  advanceDay(g2);
+  assert.ok(!g2.walls.sevilla?.nextLevel, "empty chest: no build");
+  assert.equal(g2.walls.sevilla.petition, undefined, "the petition is consumed by the refusal");
+  assert.ok(g2.inbox.some((m) => m.kind === "council" && m.txt?.es?.includes("rechaza")), "the refusal reaches the petitioner");
+});
+
+test("the walls work is only news where the concejo knows the player", () => {
+  const g = game(); // respect 0 everywhere
+  richCaja(g, "sevilla");
+  assert.ok(startWalls(g, "sevilla").ok, "the chest can always pay its own works");
+  assert.equal(g.inbox.filter((m) => m.kind === "council").length, 0, "but nobody tells a stranger");
 });
 
 test("legacy plague.walls=1 reads as level 1; new construction lands on level 2", () => {
-  const g = game({ plague: true }); rich(g);
+  const g = game({ plague: true }); richCaja(g);
   g.plague.walls.cadiz = 1; // a save from before the module
   assert.equal(wallsLevel(g, "cadiz"), 1);
   assert.ok(wallsAllow(g, "cadiz", "hospital"), "legacy save keeps the hospital license");
@@ -98,54 +146,58 @@ test("legacy plague.walls=1 reads as level 1; new construction lands on level 2"
 test("wallsAllow: flag-off pass-through and level-1 gate", () => {
   const g0 = newGame(world, "cadiz", { freePlay: true, seed: 7, walls: false, plague: false });
   assert.ok(wallsAllow(g0, "cadiz", "hospital"), "walls flag off (and no plague): the gate does not exist");
-  const g = game(); rich(g); // default ON
+  const g = game(); // default ON
   assert.equal(wallsAllow(g, "cadiz", "hospital"), false, "walls flag on, no walls built: hospital gated");
   g.walls.cadiz = { level: 1, state: "active" };
   assert.ok(wallsAllow(g, "cadiz", "hospital"));
   assert.ok(wallsAllow(g, "cadiz", "house"), "ordinary types never gated");
 });
 
-test("upkeep accrues into the weekly book and settleWeek pays it", () => {
-  const g = game(); rich(g);
+test("upkeep is paid daily by the chest, never by the player; the weekly book never sees walls", () => {
+  const g = richCaja(game());
   g.walls.cadiz = { level: 2, state: "active" };
-  const before = g.cash;
+  const cashBefore = g.cash, cajaBefore = cajaOf(g, "cadiz");
   for (let i = 0; i < 7; i++) accrueWalls(g);
-  assert.equal(g.accrued?.buildings?.["walls:cadiz"], 7 * WALL_UPKEEP * 2, "7 days x upkeep x level 2");
+  assert.equal(cajaOf(g, "cadiz"), cajaBefore - 7 * WALL_UPKEEP * 2, "7 days x upkeep x level 2 out of the chest");
+  assert.equal(g.cash, cashBefore, "the player pays no upkeep (Marco 30/10: lo mantienen ellos)");
+  assert.equal(g.accrued?.buildings?.["walls:cadiz"] ?? 0, 0, "the weekly book never sees walls");
   g.day = 7; // settle day
-  const r = settleWeek(g);
-  assert.ok(r && g.cash < before, "the weekly book collects wall upkeep");
+  settleWeek(g);
+  assert.equal(g.cash, cashBefore, "settlement collects nothing from the player for walls");
 });
 
-test("buildings and walls share one daily cash budget (Codex finding 23/10)", () => {
-  const g = game(); rich(g);
+test("walls never draw on the player's daily cash budget; the towers chain is untouched", () => {
+  const g = game();
   g.walls.cadiz = { level: 2, state: "active" };
+  g.hallCaja = { cadiz: 1e6 };
   const committed = accrueBuildings(g);
   assert.equal(typeof committed, "number", "accrueBuildings reports its commitment");
-  // Contract: whatever buildings already committed today is not available to the walls.
-  g.cash = WALL_UPKEEP * 2; // exactly the wall upkeep
-  accrueWalls(g, g.cash);   // ...but buildings already spent it all
-  assert.equal(g.walls.cadiz.unkept, true, "walls go unkept once buildings consumed today's cash");
-  assert.equal(g.accrued?.buildings?.["walls:cadiz"] ?? 0, 0, "no wall upkeep accrued");
-  g.cash = 1e6; accrueWalls(g, 0); // hysteresis resumes with cash in hand
-  assert.equal(g.walls.cadiz.unkept, false);
+  g.cash = 0; // even a broke player keeps kept walls when the chest pays
+  const out = accrueWalls(g, committed);
+  assert.equal(out, committed, "accrueWalls adds nothing to the player's budget chain");
+  assert.equal(g.walls.cadiz.unkept ?? false, false, "the chest pays the watch while the player is broke");
+  assert.equal(g.cash, 0, "player cash untouched");
 });
 
-test("unkept hysteresis: broke walls stand but their bonus suspends; cash resumes", () => {
-  const g = game(); rich(g);
+test("unkept hysteresis: a broke chest leaves the wall standing but suspends the bonus; a refilled chest resumes", () => {
+  const g = game();
   g.walls.cadiz = { level: 3, state: "active" };
-  g.cash = 0;
+  g.hallCaja = { cadiz: 0 };
   accrueWalls(g);
   assert.equal(g.walls.cadiz.unkept, true);
   assert.equal(wallsLevel(g, "cadiz"), 3, "the wall still stands (license stays)");
   assert.equal(wallsKeptLevel(g, "cadiz"), 0, "bonus suspended while unkept");
-  g.cash = 1e6;
+  g.hallCaja.cadiz = WALL_UPKEEP * 3; // one day of cost: not enough to resume (hysteresis: two days)
+  accrueWalls(g);
+  assert.equal(g.walls.cadiz.unkept, true, "one day of cost does not resume the watch (kills the hysteresis mutant)");
+  g.hallCaja.cadiz = 1e6;
   accrueWalls(g);
   assert.equal(g.walls.cadiz.unkept, false);
   assert.equal(wallsKeptLevel(g, "cadiz"), 3);
 });
 
 test("phased upgrade: the old wall stands until the new one completes (P3 11.5.3)", () => {
-  const g = game(); rich(g);
+  const g = richCaja(game());
   g.walls.cadiz = { level: 1, state: "active" };
   const q = quoteWalls(g, "cadiz");
   assert.equal(q.level, 2);
@@ -156,7 +208,7 @@ test("phased upgrade: the old wall stands until the new one completes (P3 11.5.3
 });
 
 test("kept walls add exactly WALL_POP x level of effective population; unkept walls add nothing", () => {
-  const bare = game(), walled = game(); rich(walled);
+  const bare = game(), walled = richCaja(game());
   walled.walls.cadiz = { level: 3, state: "active" };
   advanceDay(walled); advanceDay(bare); // one full day in lockstep: cadiz's market slot recomputes with the walls in place
   assert.ok(walled.market.cadiz.grain?.pop > 0, "market pop recorded");
@@ -166,25 +218,27 @@ test("kept walls add exactly WALL_POP x level of effective population; unkept wa
   assert.equal(walled.market.cadiz.grain.pop - bare.market.cadiz.grain.pop, 0, "unpaid watch: no growth bonus");
 });
 
-test("save round-trip: wall records and works in progress survive intact", async () => {
+test("save round-trip: wall records, petitions and works in progress survive intact", async () => {
   const { serialize, deserialize } = await import("../src/game/gamesave.mjs");
-  const g = game(); rich(g);
+  const g = game();
   g.walls.cadiz = { level: 2, state: "active", unkept: true };
   g.walls.sevilla = { level: 1, state: "active", nextLevel: 2, readyTick: g.tick + 50 };
+  g.walls.lisboa = { level: 0, state: "construction", petition: true };
   const { g: g2 } = deserialize(JSON.parse(JSON.stringify(serialize(g, "Casa Oro"))), world); // same wire path as plague.test
   assert.equal(wallsLevel(g2, "cadiz"), 2);
   assert.equal(g2.walls.cadiz.unkept, true, "the unkept mark survives");
   assert.equal(g2.walls.sevilla.nextLevel, 2, "the work in progress survives");
   assert.equal(g2.walls.sevilla.readyTick, g.tick + 50);
+  assert.equal(g2.walls.lisboa.petition, true, "a pending petition survives");
 });
 
 test("default game (walls ON): the hospital offer is gated until the first wall completes, then real", () => {
-  const g = game({ citylife: true }); rich(g); // default ON: no walls option passed
+  const g = richCaja(rich(game({ citylife: true }))); // default ON: no walls option passed; the player buys the plot, the chest pays the wall
   buyPlot(g, "cadiz", { id: "cadiz:1", type: "house", w: 10, d: 10 });
   assert.equal(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").reason, "walls required", "no walls: hospital not offered");
   assert.equal(quoteConstruction(g, "cadiz", "cadiz:1", "capilla").reason, "walls required", "no walls: capilla not offered");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "pozo").ok, "pozo stands outside the walls");
-  assert.ok(startWalls(g, "cadiz").ok, "the player can start the first wall");
+  assert.ok(startWalls(g, "cadiz").ok, "the concejo can start the first wall");
   while (g.walls.cadiz.nextLevel) for (let i = 0; i < 400000 && g.walls.cadiz.nextLevel; i++) advanceTick(g);
   assert.equal(wallsLevel(g, "cadiz"), 1, "the wall completed");
   assert.ok(quoteConstruction(g, "cadiz", "cadiz:1", "hospital").ok, "hospital offered once the wall stands");
@@ -201,8 +255,8 @@ test("a completed modern record subsumes the legacy marker; a stale marker never
   g.walls.cadiz = { level: 2, state: "active" };
   assert.equal(wallsLevel(g, "cadiz"), 2, "completed modern wall subsumes the marker");
   assert.equal(wallsKeptLevel(g, "cadiz"), 2, "kept while paid");
-  g.cash = 0; accrueWalls(g);
-  assert.equal(g.walls.cadiz.unkept, true, "watch goes unpaid");
+  g.hallCaja = { cadiz: 0 }; accrueWalls(g);
+  assert.equal(g.walls.cadiz.unkept, true, "watch goes unpaid when the chest is empty");
   assert.equal(wallsKeptLevel(g, "cadiz"), 0, "no bonus while unpaid: the stale marker must not resurrect it");
   assert.equal(wallsLevel(g, "cadiz"), 2, "the wall still stands, only the bonus stops");
 });
