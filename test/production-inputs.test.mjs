@@ -12,6 +12,7 @@ import { buildWorld } from "../src/sim/world.mjs";
 import { buyPlot, startConstruction, buildingAt, workshopTick } from "../src/game/buildings.mjs";
 import { quoteRecipe } from "../src/sim/recipes.mjs";
 
+const r2 = (num) => Math.round(num * 100) / 100;
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const PLOT = { id: "cadiz:7", type: "workshop", w: 4, d: 5 }; // same descriptor the buildings suite uses
 
@@ -61,6 +62,7 @@ test("two limiters, one at a time: empty cash stops a stocked workshop, partial 
   assert.equal(buildingAt(gm, "cadiz", PLOT.id).produced ?? 0, 0, "no batch ran without cash");
   assert.equal(gm.market.cadiz.wool.stock, 8, "the wool is untouched");
   assert.equal(gm.market.cadiz.cloth.stock, cloth0, "no cloth appeared");
+  assert.equal(gm.cash, 0, "the empty purse is untouched: the rejection charges nothing");
 
   const gm2 = fundedWorkshop(3);
   woolTown(gm2, 4); // stock for exactly one batch of the two the pattern wants
@@ -69,6 +71,27 @@ test("two limiters, one at a time: empty cash stops a stocked workshop, partial 
   assert.equal(buildingAt(gm2, "cadiz", PLOT.id).produced, 1, "the largest batch that fits runs: one, not two, not zero");
   assert.equal(gm2.market.cadiz.wool.stock, 0, "the batch consumed its 4 wool");
   assert.equal(gm2.market.cadiz.cloth.stock, 2 + 2, "and produced its 2 cloth");
+});
+
+test("two full batches when inputs and cash suffice: the level cap binds, nothing else", () => {
+  const gm = fundedWorkshop(3); // day 0 wants 2 batches and can have them
+  woolTown(gm, 500);
+  const cash0 = gm.cash;
+  workshopTick(gm, "cadiz");
+  assert.equal(buildingAt(gm, "cadiz", PLOT.id).produced, 2, "both batches run (a max-one-batch mutant dies here)");
+  assert.equal(gm.market.cadiz.wool.stock, 500 - 8, "each batch consumed exactly its 4 wool, once (no double charge)");
+  assert.equal(gm.market.cadiz.cloth.stock, 2 + 4, "each batch produced exactly its 2 cloth");
+  assert.equal(r2(gm.cash - cash0), 862.56, "the cash delta is literal: revenue 1058.40 (4 cloth x 264.60) minus cost 195.84 (8 wool x 24.48)");
+});
+
+test("partial cash falls back to the largest affordable batch: one batch, charged once", () => {
+  const gm = fundedWorkshop(3); // day 0 wants 2 batches (195.84 of wool)
+  woolTown(gm, 500);
+  gm.cash = 97.92; // exactly one batch of inputs: the two-batch quote (195.84) cannot be paid
+  workshopTick(gm, "cadiz");
+  assert.equal(buildingAt(gm, "cadiz", PLOT.id).produced, 1, "the affordable batch runs; the unaffordable one is skipped");
+  assert.equal(gm.market.cadiz.wool.stock, 500 - 4, "one batch of wool consumed");
+  assert.equal(r2(gm.cash), 529.2, "literal: 97.92 - 97.92 of inputs + 529.20 of cloth revenue, charged exactly once");
 });
 
 test("restock resumes production: a starved workshop weaves again the day wool returns", () => {
