@@ -193,7 +193,7 @@ function dayTick(g) {
   chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year
   chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
   const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
-  if (hc && g.reports?.[0]?.day === g.day) g.reports[0].household = hc;
+  if (hc && g.reports?.[0]?.day === g.day) { g.reports[0].household = hc; g.reports[0].cashAfter = g.cash; } // the weekly line shows the tribute, so its cash-after figure must include it
   updateRank(g, netWorth(g), post);
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   expireContracts(g); // a council contract past its due day lapses
