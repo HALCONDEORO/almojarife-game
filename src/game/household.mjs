@@ -1,7 +1,8 @@
 // Household tribute: a yearly share of net worth, charged weekly, paid by every house (the player and each trader bot)
 // into the funds of the port where the house stands (g.cityFunds). Each quarter the funds are spent on city works,
 // which raise that port's health counter; health lowers the chance a plague scare closes the port (shocks.mjs).
-// Optional rule, default OFF (newGame flag `household === true`, stored as g.household).
+// Optional rule, ON by default since the world-systems change (#639): newGame stores g.household = true
+// unless opts.household is false or 1; an off game carries no key, so saves stay identical.
 // The rate and the cost of a health point are tuning knobs. Design inference: neighbours with a house pay tribute
 // to the city treasury. No historical source yet.
 export const HOUSEHOLD_RATE_YEAR = 0.02;
