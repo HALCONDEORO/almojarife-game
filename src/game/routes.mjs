@@ -66,10 +66,19 @@ export function processRoutes(g, ops) {
       if (res.ok) { r.legs++; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     }
     routeRepair(g, s, r, ops, 0);
-    if (buyGood) ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
+    let buyRes = null;
+    if (buyGood) buyRes = ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
     if (atA && (s.cargo[r.out] ?? 0) === 0) { // need the outbound good, not just any cargo
-      if (r.stuck++ === 0) post(g, "routeStuck", { ship: s.id, city: s.at, good: r.out });
+      if (r.stuck++ === 0) {
+        if (!buyGood) post(g, "routeStuck", { ship: s.id, city: s.at, good: r.out }); // no outbound rule: legacy notice
+        else { // name the real reason the hold stayed empty (playtest 30/10: a full hold read as "no cash or no stock")
+          const room = Math.max(0, shipCapacity(s) - cargoUsed(s)), e = g.market[s.at]?.[r.out];
+          const cause = room <= 0 ? "no_space" : !e ? "no market" : e.stock <= 0 ? "no_stock"
+            : buyRes && !buyRes.ok && (buyRes.reason === "port closed" || buyRes.reason === "embargo") ? buyRes.reason : "no cash";
+          post(g, "routeStuck", { ship: s.id, city: s.at, action: "buy", good: r.out, cause });
+        }
+      }
       continue;
     }
     r.stuck = 0;
