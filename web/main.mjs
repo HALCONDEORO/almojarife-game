@@ -614,7 +614,11 @@ function render() {
   else if (company) co.textContent = `· ${company}`;
   const cal = calendarOf(g.day, g.startYear ?? LEGACY_START_YEAR), dayFrac = ((g.tick % TICKS_PER_DAY) + tickAcc / tickDurationMs()) / TICKS_PER_DAY; // exact even paused or just loaded
   const mins = Math.floor(dayFrac * 24 * 60), hh = String(Math.floor(mins / 60)).padStart(2, "0"), mm = String(mins % 60).padStart(2, "0");
-  $("day").textContent = `${cal.day} ${t.months[cal.month]} ${cal.year}, ${hh}:${mm} · ${t.day} ${g.noGoal || g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
+  const dayText = `${cal.day} ${t.months[cal.month]} ${cal.year}, `, clkText = `${hh}:${mm}`, tailText = ` · ${t.day} ${g.noGoal || g.freePlay ? g.day : `${g.day}/${DEADLINE_DAYS}`} · ${t.seasons[seasonOf(g.day)]}`;
+  const dayEl = $("day"); // the clock lives in its own fixed-width monospace span so the bar never shifts as digits change
+  if (dayEl.firstChild?.nodeName !== "#text" || !dayEl.querySelector(".clk")) dayEl.innerHTML = "";
+  if (!dayEl.firstChild) { dayEl.append(document.createTextNode(dayText), Object.assign(document.createElement("span"), { className: "clk" }), document.createTextNode(tailText)); }
+  dayEl.firstChild.nodeValue = dayText; dayEl.querySelector(".clk").textContent = clkText; dayEl.lastChild.nodeValue = tailText;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
   $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
   $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, actionUnread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
