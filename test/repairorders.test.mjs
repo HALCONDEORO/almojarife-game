@@ -7,7 +7,7 @@ import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 const mkGame = (cash = 20000) => { const game = newGame(world, "cadiz", {}); game.cash = cash; game.noGoal = true; return game; };
 /** A second ship docked in the same port. */
-const secondShip = (game, at) => { orderShip(game, "barca", at); for (let i = 0; i < SHIP_TYPES.barca.buildDays; i++) advanceDay(game); return game.ships[game.ships.length - 1]; };
+const secondShip = (game, at) => { orderShip(game, "barca", at); for (let idx = 0; idx < SHIP_TYPES.barca.buildDays; idx++) advanceDay(game); return game.ships[game.ships.length - 1]; };
 
 test("the quote is a versioned snapshot: cost by damage and reputation, days from the slowest hull", () => {
   const game = mkGame(), ship = game.ships[0], mate = secondShip(game, ship.at);
@@ -102,7 +102,7 @@ test("a ship under repair cannot sail, cannot be sold, and holds its convoy in p
   const conv = formConvoy(game, [ship.id, mate.id]).convoy;
   assert.equal(sailConvoy(game, conv.id, other, { doSail, inRepair: (sh) => repairOf(game, sh.id) }).reason, "in repair");
   assert.ok(!ship.voyage && !mate.voyage, "nobody left");
-  for (let i = 0; i < 3; i++) processRepairs(game); // 60 points: 3 days
+  for (let idx = 0; idx < 3; idx++) processRepairs(game); // 60 points: 3 days
   assert.equal(ship.hull, 100); assert.equal(repairOf(game, ship.id), null);
   assert.equal(doSail(game, ship, other).ok, true, "free to sail once the yard delivers");
 });

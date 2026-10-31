@@ -26,8 +26,8 @@ test("route ship below 50% hull orders a repair at the dock and waits for the ya
   assert.equal(msgs[0].cost, cost); assert.equal(msgs[0].days, 3);
   const txt = messageText(msgs[0], "es", fmt);
   assert.ok(txt.includes("encargó reparar el casco"), "ES text renders");
-  const en = messageText(msgs[0], "en", fmt);
-  assert.ok(en.includes("ordered a hull repair"), "EN text renders");
+  const enText = messageText(msgs[0], "en", fmt);
+  assert.ok(enText.includes("ordered a hull repair"), "EN text renders");
   advanceDay(game);
   assert.ok(!ship.voyage && repairOf(game, ship.id), "still in the yard on day two, not sailing");
   assert.equal(Object.keys(ship.cargo).length, 0, "no trading while the ship is in the yard");

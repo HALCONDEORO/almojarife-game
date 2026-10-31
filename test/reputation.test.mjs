@@ -46,13 +46,13 @@ test('tiers move the market fee and the shipyard bill',()=>{
 test('the discount reaches real trades and real repairs',()=>{
  const cheap=mk(),dear=mk();
  addRep(cheap.g,'cadiz',100);addRep(dear.g,'cadiz',-20);
- for(const x of[cheap,dear]){x.g.market.cadiz.pepper.stock=x.g.market.cadiz.pepper.target*4;x.s.cargo={};} // pepper: dear enough that per-unit rounding keeps the fee visible
- const rc=doBuy(cheap.g,cheap.s,'pepper',10),rd=doBuy(dear.g,dear.s,'pepper',10);
- assert.ok(rc.ok&&rd.ok);assert.ok(rc.cost<rd.cost,`renowned pays less than ill-seen: ${rc.cost} < ${rd.cost}`);
- const{g,s}=mk();addRep(g,'cadiz',80);s.hull=50;
- const full=repairCost(s),disc=repairPrice(g,s);
- assert.ok(disc<full);const cash=g.cash;const r=orderRepair(g,[s.id],s.at);
- assert.ok(r.ok);assert.equal(r.cost,disc);assert.equal(g.cash,cash-disc);assert.ok(repairOf(g,s.id));
+ for(const fx of[cheap,dear]){fx.g.market.cadiz.pepper.stock=fx.g.market.cadiz.pepper.target*4;fx.s.cargo={};} // pepper: dear enough that per-unit rounding keeps the fee visible
+ const buyCheap=doBuy(cheap.g,cheap.s,'pepper',10),buyDear=doBuy(dear.g,dear.s,'pepper',10);
+ assert.ok(buyCheap.ok&&buyDear.ok);assert.ok(buyCheap.cost<buyDear.cost,`renowned pays less than ill-seen: ${buyCheap.cost} < ${buyDear.cost}`);
+ const{g:game,s:ship}=mk();addRep(game,'cadiz',80);ship.hull=50;
+ const full=repairCost(ship),disc=repairPrice(game,ship);
+ assert.ok(disc<full);const cash=game.cash;const res=orderRepair(game,[ship.id],ship.at);
+ assert.ok(res.ok);assert.equal(res.cost,disc);assert.equal(game.cash,cash-disc);assert.ok(repairOf(game,ship.id));
 });
 test('reputation is clamped and survives a save/load',()=>{
  const{g}=mk();

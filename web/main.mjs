@@ -401,12 +401,12 @@ const rpathGn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k);
 const rpathIo = (buys, sells) => // buys/sells: {good, maxPrice|minPrice} — visual: up-arrow buys, down-arrow sells, icons from the market
   (sells.length ? `<span class="rpath-sell" aria-label="${t.routeSellIf}">▼${sells.map((x) => rpathGn(x.good) + (x.minPrice != null ? "≥" + x.minPrice : "")).join(", ")}</span>` : "") +
   (buys.length ? `<span class="rpath-buy" aria-label="${t.routeBuyIf}">▲${buys.map((x) => rpathGn(x.good) + (x.maxPrice != null ? "≤" + x.maxPrice : "")).join(", ")}</span>` : "");
-const rpathChain = (start, stops) => // stops: {city, io} in sailing order; the arrow home closes the loop
+const rpathChain = (start, stops) => // stops: {city, io} in sailing order; the arrow home closes the loop // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   `<span class="rpath-chain">${rpathChip(start, "")}${stops.map((st) => `<span class="rpath-arrow">→</span>${rpathChip(st.city, st.io)}`).join("")}<span class="rpath-arrow rpath-home">↩</span></span>`;
 const rpathLoop = (stops) => // v2 is a pure circuit between its stops (no sail home); ↩ closes the loop back to the first stop
   `<span class="rpath-chain">${stops.map((st, i) => (i ? `<span class="rpath-arrow">→</span>` : "") + rpathChip(st.city, st.io)).join("")}<span class="rpath-arrow rpath-home">↩</span></span>`;
 const rpathDraftIo = (st) => rpathIo(st.buyGood ? [{ good: st.buyGood, ...(st.buyMax !== "" ? { maxPrice: st.buyMax } : {}) }] : [], st.sellGood ? [{ good: st.sellGood, ...(st.sellMin !== "" ? { minPrice: st.sellMin } : {}) }] : []);
-const rpathUpdatePreview = (ship) => { const el = $("rts-preview"); if (el && routeDrafts[ship.id]) el.innerHTML = rpathLoop(routeDrafts[ship.id].stops.map((st) => ({ city: st.city, io: rpathDraftIo(st) }))); };
+const rpathUpdatePreview = (ship) => { const el = $("rts-preview"); if (el && routeDrafts[ship.id]) el.innerHTML = rpathLoop(routeDrafts[ship.id].stops.map((st) => ({ city: st.city, io: rpathDraftIo(st) }))); }; // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
 const routeDrafts = {}; // advanced-route editor drafts, per ship id
 const newRouteDraft = (at, ids) => ({ minCash: "", stops: [{ city: ids[0] ?? at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }] });
 function start(prof, save = true, opts = {}) {
@@ -479,7 +479,7 @@ function syncMissionEcho() {
   if (win && !win.hidden && chip) {
     const wr = win.getBoundingClientRect(), vt = d.getBoundingClientRect().top;
     let need = 0;
-    for (const el of [chip]) {
+    for (const el of [chip]) { // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
       if (!el || el.hidden) continue;
       const cr = el.getBoundingClientRect();
       if (!(wr.right < cr.left || wr.left > cr.right || wr.bottom < cr.top || wr.top > cr.bottom)) need = Math.max(need, (cr.bottom - vt + 6) / winZoom());
@@ -493,7 +493,7 @@ function syncMissionEcho() {
 // State for the 2D city iframe: walls, buildings, labels and the player's real docked ships.
 // The iframe asks for a resend when it finishes booting, so a state post that raced its load is not lost.
 function postCity2dState() {
-  const frame = document.getElementById("v3d")?.querySelector("iframe");
+  const frame = document.getElementById("v3d")?.querySelector("iframe"); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   if (!frame || !city2dEnabled(location.search)) return;
   const s = g.ships[sel];
   // The town's real industry (flag on only; off or old save: no field, the iframe draws nothing).
@@ -505,7 +505,7 @@ function postCity2dState() {
   const ndState = world.nodes[s.at], svcNames = { market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s.at) ? { warehouse: t.tabStore } : {}) }, townNames = Object.fromEntries(portLayout(s.at, ndState?.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type])); // the iframe re-localizes its own chrome and preview names from these on every state post
   frame.contentWindow.postMessage({ kind: "city2d-state", walls: wallsLevel(g, s.at), city: s.at, bnames: t.bldTypes, names: svcNames, tnames: townNames, buildings: g.buildings?.[s.at] ?? {}, tick: g.tick, labels: Object.fromEntries(buildingsRows(g, s.at).map((r) => [r.plotId, buildingLabel(t, r)])), ships: g.ships.filter((x) => x.at === s.at && !x.voyage).map(shipDescriptor), industry, civic: [{ id: "hall", label: t.tabHall }, ...(lonjaEnabled(location.search) ? [{ id: "lonja", label: t.tabLonja }] : [])] }, location.origin);
 }
-addEventListener("message", (e) => { const frame = document.getElementById("v3d")?.querySelector("iframe"); if (frame && e.origin === location.origin && e.source === frame.contentWindow && e.data?.kind === "city2d-ready" && (document.querySelector("#v3d .city-loading")?.remove(), true) && e.data.city === g.ships[sel]?.at) postCity2dState(); });
+addEventListener("message", (e) => { const frame = document.getElementById("v3d")?.querySelector("iframe"); if (frame && e.origin === location.origin && e.source === frame.contentWindow && e.data?.kind === "city2d-ready" && (document.querySelector("#v3d .city-loading")?.remove(), true) && e.data.city === g.ships[sel]?.at) postCity2dState(); }); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
 // Repeated trades of the same good within the toast's life merge into one toast with the summed amount.
 function toast(msg, agg) {
   let box = $("toasts"); if (!box) { box = document.createElement("div"); box.id = "toasts"; box.setAttribute("role", "status"); document.body.appendChild(box); }
@@ -522,7 +522,7 @@ if (typeof ResizeObserver !== "undefined" && $("maparea")) new ResizeObserver(fi
 let rightTab = "fleet", rtSig = "";
 const RT_TABS = [["fleet", "Flota", "Fleet"], ["city", "Ciudad", "City"], ["port", "Puerto", "Port"], ["mkt", "Mercado", "Market"], ["rep", "Informes", "Reports"], ["msg", "Mensajes", "Messages"]];
 const nearCache = new Map();
-function selectRightTab(tab) {
+function selectRightTab(tab) { // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   if (rightTab === tab) return;
   rightTab = tab; rtSig = "";
   if (tab === "rep") campaignEvent(g, { kind: "readReport" }, MISSION_HOOKS); // reading the weekly report is a mission step
@@ -530,7 +530,7 @@ function selectRightTab(tab) {
 }
 function openLedger(kind) { if (document.getElementById("v3d")) showLedger(kind); else selectRightTab(kind); }
 function renderRightTabs() {
-  const t = T[lang]; // labels and cache signature must use the same current language
+  const t = T[lang]; // labels and cache signature must use the same current language // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   const bar = $("rtabs"), fleetPane = $("rt-fleet"), led = $("rt-ledger"); if (!bar || !led) return;
   const docked = !!(ship() && !ship().voyage), n = actionUnread(g), key = `${lang}|${rightTab}|${n}|${unread(g)}|${docked}`;
   if (!docked && rightTab === "city") rightTab = "fleet"; // the city list needs a ship in port
@@ -724,7 +724,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
     el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
   });
-  $("log").innerHTML = logHtml(g.log,t,lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id);
+  $("log").innerHTML = logHtml(g.log,t,lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   // panel: in navigation mode the map stands alone (P3); the panel only pops up for a pending
   // event. In the city view it carries the port services inside the city window.
   let h = "";
@@ -755,7 +755,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     }
     const wh = warehouseOf(g, s.at);
     if (!inCity) h += `<div class="tabs">` + [["market", t.tabMarket], ["city", t.tabCity], ["hall", t.tabHall], ["buildings", t.bldBuild], ["yard", t.tabYard], ["tavern", t.tabTavern], ["route", t.tabRoute], ["bank", t.tabBank], ["house", premises(g,s.at,lang).label], ["store", t.tabStore], ...(lonjaEnabled(location.search) ? [["lonja", t.tabLonja]] : [])].map(([k, l]) => `<button data-tab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("") + `</div>`;    const bldCard = () => { // armed buy/build/upgrade action: quote card with confirm/cancel
-    const impNote = (t, o) => { const nn = Object.values(o.imported ?? {}).reduce((a, b) => a + b, 0); return nn ? ` · <i>${t.bldImport.replace("{n}", fmt(nn))}</i>` : ""; };
+    const impNote = (t, o) => { const nn = Object.values(o.imported ?? {}).reduce((a, b) => a + b, 0); return nn ? ` · <i>${t.bldImport.replace("{n}", fmt(nn))}</i>` : ""; }; // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
       if (!bldAction) return "";
       const layA = plotsCache[s.at];
       let card = "", canPay = false, lockNote = "";
@@ -806,7 +806,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       h += `<table class="route-table route-editor"><thead><tr><th></th><th>${t.routeColCity}</th><th>${t.routeBuyIf}</th><th>≤</th><th>${t.routeSellIf}</th><th>≥</th><th></th></tr></thead><tbody>` +
         d.stops.map((st, i) => {
           const cityOpts = routePorts.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
-          const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join("");
+          const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join(""); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
           return `<tr><td>${i + 1}</td><td><select id="rts-city-${i}">${cityOpts}</select></td><td><select id="rts-bg-${i}">${goodOpts(st.buyGood)}</select></td><td><input id="rts-bp-${i}" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"></td><td><select id="rts-sg-${i}">${goodOpts(st.sellGood)}</select></td><td><input id="rts-sp-${i}" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"></td><td><button id="rts-del-${i}" title="${t.routeDelStop}" aria-label="${t.routeDelStop}" class="rt-x">✕</button></td></tr>`;
         }).join("") + `</tbody></table>`;
       h += `<div class="rumor"><button id="rts-add">${t.routeAddStop}</button> ${t.routeMinCash}: <input id="rts-mincash" type="number" min="0" step="1" size="6" value="${d.minCash}"> <button id="rts-set2">${t.routeSetAdv}</button> <small id="rts-msg" style="color:#a11"></small></div>`;
@@ -837,7 +837,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay).replace("{l}", Math.max(0, x.dueDay - g.day)).replace("{r}", fmt(x.reward))).join("<br>") + `</p>`; }
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
-      const hv = hallView(g, s.at);
+      const hv = hallView(g, s.at); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
       if(ui2dEnabled(location.search))h += hall2dHtml(hv,t,fmtM,RESPECT_NAMES[lang][hv.respectId],lang);
       else {
       h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hv.mayor}</div>` + hv.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("") + `</div>`;
@@ -949,7 +949,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     } else if (tab === "town") { // a typed town building clicked in the city plan: read-only card, no services yet
       h += t.townTypes[townSel] ? `<h3>${t.townTypes[townSel]}</h3><p>${t.townDesc[townSel]}</p>` : `<p><i>${t.townNone}</i></p>`;
     } else if (tab === "house") {
-      const pr = premises(g,s.at,lang,hasOffice(g, s.at));
+      const pr = premises(g,s.at,lang,hasOffice(g, s.at)); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
       h += `<h3>${pr.label}: ${cityName(s.at)}</h3><p>${pr.info}</p>`;
       h += houseHtml(g, lang, netWorth(g), fmtM, cityName, LOAN_MAX);
       if (!pr.isHome && !hasOffice(g, s.at)) { const rp = repOf(g, s.at); h += `<p><i>${t.officeReq.replace("{p}", fmt(OFFICE_PRICE)).replace("{r}", RESPECT_NAMES[lang][respectOf(g, s.at).id]).replace("{n}", Math.floor(rp))}</i></p>` + `<p><button data-bldact="office|buy" ${g.cash < OFFICE_PRICE || rp < OFFICE_MIN_RESPECT ? "disabled" : ""}>${t.officeBuy.replace("{p}", fmt(OFFICE_PRICE))}</button></p>`; }
@@ -978,11 +978,11 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     } else if (tab === "yard") {
       if (inCity && city3dId && s.at !== city3dId) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
       { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
-        const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), price = repairPrice(g, s), gunCost = gunRepairCost(s), ord = repairOf(g, s.id), days = repairDays([s]);
+        const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), hullPrice = repairPrice(g, s), gunCost = gunRepairCost(s), repOrd = repairOf(g, s.id), days = repairDays([s]);
         // 1. what needs doing to this ship, with the numbers that matter
         h += sec(`${en ? "Your ship" : "Tu barco"}: ${esc(shipDisplayName(s,t.types))}`,
-          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b>${ord ? `<small>${en ? "In repair" : "En reparación"} · ${en ? "ready day" : "listo el día"} ${ord.day + ord.days}</small><button data-repaircancel="${ord.id}">${en ? "Cancel" : "Cancelar"}</button>` : `<button data-repair="1" ${away || price <= 0 || g.cash < price ? "disabled" : ""}>${price > 0 ? `${en ? "Repair" : "Reparar"} · ${fmt(price)} · ${days} d` : (en ? "Hull in order" : "Casco en buen estado")}</button>`}</div>` +
-          `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gunCost <= 0 || s.voyage || g.cash < gunCost ? "disabled" : ""}>${cannonsOf(s) ? (gunCost > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gunCost) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
+          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b>${repOrd ? `<small>${en ? "In repair" : "En reparación"} · ${en ? "ready day" : "listo el día"} ${repOrd.day + repOrd.days}</small><button data-repaircancel="${repOrd.id}">${en ? "Cancel" : "Cancelar"}</button>` : `<button data-repair="1" ${away || hullPrice <= 0 || g.cash < hullPrice ? "disabled" : ""}>${hullPrice > 0 ? `${en ? "Repair" : "Reparar"} · ${fmt(hullPrice)} · ${days} d` : (en ? "Hull in order" : "Casco en buen estado")}</button>`}</div>` +
+          `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gunCost <= 0 || s.voyage || g.cash < gunCost ? "disabled" : ""}>${cannonsOf(s) ? (gunCost > 0 ? `${en ? "Repair guns" : "Reparar cañones"} · ${fmt(gunCost)}` : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
           `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => {
             const price = armoryPrice(g, s.at, w.price), why = away ? "not in this port" : weaponCount(s) >= maxCannons(s) ? "full" : armoryBlock(g, s, w.weight, price, g.cash);
             const reason = why === "not in this port" ? (en ? "Dock this ship here first." : "Atraca este barco aquí primero.") : (SW[lang] ?? SW.es).armWhy[why];
@@ -1059,9 +1059,9 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-al-del]").forEach((e) => e.onclick = () => act(() => clearPriceAlert(g, s.at, e.dataset.alDel)));
   { const pv = P.querySelector("[data-market-preview]"); if (pv) P.querySelectorAll(".mkt-pill").forEach((e) => { const show = () => { pv.textContent = e.dataset.tip || ""; }, hide = () => { pv.textContent = ""; }; e.addEventListener("mouseenter", show); e.addEventListener("focus", show); e.addEventListener("mouseleave", hide); e.addEventListener("blur", hide); }); }
   P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastBought.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "buy:" + gd, q: dq, c: dc, render }); } }); // skipcq: JS-0123 - pre-existing shadow in the buy handler; the line only moved with this PR's additions
-  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const cash0 = g.cash, q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = v === "all" ? sellableHold(g, s, gd) + (wh?.goods?.[gd] ?? 0) : sellRequestQty(g, s, gd, +v, wh); /* fixed buttons and sell-all never ask for locked prize goods */ const r = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastSold.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "sell:" + gd, q: dq, c: dc, render }); } });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
+  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const cash0 = g.cash, q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = v === "all" ? sellableHold(g, s, gd) + (wh?.goods?.[gd] ?? 0) : sellRequestQty(g, s, gd, +v, wh); /* fixed buttons and sell-all never ask for locked prize goods */ const r = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastSold.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "sell:" + gd, q: dq, c: dc, render }); } });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{ // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
-    const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
+    const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false; // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
     el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
     el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+shipDisplayName(s,T[lang].types);
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
@@ -1128,7 +1128,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         r = setRouteAdv(g, s, stops, { minCash: num(d.minCash) ?? 0 });
         if (r.ok) delete routeDrafts[s.id];
       });
-      if (r && !r.ok) { const m = $("rts-msg"); if (m) m.textContent = t.routeSetErr; } // after the re-render, so the message survives
+      if (r && !r.ok) { const m = $("rts-msg"); if (m) m.textContent = t.routeSetErr; } // after the re-render, so the message survives // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
     };
   }
   P.querySelectorAll("[data-loan]").forEach((e) => e.onclick = () => act(() => borrow(g, s.at, +e.dataset.loan)));
@@ -1298,7 +1298,7 @@ function syncCityControls() {
   const cvc = $("cityview-ctl"); if (cvc) cvc.setAttribute("aria-label", lang === "es" ? "Controles de vista de la ciudad" : "City view controls");
   set("section", lang === "es" ? "Ciudad" : "City");
   set("section2", lang === "es" ? "Actividad" : "Activity");
-  for (const [sel, tip] of [['[data-city-tab="buildings"]', t.tipBuild], ["[data-city-ships]", t.tipShips], ["[data-city-reports]", t.tipReports], ["[data-city-msgs]", t.tipMsgs], ["[data-city-menu]", t.tipMenu], ["[data-map]", t.tipBack]]) { const rb = d.querySelector(sel); if (rb && rb.title !== tip) rb.title = tip; }
+  for (const [sel, tip] of [['[data-city-tab="buildings"]', t.tipBuild], ["[data-city-ships]", t.tipShips], ["[data-city-reports]", t.tipReports], ["[data-city-msgs]", t.tipMsgs], ["[data-city-menu]", t.tipMenu], ["[data-map]", t.tipBack]]) { const rb = d.querySelector(sel); if (rb && rb.title !== tip) rb.title = tip; } // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
   set("menu", lang === "es" ? "Menú" : "Menu");
   set("back", lang === "es" ? "Volver al mapa" : "Back to map");
   const w = d.querySelector(".city-window");

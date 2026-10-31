@@ -33,6 +33,6 @@ test("selling pays by class and hull, but never the last ship, a loaded one, or 
   const game = mkGame(); assert.equal(sellShip(game, game.ships[0]).reason, "last ship");
   orderShip(game, "barca", "cadiz"); for (let idx = 0; idx < 8; idx++) advanceDay(game);
   const mate = game.ships[1]; mate.cargo.salt = 1; assert.equal(sellShip(game, mate).reason, "hold not empty"); mate.cargo = {};
-  const cash = game.cash, v = shipValue(mate); mate.hull = 50; assert.ok(shipValue(mate) < v);
+  const cash = game.cash, val = shipValue(mate); mate.hull = 50; assert.ok(shipValue(mate) < val);
   assert.equal(sellShip(game, mate).ok, true); assert.equal(game.ships.length, 1); assert.ok(game.cash > cash);
 });
