@@ -591,8 +591,7 @@ const wallsCityCard = (gm, st, tt) => {
   else if (!wr?.nextLevel) html += `<p><small>${whyText(tt, wq.reason)}</small></p>`; // works under way already show their progress line above
   return html;
 };
-// skipcq: JS-R1005 - pre-existing cyclomatic complexity in the main render; DeepSource re-flags it only because this PR edits lines inside it. Extracting render() is out of scope here.
-function render() {
+function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits lines inside render() but does not grow it, extraction is out of scope
   sel = fleetSelection(g, sel);
   if (sel < 0) {
     playing = false; close3d(); shipWin = null; $("shipwin")?.remove(); $("sea-modal")?.remove();
@@ -727,7 +726,7 @@ function render() {
     el.onpointerdown = (ev) => { if (ev.pointerType === "touch") { const x = ev.clientX, y = ev.clientY; lp = setTimeout(() => { if (moved < 6) { openMenu(el.dataset.c, x, y); moved = 99; } }, 550); } };
     el.onpointerup = el.onpointerleave = () => clearTimeout(lp);
   });
-  $("log").innerHTML = logHtml(g.log,t,lang,cityName,(id)=>g.ships.find(sh=>sh.id===id)?.name??id);
+  $("log").innerHTML = logHtml(g.log,t,lang,cityName,(id)=>g.ships.find(s=>s.id===id)?.name??id);
   // panel: in navigation mode the map stands alone (P3); the panel only pops up for a pending
   // event. In the city view it carries the port services inside the city window.
   let h = "";
@@ -840,15 +839,15 @@ function render() {
         if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay).replace("{l}", Math.max(0, x.dueDay - g.day)).replace("{r}", fmt(x.reward))).join("<br>") + `</p>`; }
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
-      const hallV = hallView(g, s.at);
-      if(ui2dEnabled(location.search))h += hall2dHtml(hallV,t,fmtM,RESPECT_NAMES[lang][hallV.respectId],lang);
+      const hv = hallView(g, s.at);
+      if(ui2dEnabled(location.search))h += hall2dHtml(hv,t,fmtM,RESPECT_NAMES[lang][hv.respectId],lang);
       else {
-      h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hallV.mayor}</div>${hallV.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("")}</div>`;
-      h += `<p><i>${t.hallStand.replace("{r}", RESPECT_NAMES[lang][hallV.respectId]).replace("{n}", hallV.respectPts)}</i></p>`;
-      const cityLines = [hallV.identity, hallV.mood, hallV.craft, hallV.festival, hallV.memory, hallV.relations, hallV.growth].filter(Boolean); // living-city lines: present only while their flag is on (off: nothing renders)
+      h += `<p>${t.hallInfo}</p><div class="cityclasses"><div class="card"><b>${t.hallMayor}</b><br>${hv.mayor}</div>` + hv.councillors.map((n, i) => `<div class="card"><b>${t.hallRegs} ${i + 1}</b><br>${n}</div>`).join("") + `</div>`;
+      h += `<p><i>${t.hallStand.replace("{r}", RESPECT_NAMES[lang][hv.respectId]).replace("{n}", hv.respectPts)}</i></p>`;
+      const cityLines = [hv.identity, hv.mood, hv.craft, hv.festival, hv.memory, hv.relations, hv.growth].filter(Boolean); // living-city lines: present only while their flag is on (off: nothing renders)
       if (cityLines.length) h += `<p><i>` + cityLines.map((l) => l.txt?.[lang] ?? l.txt?.es).filter(Boolean).join("<br>") + `</i></p>`;
-      h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hallV.feePct)}<br>${t.hallToll.replace("{d}", hallV.tollDiv).replace("{x}", hallV.tollDiscountPct)}</p>`;
-      h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hallV.caja))}</b><br>${t.hallLevies.replace("{s}", `${hallV.sisaPct > 0 ? "+" : ""}${hallV.sisaPct}%`).replace("{p}", `${hallV.portazgoPct > 0 ? "+" : ""}${hallV.portazgoPct}%`)}<br>${t.hallNext.replace("{d}", hallV.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
+      h += `<h4>${t.hallDerechos}</h4><p>${t.hallFee.replace("{p}", hv.feePct)}<br>${t.hallToll.replace("{d}", hv.tollDiv).replace("{x}", hv.tollDiscountPct)}</p>`;
+      h += `<p><b>${t.hallCaja.replace("{c}", fmtM(hv.caja))}</b><br>${t.hallLevies.replace("{s}", (hv.sisaPct > 0 ? "+" : "") + hv.sisaPct + "%").replace("{p}", (hv.portazgoPct > 0 ? "+" : "") + hv.portazgoPct + "%")}<br>${t.hallNext.replace("{d}", hv.nextMeeting)}</p><p><i>${t.hallNote}</i></p>`;
       }
       h += justiceData.ready ? justiceStatusHtml(g, lang) : `<p data-justice-unavailable>${lang === "es" ? "Justicia portuaria no disponible: no se pudieron cargar sus datos. El comercio sigue disponible; recarga para reintentarlo." : "Port justice unavailable: its data could not be loaded. Trading remains available; reload to retry."}</p>`;
       h += privateeringReady ? privateeringHallHtml(g,s,justiceRealms,privateeringPeaces,lang) : `<p data-privateering-unavailable>${lang === "es" ? "Corso no disponible: faltan datos de tribunales o paces. Recarga para reintentarlo." : "Privateering unavailable: court or peace data is missing. Reload to retry."}</p>`;
@@ -952,10 +951,10 @@ function render() {
     } else if (tab === "town") { // a typed town building clicked in the city plan: read-only card, no services yet
       h += t.townTypes[townSel] ? `<h3>${t.townTypes[townSel]}</h3><p>${t.townDesc[townSel]}</p>` : `<p><i>${t.townNone}</i></p>`;
     } else if (tab === "house") {
-      const prem = premises(g,s.at,lang,hasOffice(g, s.at));
-      h += `<h3>${prem.label}: ${cityName(s.at)}</h3><p>${prem.info}</p>`;
+      const pr = premises(g,s.at,lang,hasOffice(g, s.at));
+      h += `<h3>${pr.label}: ${cityName(s.at)}</h3><p>${pr.info}</p>`;
       h += houseHtml(g, lang, netWorth(g), fmtM, cityName, LOAN_MAX);
-      if (!prem.isHome && !hasOffice(g, s.at)) { const rp = repOf(g, s.at); h += `<p><i>${t.officeReq.replace("{p}", fmt(OFFICE_PRICE)).replace("{r}", RESPECT_NAMES[lang][respectOf(g, s.at).id]).replace("{n}", Math.floor(rp))}</i></p><p><button data-bldact="office|buy" ${g.cash < OFFICE_PRICE || rp < OFFICE_MIN_RESPECT ? "disabled" : ""}>${t.officeBuy.replace("{p}", fmt(OFFICE_PRICE))}</button></p>`; }
+      if (!pr.isHome && !hasOffice(g, s.at)) { const rp = repOf(g, s.at); h += `<p><i>${t.officeReq.replace("{p}", fmt(OFFICE_PRICE)).replace("{r}", RESPECT_NAMES[lang][respectOf(g, s.at).id]).replace("{n}", Math.floor(rp))}</i></p>` + `<p><button data-bldact="office|buy" ${g.cash < OFFICE_PRICE || rp < OFFICE_MIN_RESPECT ? "disabled" : ""}>${t.officeBuy.replace("{p}", fmt(OFFICE_PRICE))}</button></p>`; }
       if(!pr.isHome) h += `<p>${warehouseOf(g,s.at) ? (lang==="es"?"Almacén propio disponible en este puerto.":"You own a warehouse in this port.") : (lang==="es"?"No tienes almacén en este puerto.":"You have no warehouse in this port.")}</p><button data-local-store>${t.tabStore}</button><button data-local-reports>${LT[lang].reports}</button>`;
     } else if (tab === "bank") {
       const room = bankRoom(g, s.at), tm = termsFor(g, s.at), capHere = tm.room < 1 ? Math.floor(loanCapFor(g, LOAN_MAX) * tm.room / 100) * 100 : loanCapFor(g, LOAN_MAX), amts = [100, 500, 1000, 5000].filter((a) => a <= room);
@@ -1058,15 +1057,15 @@ function render() {
   });
   P.querySelectorAll("[data-al-del]").forEach((e) => e.onclick = () => act(() => clearPriceAlert(g, s.at, e.dataset.alDel)));
   { const pv = P.querySelector("[data-market-preview]"); if (pv) P.querySelectorAll(".mkt-pill").forEach((e) => { const show = () => { pv.textContent = e.dataset.tip || ""; }, hide = () => { pv.textContent = ""; }; e.addEventListener("mouseenter", show); e.addEventListener("focus", show); e.addEventListener("mouseleave", hide); e.addEventListener("blur", hide); }); }
-  P.querySelectorAll("[data-b]").forEach((e) => { e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const mkToast = (qty, cost) => t.toastBought.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(cost)); toast(mkToast(dq, dc), { key: `buy:${gd}`, q: dq, c: dc, render: mkToast }); } }; });
-  P.querySelectorAll("[data-s]").forEach((e) => { e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const cash0 = g.cash, q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = v === "all" ? sellableHold(g, s, gd) + (wh?.goods?.[gd] ?? 0) : sellRequestQty(g, s, gd, +v, wh); /* fixed buttons and sell-all never ask for locked prize goods */ const r = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const mkToast = (qty, cost) => t.toastSold.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(cost)); toast(mkToast(dq, dc), { key: `sell:${gd}`, q: dq, c: dc, render: mkToast }); } }; });  P.querySelectorAll("[data-captain-review]").forEach(b=>{b.onclick=()=>{
+  P.querySelectorAll("[data-b]").forEach((e) => e.onclick = () => { const [gd, q] = e.dataset.b.split(":"); const cash0 = g.cash, q0 = s.cargo[gd] ?? 0; const r = doBuy(g, s, gd, +q); sfx(r.ok ? "buy" : "error"); act(() => r); const dq = (s.cargo[gd] ?? 0) - q0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastBought.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "buy:" + gd, q: dq, c: dc, render }); } });
+  P.querySelectorAll("[data-s]").forEach((e) => e.onclick = () => { const [gd, v] = e.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const cash0 = g.cash, q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = v === "all" ? sellableHold(g, s, gd) + (wh?.goods?.[gd] ?? 0) : sellRequestQty(g, s, gd, +v, wh); /* fixed buttons and sell-all never ask for locked prize goods */ const r = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(r.ok ? "sell" : "error"); act(() => r); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (q, c) => t.toastSold.replace("{q}", q).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(c)); toast(render(dq, dc), { key: "sell:" + gd, q: dq, c: dc, render }); } });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
     const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false;
     el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
     el.querySelector("h2").textContent=t.confirm+": "+c.name+" → "+shipDisplayName(s,T[lang].types);
     $("cap-cancel").onclick=()=>{el.hidden=true;playing=was;render();};
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
-  };});
+  });
   P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
   P.querySelectorAll("[data-almbid]").forEach((e) => e.onclick = () => { const v = Math.floor(+P.querySelector(`[data-alminput="${e.dataset.almbid}"]`)?.value); const r = placeBid(g, s.at, v, e.dataset.almbid); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); });
   const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => { const city = P.querySelector("#rum").value, r = buyRumor(g, city, s.at); rumorNote = r.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: r.reason === "already known" ? t.rumorErrKnown : r.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : r.reason }; act(() => {}); };
@@ -1128,7 +1127,7 @@ function render() {
         r = setRouteAdv(g, s, stops, { minCash: num(d.minCash) ?? 0 });
         if (r.ok) delete routeDrafts[s.id];
       });
-      if (r && !r.ok) { const msg = $("rts-msg"); if (msg) msg.textContent = t.routeSetErr; } // after the re-render, so the message survives
+      if (r && !r.ok) { const m = $("rts-msg"); if (m) m.textContent = t.routeSetErr; } // after the re-render, so the message survives
     };
   }
   P.querySelectorAll("[data-loan]").forEach((e) => e.onclick = () => act(() => borrow(g, s.at, +e.dataset.loan)));
@@ -1633,10 +1632,10 @@ function showTitle() {
   $("t-file").onchange = async (e) => {
     const f = e.target.files[0]; if(!f)return;
     let r; try { r = unpackGame(JSON.parse(await f.text()), world); } catch { $("t-msg").textContent = t.badSave; return; }
-    const prevSaveRaw = localStorage.getItem(SAVE_KEY), prevSave = prevSaveRaw && isValidSaveText(prevSaveRaw) ? prevSaveRaw : null, packedSave = JSON.stringify(packGame(r.g, r.company)); // a corrupt current is not worth parking; the old backup stays
+    const prevRaw = localStorage.getItem(SAVE_KEY), prev = prevRaw && isValidSaveText(prevRaw) ? prevRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // a corrupt current is not worth parking; the old backup stays
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // never overwrite backup slots with a parked copy pending
-    if (prevSave) { try { restoreRotate(localStorage, SAVE_KEY, prevSave, packedSave); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
-    else try { localStorage.setItem(SAVE_KEY, packedSave); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
+    if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
+    else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
     music.leaveTitle(); stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if(ship()&&!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
