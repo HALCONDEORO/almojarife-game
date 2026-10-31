@@ -32,7 +32,7 @@ test("pausing keeps the numbers untouched and resuming brings the order back as 
   const on = setStewardRuleEnabled(game, "cadiz", "wine", true);
   assert.deepEqual(on, { ok: true, enabled: true, changed: true });
   assert.deepEqual(stewardOf(game, "cadiz").rules.wine, before, "and the resume restores the very same order");
-  assert.equal(stewardOf(game, "cadiz").off.wine, undefined);
+  assert.ok(stewardOf(game, "cadiz").off?.wine === undefined, "no paused marker remains");
 });
 
 test("only true and false are accepted; anything else is rejected, never decoded", () => {
@@ -71,7 +71,7 @@ test("the paused state rides the save; an old save without it stays enabled", ()
   assert.equal(stewardOf(loaded, "cadiz").off.wine, true, "paused survives the round-trip");
   delete stewardOf(game, "cadiz").off; // an old save's shape: no off record at all
   const loadedOld = deserialize(serialize(game, "T"), world).g;
-  assert.equal(stewardOf(loadedOld, "cadiz").off, undefined);
+  assert.ok(stewardOf(loadedOld, "cadiz").off === undefined, "old saves carry no off record");
   assert.ok(setStewardRuleEnabled(loadedOld, "cadiz", "wine", false).ok, "and the order can still be paused");
 });
 
@@ -80,7 +80,7 @@ test("removing a paused order clears its marker, so a new order for the good sta
   twoBuyRules(game);
   assert.ok(setStewardRuleEnabled(game, "cadiz", "wine", false).ok);
   assert.ok(clearStewardRule(game, "cadiz", "wine").ok);
-  assert.equal(stewardOf(game, "cadiz").off.wine, undefined);
+  assert.ok(stewardOf(game, "cadiz").off?.wine === undefined, "no paused marker remains");
   assert.ok(setStewardRule(game, "cadiz", "wine", { buyBelow: 1000, buyTo: 5 }, 999).ok);
   assert.equal(stewardOf(game, "cadiz").off.wine, undefined, "fresh order is enabled");
 });

@@ -81,9 +81,9 @@ export function moveStewardRule(g, city, good, dir) {
    - Old saves carry no off record and default to enabled, today's behavior. */
 export function setStewardRuleEnabled(g, city, good, enabled) {
   if (enabled !== true && enabled !== false) return { ok: false, reason: "bad state" };
-  const w = g.warehouses?.[city];
-  if (!w) return { ok: false, reason: "no warehouse here" };
-  const adm = w.admin;
+  const wh = g.warehouses?.[city];
+  if (!wh) return { ok: false, reason: "no warehouse here" };
+  const adm = wh.admin;
   if (!adm || !Object.prototype.hasOwnProperty.call(adm.rules, good)) return { ok: false, reason: "no rule" };
   const was = !adm.off?.[good];
   if (was === enabled) return { ok: true, enabled, changed: false };
