@@ -452,6 +452,18 @@ function courseOrigin(game, ship, docked) {
   const position = locate(game.world, ship);
   return position?.id ?? (position ? freeId(position.lat, position.lon) : (ship.voyage.from ?? ship.at));
 }
+/** Record the existing port-bound ledger, discovery and mission effects after accepting a course. */
+function recordPortCourse(g, ship, from, plan) {
+    // Ledger: the ship's open entry is retargeted only while nothing closed it - no sale booked
+    // and no docking at its port (ship.at is still the port the leg left from); a closed leg earns its own entry.
+    const last = (g.voyages ?? []).find((v) => v.ship === ship.id); // openVoyage prepends: first match is the ship's latest entry
+    if (last && last.sold === 0 && last.to !== ship.at) { last.from = from; last.to = plan.to; }
+    else openVoyage(g, ship, from, plan.to);
+    // Chart: ordering into a port sighted up close puts it on the chart at once.
+    if (discover(g, plan.to)) say(g, "discovered", { city: plan.to });
+    // Missions: a port-bound outing logs one sail event; rerouting keeps the one already logged.
+    if (!ship.voyage.sailLogged) { campaignEvent(g, { kind: "sail", to: plan.to }, MISSION); ship.voyage.sailLogged = true; }
+}
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
@@ -485,17 +497,7 @@ export function doGoTo(g, ship, lat, lon) {
   const prevSailLogged = ship.voyage?.sailLogged === true;
   ship.voyage = { from, to: plan.to, ticksLeft: ticks, totalTicks: ticks, path: plan.path, km: plan.km, wind, pts: plan.pts, ...(plan.toPort ? {} : { free: true }), sailLogged: prevSailLogged };
   say(g, "sail", { ship: ship.id, city: plan.to, hours: Math.max(1, Math.round(ticks / TICKS_PER_HOUR)) });
-  if (plan.toPort) {
-    // Ledger: the ship's open entry is retargeted only while nothing closed it - no sale booked
-    // and no docking at its port (ship.at is still the port the leg left from); a closed leg earns its own entry.
-    const last = (g.voyages ?? []).find((v) => v.ship === ship.id); // openVoyage prepends: first match is the ship's latest entry
-    if (last && last.sold === 0 && last.to !== ship.at) { last.from = from; last.to = plan.to; }
-    else openVoyage(g, ship, from, plan.to);
-    // Chart: ordering into a port sighted up close puts it on the chart at once.
-    if (discover(g, plan.to)) say(g, "discovered", { city: plan.to });
-    // Missions: a port-bound outing logs one sail event; rerouting keeps the one already logged.
-    if (!ship.voyage.sailLogged) { campaignEvent(g, { kind: "sail", to: plan.to }, MISSION); ship.voyage.sailLogged = true; }
-  }
+  if (plan.toPort) recordPortCourse(g, ship, from, plan);
   tutorialNote(g, "sail"); // free navigation counts as sailing for the tutorial
   return { ok: true, ticks, km: Math.round(plan.km), toPort: plan.toPort };
 }
