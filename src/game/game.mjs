@@ -48,10 +48,10 @@ import { householdWeek } from "./household.mjs";
 import { tickContacts } from "./contacts.mjs";
 import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
 import {automaticEncounter} from "./encounterdaily.mjs";
-import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, houseClassPop, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
-import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
+import { tickBuildings, accrueBuildings, workshopTick, houseClassPop, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
+import { initCitylife, citylifeDay, effectivePop } from "./citylife.mjs";
 import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
-import { initWalls, tickWalls, accrueWalls, wallsKeptLevel, councilWallsVote, WALL_POP } from "./walls.mjs";
+import { initWalls, tickWalls, accrueWalls, councilWallsVote } from "./walls.mjs";
 import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
@@ -248,7 +248,7 @@ function marketTick(g) {
     const houseCls = houseClassPop(g, c.id), houseClsTotal = houseCls.poor + houseCls.middle + houseCls.rich;
     for (const [good, e] of Object.entries(g.market[c.id])) {
       const muls = plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good);
-      e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id) + WALL_POP * wallsKeptLevel(g, c.id)) * muls);
+      e.pop = Math.round(effectivePop(g, c.id) * muls); // the shared composition (citylife.mjs): base + houses + drift + walls
       e.classExtra = houseClsTotal ? { poor: houseCls.poor * muls, middle: houseCls.middle * muls, rich: houseCls.rich * muls } : null; // same scale as e.pop, so mixed + typed = everyone, per good
     } // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
     growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)

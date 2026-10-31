@@ -14,7 +14,7 @@ const funded = () => newGame(world, "cadiz", { cash: 30000 });
 test("empty city: no rows, no bonuses", () => {
   const g = funded();
   assert.deepEqual(buildingsRows(g, "cadiz"), []);
-  assert.deepEqual(cityEffects(g, "cadiz"), { pop: world.nodes.cadiz.pop ?? 8000, popBonus: 0, capBonus: 0, jobs: 0, free: Math.max(0, (world.nodes.cadiz.pop ?? 8000) - Math.round((world.nodes.cadiz.pop ?? 8000) * 0.9)), staffing: 1 });
+  assert.deepEqual(cityEffects(g, "cadiz"), { pop: world.nodes.cadiz.pop ?? 8000, popBonus: 0, popEff: world.nodes.cadiz.pop ?? 8000, capBonus: 0, jobs: 0, free: Math.max(0, (world.nodes.cadiz.pop ?? 8000) - Math.round((world.nodes.cadiz.pop ?? 8000) * 0.9)), staffing: 1 });
 });
 
 test("a bare plot row has state plot, no upkeep; a construction row carries progress and ready day", () => {
