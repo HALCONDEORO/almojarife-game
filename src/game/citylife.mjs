@@ -11,6 +11,7 @@
 import { CLASSES, PER_1000, classShares } from "../sim/classes.mjs";
 import { activeShocks } from "./shocks.mjs";
 import { housePopBonus, housingRoom } from "./buildings.mjs";
+import { WALL_POP, wallsKeptLevel } from "./walls.mjs";
 import { plagueActive, PLAGUE_MOOD } from "./plague.mjs";
 import { calamityMoodHit } from "./calamities.mjs";
 
@@ -45,6 +46,13 @@ const CORRAL_MIDDLE_MOOD = 2;      // per active level, middle class only
 
 /** Effective inhabitants of a city: base population + hands from houses + drift from city life. */
 export function citylifeExtra(g, cityId) { return g.citylife?.cities?.[cityId]?.extra ?? 0; }
+
+/** Effective population of a city: base census + the player's houses + the weekly neighbour
+ *  drift + kept walls. The ONE composition market demand (game.mjs) and every UI surface
+ *  (port header, buildings tab, city modal) must share, so they can never drift apart. */
+export function effectivePop(g, cityId) {
+  return (g.world.nodes[cityId]?.pop ?? 8000) + housePopBonus(g, cityId) + citylifeExtra(g, cityId) + WALL_POP * wallsKeptLevel(g, cityId);
+}
 
 /** Fresh state for a new game with the flag on. */
 export function initCitylife(world) {
