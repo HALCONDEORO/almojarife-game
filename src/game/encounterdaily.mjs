@@ -14,6 +14,17 @@ import {inStorm} from '../sim/weather.mjs';
 export const SEA_ENCOUNTER_CHANCE=0.025; // per day at sea
 // Per tick: P(at least one encounter in a full day at sea) = 1-(1-p_tick)^240 = SEA_ENCOUNTER_CHANCE exactly.
 export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS_PER_DAY);
+/* Encounter lifecycle, named once (states are separate and observable):
+   - prepared: the seeded roll happens here; a pirates roll becomes g.pending
+     (a queued decision bound to one ship and one tick id), a storm applies at once.
+   - queued: g.pending waits for the player's choice; while it exists no new
+     encounter is prepared for anyone (the guard below), and the day loop stops.
+   - active: resolvePirates consumes the pending decision, validates the binding
+     is still sailable, and stores ONE final report (g.encounterReport).
+   A preparer called again on an already-queued tick returns null: the per-tick
+   version (g.encounterTicks) is written before the roll, so a tick can never be
+   rerolled, not even after a save/reload. A pending decision that no longer
+   matches a sailable ship is rejected at resolve time, never silently reused. */
 export function automaticEncounter(g,ship,world){
  if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored)return null;
  const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
