@@ -11,7 +11,7 @@ test('a convoy forms in port from 2-5 owned docked ships and rejects bad groups'
  const {g,s0,s1}=mk();
  assert.equal(formConvoy(g,[s0.id]).ok,false,'one hull is not a convoy');
  assert.equal(formConvoy(g,[s0.id,'nope']).ok,false,'foreign ship');
- const r=formConvoy(g,[s0.id,s1.id]);assert.ok(r.ok);assert.equal(r.convoy.ships.length,2);assert.equal(s0.convoy,r.convoy.id);
+ const result=formConvoy(g,[s0.id,s1.id]);assert.ok(result.ok);assert.equal(result.convoy.ships.length,2);assert.equal(s0.convoy,result.convoy.id);
  assert.equal(formConvoy(g,[s0.id,s1.id]).ok,false,'already grouped');
  doSail(g,g.ships[0],'barcelona');
  assert.equal(formConvoy(g,[g.ships[0].id,s1.id]).ok,false,'at sea');
@@ -23,6 +23,31 @@ test('leaving shrinks the group and a single hull disbands itself; at-sea ships 
  const cv2=formConvoy(g,[s0.id,s1.id]).convoy;
  sailConvoy(g,cv2.id,'barcelona',{doSail});
  assert.equal(leaveConvoy(g,s0.id).ok,false,'cannot desert mid-voyage');
+});
+test('candidate selection is construction-time advice; formation validates at execution and is all-or-nothing',()=>{
+ const {g,s0,s1}=mk();
+ assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
+ // a stale candidate list (one ship sailed off, another got grouped elsewhere) fails whole:
+ const cv=formConvoy(g,[s0.id,s1.id]).convoy;
+ const seqBefore=g.convoySeq,groupedSnapshot=JSON.stringify(g);
+ assert.equal(formConvoy(g,[s0.id,s2.id]).ok,false,'a grouped candidate rejects the command');
+ assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
+ assert.equal(JSON.stringify(g),groupedSnapshot,'rejected grouped candidate writes nothing');
+ assert.equal(s2.convoy,undefined,'no partial assignment');
+ assert.equal(g.convoySeq,seqBefore,'no id minted on failure');
+ assert.deepEqual(Object.keys(g.convoys),[cv.id],'the existing registration is untouched');
+ // candidate order at construction does not change membership:
+ disbandConvoy(g,cv.id);
+ const reformed=formConvoy(g,[s1.id,s0.id,s2.id]).convoy;
+ assert.deepEqual([...reformed.ships].sort(),[s0.id,s1.id,s2.id].sort(),'same members regardless of candidate order');
+ disbandConvoy(g,reformed.id);
+ // a candidate that leaves port between selection and execution invalidates the whole command:
+ assert.ok(doSail(g,s0,'barcelona').ok);
+ const sailedSnapshot=JSON.stringify(g);
+ assert.equal(formConvoy(g,[s0.id,s1.id]).reason,'at sea');
+ assert.equal(JSON.stringify(g),sailedSnapshot,'rejected sailed candidate writes nothing');
+ assert.equal(s1.convoy,undefined,'nobody is registered from a stale list');
+ assert.equal(g.convoySeq,seqBefore+1,'only the successful re-formation consumed an id');
 });
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
@@ -43,7 +68,7 @@ test('convoy ids are minted once and never reused, even across disband and reloa
 });
 test('the convoy sails together at the pace of the slowest hull',()=>{
  const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
- const r=sailConvoy(g,cv.id,'barcelona',{doSail});assert.ok(r.ok);
+ const result=sailConvoy(g,cv.id,'barcelona',{doSail});assert.ok(result.ok);
  assert.ok(s0.voyage&&s1.voyage);assert.equal(s0.voyage.ticksLeft,s1.voyage.ticksLeft,'arrive together');
  assert.equal(s0.voyage.to,'barcelona');assert.equal(s1.voyage.to,'barcelona');
  assert.equal(sailConvoy(g,cv.id,'barcelona',{doSail}).ok,false,'already at sea');
@@ -90,8 +115,8 @@ test('every convoy notice carries bilingual text (no blank inbox lines)',()=>{
 test('sailConvoy validates every hull before any leaves: no partial departures',()=>{
  const {g,s0,s1}=mk();const cv=formConvoy(g,[s0.id,s1.id]).convoy;
  s1.crew=0; // below the minimum: this hull cannot leave
- const r=sailConvoy(g,cv.id,'barcelona',{doSail});
- assert.equal(r.ok,false);assert.equal(r.reason,'crew');
+ const result=sailConvoy(g,cv.id,'barcelona',{doSail});
+ assert.equal(result.ok,false);assert.equal(result.reason,'crew');
  assert.ok(!s0.voyage&&!s1.voyage,'nobody moved: the group is not stranded without its escort');
 });
 test('selling a ship posts its convoy farewell and a single-hull remainder disbands with notice',()=>{
@@ -100,5 +125,5 @@ test('selling a ship posts its convoy farewell and a single-hull remainder disba
  const notes=(g.inbox??[]).filter((m)=>m.kind.startsWith('convoy'));
  assert.ok(notes.some((m)=>m.kind==='convoyLeft'&&m.txt?.es&&m.txt?.en),'farewell posted, bilingual');
  assert.ok(notes.some((m)=>m.kind==='convoyDisbanded'),'the disband is posted too');
- assert.equal(s0.convoy,undefined);assert.equal(g.convoys[cv.id],undefined);
+ assert.equal(Object.hasOwn(s0,'convoy'),false);assert.equal(Object.hasOwn(g.convoys,cv.id),false);
 });
