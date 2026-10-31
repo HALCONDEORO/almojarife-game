@@ -8,6 +8,8 @@ export function voyageSummary(s){
 }
 // Why the last course change was refused (ship.navError, set by doGoTo): shown until a new order goes through.
 const NAVWHY={
+ boycott:{es:'el puerto de destino no admite llegadas por un boicot',en:'the destination port refuses arrivals under a boycott'},
+ blockade:{es:'un bloqueo impide entrar o salir del puerto',en:'a blockade prevents entering or leaving the port'},
  convoy:{es:'navega en convoy: el grupo zarpa junto a un puerto',en:'it sails in a convoy: the group leaves together for a port'},
  crew:{es:'le falta tripulación para gobernar el barco',en:'it is short of crew to handle the ship'},
  held:{es:'la justicia lo tiene retenido en puerto',en:'the law is holding it in port'},
