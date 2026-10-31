@@ -32,16 +32,16 @@ test('keeping the prize adds a crewless ship that keeps station and arrives with
  const{g,s,e}=fight('repelled');
  const before=g.ships.length,result=claimPrize(g,true);
  assert.ok(result.ok);assert.equal(g.ships.length,before+1);assert.equal(g.encounterReport,null);
- const p=result.ship;assert.equal(p.type,e.prize.type);assert.equal(p.hull,e.prize.hull);assert.equal(p.prize,true);assert.equal(p.crew,0);
+ const prize=result.ship;assert.equal(prize.type,e.prize.type);assert.equal(prize.hull,e.prize.hull);assert.equal(prize.prize,true);assert.equal(prize.crew,0);
  // DECLARED (hull-wear rebalance 26/10): the pair carries escort markers (escorted / escortedBy) so
  // hull drag leaves them in station; everything else about the shared voyage is identical.
- const{escorted,...pv}=p.voyage,{escortedBy,...wv}=s.voyage;
+ const{escorted,...pv}=prize.voyage,{escortedBy,...wv}=s.voyage;
  assert.deepEqual(pv,wv,'same voyage as the winner');
- assert.equal(escorted,true);assert.equal(escortedBy,p.id,'escort markers on the pair');
+ assert.equal(escorted,true);assert.equal(escortedBy,prize.id,'escort markers on the pair');
  assert.equal(claimPrize(g,true).ok,false,'once per encounter');
  arrive(g,s);
- assert.ok(!p.voyage&&p.at===s.at,'both arrived at the destination');
- assert.equal(doSail(g,p,'cadiz').reason,'crew','a crewless prize cannot sail again');
+ assert.ok(!prize.voyage&&prize.at===s.at,'both arrived at the destination');
+ assert.equal(doSail(g,prize,'cadiz').reason,'crew','a crewless prize cannot sail again');
 });
 test('a kept prize registers once and the escort binding dies with the shared voyage',()=>{
  const{g,s}=fight('repelled');
@@ -66,19 +66,19 @@ test('leaving the prize adds nothing and closes the report',()=>{
 });
 test('a prize resells at the lower prize rate; a normal ship keeps the standard rate',()=>{
  const{g,s,e}=fight('repelled');const result=claimPrize(g,true);arrive(g,s);
- const p=result.ship;
- assert.equal(shipValue(p),Math.round(SHIP_TYPES[e.prize.type].price*PRIZE_SELL_RATE*(0.5+0.5*p.hull/100)));
+ const prize=result.ship;
+ assert.equal(shipValue(prize),Math.round(SHIP_TYPES[e.prize.type].price*PRIZE_SELL_RATE*(0.5+0.5*prize.hull/100)));
  assert.equal(shipValue(s),Math.round(SHIP_TYPES[s.type].price*SELL_RATE*(0.5+0.5*s.hull/100)),'standard ship unchanged');
- const cash=g.cash,v=shipValue(p),sale=sellShip(g,p);
+ const cash=g.cash,v=shipValue(prize),sale=sellShip(g,prize);
  assert.ok(sale.ok,sale.reason);assert.equal(sale.value,v);assert.equal(Math.round(g.cash),Math.round(cash+v));
- assert.ok(!g.ships.includes(p));
+ assert.ok(!g.ships.includes(prize));
 });
 test('the offer survives a save/load mid-report and claims identically',()=>{
  const{g,e}=fight('repelled');
  const result=deserialize(serialize(g,'T'),world).g;
  assert.deepEqual(result.encounterReport.prize,e.prize);
- const a=claimPrize(g,true),b=claimPrize(result,true);
- assert.equal(a.ship.type,b.ship.type);assert.equal(a.ship.hull,b.ship.hull);
+ const originalClaim=claimPrize(g,true),loadedClaim=claimPrize(result,true);
+ assert.equal(originalClaim.ship.type,loadedClaim.ship.type);assert.equal(originalClaim.ship.hull,loadedClaim.ship.hull);
 });
 test('the dialog offers keep/leave only while a prize is pending (es/en)',()=>{
  const{g}=fight('repelled');
