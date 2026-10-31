@@ -24,8 +24,7 @@ export function escortOf(g, ship) {
   return sum;
 }
 
-/** Group 2-5 docked owned ships into a convoy. */
-/**
+/** Group 2-5 docked owned ships into a convoy.
  * Registration contract: a convoy id is minted from the monotonic convoySeq only after every
  * guard passes, so a rejected attempt (including a replay on already-grouped ships) consumes
  * nothing. disbandConvoy removes the registration but never the sequence: an id, once used,

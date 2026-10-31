@@ -27,9 +27,10 @@ test('leaving shrinks the group and a single hull disbands itself; at-sea ships 
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;
- const seqAfterForm=g.convoySeq;
+ const seqAfterForm=g.convoySeq,beforeReplay=JSON.stringify(g);
  assert.equal(formConvoy(g,[s0.id,s1.id]).ok,false,'replay: the relation already exists');
  assert.equal(g.convoySeq,seqAfterForm,'a rejected replay mints no id');
+ assert.equal(JSON.stringify(g),beforeReplay,'a rejected replay writes nothing');
  assert.ok(disbandConvoy(g,cv1.id).ok);
  assert.equal(g.convoys[cv1.id],undefined,'registration removed on disband');
  const cv2=formConvoy(g,[s0.id,s1.id]).convoy;

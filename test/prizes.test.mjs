@@ -50,6 +50,9 @@ test('a kept prize registers once and the escort binding dies with the shared vo
  assert.equal(claimPrize(g,true).ok,false,'replay registers nothing');
  assert.equal(claimPrize(g,false).ok,false,'the report is already closed');
  assert.equal(g.ships.length,before+1,'the fleet grew exactly once');
+ const loaded=deserialize(serialize(g,'T'),world).g,saved=JSON.stringify(loaded);
+ assert.equal(claimPrize(loaded,true).ok,false,'reload cannot reopen the claimed report');
+ assert.equal(JSON.stringify(loaded),saved,'rejected replay after reload writes nothing');
  const p=r.ship;
  assert.equal(p.voyage?.escorted,true);assert.equal(s.voyage?.escortedBy,p.id,'mutual binding while the voyage lives');
  arrive(g,s);
