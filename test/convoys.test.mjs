@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
-import {newGame,doSail,buyCaravel,sellShip,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
+import {newGame,doSail,advanceDay,buyCaravel,sellShip,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
+import {renameConvoy} from '../src/game/convoys.mjs';
 import {buyWeapon,defenceOf} from '../src/game/crew.mjs';
 import {encounterOutcome} from '../src/game/encounters.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
@@ -114,6 +115,31 @@ test('migration is old-roster removal + new-roster insertion + backlink update; 
  const r=deserialize(serialize(g,'T'),world).g;
  assert.equal(convoyOf(r,r.ships[0]),null,'a dangling backlink stays inert after reload');
  assert.ok(convoyOf(r,r.ships[1])?.id===B.id,'live memberships survive the round-trip');
+});
+test('registration starts no behavior; metadata fallback preserves old values; a sold member leaves cleanly',()=>{
+ const {g,s0,s1}=mk();g.noGoal=true; // deadline off: the test advances a day
+ assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
+ // registration (context) is separate from behavior: forming starts no voyage, today or after a day
+ const cv=formConvoy(g,[s0.id,s1.id,s2.id]).convoy;
+ assert.ok(!s0.voyage&&!s1.voyage&&!s2.voyage,'no voyage at registration');
+ advanceDay(g);
+ assert.ok(!s0.voyage&&!s1.voyage&&!s2.voyage,'a registered convoy does not sail on its own');
+ // missing metadata policy: an unnamed convoy gets a default; a rejected rename keeps the old name
+ assert.match(cv.name,/^Convoy [0-9]+$/,'default name when none is given');
+ assert.equal(renameConvoy(g,cv.id,'  ').reason,'bad name');
+ assert.equal(renameConvoy(g,cv.id,'Flota del Sur').ok,true);
+ assert.equal(renameConvoy(g,cv.id,'x'.repeat(31)).reason,'bad name');
+ assert.equal(cv.name,'Flota del Sur','the old name survives a failed rename');
+ assert.equal(renameConvoy(g,'cv999','Nope').reason,'no convoy');
+ // null nested relation: selling a member removes it from the roster, the group lives on
+ const cash=g.cash;
+ assert.ok(sellShip(g,s2).ok);
+ assert.deepEqual(cv.ships,[s0.id,s1.id],'the roster drops the sold ship');
+ assert.ok(convoyOf(g,s0),'the surviving members keep the group');
+ assert.ok(g.cash>cash);
+ // a port-bound convoy is a real context: its members cannot join another group
+ assert.ok(buyCaravel(g,s0.at).ok);const s3=g.ships[g.ships.length-1];
+ assert.equal(formConvoy(g,[s0.id,s3.id]).reason,'already grouped','membership binds even without any voyage');
 });
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();

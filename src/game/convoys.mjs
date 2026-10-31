@@ -26,6 +26,10 @@ export function escortOf(g, ship) {
 
 /** Group 2-5 docked owned ships into a convoy. */
 /**
+ * Stage contract: registration starts no behavior - a convoy forms without any voyage and
+ * never sails on its own; sailing is a separate explicit command. Metadata policy: an
+ * unnamed convoy gets a default name and a rejected rename keeps the old one. A sold member
+ * leaves the roster through the same removeFromConvoy path (auto-disband under two hulls).
  * Backlink contract: the resolver gates on registration - s.convoy alone is not membership,
  * convoyOf returns null unless g.convoys still holds the id. Roster removal is filter-based
  * (ordered, no swap-remove tail cells). Migration is three visible writes: old-roster
