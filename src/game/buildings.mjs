@@ -381,6 +381,11 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Local identity across the loop: the port ratio is one local shared by every building (never
+ * recomputed inside the loop), while each building's counters (produced, negDays, negWarned) are
+ * its own - a short-of-input or halted building neither stops nor rewrites its neighbour. The
+ * recipe's stock condition and the staffing denominator are separate contracts that never stand
+ * in for one another. */
 /** Checked value, used value: workshopTick evaluates the port ratio exactly once into a local and
  * both the `staff <= 0` guard and the batch arithmetic consume that same local - no reload can
  * diverge from the checked value. A repair must repair: restartBuilding's postcondition is that the

@@ -236,3 +236,30 @@ test('the staffing guard checks the same value the batch arithmetic consumes; a 
  let prev=0;
  for(let t=9;t<=14;t++){g.tick=t*1440;workshopTick(g,'cadiz');const now=b.produced;assert.ok(Number.isInteger(now)&&now>=prev,'produced grows whole');prev=now;}
 });
+
+test('per-building state keeps its identity across the loop; the port ratio is one shared local',()=>{
+ // structural: the loop reads the port-level `staff` local for every building - no per-building recompute
+ const src=readFileSync('src/game/buildings.mjs','utf8');
+ const tickBody=src.slice(src.indexOf('export function workshopTick'),src.indexOf('/** Building effects'));
+ const loopBody=tickBody.slice(tickBody.indexOf('for (const [plotId, b]'));
+ assert.ok(!loopBody.includes('staffingRatio('),'the ratio is not recomputed per building');
+ // runtime: two buildings, same port - one short of input, the other not; each keeps its own state
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ buyPlot(g,'cadiz',{id:'cadiz:1',type:'fishery',w:4,d:4});
+ g.buildings['cadiz']['cadiz:1']={type:'fishery',level:3,state:'active',plotType:'fishery'};
+ buyPlot(g,'cadiz',{id:'cadiz:2',type:'workshop',w:4,d:4});
+ g.buildings['cadiz']['cadiz:2']={type:'workshop',level:1,state:'active',plotType:'workshop'}; // the cloth processor (weave recipe)
+ g.market.cadiz.wool.stock=0;g.market.cadiz.wool.target=300; // the weaver cannot quote
+ const f=g.buildings['cadiz']['cadiz:1'],wv=g.buildings['cadiz']['cadiz:2'];
+ for(let t=1;t<=6;t++){g.tick=t*1440;workshopTick(g,'cadiz');}
+ assert.ok((f.produced??0)>0,'the fishery produces despite the weaver being unquotable');
+ assert.equal(wv.produced??0,0,'the unquotable weaver produces nothing');
+ assert.equal(wv.negDays??0,0,'and its margin streak is untouched (unquotable is not a failure)');
+ // halting one building does not touch the other building's counters
+ f.halted=true;
+ const wvProd=wv.produced??0,fProd=f.produced;
+ g.market.cadiz.wool.stock=400;g.market.cadiz.cloth.stock=0;g.market.cadiz.cloth.target=200; // wool glut, cloth scarce: the weave margin is clearly positive
+ for(let t=7;t<=12;t++){g.tick=t*1440;workshopTick(g,'cadiz');}
+ assert.equal(f.produced,fProd,'halted fishery: state frozen');
+ assert.ok((wv.produced??0)>wvProd,'the weaver produces once it can quote');
+});
