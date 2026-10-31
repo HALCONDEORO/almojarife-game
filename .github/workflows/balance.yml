@@ -1,7 +1,19 @@
 name: Balance
-# Fast gate on pull requests (10 game years) and full 100-year run on pushes to main:
-# both fire only when a change can move the simulation. Nightly and on-demand always run the full set.
-# Both filters are fail-closed: everything matches "**" except paths proven sim-irrelevant below.
+# Reliability policy. The 100-year sim outgrew the 90-minute job timeout (measured runs: 51.4 min
+# nightly 450ebd5, 71.9 min push a5a880c, 90+ min cancelled on main 53d886c), so the deep runs split
+# into parallel legs that each stay far under the timeout. The PR gate stays a single short run.
+#   PR gate ......... 10 game years (3650 days), default + 3 extra seeds, one job (unchanged)
+#   push to main .... 100 game years, default + 3 extra seeds, split into 4 parallel legs
+#   nightly 02:17 ... 100 game years, split into 4 parallel legs (restored from the old single run)
+#   weekly Sat 02:47  100 game years, split into 4 parallel legs; the nightly cron skips Saturday
+#                     (0-5) so the two never fire on the same morning
+#   manual dispatch . the same 100y legs, default + 3 extra seeds (the old seeds input is gone:
+#                     the legs cover the default set; a custom set runs locally with
+#                     BALANCE_DAYS/BALANCE_SEEDS + node tools/sim_balance_check.mjs)
+# Each leg runs the same sim and check tools on its own slice (BALANCE_BASE marks the base leg);
+# the legs together run every scenario, seed and paired policy of the old single run. A slice
+# mismatch fails loudly (see sim_balance_check.mjs), never a silent skip.
+# Both path filters are fail-closed: everything matches "**" except paths proven sim-irrelevant below.
 on:
   pull_request:
     paths:
@@ -45,19 +57,17 @@ on:
       - "!**/*.gif"
       - "!**/*.svg"
   schedule:
-    - cron: "17 2 * * *" # nightly, 02:17 UTC
-  workflow_dispatch:
-    inputs:
-      seeds:
-        description: "Extra game seeds for bots B and C (comma list; default 1,2,3)"
-        required: false
-        default: "1,2,3"
+    - cron: "17 2 * * 0-5" # nightly Sunday-Friday, 02:17 UTC: the full 100-year run, split into parallel legs
+    - cron: "47 2 * * 6" # Saturday 02:47 UTC takes the weekly slot instead of the nightly run, so the two never fire on the same morning
+  workflow_dispatch: # runs the same 100y legs (see the header note about the removed seeds input)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   balance:
+    # PR gate only: short 10-year check on the paths that can move the simulation.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -66,8 +76,34 @@ jobs:
         with:
           node-version: 20
       - run: sh tools/fetch_data.sh
-      - name: Balance gate (fast on PRs, 100 years otherwise)
+      - name: Balance gate (10y on PRs)
         env:
-          BALANCE_DAYS: ${{ github.event_name == 'pull_request' && '3650' || '' }}
-          BALANCE_SEEDS: ${{ github.event.inputs.seeds || '1,2,3' }}
+          BALANCE_DAYS: "3650"
+          BALANCE_SEEDS: "1,2,3"
+        run: node tools/sim_balance_check.mjs
+
+  balance-deep:
+    # The full 100-year deep run (default + seeds 1,2,3: main pushes, nightly, weekly, manual
+    # dispatch), split into parallel legs because the single run outgrew the 90-minute timeout
+    # (measured 51.4 -> 71.9 -> 90+ min cancelled). Each leg runs the same check tool on its own
+    # slice; the legs together cover every scenario, seed and paired policy of the old single run.
+    # Leg wall time is ~15-35 min at current sim speed; timeout-minutes 60 leaves a wide margin.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: [base, seed1, seed2, seed3]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - run: sh tools/fetch_data.sh
+      - name: Balance 100y leg (${{ matrix.leg }})
+        env:
+          BALANCE_DAYS: "36500"
+          BALANCE_BASE: ${{ matrix.leg == 'base' && '1' || '0' }}
+          BALANCE_SEEDS: ${{ matrix.leg == 'base' && 'none' || (matrix.leg == 'seed1' && '1' || (matrix.leg == 'seed2' && '2' || '3')) }}
         run: node tools/sim_balance_check.mjs
