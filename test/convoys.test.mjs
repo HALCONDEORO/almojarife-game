@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,doSail,advanceDay,buyCaravel,sellShip,formConvoy,leaveConvoy,disbandConvoy,sailConvoy,escortOf,convoyOf} from '../src/game/game.mjs';
-import {renameConvoy} from '../src/game/convoys.mjs';
+import {renameConvoy,removeFromConvoy} from '../src/game/convoys.mjs';
 import {buyWeapon,defenceOf} from '../src/game/crew.mjs';
 import {encounterOutcome} from '../src/game/encounters.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
@@ -185,6 +185,41 @@ test('a returned handle is not the result: the registration keeps the group aliv
  assert.equal(sailConvoy(g,cv.id,'cadiz',{doSail}).reason,'no convoy','the old handle is inert');
  assert.equal(cv.ships.length,2,'the stale handle still reads its old roster');
  assert.equal(convoyOf(g,s0),null,'but the ships are free');
+});
+test('roster removal is positional, normalizes duplicates, and never moves members implicitly',()=>{
+ const {g,s0,s1}=mk();g.noGoal=true;
+ assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
+ assert.ok(buyCaravel(g,s0.at).ok);const s3=g.ships[3];
+ const cv=formConvoy(g,[s0.id,s1.id,s2.id,s3.id],'Flota').convoy;
+ // first/middle/last removal keeps the survivors' relative order
+ assert.ok(leaveConvoy(g,s0.id).ok);assert.deepEqual(cv.ships,[s1.id,s2.id,s3.id]);
+ assert.ok(leaveConvoy(g,s2.id).ok);assert.deepEqual(cv.ships,[s1.id,s3.id]);
+ const notes=(g.inbox??[]).length;
+ assert.ok(leaveConvoy(g,s3.id).ok); // one hull left: the disband fires here
+ assert.equal(s1.convoy,undefined);assert.equal(g.convoys[cv.id],undefined);
+ assert.ok((g.inbox??[]).slice(0,(g.inbox??[]).length-notes).some(e=>e.kind==='convoyDisbanded'),'the disband is posted'); // newest first
+ // a wrapper miss changes nothing and posts nothing
+ const notes2=(g.inbox??[]).length;
+ assert.equal(leaveConvoy(g,s0.id).reason,'no convoy');
+ removeFromConvoy(g,s0); // not grouped: a no-op
+ assert.equal((g.inbox??[]).length,notes2,'no post on a miss');
+ // duplicates: the command collapses them at formation; removal normalizes a corrupt roster
+ const r=formConvoy(g,[s0.id,s0.id,s1.id]);
+ assert.ok(r.ok);assert.deepEqual(r.convoy.ships,[s0.id,s1.id],'duplicate inputs count once');
+ r.convoy.ships.push(s0.id); // corrupted state: a duplicate active entry
+ removeFromConvoy(g,s0);
+ assert.deepEqual(r.convoy.ships,[s1.id],'removal takes every matching entry');
+ assert.equal(g.convoys[r.convoy.id],undefined,'one hull left: auto-disband');
+ // no implicit moves: a grouped member must leave before it can join another group
+ const a=formConvoy(g,[s0.id,s1.id],'A').convoy;
+ assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
+ assert.deepEqual(a.ships,[s0.id,s1.id],'the failed move changed nothing');
+ assert.ok(leaveConvoy(g,s0.id).ok);
+ const b=formConvoy(g,[s2.id,s0.id],'B').convoy;
+ assert.deepEqual(b.ships,[s2.id,s0.id],'the new group keeps the order the command asked for');
+ // leaving is not idempotent as a command, even though the state converges
+ assert.ok(leaveConvoy(g,s0.id).ok,'the first leave succeeds');
+ assert.equal(leaveConvoy(g,s0.id).reason,'no convoy','the second is a miss');
 });
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();

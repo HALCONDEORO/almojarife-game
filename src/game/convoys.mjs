@@ -31,6 +31,12 @@ export function escortOf(g, ship) {
  * all members, so a failure always fires on the first call - departures are atomic, a failed
  * first leg strands nobody. Reset is selective: disband/leave clear exactly the backlink and
  * the registration; every other ship field (name, cargo, hull, position) is preserved.
+ * Removal contract: leaving is positional - survivors keep their relative order, dropping
+ * under two hulls disbands (survivor backlink and registration cleared, disband posted). A
+ * miss changes and posts nothing. Formation collapses duplicate inputs; a corrupt duplicate
+ * in the roster is normalized by removal (every matching entry goes). There are no implicit
+ * moves: a grouped member must leave before joining elsewhere, and the new roster keeps the
+ * command's order. Leaving is not idempotent as a command: a second leave answers no convoy.
  * Handle contract: formConvoy's returned object is a view of the registration, not the
  * result - the g.convoys entry (plain state, saved and loaded like the rest) is what keeps
  * the group alive and what every command consults. Once disbanded, the old handle is inert:
