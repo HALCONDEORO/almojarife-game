@@ -446,6 +446,12 @@ function legWind(g, ship, from, toId, lat, lon) {
 
 /** Why a docked ship cannot leave right now, or null: the court holds it, the yard does, or a full blockade seals its port (a boycott lets it sail out). */
 const dockBlocker = (g, ship) => heldNow(g, ship) ? "held" : repairOf(g, ship.id) ? "in repair" : blockadeOn(g, ship.at) ? "blockade" : null;
+/** Course origin preserves the actual located waypoint, or the previous leg origin when position is unknown. Read-only. */
+function courseOrigin(game, ship, docked) {
+  if (docked) return ship.at;
+  const position = locate(game.world, ship);
+  return position?.id ?? (position ? freeId(position.lat, position.lon) : (ship.voyage.from ?? ship.at));
+}
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
@@ -471,8 +477,7 @@ export function doGoTo(g, ship, lat, lon) {
   delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
   // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
-  const pos = docked ? null : locate(g.world, ship);
-  const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
+  const from = courseOrigin(g, ship, docked); // at a lane node the place IS that port/waypoint
   // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
   const wind = docked ? legWind(g, ship, from, plan.to, lat, lon) : (ship.voyage.wind ?? 1);
   const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
