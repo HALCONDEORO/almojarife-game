@@ -43,6 +43,23 @@ test('keeping the prize adds a crewless ship that keeps station and arrives with
  assert.ok(!p.voyage&&p.at===s.at,'both arrived at the destination');
  assert.equal(doSail(g,p,'cadiz').reason,'crew','a crewless prize cannot sail again');
 });
+test('a kept prize registers once and the escort binding dies with the shared voyage',()=>{
+ const{g,s}=fight('repelled');
+ const before=g.ships.length,claim=claimPrize(g,true);
+ assert.ok(claim.ok);
+ assert.equal(claimPrize(g,true).ok,false,'replay registers nothing');
+ assert.equal(claimPrize(g,false).ok,false,'the report is already closed');
+ assert.equal(g.ships.length,before+1,'the fleet grew exactly once');
+ const loaded=deserialize(serialize(g,'T'),world).g,saved=JSON.stringify(loaded);
+ assert.equal(claimPrize(loaded,true).ok,false,'reload cannot reopen the claimed report');
+ assert.equal(JSON.stringify(loaded),saved,'rejected replay after reload writes nothing');
+ const prize=claim.ship;
+ assert.equal(prize.voyage?.escorted,true);assert.equal(s.voyage?.escortedBy,prize.id,'mutual binding while the voyage lives');
+ arrive(g,s);
+ assert.equal(s.voyage,null);assert.equal(prize.voyage,null,'both voyage records close on arrival, markers with them');
+ assert.ok(doSail(g,s,'cadiz').ok);
+ assert.equal(Object.hasOwn(s.voyage,'escorted'),false);assert.equal(Object.hasOwn(s.voyage,'escortedBy'),false,'a fresh voyage carries no stale binding');
+});
 test('leaving the prize adds nothing and closes the report',()=>{
  const{g}=fight('repelled');const before=g.ships.length;
  const r=claimPrize(g,false);assert.ok(r.ok);assert.equal(g.ships.length,before);assert.equal(g.encounterReport,null);

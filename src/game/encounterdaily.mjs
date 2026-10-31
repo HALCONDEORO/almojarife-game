@@ -25,28 +25,34 @@ export const SEA_ENCOUNTER_CHANCE_TICK=1-Math.pow(1-SEA_ENCOUNTER_CHANCE,1/TICKS
    version (g.encounterTicks) is written before the roll, so a tick can never be
    rerolled, not even after a save/reload. A pending decision that no longer
    matches a ship with a voyage is rejected at resolve time, never silently reused. */
+// Weather classification is pure: no encounter roll or state write happens here.
+function encounterInStorm(g,ship,world){
+ if(!world||!ship.voyage||!Number.isFinite(g.day))return false;
+ const pos=locate(world,ship);
+ return Boolean(pos&&Number.isFinite(pos.lat)&&Number.isFinite(pos.lon)&&inStorm(pos.lat,pos.lon,g.day,g.seed??0));
+}
 export function automaticEncounter(g,ship,world){
  if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored)return null;
  const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
  (g.encounterTicks??={})[key]=g.tick;
- const r=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);
- if(r()>=SEA_ENCOUNTER_CHANCE_TICK)return null;
- const roll=r();
+ const random=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);
+ if(random()>=SEA_ENCOUNTER_CHANCE_TICK)return null;
+ const roll=random();
  let kind=roll<0.5?'pirates':'storm';
  // Real weather: inside a storm cell of the chart the encounter is always that storm. The daily
  // encounter rate is untouched; outside a cell the old 50/50 roll decides (a squall can still catch you).
- if(world&&ship.voyage&&Number.isFinite(g.day)){const pos=locate(world,ship);if(pos&&Number.isFinite(pos.lat)&&Number.isFinite(pos.lon)&&inStorm(pos.lat,pos.lon,g.day,g.seed??0))kind='storm';}
+ if(encounterInStorm(g,ship,world))kind='storm';
  if(kind==='pirates'){
   g.pending={event:'sea-pirates',ship:ship.id,day:g.day,hour:hourOf(g.tick),id:`sea-v2:${g.tick}:${ship.id}`,escapeChance:escapeChance(ship)};
   return g.pending;
  }
- const out=encounterOutcome(ship,kind,r()),applied=applyEncounter(g,ship,out);
+ const out=encounterOutcome(ship,kind,random()),applied=applyEncounter(g,ship,out);
  if(!applied.ok)return null;
- const e={...applied,id:`sea-v2:${g.tick}:${ship.id}`,day:g.day,hour:hourOf(g.tick),ship:ship.id,from:ship.voyage.from,to:ship.voyage.to};
- (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
- g.log.unshift({day:g.day,key:'event',txt:{es:encounterText(e,'es'),en:encounterText(e,'en')},ship:ship.id});if(g.log.length>30)g.log.pop();
- post(g,'event',{txt:{es:encounterText(e,'es'),en:encounterText(e,'en')},ship:ship.id});
- return e;
+ const report={...applied,id:`sea-v2:${g.tick}:${ship.id}`,day:g.day,hour:hourOf(g.tick),ship:ship.id,from:ship.voyage.from,to:ship.voyage.to};
+ (g.encounters??=[]).unshift(report);if(g.encounters.length>80)g.encounters.pop();
+ g.log.unshift({day:g.day,key:'event',txt:{es:encounterText(report,'es'),en:encounterText(report,'en')},ship:ship.id});if(g.log.length>30)g.log.pop();
+ post(g,'event',{txt:{es:encounterText(report,'es'),en:encounterText(report,'en')},ship:ship.id});
+ return report;
 }
 
 /** Original escape rule: intact hull, crew and navigation improve the displayed chance. */
@@ -58,19 +64,19 @@ export function escapeChance(ship){
 }
 /** One decision, one stored final report; reopening a save cannot reroll it. */
 export function resolvePirates(g,choice){
- const p=g.pending;
- if(g.over||p?.event!=='sea-pirates'||!['flee','fight'].includes(choice))return {ok:false};
- const ship=g.ships.find(s=>s.id===p.ship);
- if(!ship?.voyage||!Number.isFinite(p.escapeChance)||p.escapeChance<15||p.escapeChance>85)return {ok:false};
- const r=seeded(`sea-choice-v1:${g.seed??0}:${p.id}`);
- const escaped=choice==='flee'&&r()*100<p.escapeChance;
- const fight=(escaped||g.pirateFight!==true)?null:fightPirates(ship,g.seed,p.id,escortOf(g,ship)); // the pirates are a real seeded ship fought with the shared battle resolver; a convoy escort adds defence
- let out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:fight?fight.outcome:encounterOutcome(ship,'pirates',r(),escortOf(g,ship)); // flag off (default): the old single-roll outcome, identical to before
+ const pending=g.pending;
+ if(g.over||pending?.event!=='sea-pirates'||!['flee','fight'].includes(choice))return {ok:false};
+ const ship=g.ships.find(s=>s.id===pending.ship);
+ if(!ship?.voyage||!Number.isFinite(pending.escapeChance)||pending.escapeChance<15||pending.escapeChance>85)return {ok:false};
+ const random=seeded(`sea-choice-v1:${g.seed??0}:${pending.id}`);
+ const escaped=choice==='flee'&&random()*100<pending.escapeChance;
+ const fight=(escaped||g.pirateFight!==true)?null:fightPirates(ship,g.seed,pending.id,escortOf(g,ship)); // the pirates are a real seeded ship fought with the shared battle resolver; a convoy escort adds defence
+ const out=escaped?{kind:'pirates',result:'escaped',hullLoss:0,cargoLossPct:0,delay:1}:fight?fight.outcome:encounterOutcome(ship,'pirates',random(),escortOf(g,ship)); // flag off (default): the old single-roll outcome, identical to before
  const applied=applyEncounter(g,ship,out);if(!applied.ok)return applied;
- const e={...applied,id:p.id,day:p.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
- (g.encounters??=[]).unshift(e);if(g.encounters.length>80)g.encounters.pop();
- if(e.result==='repelled'&&ship.voyage)e.prize=fight?fight.prize:prizeFor(g,e.id); // flag on: the fought ship if it did not sink; flag off: the old seeded prize, unchanged
- g.encounterReport=e;g.pending=null;return e;
+ const report={...applied,id:pending.id,day:pending.day,ship:ship.id,from:ship.voyage.from,to:ship.voyage.to,choice,escapeFailed:choice==='flee'&&!escaped};
+ (g.encounters??=[]).unshift(report);if(g.encounters.length>80)g.encounters.pop();
+ if(report.result==='repelled'&&ship.voyage)report.prize=fight?fight.prize:prizeFor(g,report.id); // flag on: the fought ship if it did not sink; flag off: the old seeded prize, unchanged
+ g.encounterReport=report;g.pending=null;return report;
 }
 
 // Prizes: a won fight against pirates can leave their ship behind; the player may keep it, once per encounter.
@@ -79,30 +85,33 @@ export const PRIZE_ROLL=[["barca",0.6],["cog",0.3],["caravel",0.1]];
 export const PRIZE_HULL_MIN=30,PRIZE_HULL_SPAN=40; // hull 30-69%
 /** Seeded prize offer of a won encounter: type and hull. */
 export function prizeFor(g,encounterId){
- const r=seeded(`prize-v1:${g.seed??0}:${encounterId}`);
- let x=r(),type=PRIZE_ROLL[PRIZE_ROLL.length-1][0];
+ const random=seeded(`prize-v1:${g.seed??0}:${encounterId}`);
+ let x=random(),type=PRIZE_ROLL[PRIZE_ROLL.length-1][0];
  for(const[t,p]of PRIZE_ROLL){x-=p;if(x<0){type=t;break;}}
- return{type,hull:PRIZE_HULL_MIN+Math.floor(r()*PRIZE_HULL_SPAN)};
+ return{type,hull:PRIZE_HULL_MIN+Math.floor(random()*PRIZE_HULL_SPAN)};
 }
-/** Keep or leave the prize of the open report. Closes the report; the choice is logged. */
+/** Keep or leave the prize of the open report. Closes the report; the choice is logged.
+ * Registration is exactly-once: the report closes with the first claim, so any replay is a
+ * no-op rejection and the fleet grows at most by one. The escort binding (escorted /
+ * escortedBy) lives on the shared voyage record and dies with it on arrival. */
 export function claimPrize(g,keep){
- const e=g.encounterReport;
- if(g.over||!e?.prize)return{ok:false};
- const winner=g.ships.find(s=>s.id===e.ship);
+ const report=g.encounterReport;
+ if(g.over||!report?.prize)return{ok:false};
+ const winner=g.ships.find(s=>s.id===report.ship);
  if(keep&&!winner)return{ok:false};
  let prize=null;
  if(keep){
-  prize=makeShip(g.nextId++,e.prize.type,winner.at,g.ships);
-  prize.hull=e.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
+  prize=makeShip(g.nextId++,report.prize.type,winner.at,g.ships);
+  prize.hull=report.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
   if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
   g.ships.push(prize);
  }
  const txt=keep
-  ?{es:`Presa capturada: ${e.prize.type} se une a tu flota (casco ${e.prize.hull}%, sin tripulación).`,en:`Prize taken: a ${e.prize.type} joins your fleet (hull ${e.prize.hull}%, no crew).`}
+  ?{es:`Presa capturada: ${report.prize.type} se une a tu flota (casco ${report.prize.hull}%, sin tripulación).`,en:`Prize taken: a ${report.prize.type} joins your fleet (hull ${report.prize.hull}%, no crew).`}
   :{es:'Dejaste el barco pirata a la deriva.',en:'You left the pirate ship adrift.'};
- g.log.unshift({day:g.day,key:'event',txt,ship:e.ship});if(g.log.length>30)g.log.pop();
- post(g,'event',{txt,ship:e.ship});
- e.prize.taken=!!keep;
+ g.log.unshift({day:g.day,key:'event',txt,ship:report.ship});if(g.log.length>30)g.log.pop();
+ post(g,'event',{txt,ship:report.ship});
+ report.prize.taken=Boolean(keep);
  g.encounterReport=null;
  return{ok:true,ship:prize};
 }
