@@ -99,6 +99,26 @@ export function setStewardRuleEnabled(g, city, good, enabled) {
   else (adm.off ??= {})[good] = true;
   return { ok: true, enabled, changed: true };
 }
+/** Dismiss the administrator: remove the whole automation record (every standing
+   order, the paused markers and the coin reserve) in one explicit command
+   (ciclo del almacenero). Lifecycle facts, established for this game and
+   documented where the contract asks: there is no hiring step and no fee - the
+   administrator comes free with the warehouse, so there is no cost to check or
+   refund; no scheduled work exists to cancel, because the orders run inline in
+   the day tick; and the goods in the store are never touched. Re-hiring is just
+   setting orders again. A dismiss with nothing to dismiss fails explicitly
+   ("nothing to dismiss"), so a stale or repeated removal has a defined outcome. */
+export function dismissSteward(g, city) {
+  const w = g.warehouses?.[city];
+  if (!w) return { ok: false, reason: "no warehouse here" };
+  const adm = w.admin;
+  const rules = adm ? Object.keys(adm.rules).length : 0;
+  const paused = adm?.off ? Object.keys(adm.off).length : 0;
+  if (!adm || (rules === 0 && paused === 0 && !(adm.reserve > 0))) return { ok: false, reason: "nothing to dismiss" };
+  const reserve = adm.reserve ?? 0;
+  delete w.admin;
+  return { ok: true, rules, reserve };
+}
 /** Cash the administrator must leave untouched. */
 export function setStewardReserve(g, city, amount) {
   const w = g.warehouses?.[city];
