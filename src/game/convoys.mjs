@@ -32,6 +32,9 @@ export function escortOf(g, ship) {
  * and each member backlinked by ship.convoy. Form/leave/disband preserve both directions;
  * save/load keeps them. This describes completed commands, not crash atomicity or arbitrary
  * corrupted input records. Unknown convoy and ship ids are rejected by the matching commands.
+ * Regrouping contract: an already-grouped ship rejects a new formation without mutation.
+ * Callers must explicitly leave first; duplicate input ship ids dedupe before validation,
+ * and a replay on already-grouped ships creates no second membership.
  * Candidate contract: a candidate list is construction-time advice (the desktop panel
  * auto-selects docked ships at click time). Eligibility is re-validated here at execution and
  * formation is all-or-nothing: any failed guard mutates nothing - no registration, no
