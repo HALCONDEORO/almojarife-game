@@ -65,3 +65,26 @@ test("save/load preserves the composition", () => {
   assert.equal(effectivePop(g2, "cadiz"), before);
   assert.equal(cityEffects(g2, "cadiz").popEff, before);
 });
+
+// Wiring guard (Auditoría 30/10): the semantic tests above stay green if web/main.mjs
+// reverts a surface to the old formula, so assert the source of each of the three real
+// render sites reads the shared helper. Reverting any one of them must fail here.
+import { readFileSync } from "node:fs";
+const mainSrc = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
+
+test("port header prints eff.popEff from the shared helper, not the stale sum", () => {
+  assert.match(mainSrc, /info\.textContent = ` · \$\{fmt\(eff\.popEff\)\}/, "updateCityHeader wires popEff");
+});
+
+test("buildings tab line prints eff.popEff from the shared helper, not the stale sum", () => {
+  assert.match(mainSrc, /bldPopLine\.replace\("\{p\}", fmt\(eff\.popEff\)\)/, "bldPopLine wires popEff");
+});
+
+test("city modal total comes straight from effectivePop", () => {
+  assert.match(mainSrc, /const popEff = effectivePop\(g, s\.at\);/, "the modal wires effectivePop");
+});
+
+test("no surface keeps the old pop + popBonus formula", () => {
+  assert.equal(mainSrc.includes("eff.pop + eff.popBonus"), false, "stale formula is gone from main.mjs");
+  assert.equal(mainSrc.includes("(nd2.pop ?? 8000) + eff.popBonus + drift + wallPop"), false, "the hand-spelled modal sum is gone");
+});
