@@ -92,6 +92,29 @@ test('executed membership is bidirectional; reparenting is explicit leave-then-f
  assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
  assert.equal(Object.keys(g.convoys).filter(id=>g.convoys[id].ships.includes(s0.id)).length,1,'one membership total');
 });
+test('migration is old-roster removal + new-roster insertion + backlink update; the resolver gates on registration',()=>{
+ const {g,s0,s1}=mk();
+ assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
+ assert.ok(buyCaravel(g,s0.at).ok);const s3=g.ships[3];
+ const A=formConvoy(g,[s0.id,s1.id,s2.id]).convoy;
+ // ordered removal from the middle: filter-based, no tail-cell leftovers
+ assert.ok(leaveConvoy(g,s1.id).ok);
+ assert.deepEqual(A.ships,[s0.id,s2.id],'middle removal leaves an ordered active range');
+ // complete migration: s1 leaves A (done) and forms B with s3 - all three writes visible
+ const B=formConvoy(g,[s1.id,s3.id]).convoy;
+ assert.ok(!A.ships.includes(s1.id),'old roster no longer references the mover');
+ assert.deepEqual(B.ships,[s1.id,s3.id],'new roster inserted');
+ assert.equal(s1.convoy,B.id,'reverse link updated');
+ assert.ok(s0.convoy===A.id&&s2.convoy===A.id,'the remaining members are untouched');
+ // the typed relation: the backlink field alone is not membership - convoyOf gates on the registration
+ delete g.convoys[A.id]; // surgery: simulate a lost registration
+ assert.equal(s0.convoy,A.id,'the field still points at the old id');
+ assert.equal(convoyOf(g,s0),null,'but the relation resolves to null without the registration');
+ // and the dangling field survives a reload still inert: no phantom membership comes back
+ const r=deserialize(serialize(g,'T'),world).g;
+ assert.equal(convoyOf(r,r.ships[0]),null,'a dangling backlink stays inert after reload');
+ assert.ok(convoyOf(r,r.ships[1])?.id===B.id,'live memberships survive the round-trip');
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;

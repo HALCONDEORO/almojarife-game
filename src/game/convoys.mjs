@@ -26,6 +26,11 @@ export function escortOf(g, ship) {
 
 /** Group 2-5 docked owned ships into a convoy. */
 /**
+ * Backlink contract: the resolver gates on registration - s.convoy alone is not membership,
+ * convoyOf returns null unless g.convoys still holds the id. Roster removal is filter-based
+ * (ordered, no swap-remove tail cells). Migration is three visible writes: old-roster
+ * removal, new-roster insertion, reverse-link update; a dangling field after a lost
+ * registration stays inert, including across a save/load round-trip.
  * Executor contract: executed membership is bidirectional - the roster entry and the
  * backlink move together on every form/leave/disband. Reparenting is never silent: a grouped
  * ship rejects a new formation and moves only through an explicit leave first, so a ship
