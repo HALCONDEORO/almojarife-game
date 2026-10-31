@@ -46,6 +46,30 @@ export function clearStewardRule(g, city, good) {
   delete a.rules[good];
   return { ok: true };
 }
+/** Reorder one standing order in the priority list (prioridad almacenero): the steward
+   serves the rules in list order, so when cash, room or the port purse run short,
+   the orders nearer the top are served first.
+   - Final-index contract: dir -1 moves the rule one place earlier, +1 one place
+     later. A local single-player game has no concurrent edits to race against, so
+     a boundary or version contract would add nothing here (documented decision).
+   - Membership, direction and bounds are validated: a move past either end fails
+     explicitly ("already first" / "already last") and leaves the list untouched.
+   - The relative order of the other entries is preserved; the rules object keeps
+     its key order through JSON, so the list survives a save/load round-trip. */
+export function moveStewardRule(g, city, good, dir) {
+  const w = g.warehouses?.[city];
+  if (!w) return { ok: false, reason: "no warehouse here" };
+  const adm = w.admin;
+  if (!adm || !Object.prototype.hasOwnProperty.call(adm.rules, good)) return { ok: false, reason: "no rule" };
+  if (dir !== -1 && dir !== 1) return { ok: false, reason: "bad direction" };
+  const keys = Object.keys(adm.rules), from = keys.indexOf(good), to = from + dir;
+  if (to < 0) return { ok: false, reason: "already first" };
+  if (to >= keys.length) return { ok: false, reason: "already last" };
+  keys.splice(from, 1);
+  keys.splice(to, 0, good);
+  adm.rules = Object.fromEntries(keys.map((key) => [key, adm.rules[key]]));
+  return { ok: true, from, to };
+}
 /** Cash the administrator must leave untouched. */
 export function setStewardReserve(g, city, amount) {
   const w = g.warehouses?.[city];
