@@ -591,6 +591,7 @@ const wallsCityCard = (gm, st, tt) => {
   else if (!wr?.nextLevel) html += `<p><small>${whyText(tt, wq.reason)}</small></p>`; // works under way already show their progress line above
   return html;
 };
+// skipcq: JS-R1005 - pre-existing cyclomatic complexity in the main render; DeepSource re-flags it only because this PR edits lines inside it. Extracting render() is out of scope here.
 function render() {
   sel = fleetSelection(g, sel);
   if (sel < 0) {
@@ -885,7 +886,7 @@ function render() {
       ensurePlots(s.at);
       if (bldAction && !bldAction.plotId.startsWith(s.at + ":")) { bldAction = null; bldError = null; } // sailed away with an armed action
       const eff = cityEffects(g, s.at);
-      h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.popEff)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
+      h += `<p>${t.bldInfo}</p>${eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.popEff)).replace("{b}", fmt(eff.popBonus))}</b></p>` : ""}`;
       if (eff.jobs) h += `<p><b>${t.bldJobsLine.replace("{j}", fmt(eff.jobs)).replace("{f}", fmt(eff.free)).replace("{s}", Math.round(eff.staffing * 100))}</b></p>` + (eff.staffing < 1 ? `<p><b style="color:#a11">${t.bldJobsShort.replace("{s}", Math.round(eff.staffing * 100))}</b></p>` : "");
       h += bldCard();
       if (g.walls) h += wallsCityCard(g, s, t); // city walls (flag on): city-level works, no plot needed
@@ -1318,7 +1319,7 @@ function updateCityHeader(cityId) {
   const wl = wallsLevel(g, cityId); if (wl > 0) extra.push(`${lang === "es" ? "Murallas" : "Walls"} ${wl}`);
   if (hasOffice(g, cityId)) extra.push(t.tabOffice);
   if (warehouseOf(g, cityId)) extra.push(t.tabStore);
-  info.textContent = ` · ${fmt(eff.popEff)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}${extra.length ? " · " + extra.join(" · ") : ""}`;
+  info.textContent = ` · ${fmt(eff.popEff)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}${extra.length ? ` · ${extra.join(" · ")}` : ""}`;
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
