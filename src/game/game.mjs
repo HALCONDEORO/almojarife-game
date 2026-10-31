@@ -66,6 +66,7 @@ import { npcPlan } from "../sim/npcplan.mjs";
 import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
 import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
 import { embargoOn, embargoNotice, GRAIN } from "./embargo.mjs";
+import { entryBan, blockadeOn, plannedEntryBan } from "./portmeasures.mjs";
 import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -443,8 +444,14 @@ function legWind(g, ship, from, toId, lat, lon) {
   return 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${toId}`)();
 }
 
-/** Why a docked ship cannot leave right now, or null: the court holds it, or the yard does. */
-const dockBlocker = (g, ship) => heldNow(g, ship) ? "held" : repairOf(g, ship.id) ? "in repair" : null;
+/** Why a docked ship cannot leave right now, or null: the court holds it, the yard does, or a full blockade seals its port (a boycott lets it sail out). */
+const dockBlocker = (g, ship) => heldNow(g, ship) ? "held" : repairOf(g, ship.id) ? "in repair" : blockadeOn(g, ship.at) ? "blockade" : null;
+/** Course origin preserves the actual located waypoint, or the previous leg origin when position is unknown. Read-only. */
+function courseOrigin(game, ship, docked) {
+  if (docked) return ship.at;
+  const position = locate(game.world, ship);
+  return position?.id ?? (position ? freeId(position.lat, position.lon) : (ship.voyage.from ?? ship.at));
+}
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };
@@ -459,6 +466,7 @@ export function doGoTo(g, ship, lat, lon) {
   if (block) return refuse(block);
   const plan = planTrip(g.world, ship, lat, lon);
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
+  const destinationBan = plannedEntryBan(g, plan); if (destinationBan) return refuse(destinationBan); // a closed harbour refuses the course change too
   if (convoy) {
     if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
     const leg = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (sh) => repairOf(g, sh.id) }); // skipcq: JS-0129 - convoys.mjs is imported at the foot of this module to break the import cycle; ESM hoisting makes the call safe
@@ -469,8 +477,7 @@ export function doGoTo(g, ship, lat, lon) {
   delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
   // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
-  const pos = docked ? null : locate(g.world, ship);
-  const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
+  const from = courseOrigin(g, ship, docked); // at a lane node the place IS that port/waypoint
   // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
   const wind = docked ? legWind(g, ship, from, plan.to, lat, lon) : (ship.voyage.wind ?? 1);
   const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
@@ -497,6 +504,8 @@ export function doSail(g, ship, to) {
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
   if (repairOf(g, ship.id)) return { ok: false, reason: "in repair" }; // the yard keeps the ship in port until the order closes or is cancelled
+  if (ship.at !== undefined && !ship.voyage && blockadeOn(g, ship.at)) return { ok: false, reason: "blockade" }; // trapped: a full blockade holds every ship in port
+  const ban = entryBan(g, to); if (ban) return { ok: false, reason: ban }; // boycott or blockade: no course into a closed harbour
   const from = ship.at;
   // Per-leg wind from the regional field (seeded by day and leg ends), so replays and save/load keep the same weather.
   const wind = legWind(g, ship, from, to);
