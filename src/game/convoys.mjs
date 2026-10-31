@@ -26,6 +26,11 @@ export function escortOf(g, ship) {
 
 /** Group 2-5 docked owned ships into a convoy. */
 /**
+ * Executor contract: executed membership is bidirectional - the roster entry and the
+ * backlink move together on every form/leave/disband. Reparenting is never silent: a grouped
+ * ship rejects a new formation and moves only through an explicit leave first, so a ship
+ * holds at most one membership at any moment. Duplicate payload entries dedupe locally; a
+ * replayed command is rejected whole rather than creating a second membership.
  * Membership contract: membership exists only as a registered convoy in g.convoys plus a
  * backlink on each member (s.convoy). A retained candidate list is not membership, and a
  * convoy object is not visible until both writes land together inside formConvoy. The
