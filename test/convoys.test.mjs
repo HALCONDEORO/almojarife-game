@@ -49,6 +49,34 @@ test('candidate selection is construction-time advice; formation validates at ex
  assert.equal(s1.convoy,undefined,'nobody is registered from a stale list');
  assert.equal(g.convoySeq,seqBefore+1,'only the successful re-formation consumed an id');
 });
+test('membership exists only as registration plus backlinks, consistent through form/leave/disband/reload',()=>{
+ const {g,s0,s1}=mk();
+ // invalid payloads are rejections, never a partial state:
+ const initial=JSON.stringify(g);
+ assert.equal(formConvoy(g,null).reason,'bad ships');
+ assert.equal(formConvoy(g,[]).reason,'bad size');
+ assert.equal(Object.keys(g.convoys??{}).length,0,'nothing registered');
+ // expired raw context: unknown ids are clean rejections on every command:
+ assert.equal(disbandConvoy(g,'cv999').reason,'no convoy');
+ assert.equal(sailConvoy(g,'cv999','barcelona',{doSail}).reason,'no convoy');
+ assert.equal(leaveConvoy(g,'nobody').ok,false);
+ assert.equal(JSON.stringify(g),initial,'invalid payloads and unknown ids write nothing');
+ // membership = registered convoy whose members backlink it, and nothing else:
+ assert.ok(formConvoy(g,[s0.id,s1.id]).ok);
+ const inv=g=>Object.entries(g.convoys).every(([id,c])=>c.ships.every(sid=>g.ships.find(x=>x.id===sid)?.convoy===id))&&g.ships.every(x=>!x.convoy||g.convoys[x.convoy]?.ships.includes(x.id));
+ assert.ok(inv(g),'invariant after formation');
+ assert.ok(leaveConvoy(g,s0.id).ok);assert.ok(inv(g),'invariant after a member leaves');
+ // s0 left: it is a retained candidate again, not a member - the group auto-disbanded to <2
+ assert.equal(s0.convoy,undefined);assert.ok(inv(g));
+ const cv2=formConvoy(g,[s0.id,s1.id]).convoy;
+ assert.ok(disbandConvoy(g,cv2.id).ok);assert.ok(inv(g),'invariant after disband');
+ assert.equal(s0.convoy,undefined);assert.equal(s1.convoy,undefined,'no dangling backlinks');
+ // the invariant survives a save/load round-trip:
+ const cv3=formConvoy(g,[s0.id,s1.id]).convoy;
+ const loaded=deserialize(serialize(g,'T'),world).g;
+ assert.ok(inv(loaded),'invariant after reload');
+ assert.equal(loaded.convoys[cv3.id].ships.length,2);
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;
