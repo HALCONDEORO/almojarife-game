@@ -25,6 +25,11 @@ export function escortOf(g, ship) {
 }
 
 /** Group 2-5 docked owned ships into a convoy.
+ * Candidate contract: a candidate list is construction-time advice (the desktop panel
+ * auto-selects docked ships at click time). Eligibility is re-validated here at execution and
+ * formation is all-or-nothing: any failed guard mutates nothing - no registration, no
+ * backlink, no id consumed. A stale candidate (sailed off, grouped elsewhere) rejects the
+ * whole command rather than forming a partial convoy.
  * Registration contract: a convoy id is minted from the monotonic convoySeq only after every
  * guard passes, so a rejected attempt (including a replay on already-grouped ships) consumes
  * nothing. disbandConvoy removes the registration but never the sequence: an id, once used,
