@@ -188,7 +188,7 @@ function dayTick(g) {
   councilWallsVote(g); // and on meeting days they vote the walls the chest can afford (Marco 30/10: the concejo votes, pays and maintains them)
   worksDay(g); // the works department delivers materials, charges the chest per day worked and finishes works (Marco 30/10 20:04)
   councilWorksVote(g); // and on meeting days it votes the petitions the chest can start
-  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => repairShip(g, s)), repairQuote: (s) => repairPrice(g, s) }); // ships with a standing route act on the day they are docked
+  processRoutes(g, { doBuy: (...a) => quietly(() => doBuy(...a)), doSell: (...a) => quietly(() => doSell(...a)), doSail: (...a) => quietly(() => doSail(...a)), doRepair: (s) => quietly(() => orderRepair(g, [s.id], s.at)), repairQuote: (s) => repairPrice(g, s), inRepair: (s) => repairOf(g, s.id) }); // ships with a standing route act on the day they are docked
   g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
   warnLowCash(g);
   dailyJustice(g); // flag off: nothing
@@ -208,6 +208,7 @@ function dayTick(g) {
   tickContacts(g); // hired contacts send their inexact price reports (presence re-wins the port below)
   tickAlerts(g); // price alerts compare against today's market and fire once
   deliverOrders(g);
+  processRepairs(g); // the yard advances every open repair order
   refreshIntel(g);
   if (!g.freePlay && !g.noGoal) { // free play and open-ended games have no deadline and no goal: the world just goes on (noGoal keeps bankruptcy and the campaign)
     if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
@@ -376,11 +377,12 @@ export function doGoTo(g, ship, lat, lon) {
   if (speedFactor(ship) <= 0) return refuse("crew");
   const docked = !ship.voyage;
   if (docked && heldNow(g, ship)) return refuse("held");
+  if (docked && repairOf(g, ship.id)) return refuse("in repair");
   const plan = planTrip(g.world, ship, lat, lon);
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
   if (convoy) {
     if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
-    const r = sailConvoy(g, convoy.id, plan.to, { doSail });
+    const r = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (s) => repairOf(g, s.id) });
     if (!r.ok) return refuse(r.reason);
     delete ship.navError;
     return { ...r, toPort: true };
@@ -415,6 +417,7 @@ export function doSail(g, ship, to) {
   if (g.over) return { ok: false, reason: "game over" };
   if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
   if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
+  if (repairOf(g, ship.id)) return { ok: false, reason: "in repair" }; // the yard keeps the ship in port until the order closes or is cancelled
   const from = ship.at;
   // Per-leg wind from the regional field (seeded by day and leg ends), so replays and save/load keep the same weather.
   const wind = legWind(g, ship, from, to);
@@ -435,7 +438,7 @@ export function buyCaravel(g, at) {
   g.ships.push(s); say(g, "caravel", { city: at });
   return { ok: true, ship: s };
 }
-export const SELL_RATE = 0.6, REPAIR_PER_POINT = 4;
+export const SELL_RATE = 0.6, REPAIR_PER_POINT = 4, REPAIR_POINTS_PER_DAY = 25; // the yard restores 25 hull points per ship and day
 /** Order a new ship at the shipyard of the port where a ship of yours is docked. It is delivered after buildDays. */
 export function orderShip(g, type, at) {
   const t = SHIP_TYPES[type];
@@ -456,21 +459,78 @@ export function deliverOrders(g) {
     const s = makeShip(g.nextId++, o.type, o.at, g.ships); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id }); post(g, "order", { city: o.at, type: o.type, ship: s.id });
   }
 }
-export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
+/** Hull damage in points, clamped to the 0-100 range a hull can actually carry. */
+export const repairDamage = (ship) => Math.min(Math.max(100 - (Number.isFinite(ship.hull) ? ship.hull : 100), 0), 100); // a missing or non-finite hull reads as sound
+export const repairCost = (ship) => Math.ceil(repairDamage(ship) * REPAIR_PER_POINT);
 export const repairPrice = (g, ship) => Math.ceil(repairCost(ship) * repairMul(g, ship.at)); // reputation discounts the shipyard bill
-/** `at` (optional) is the port the player is acting from: a ship can only be repaired where it is docked. Omitted by automatic routes, which act on their own docked ship. */
-export function repairShip(g, ship, at) {
-  if (ship.voyage) return { ok: false, reason: "at sea" };
-  if (at !== undefined && ship.at !== at) return { ok: false, reason: "not in this port" };
-  const c = repairPrice(g, ship);
-  if (c <= 0) return { ok: false, reason: "no damage" };
-  if (g.cash < c) return { ok: false, reason: "no cash" };
-  g.cash -= c; ship.hull = 100; return { ok: true, cost: c };
+/** The active repair order covering a ship, or null. */
+export const repairOf = (g, shipId) => (g.repairs ?? []).find((o) => o.ships.includes(shipId)) ?? null;
+/** Ships an order may cover right now: owned, docked in `at`, not at sea, not already under repair, damaged, listed once. */
+function repairCandidates(g, shipIds, at) {
+  if (!Array.isArray(shipIds) || !shipIds.length || new Set(shipIds).size !== shipIds.length) return { ok: false, reason: "no ships" };
+  const ships = [];
+  for (const id of shipIds) {
+    const s = g.ships.find((x) => x.id === id);
+    if (!s) return { ok: false, reason: "unknown ship" };
+    if (s.voyage) return { ok: false, reason: "at sea" };
+    if (s.at !== at) return { ok: false, reason: "not in this port" };
+    if (repairOf(g, s.id)) return { ok: false, reason: "already in repair" };
+    if (!(repairDamage(s) > 0)) return { ok: false, reason: "no damage" };
+    ships.push(s);
+  }
+  return { ok: true, ships };
+}
+/** Days the yard needs for a set of ships: the slowest hull sets the pace at REPAIR_POINTS_PER_DAY points a day. */
+export const repairDays = (ships) => Math.ceil(Math.max(...ships.map(repairDamage)) / REPAIR_POINTS_PER_DAY);
+/** A versioned quote: cost and days computed now, for these ships in this port. Nothing is guaranteed until the order is placed. */
+export function repairQuote(g, shipIds, at) {
+  const c = repairCandidates(g, shipIds, at);
+  if (!c.ok) return c;
+  const cost = c.ships.reduce((s, x) => s + repairPrice(g, x), 0);
+  return { ok: true, v: 1, at, ships: c.ships.map((x) => x.id), cost, days: repairDays(c.ships) };
+}
+/** Place a repair order: everything is validated again at execution, the bill is charged once, and the yard works until every listed hull is sound. */
+export function orderRepair(g, shipIds, at) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const q = repairQuote(g, shipIds, at);
+  if (!q.ok) return q;
+  if (g.cash < q.cost) return { ok: false, reason: "no cash" };
+  g.cash -= q.cost;
+  const ships = q.ships.map((id) => g.ships.find((x) => x.id === id)), total = ships.reduce((s, x) => s + repairDamage(x), 0);
+  const order = { id: (g.nextRepairId = (g.nextRepairId ?? 0) + 1), at, ships: q.ships, cost: q.cost, days: q.days, total, left: total, day: g.day };
+  (g.repairs ??= []).push(order);
+  post(g, "repairOrder", { city: at, ships: q.ships, nships: q.ships.length, cost: q.cost, days: q.days, orderId: order.id });
+  return { ok: true, id: order.id, cost: q.cost, days: q.days };
+}
+/** Daily yard work: REPAIR_POINTS_PER_DAY hull points per ship, clamped at 100; the order closes when every listed hull is sound. Money already moved at order time. */
+export function processRepairs(g) {
+  for (const o of [...(g.repairs ?? [])]) {
+    let done = true;
+    for (const id of o.ships) {
+      const s = g.ships.find((x) => x.id === id);
+      if (!s) continue; // orders block selling, so a missing member is foreign state: skip it
+      const pts = Math.min(REPAIR_POINTS_PER_DAY, 100 - (s.hull ?? 100));
+      if (pts > 0) { s.hull = (s.hull ?? 100) + pts; o.left = Math.max(0, o.left - pts); }
+      if ((s.hull ?? 100) < 100) done = false;
+    }
+    if (done) { g.repairs.splice(g.repairs.indexOf(o), 1); post(g, "repairDone", { city: o.at, ships: o.ships, nships: o.ships.length, orderId: o.id }); }
+  }
+}
+/** Cancel a repair order: the yard keeps what it already delivered and refunds the rest, floor(cost x left/total). */
+export function cancelRepair(g, orderId) {
+  const o = (g.repairs ?? []).find((x) => x.id === orderId);
+  if (!o) return { ok: false, reason: "no order" };
+  const refund = o.total > 0 ? Math.floor((o.cost * o.left) / o.total) : 0;
+  g.cash += refund;
+  g.repairs.splice(g.repairs.indexOf(o), 1);
+  post(g, "repairCancel", { city: o.at, ships: o.ships, nships: o.ships.length, orderId: o.id, refund });
+  return { ok: true, refund };
 }
 export const PRIZE_SELL_RATE = 0.4; // a captured pirate ship resells below the cared-for rate
 export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * (ship.prize ? PRIZE_SELL_RATE : SELL_RATE) * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
 export function sellShip(g, ship) {
   if(g.over||!g.ships.includes(ship))return {ok:false,reason:"not an active owned ship"};
+  if (repairOf(g, ship.id)) return { ok: false, reason: "in repair" };
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (g.ships.length <= 1) return { ok: false, reason: "last ship" };
   if (cargoUsed(ship) > 0) return { ok: false, reason: "hold not empty" };

@@ -11,7 +11,7 @@ import { CANNON_PRICE, cannonsOf, maxCannons, gunCond, gunRepairCost, crewLimits
 import { shipCapacity } from "../sim/trade.mjs";
 import { hullSpeedFactor } from "../game/seawear.mjs";
 import { armoryBlock, gearNextWeight } from "../sim/armory.mjs";
-import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, warehouseOf, quote } from "../game/game.mjs";
+import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, repairOf, repairDays, warehouseOf, quote } from "../game/game.mjs";
 
 const WEAPON_NAME = { es: { ballista: "Ballesta", catapult: "Catapulta", cannon: "Cañón", bombard: "Bombarda" }, en: { ballista: "Ballista", catapult: "Catapult", cannon: "Cannon", bombard: "Bombard" } };
 export const SW = {
@@ -27,7 +27,7 @@ export const SW = {
     guns: "Armamento", gunCond: "Estado {c}%", gunNone: "Sin cañones",
     gunRepair: "Reparar armamento ({p})", cannonBuy: "Comprar cañón ({p})",
     armory: "Armería", weaponBuy: "{w} ({p}, poder {pw}, peso {wt})", gearLine: "Equipo de marineros: nivel {l}/{m}", gearBuy: "Mejorar equipo ({p})", weightLine: "Armas y equipo restan {w} de bodega",
-    hull: "Casco {h}%", repair: "Reparar casco ({p})", hullSlow: "Lento por casco dañado: −{p}% de velocidad",
+    hull: "Casco {h}%", repair: "Reparar casco ({p} · {d} días)", repairActive: "En reparación · listo el día {d}", cancel: "Cancelar", hullSlow: "Lento por casco dañado: −{p}% de velocidad",
     armWhy: { "game over": "La partida ha terminado.", "at sea": "El barco esta en el mar.", "no cash": "No llegan las monedas.", "hold full": "La bodega no tiene sitio para ese peso.", "full": "No caben mas armas en esta nave.", "max level": "El equipo ya esta al maximo." },
     upkeep: "Mantenimiento: {u}/día", value: "Valor: {v}",
     atPort: "En {city}", atSea: "En el mar: {from} → {to} ({eta})",
@@ -50,7 +50,7 @@ export const SW = {
     guns: "Armament", gunCond: "Condition {c}%", gunNone: "No cannons",
     gunRepair: "Repair armament ({p})", cannonBuy: "Buy a cannon ({p})",
     armory: "Armory", weaponBuy: "{w} ({p}, power {pw}, weight {wt})", gearLine: "Sailors' gear: level {l}/{m}", gearBuy: "Upgrade gear ({p})", weightLine: "Weapons and gear take {w} from the hold",
-    hull: "Hull {h}%", repair: "Repair hull ({p})", hullSlow: "Slowed by hull damage: −{p}% speed",
+    hull: "Hull {h}%", repair: "Repair hull ({p} · {d} d)", repairActive: "In repair · ready day {d}", cancel: "Cancel", hullSlow: "Slowed by hull damage: −{p}% speed",
     armWhy: { "game over": "The game is over.", "at sea": "The ship is at sea.", "no cash": "Not enough coins.", "hold full": "The hold has no room for that weight.", "full": "No room for more weapons on this ship.", "max level": "Gear is already at max level." },
     upkeep: "Upkeep: {u}/day", value: "Value: {v}",
     atPort: "At {city}", atSea: "At sea: {from} → {to} ({eta})",
@@ -145,9 +145,9 @@ function crewTab(g, s, lang, t, fmt, fmtM = fmt) {
 }
 
 function dataTab(g, s, t, hp) {
-  const fmt = hp.fmt, cn = hp.cityName, rp = repairPrice(g, s), sv = shipValue(s);
+  const fmt = hp.fmt, cn = hp.cityName, rp = repairPrice(g, s), ro = repairOf(g, s.id), sv = shipValue(s);
   let h = "";
-  h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} <button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp))}</button><br>`;
+  h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} ${ro ? `<small>${t.repairActive.replace("{d}", ro.day + ro.days)}</small> <button data-repaircancel="${ro.id}">${t.cancel}</button>` : `<button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp)).replace("{d}", repairDays([s]))}</button>`}<br>`;
   { const hs = Math.round((1 - hullSpeedFactor(s.hull)) * 100); if (s.voyage && hs > 0) h += `<small class="warn">${t.hullSlow.replace("{p}", hs)}</small><br>`; }
   h += `${t.upkeep.replace("{u}", SHIP_TYPES[s.type].upkeepPerDay)} · ${t.value.replace("{v}", fmt(sv))}</p>`;
   h += s.voyage

@@ -112,7 +112,7 @@ import { TICKS_PER_HOUR, tickParts, calendarOf, LEGACY_START_YEAR, START_YEAR } 
 import { LOAN_RATE, LOAN_MAX } from "../src/game/bank.mjs";
 import { termsFor } from "../src/game/payrep.mjs";
 import { buyChart, chartOffers, chartPrice, routeRumorTarget, buyRouteRumor, ROUTE_RUMOR_PRICE } from "../src/game/charts.mjs";
-import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, repairShip, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, doSellStored, doSellCombined, sellableHold, sellRequestQty, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, START_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
+import { warehouseCap, setRoute, setRouteAdv, clearRoute, repeatRoute, routeStats, borrow, repay, feeMul, bankRoom, loansOwed, newGame, advanceTick, TICKS_PER_DAY, doBuy, doSell, doSail, waitUntilArrival, buyCaravel, orderShip, orderRepair, cancelRepair, repairOf, repairQuote, repairDays, repairGuns, buyCannon, buyWeapon, hireCrew, dismissCrew, repairPrice, sellShip, shipValue, buyRumor, RUMOR_PRICE, formConvoy, leaveConvoy, sailConvoy, convoyOf, isLive, buyWarehouse, storeGoods, takeGoods, warehouseOf, WAREHOUSE_PRICE, doSellStored, doSellCombined, sellableHold, sellRequestQty, quote, bestPorts, netWorth, cargoUsed, SHIP_TYPES, GOAL_CASH, START_CASH, DEADLINE_DAYS, CARAVEL_PRICE, isDiscovered } from "../src/game/game.mjs";
 import { stewardOf, setStewardRule, clearStewardRule, setStewardReserve } from "../src/game/steward.mjs";
 import { offerOf, activeContracts, acceptContract } from "../src/game/contracts.mjs";
 import { contractMaxFor } from "../src/game/rankperks.mjs";
@@ -980,10 +980,10 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     } else if (tab === "yard") {
       if (inCity && city3dId && s.at !== city3dId) h += `<p class="yd-away"><b>${lang === "en" ? "Dock this ship here to repair or arm it." : "Atraca este barco aquí para repararlo o armarlo."}</b> <small>${lang === "en" ? `It is ${s.voyage ? "at sea" : "in " + cityName(s.at)}. You can still order new ships.` : `Ahora está ${s.voyage ? "en el mar" : "en " + cityName(s.at)}. Aun así puedes encargar barcos nuevos.`}</small></p>`;
       { const en = lang === "en", sec = (title, body, cls = "") => `<section class="yd-sec ${cls}"><h4>${title}</h4>${body}</section>`;
-        const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s);
+        const away = inCity && city3dId && s.at !== city3dId, hullNow = Math.round(s.hull ?? 100), rp = repairPrice(g, s), gp = gunRepairCost(s), ro = repairOf(g, s.id), rd = repairDays([s]);
         // 1. what needs doing to this ship, with the numbers that matter
         h += sec(`${en ? "Your ship" : "Tu barco"}: ${esc(shipDisplayName(s,t.types))}`,
-          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b><button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) : (en ? "Hull in order" : "Casco en buen estado")}</button></div>` +
+          `<div class="yd-row"><span>${en ? "Hull" : "Casco"}</span><progress max="100" value="${hullNow}"></progress><b>${hullNow}%</b>${ro ? `<small>${en ? "In repair" : "En reparación"} · ${en ? "ready day" : "listo el día"} ${ro.day + ro.days}</small><button data-repaircancel="${ro.id}">${en ? "Cancel" : "Cancelar"}</button>` : `<button data-repair="1" ${away || rp <= 0 || g.cash < rp ? "disabled" : ""}>${rp > 0 ? (en ? "Repair" : "Reparar") + " · " + fmt(rp) + " · " + rd + " d" : (en ? "Hull in order" : "Casco en buen estado")}</button>`}</div>` +
           `<div class="yd-row"><span>${en ? "Guns" : "Cañones"}</span><b>${weaponCount(s)}/${maxCannons(s)}</b><small>${weaponCount(s) ? Object.entries(weaponsOf(s)).map(([k, n]) => t.weaponNames[k] + " ×" + n).join(", ") + " · " + t.weaponPowerLbl.replace("{p}", weaponPower(s)) : (en ? "unarmed" : "sin armar")}</small><button data-gunrepair="1" ${away || gp <= 0 || s.voyage || g.cash < gp ? "disabled" : ""}>${cannonsOf(s) ? (gp > 0 ? (en ? "Repair guns" : "Reparar cañones") + " · " + fmt(gp) : (en ? "Guns in order" : "Cañones en buen estado")) : t.gunNone}</button></div>` +
           `<div class="yd-weapons">${Object.entries(WEAPON_TYPES).map(([k, w]) => {
             const price = armoryPrice(g, s.at, w.price), why = away ? "not in this port" : weaponCount(s) >= maxCannons(s) ? "full" : armoryBlock(g, s, w.weight, price, g.cash);
@@ -993,10 +993,13 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
 
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
-        if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button></div>`);
+        const cvrDmg = cvr ? cvr.ships.map((id) => g.ships.find((x) => x.id === id)).filter((x) => x && !x.voyage && x.at === s.at && !repairOf(g, x.id) && (x.hull ?? 100) < 100) : [];
+        const cvrCost = cvrDmg.reduce((sum, x) => sum + repairPrice(g, x), 0), cvrDays = cvrDmg.length ? repairDays(cvrDmg) : 0;
+        if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button>${cvrDmg.length ? `<button data-cvrepair="1" ${g.cash < cvrCost ? "disabled" : ""}>${en ? "Repair convoy" : "Reparar convoy"} · ${fmt(cvrCost)} · ${cvrDays} d</button>` : ""}</div>`);
         else if (!s.voyage && free.length >= 2) h += sec("Convoy", `<div class="yd-row"><small>${t.cvSailNote}</small>${convoyNameInput("",lang)}<button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button></div>`);
         // 3. orders in progress
         if (g.orders?.length) h += sec(t.orders, g.orders.map((o) => { const pct = Math.round(orderProgress(o, g.day) * 100); return `<div class="yd-row"><span>${t.types[o.type]} · ${cityName(o.at)}</span><progress max="100" value="${pct}"></progress><small>${en ? "ready day" : "listo el día"} ${o.readyDay} (${pct}%)</small></div>`; }).join(""));
+        if (g.repairs?.length) h += sec(en ? "Repairs under way" : "Reparaciones en curso", g.repairs.map((o) => { const pct = o.total > 0 ? Math.round((1 - o.left / o.total) * 100) : 100; return `<div class="yd-row"><span>${o.ships.length} ${en ? "ship(s)" : "barco(s)"} · ${cityName(o.at)}</span><progress max="100" value="${pct}"></progress><small>${en ? "ready day" : "listo el día"} ${o.day + o.days} (${pct}%)</small><button data-repaircancel="${o.id}">${en ? "Cancel" : "Cancelar"}</button></div>`; }).join(""));
         // 4. new ships last: a compact grid
         h += sec(en ? "Build a new ship" : "Encargar un barco nuevo", `<div class="yardcards">` + Object.entries(SHIP_TYPES).map(([k, v]) => `<div class="card yc">${shipIconSvg(k)}<b>${t.types[k]}</b><small>${t.yc.replace("{c}", v.capacity).replace("{d}", v.buildDays).replace("{u}", v.upkeepPerDay)}</small><button data-order="${k}" ${g.cash < v.price ? "disabled" : ""}>${t.orderShort.replace("{p}", fmt(v.price))}</button></div>`).join("") + `</div><p><small>${t.yardInfo}</small></p>`, "yd-new");
       }
@@ -1149,7 +1152,9 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-cvform]").forEach((e) => e.onclick = () => act(() => formConvoy(g, g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x)).slice(0, 5).map((x) => x.id), P.querySelector("#convoy-name").value)));
   P.querySelectorAll("[data-cvrename]").forEach(e=>e.onclick=()=>{const input=P.querySelector("#convoy-name");input.setCustomValidity(input.value.trim()?"":(lang==="es"?"Escribe un nombre.":"Enter a name."));if(input.reportValidity())act(()=>renameConvoy(g,e.dataset.cvrename,input.value));});
   P.querySelectorAll("[data-cvleave]").forEach((e) => e.onclick = () => act(() => leaveConvoy(g, s.id)));
-  P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
+  P.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => orderRepair(g, [s.id], s.at)));
+  P.querySelectorAll("[data-repaircancel]").forEach((e) => e.onclick = () => act(() => cancelRepair(g, Number(e.dataset.repaircancel))));
+  P.querySelectorAll("[data-cvrepair]").forEach((e) => e.onclick = () => act(() => { const cv = convoyOf(g, s), dmg = cv ? cv.ships.map((id) => g.ships.find((x) => x.id === id)).filter((x) => x && !x.voyage && x.at === s.at && !repairOf(g, x.id) && (x.hull ?? 100) < 100) : []; if (dmg.length) orderRepair(g, dmg.map((x) => x.id), s.at); }));
   P.querySelectorAll("[data-sellship-id]").forEach((e) => e.onclick = () => act(() => { const x = g.ships.find((y) => y.id === Number(e.dataset.sellshipId)); const r = x && sellShip(g, x); if (r && r.ok) sel = 0; }));
   P.querySelectorAll("[data-caravel]").forEach((e) => e.onclick = () => act(() => { const r = buyCaravel(g, s.at); if (r.ok) sel = g.ships.length - 1; }));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
@@ -1224,7 +1229,8 @@ function renderShipWin() {
   d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); });
   d.querySelectorAll("[data-gear]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyGear(g, s))); if (r && !r.ok) armFailNote(r.reason); });
-  d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => repairShip(g, s, city3dId ?? undefined)));
+  d.querySelectorAll("[data-repair]").forEach((e) => e.onclick = () => act(() => orderRepair(g, [s.id], s.at)));
+  d.querySelectorAll("[data-repaircancel]").forEach((e) => e.onclick = () => act(() => cancelRepair(g, Number(e.dataset.repaircancel))));
   d.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
 }
 

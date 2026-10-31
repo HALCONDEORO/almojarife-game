@@ -1,7 +1,7 @@
 // Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
-import {newGame,doBuy,doSell,repairShip,repairCost,repairPrice} from '../src/game/game.mjs';
+import {newGame,doBuy,doSell,orderRepair,repairOf,repairCost,repairPrice} from '../src/game/game.mjs';
 import {noteTrade,decayRep,portRep,repTierOf,feeMul,repairMul,addRep,repOnSale,repOnBuy,scarcityOf,REP_MIN,REP_MAX,REP_TRADE_CAP} from '../src/game/reputation.mjs';
 import {FEE} from '../src/sim/trade.mjs';
 import {houseHtml} from '../src/view/rankview.mjs';
@@ -51,8 +51,8 @@ test('the discount reaches real trades and real repairs',()=>{
  assert.ok(rc.ok&&rd.ok);assert.ok(rc.cost<rd.cost,`renowned pays less than ill-seen: ${rc.cost} < ${rd.cost}`);
  const{g,s}=mk();addRep(g,'cadiz',80);s.hull=50;
  const full=repairCost(s),disc=repairPrice(g,s);
- assert.ok(disc<full);const cash=g.cash;const r=repairShip(g,s);
- assert.ok(r.ok);assert.equal(r.cost,disc);assert.equal(s.hull,100);assert.equal(g.cash,cash-disc);
+ assert.ok(disc<full);const cash=g.cash;const r=orderRepair(g,[s.id],s.at);
+ assert.ok(r.ok);assert.equal(r.cost,disc);assert.equal(g.cash,cash-disc);assert.ok(repairOf(g,s.id));
 });
 test('reputation is clamped and survives a save/load',()=>{
  const{g}=mk();
