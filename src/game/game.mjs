@@ -56,6 +56,7 @@ import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
+import { whLocked } from "./whlock.mjs";
 import { accrueWatch, whCap } from "./whwatch.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { prizeLocked } from "./privateering.mjs";
@@ -386,6 +387,7 @@ export function doSellStored(g, city, good, qty) {
   if (portClosed(g, city)) return { ok: false, reason: "port closed" };
   const w = warehouseOf(g, city);
   if (!w) return { ok: false, reason: "no warehouse here" };
+  if (whLocked(w, good)) return { ok: false, reason: "locked" };
   const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, city);
   const r = sellStored(g.world, g.market, city, w, good, qty, f);
@@ -401,11 +403,12 @@ export function sellableHold(g, ship, good) {
 /** Quantity a sell button may request: clamped to the sellable hold plus the store stock,
  *  so a fixed-quantity click never asks for locked prize goods (the UI and doSellCombined() agree). */
 export function sellRequestQty(g, ship, good, qty, store) {
-  return Math.min(qty, sellableHold(g, ship, good) + (store?.goods?.[good] ?? 0));
+  return Math.min(qty, sellableHold(g, ship, good) + (whLocked(store, good) ? 0 : (store?.goods?.[good] ?? 0)));
 }
 /** Combined sell preview with the same sellable hold, fee and purse the execution will use. */
 export function previewSellCombinedPort(g, ship, good, qty, store) {
-  return previewSellCombined(g.world, g.market, ship, store, good, qty, FEE * feeMul(g, ship.at), sellableHold(g, ship, good));
+  const storeEff = whLocked(store, good) ? { ...store, goods: { ...store?.goods, [good]: 0 } } : store; // a locked good counts as empty: preview and execution agree
+  return previewSellCombined(g.world, g.market, ship, storeEff, good, qty, FEE * feeMul(g, ship.at), sellableHold(g, ship, good));
 }
 /** One sale click that empties the hold first and then the port warehouse, as a single transaction:
  *  one fee (computed before any respect gain), one effects pass, and a total that matches previewSellCombined(). */
@@ -413,7 +416,7 @@ export function doSellCombined(g, ship, good, qty, store) {
   if (g.over) return { ok: false, reason: "game over" };
   const city = ship.at;
   if (portClosed(g, city)) return { ok: false, reason: "port closed" };
-  const have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
+  const have = ship.cargo[good] ?? 0, stored = whLocked(store, good) ? 0 : (store?.goods?.[good] ?? 0); // a locked good never leaves the store, not even in a combined sale
   const avail = sellableHold(g, ship, good), locked = have - avail; // prize goods wait for a court: they stay in the hold (flag off: never locked); the UI previews with the same sellableHold()
   if (locked > 0 && qty > avail + stored) return { ok: false, reason: "prize" };
   qty = Math.min(qty, avail + stored);
@@ -582,6 +585,7 @@ export function takeGoods(g, ship, good, qty) {
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
   if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
+  if (whLocked(w, good)) return { ok: false, reason: "locked" };
   qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
   const had=w.goods[good],paid=w.basis?.[good]??0,transferred=qty===had?paid:Math.round(paid*qty/had);
