@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame } from "../src/game/game.mjs";
+import { newGame, advanceTick } from "../src/game/game.mjs";
 import { automaticEncounter, resolvePirates } from "../src/game/encounterdaily.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 
 const world = loadWorld();
 
-// A ship mid-voyage with the default rules (pirate-fight flag off: the classic single roll).
+// A ship mid-voyage using the current default combat rules.
 const seafarer = () => {
   const game = newGame(world);
   game.noGoal = true;
@@ -51,9 +51,16 @@ test("a tick can never be rerolled, even when the roll produced nothing", () => 
   const { game, ship } = seafarer();
   game.tick = 7;
   const first = automaticEncounter(game, ship, world);
+  assert.equal(first, null, "this deterministic tick has no encounter");
+  assert.equal(game.encounterTicks[String(ship.id)], 7, "even an empty roll records the tick");
+  const before = JSON.stringify(game);
   const second = automaticEncounter(game, ship, world);
   assert.equal(second, null, "the version mark is written before the roll");
-  if (first) assert.equal(game.encounters.length + (game.pending ? 1 : 0), 1, "at most one outcome per tick");
+  assert.equal(JSON.stringify(game), before, "a repeated empty tick writes nothing");
+  const loaded = deserialize(serialize(game, "T"), world).g;
+  const saved = JSON.stringify(loaded);
+  assert.equal(automaticEncounter(loaded, loaded.ships[0], world), null);
+  assert.equal(JSON.stringify(loaded), saved, "the empty-roll version mark survives reload");
 });
 
 test("a bad choice is rejected and the decision stays queued; resolving activates exactly one report", () => {
@@ -97,4 +104,21 @@ test("a decision whose ship is no longer sailable is rejected at resolve, never 
   sailIntoPirates(game, ship);
   delete ship.voyage; // the ship somehow stopped sailing while the decision waited
   assert.equal(resolvePirates(game, "fight").ok, false, "stale binding rejected");
+});
+
+
+test("the real tick loop pauses for both the queued choice and the open final report", () => {
+  const { game, ship } = seafarer();
+  sailIntoPirates(game, ship);
+  const queued = JSON.stringify(game);
+  advanceTick(game);
+  assert.equal(JSON.stringify(game), queued, "a queued choice pauses the whole tick");
+  resolvePirates(game, "flee");
+  const active = JSON.stringify(game);
+  advanceTick(game);
+  assert.equal(JSON.stringify(game), active, "an open final report also pauses the tick");
+  const loaded = deserialize(serialize(game, "T"), world).g;
+  const saved = JSON.stringify(loaded);
+  assert.equal(resolvePirates(loaded, "flee").ok, false);
+  assert.equal(JSON.stringify(loaded), saved, "a saved final report cannot be applied twice");
 });
