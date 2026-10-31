@@ -39,7 +39,12 @@ export function takeLoan(g, city, amount, netWorth, post = () => {}) {
   post(g, "loan", { city, amt: amount, rate: +((loan.rate ?? LOAN_RATE) * 100).toFixed(2), dueDay: loan.due });
   return { ok: true, loan };
 }
-/** Pay back up to `amount` of one loan, from positive cash only. */
+/** Pay back up to `amount` of one loan, from positive cash only.
+ * Validate and normalize before any effect: the offer is clamped to what is owed and to the
+ * positive cash on hand, sub-cent offers normalize to zero, and a payment with no possible
+ * effect writes nothing (no cash, no record, no message). The record, the cash and the
+ * ledger post all see the same final amount; a fully paid loan closes and replaying its id
+ * is a miss, not a second payment. */
 export function repayLoan(g, id, amount, post = () => {}) {
   const l = loansOf(g).find((x) => x.id === id);
   if (!l) return { ok: false, reason: "no loan" };

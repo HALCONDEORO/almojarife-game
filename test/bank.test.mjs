@@ -162,3 +162,34 @@ test("typed dispatch: payload coercion boundaries, staged effects, warn-once and
   assert.ok(g.cash < 0, "the balance can go negative collecting an unsigned debt");
   assert.ok((g.inbox ?? []).some((m) => m.kind === "loanLate"));
 });
+
+test("repay validates and normalizes before effects: the record only sees the final amount", () => {
+  const g = idle(), city = g.ships[0].at;
+  const r = borrow(g, city, 500), id = r.loan.id;
+  // a payment with no possible effect writes nothing: no cash moved, no record touched, no message
+  const box0 = (g.inbox ?? []).length;
+  assert.equal(repay(g, id, 0).reason, "no cash");
+  assert.equal(repay(g, id, NaN).reason, "no cash");
+  assert.equal(repay(g, 999, 100).reason, "no loan");
+  assert.equal(r.loan.left, 500); assert.equal((g.inbox ?? []).length, box0, "failed repayments are silent");
+  // overpayment normalizes to what is owed; the record and the post see the same final amount
+  const cash0 = g.cash;
+  const p = repay(g, id, 99999);
+  assert.ok(p.ok); assert.equal(p.paid, 500, "clamped to the debt");
+  assert.equal(g.cash, cash0 - 500);
+  assert.equal(g.loans.length, 0, "a fully paid loan closes");
+  const paid = (g.inbox ?? []).find((m) => m.kind === "loanPaid");
+  assert.equal(paid.amt, 500, "ledger and record use the same final terms");
+  // replaying the closed id is a miss, not a second payment
+  const cash1 = g.cash;
+  assert.equal(repay(g, id, 100).reason, "no loan");
+  assert.equal(g.cash, cash1);
+  // partial payment: cash floor is zero and sub-cent offers normalize to nothing
+  const r2 = borrow(g, city, 500);
+  g.cash = 0.004;
+  assert.equal(repay(g, r2.loan.id, 0.004).reason, "no cash", "sub-cent normalizes to zero");
+  g.cash = 120.5;
+  const p2 = repay(g, r2.loan.id, 200);
+  assert.ok(p2.ok); assert.equal(p2.paid, 120.5, "clamped to the cash on hand");
+  assert.equal(r2.loan.left, 379.5); assert.equal(g.cash, 0);
+});
