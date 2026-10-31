@@ -54,7 +54,7 @@ async function main(args) {
   if (!['candidate', 'delivered'].includes(mode) || !/^[1-9][0-9]*$/.test(number ?? '') || !shaPattern.test(expected ?? '') || (mode === 'candidate' && paths.length)) throw Error('Usage: node tools/delivery/verify.mjs candidate PR FULL_HEAD_SHA | delivered PR FULL_MERGE_SHA PATH [PATH...]');
   const api = 'https://api.github.com/repos/HALCONDEORO/almojarife-game/';
   const pr = await get(`${api}pulls/${number}`);
-  let evidence;
+  let evidence = null;
   if (mode === 'candidate') {
     const [checks, status] = await Promise.all([get(`${api}commits/${expected}/check-runs?per_page=100`), get(`${api}commits/${expected}/status`)]);
     evidence = candidateEvidence(pr, expected, checks, status);
@@ -71,8 +71,8 @@ async function main(args) {
     }
     evidence = deploymentEvidence(pr, expected, runs, paths, comparisons);
   }
-  console.log(JSON.stringify(evidence, null, 2));
+  process.stdout.write(`${JSON.stringify(evidence, null, 2)}\n`);
   if (!evidence.ok) process.exitCode = 1;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main(process.argv.slice(2)).catch(error => { console.error(error.message); process.exitCode = 1; });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main(process.argv.slice(2)).catch(error => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
