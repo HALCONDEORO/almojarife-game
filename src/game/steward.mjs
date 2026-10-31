@@ -57,9 +57,9 @@ export function clearStewardRule(g, city, good) {
    - The relative order of the other entries is preserved; the rules object keeps
      its key order through JSON, so the list survives a save/load round-trip. */
 export function moveStewardRule(g, city, good, dir) {
-  const w = g.warehouses?.[city];
-  if (!w) return { ok: false, reason: "no warehouse here" };
-  const adm = w.admin;
+  const warehouse = g.warehouses?.[city];
+  if (!warehouse) return { ok: false, reason: "no warehouse here" };
+  const adm = warehouse.admin;
   if (!adm || !Object.prototype.hasOwnProperty.call(adm.rules, good)) return { ok: false, reason: "no rule" };
   if (dir !== -1 && dir !== 1) return { ok: false, reason: "bad direction" };
   const keys = Object.keys(adm.rules), from = keys.indexOf(good), to = from + dir;
