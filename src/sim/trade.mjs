@@ -122,23 +122,23 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
    qty is a positive safe integer, or Infinity for the typed "all that fits":
    a maximum-integer sentinel would silently underfill a hold larger than it. */
 export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
-  const e = market[ship.at]?.[good];
-  if (ship.voyage || !e || !(qty === Infinity || (Number.isSafeInteger(qty) && qty > 0)) || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
+  const entry = market[ship.at]?.[good];
+  if (ship.voyage || !entry || !(qty === Infinity || (Number.isSafeInteger(qty) && qty > 0)) || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
   const room = Math.max(0, shipCapacity(ship) - cargoUsed(ship));
-  const lim = Math.min(qty, e.stock, room);
-  const sim = { ...e }; let n = 0, cost = 0;
+  const lim = Math.min(qty, entry.stock, room);
+  const sim = { ...entry }; let n = 0, cost = 0;
   while (n < lim) {
     const unit = ceil2(price(world, sim, good) * (1 + fee));
     if (cost + unit > cash) break;
     cost += unit; sim.stock -= 1; n++;
   }
-  return { qty: n, cost, avg: n ? Math.round(cost / n * 100) / 100 : 0, next: price(world, sim, good), limit: n < qty ? (e.stock < qty && n === e.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
+  return { qty: n, cost, avg: n ? Math.round(cost / n * 100) / 100 : 0, next: price(world, sim, good), limit: n < qty ? (entry.stock < qty && n === entry.stock ? "stock" : room < qty && n === room ? "room" : "cash") : null };
 }
 /** What a sell of qty would do, without changing anything. Same rules as sell(). */
 export function previewSell(world, market, ship, good, qty, fee = FEE) {
-  const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
-  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
-  const sim = { ...e }; let revenue = 0;
+  const entry = market[ship.at]?.[good], have = ship.cargo[good] ?? 0;
+  if (ship.voyage || !entry || !Number.isSafeInteger(qty) || qty <= 0 || have <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const sim = { ...entry }; let revenue = 0;
   const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sell()
   const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
   let pvCents = 0;
@@ -158,8 +158,8 @@ export function previewSell(world, market, ship, good, qty, fee = FEE) {
  *  purse cap and fee as sell(), but the goods (and their book cost) leave the warehouse, not a hold. */
 export function sellStored(world, market, city, store, good, qty, fee = FEE) {
   if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
-  const e = market[city]?.[good];
-  if (!e) return { ok: false, reason: "no market" };
+  const entry = market[city]?.[good];
+  if (!entry) return { ok: false, reason: "no market" };
   qty = Math.min(qty, store.goods?.[good] ?? 0);
   if (qty <= 0) return { ok: false, reason: "nothing to sell" };
   let revenue = 0;
@@ -168,9 +168,9 @@ export function sellStored(world, market, city, store, good, qty, fee = FEE) {
   let revenueCents = 0;
   let n = 0;
   while (n < qty) {
-    e.stock += 1;
-    const unit = floor2(price(world, e, good) * (1 - fee));
-    if (purse && revenueCents + Math.round(unit * 100) > cashCents) { e.stock -= 1; break; }
+    entry.stock += 1;
+    const unit = floor2(price(world, entry, good) * (1 - fee));
+    if (purse && revenueCents + Math.round(unit * 100) > cashCents) { entry.stock -= 1; break; }
     revenueCents += Math.round(unit * 100); revenue += unit; n++;
   }
   if (n === 0) return { ok: false, reason: "market has no cash" };
@@ -185,11 +185,11 @@ export function sellStored(world, market, city, store, good, qty, fee = FEE) {
 }
 /** What a sale of qty would do taken from the ship's hold FIRST and then from the port warehouse,
  *  one market simulation so the price moves across both parts. No mutation. */
-export function previewSellCombined(world, market, ship, store, good, qty, fee = FEE, holdAvail) {
-  const e = market[ship.at]?.[good], have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
+export function previewSellCombined(world, market, ship, store, good, qty, fee = FEE, holdAvail = undefined) {
+  const entry = market[ship.at]?.[good], have = ship.cargo[good] ?? 0, stored = store?.goods?.[good] ?? 0;
   const avail = Math.min(have, holdAvail ?? have); // sellable hold: locked prize goods never enter the preview, exactly like doSellCombined()
-  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || avail + stored <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
-  const sim = { ...e }; let revenue = 0;
+  if (ship.voyage || !entry || !Number.isSafeInteger(qty) || qty <= 0 || avail + stored <= 0) return { qty: 0, revenue: 0, avg: 0, profit: 0, next: null };
+  const sim = { ...entry }; let revenue = 0;
   const pvPurse = WHOLESALE_PURSE_BINDING ? commerceOf(market[ship.at]) : null; // same cash cap as sellStored()
   const pvCashCents = pvPurse ? Math.round(pvPurse.cash * 100) : 0;
   let pvCents = 0;
