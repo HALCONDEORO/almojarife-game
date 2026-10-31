@@ -7,9 +7,9 @@ import { messageText } from "../src/view/ledgerview.mjs";
 const world = loadWorld();
 const mkGame = () => { const game = newGame(world); game.eventsOn = false; game.noGoal = true; return game; };
 const pair = (game) => { const portA = game.ships[0].at, portB = world.cities.find((city) => city.id !== portA).id; return [portA, portB]; };
-const goodAt = (game, portA) => Object.keys(world.goods).find((k) => game.market[portA][k] && game.market[portA][k].stock > 50);
+const goodAt = (game, portA) => Object.keys(world.goods).find((goodId) => game.market[portA][goodId] && game.market[portA][goodId].stock > 50);
 const routeMsgs = (game, kind) => (game.inbox ?? []).filter((msgs) => msgs.kind === kind);
-const fmt = (n) => String(Math.round(n));
+const fmt = (num) => String(Math.round(num));
 
 test("route ship below 50% hull orders a repair at the dock and waits for the yard", () => {
   const game = mkGame(), ship = game.ships[0], [portA, portB] = pair(game), good = goodAt(game, portA);

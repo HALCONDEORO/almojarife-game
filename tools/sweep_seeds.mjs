@@ -34,8 +34,8 @@ function netWorth(g, t) {
 }
 function wealth(seed, extra) { const g = newGame(world, "cadiz", mkOpts(seed, extra)); for (let i = 0; i < DAYS && !g.over; i++) advanceDay(g); const bots = g.ai.map((t) => netWorth(g, t)); return { bots, median: median(bots), cash: g.ai.map((t) => Math.round(t.cash)), day: g.day }; }
 function repair(seed, extra) {
-  const g = newGame(world, "cadiz", mkOpts(seed, extra)); const s = g.ships[0]; s.hull = 60; g.cash = 5000; const c = g.cash, price = repairPrice(g, s), r = repairShip(g, s);
-  return { ok: !!r.ok && s.hull === 100 && Math.round(c - g.cash) === price, price };
+  const g = newGame(world, "cadiz", mkOpts(seed, extra)); const s = g.ships[0]; s.hull = 60; g.cash = 5000; const cash0 = g.cash, bill = repairPrice(g, s), res = repairShip(g, s);
+  return { ok: !!res.ok && s.hull === 100 && Math.round(cash0 - g.cash) === bill, price: bill };
 }
 function events(seed, extra) {
   try {

@@ -454,10 +454,10 @@ export function doGoTo(g, ship, lat, lon) {
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
   if (convoy) {
     if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
-    const r = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (s) => repairOf(g, s.id) });
-    if (!r.ok) return refuse(r.reason);
+    const leg = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (sh) => repairOf(g, sh.id) });
+    if (!leg.ok) return refuse(leg.reason);
     delete ship.navError;
-    return { ...r, toPort: true };
+    return { ...leg, toPort: true };
   }
   delete ship.navError; // a course change that goes through clears the last refusal
   if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks

@@ -991,8 +991,8 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
 
         // 2. convoy, only when it applies
         const cvr = convoyOf(g, s), free = g.ships.filter((x) => !x.voyage && x.at === s.at && !convoyOf(g, x));
-        const cvrDmg = cvr ? cvr.ships.map((id) => g.ships.find((x) => x.id === id)).filter((x) => x && !x.voyage && x.at === s.at && !repairOf(g, x.id) && (x.hull ?? 100) < 100) : [];
-        const cvrCost = cvrDmg.reduce((sum, x) => sum + repairPrice(g, x), 0), cvrDays = cvrDmg.length ? repairDays(cvrDmg) : 0;
+        const cvrDmg = cvr ? cvr.ships.map((id) => g.ships.find((sh) => sh.id === id)).filter((sh) => sh && !sh.voyage && sh.at === s.at && !repairOf(g, sh.id) && (sh.hull ?? 100) < 100) : [];
+        const cvrCost = cvrDmg.reduce((sum, sh) => sum + repairPrice(g, sh), 0), cvrDays = cvrDmg.length ? repairDays(cvrDmg) : 0;
         if (cvr) h += sec(en ? "Convoy" : "Convoy", `<div class="yd-row"><small>${t.cvIn.replace("{name}", esc(cvr.name)).replace("{n}", cvr.ships.length)} ${t.cvSailNote}</small>${convoyNameInput(cvr.name,lang)}<button data-cvrename="${cvr.id}">${en?"Rename":"Renombrar"}</button><button data-cvleave="1" ${s.voyage ? "disabled" : ""}>${t.cvLeave}</button>${cvrDmg.length ? `<button data-cvrepair="1" ${g.cash < cvrCost ? "disabled" : ""}>${en ? "Repair convoy" : "Reparar convoy"} · ${fmt(cvrCost)} · ${cvrDays} d</button>` : ""}</div>`);
         else if (!s.voyage && free.length >= 2) h += sec("Convoy", `<div class="yd-row"><small>${t.cvSailNote}</small>${convoyNameInput("",lang)}<button data-cvform="1">${t.cvForm.replace("{n}", Math.min(free.length, 5))}</button></div>`);
         // 3. orders in progress
