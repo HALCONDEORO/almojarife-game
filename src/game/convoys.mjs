@@ -26,6 +26,12 @@ export function escortOf(g, ship) {
 
 /** Group 2-5 docked owned ships into a convoy. */
 /**
+ * Membership contract: membership exists only as a registered convoy in g.convoys plus a
+ * backlink on each member (s.convoy). A retained candidate list is not membership, and a
+ * convoy object is not visible until both writes land together inside formConvoy. The
+ * invariant "registered ids have backlinked members; backlinks point at registered ids that
+ * list the ship" holds after every form/leave/disband and across save/load. Unknown ids are
+ * clean rejections on every command.
  * Candidate contract: a candidate list is construction-time advice (the desktop panel
  * auto-selects docked ships at click time). Eligibility is re-validated here at execution and
  * formation is all-or-nothing: any failed guard mutates nothing - no registration, no
