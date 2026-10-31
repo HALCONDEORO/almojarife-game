@@ -31,6 +31,11 @@ export function escortOf(g, ship) {
  * all members, so a failure always fires on the first call - departures are atomic, a failed
  * first leg strands nobody. Reset is selective: disband/leave clear exactly the backlink and
  * the registration; every other ship field (name, cargo, hull, position) is preserved.
+ * Handle contract: formConvoy's returned object is a view of the registration, not the
+ * result - the g.convoys entry (plain state, saved and loaded like the rest) is what keeps
+ * the group alive and what every command consults. Once disbanded, the old handle is inert:
+ * commands answer no convoy and the roster it still shows commits nothing. A failed command
+ * returns an explicit outcome and leaves the prepared group alive for a retry.
  * Stage contract: registration starts no behavior - a convoy forms without any voyage and
  * never sails on its own; sailing is a separate explicit command. Metadata policy: an
  * unnamed convoy gets a default name and a rejected rename keeps the old one. A sold member

@@ -163,6 +163,29 @@ test('departure validates before any callback; a failed first leg strands nobody
  assert.equal(g.convoys[cv.id],undefined,'registration released');
  assert.equal(s0.at,'barcelona');assert.equal(s1.at,'cadiz','positions untouched by the reset');
 });
+test('a returned handle is not the result: the registration keeps the group alive and a stale handle commands nothing',()=>{
+ const {g,s0,s1}=mk();g.noGoal=true;
+ const cv=formConvoy(g,[s0.id,s1.id],'Flota').convoy;
+ // the registration, not the caller's handle, keeps the prepared group alive across a save
+ const g2=JSON.parse(JSON.stringify(g));
+ assert.ok(g2.convoys[cv.id],'the group survives in plain state');
+ assert.ok(sailConvoy(g2,cv.id,'barcelona',{doSail}).ok,'commands reach it from a reloaded state');
+ // a failed later command has an explicit outcome and the prepared group recovers
+ s0.crew=0; // short-crewed: the departure is refused before anyone moves
+ const r=sailConvoy(g,cv.id,'barcelona',{doSail});
+ assert.equal(r.ok,false);assert.equal(r.reason,'crew','an explicit outcome, not a silent drop');
+ assert.ok(g.convoys[cv.id],'the prepared group is still alive');
+ s0.crew=10;
+ assert.ok(sailConvoy(g,cv.id,'barcelona',{doSail}).ok,'retry after the fix executes the plan');
+ assert.ok(s0.voyage&&s1.voyage);
+ // a stale handle commands nothing once the registration is gone
+ let n=0;while(s0.voyage&&n++<400)advanceDay(g);
+ assert.ok(disbandConvoy(g,cv.id).ok);
+ assert.equal(g.convoys[cv.id],undefined);
+ assert.equal(sailConvoy(g,cv.id,'cadiz',{doSail}).reason,'no convoy','the old handle is inert');
+ assert.equal(cv.ships.length,2,'the stale handle still reads its old roster');
+ assert.equal(convoyOf(g,s0),null,'but the ships are free');
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;
