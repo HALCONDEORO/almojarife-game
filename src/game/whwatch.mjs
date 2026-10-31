@@ -11,8 +11,9 @@
 //   sqrt shape (L = trunc(sqrt(M/2)); L > 2G -> 0, L < G -> 2, else 1; empty warehouse:
 //   M = G = 0 -> 1, M = 0 with guards -> 2). Own tuning, halved 2026-10-31: the P3 study
 //   ties the watch requirement to the REQUIRED storage and keeps the sqrt shape but does
-//   not document its divisor, so one guard now covers twice the goods (L of M instead of
-//   trunc(sqrt(2M))). A classification shown to the player, not a theft probability:
+//   not document its divisor. The halved divisor means roughly half the guards for the
+//   same stored load (the continuous goods threshold per guard quadruples: L of M instead
+//   of trunc(sqrt(2M))). A classification shown to the player, not a theft probability:
 //   no theft mechanic exists.
 // - Accounting: the wage (kept guards x WH_WATCH_WAGE, an exact integer, the same figure
 //   the tab shows as the estimate) accrues once per day into the weekly book under

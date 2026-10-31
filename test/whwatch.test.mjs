@@ -42,6 +42,12 @@ test('classification: the sqrt shape and its edges',()=>{
  assert.equal(watchSecurity(gm,'cadiz',cap),1,'L=5 == G: fair (strict high edge)');
  assert.ok(setWatch(gm,'cadiz',6,cap).ok);
  assert.equal(watchSecurity(gm,'cadiz',cap),2,'L=5 < G=6: high');
+ wh.goods={grain:72}; // L=trunc(sqrt(36))=6
+ assert.ok(setWatch(gm,'cadiz',3,cap).ok);
+ assert.equal(watchSecurity(gm,'cadiz',cap),1,'L=6 == 2G=6: fair (strict low edge; a >= mutant would read low)');
+ assert.ok(setWatch(gm,'cadiz',2,cap).ok);
+ assert.equal(watchSecurity(gm,'cadiz',cap),0,'L=6 > 2G=4: low');
+ wh.goods={grain:50}; // back to L=5 for the unpaid case below
  watchOf(gm,'cadiz').unkept=true; // mutating the saved record straight: an unpaid watch guards nothing
  assert.equal(watchSecurity(gm,'cadiz',cap),0,'unpaid: the watch counts as 0');
  assert.equal(watchKept(gm,'cadiz',cap),0);
