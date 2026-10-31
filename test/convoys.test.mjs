@@ -77,6 +77,30 @@ test('membership exists only as registration plus backlinks, consistent through 
  assert.ok(membershipIsConsistent(loaded),'invariant after reload');
  assert.equal(loaded.convoys[cv3.id].ships.length,2);
 });
+test('executed membership is bidirectional; reparenting is explicit leave-then-form, never silent',()=>{
+ const {g,s0,s1}=mk();
+ assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
+ // duplicate payload entries dedupe locally, then the whole command runs once:
+ const cv=formConvoy(g,[s0.id,s0.id,s1.id]).convoy;
+ assert.equal(cv.ships.length,2,'duplicated ids form one membership');
+ const groupedState=JSON.stringify(g);
+ // no silent reparenting: a grouped candidate rejects a second formation...
+ assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
+ assert.equal(JSON.stringify(g),groupedState,'rejected regroup writes nothing');
+ // ...movement is explicit: leave A, then form B - both directions update together
+ assert.ok(leaveConvoy(g,s0.id).ok);
+ assert.equal(s0.convoy,undefined,'leaving clears the moved ship backlink');assert.deepEqual(cv.ships,[s1.id],'roster shrank with the backlink');
+ const regrouped=formConvoy(g,[s0.id,s2.id]).convoy;
+ assert.equal(s0.convoy,regrouped.id);assert.equal(s2.convoy,regrouped.id);
+ assert.ok(!cv.ships.includes(s0.id),'the old roster no longer lists the mover');
+ // dropping to one hull auto-disbanded the old group: no one-member roster survives
+ assert.equal(g.convoys[cv.id],undefined,'single-hull convoy no longer registered');assert.equal(s1.convoy,undefined,'last hull backlink cleared by auto-disband');
+ const replayState=JSON.stringify(g);
+ // a replay of the executed command is a rejection, not a second membership:
+ assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
+ assert.equal(JSON.stringify(g),replayState,'replayed grouping writes nothing');
+ assert.equal(Object.keys(g.convoys).filter(id=>g.convoys[id].ships.includes(s0.id)).length,1,'one membership total');
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;
