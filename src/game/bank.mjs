@@ -50,7 +50,11 @@ export function repayLoan(g, id, amount, post = () => {}) {
   post(g, "loanPaid", { amt: pay });
   return { ok: true, paid: pay };
 }
-/** At settlement: warn about loans due within a week, and collect the ones that fell due. */
+/** At settlement: warn about loans due within a week, and collect the ones that fell due.
+ * Staged contract: warning writes only the warned mark (posted once per loan), never the
+ * money; collection accrues the last interest, debits the cash (the signed balance may go
+ * negative under an unsigned debt, by design), closes the record and posts loanLate,
+ * together. The caller passes the real post; the default is a silent no-op for helpers. */
 export function processLoans(g, post = () => {}) {
   let taken = 0;
   for (const l of [...loansOf(g)]) {

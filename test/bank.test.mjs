@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, netWorth, borrow, repay, bankRoom, loansOwed } from "../src/game/game.mjs";
-import { LOAN_RATE, LOAN_TERM_DAYS, LOAN_MAX, loanInterest } from "../src/game/bank.mjs";
+import { LOAN_RATE, LOAN_TERM_DAYS, LOAN_MAX, loanInterest, processLoans } from "../src/game/bank.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
+import { post } from "../src/game/ledger.mjs";
 import { messageText } from "../src/view/ledgerview.mjs";
 const world = loadWorld();
 const idle = () => { const g = newGame(world, "cadiz", {household:false,calamities:false,regionalRivals:false}); g.eventsOn = false; return g; };
@@ -131,4 +132,33 @@ test("submission is acceptance: failed guards write nothing, the returned loan i
   const back = deserialize(serialize(g, "X"), world).g;
   assert.equal(back.loans.length, 2);
   assert.deepEqual(back.loans.map((l) => [l.id, l.left, l.due]), g.loans.map((l) => [l.id, l.left, l.due]));
+});
+
+test("typed dispatch: payload coercion boundaries, staged effects, warn-once and collection past zero", () => {
+  const g = idle(), city = g.ships[0].at;
+  // payload roles validated separately: non-numbers, negatives and off-step values rejected; decimals truncate
+  for (const bad of [0, -100, 99, NaN, Infinity, 150]) assert.equal(borrow(g, city, bad).reason, "bad amount", String(bad));
+  const dec = borrow(g, city, 100.9); assert.ok(dec.ok); assert.equal(dec.loan.left, 100, "decimals truncate to the step");
+  const str = borrow(g, city, "200"); assert.ok(str.ok); assert.equal(str.loan.left, 200, "numeric strings are coerced");
+  // staged effects: ok means the record AND the money moved, together
+  const cash0 = g.cash;
+  const r = borrow(g, city, 300);
+  assert.equal(g.loans.length, 3); assert.equal(g.cash, cash0 + 300, "record and money complete together");
+  // the maximum encoded amount is the room itself
+  const room = bankRoom(g);
+  assert.equal(borrow(g, city, room + 100).reason, "over limit");
+  // warn-once: the approaching due date is posted exactly one time
+  g.loans.forEach((l) => { l.due = g.day + 5; });
+  const box0 = (g.inbox ?? []).length;
+  processLoans(g, post);
+  const warns = (g.inbox ?? []).slice(0, (g.inbox ?? []).length - box0).filter((m) => m.kind === "loanDue");
+  assert.equal(warns.length, 3, "one warning per loan");
+  processLoans(g, post);
+  assert.equal((g.inbox ?? []).filter((m) => m.kind === "loanDue").length, 3, "no re-warning");
+  // collection: an unsigned debt can drive the signed balance negative, by design
+  g.cash = 0; g.loans.forEach((l) => { l.due = g.day; });
+  processLoans(g, post);
+  assert.equal(g.loans.length, 0, "every due loan is collected and closed");
+  assert.ok(g.cash < 0, "the balance can go negative collecting an unsigned debt");
+  assert.ok((g.inbox ?? []).some((m) => m.kind === "loanLate"));
 });
