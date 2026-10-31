@@ -90,7 +90,7 @@ import { quoteWalls, proposeWall, wallsLevel, wallsKeptLevel, WALL_POP, WALL_MAX
 import { quoteTowers, startTowers, towersCount, towersKept, towersMax, TOWER_UPKEEP, TOWER_BUILD_DAYS } from "../src/game/towers.mjs"; // watchtowers on the wall (issue #363, lane C)
 import { voyagesHtml, voyagesTitle } from "../src/view/voyageview.mjs";
 import { affordRatio } from "../src/sim/market.mjs";
-import { citylifeExtra } from "../src/game/citylife.mjs";
+import { citylifeExtra, effectivePop } from "../src/game/citylife.mjs";
 import { reportsHtml, inboxHtml, chronicleHtml, LT, badge } from "../src/view/ledgerview.mjs";
 import { actionUnread } from "../src/view/msgclass.mjs";
 import { unread, markAllRead, markRead, SETTLE_EVERY, dueNow } from "../src/game/ledger.mjs";
@@ -818,7 +818,7 @@ function render() {
     } else if (tab === "city") {
       const nd2 = world.nodes[s.at], ks = Object.keys(g.world.goods), ent = g.market[s.at];
       const eff = cityEffects(g, s.at), drift = citylifeExtra(g, s.at), wallPop = WALL_POP * wallsKeptLevel(g, s.at);
-      const popEff = (nd2.pop ?? 8000) + eff.popBonus + drift + wallPop; // same composition as market demand (game.mjs), before per-good multipliers
+      const popEff = effectivePop(g, s.at); // the shared composition (citylife.mjs), before per-good multipliers
       const rows = cityRows(popEff, ks, (k) => affordRatio(ent[k], g.world.goods[k].base)), cn = { poor: t.clsPoor, middle: t.clsMiddle, rich: t.clsRich };
       { const parts = [t.cityPopBase.replace("{n}", fmt(nd2.pop ?? 8000))];
         if (eff.popBonus) parts.push(t.cityPopHouses.replace("{n}", "+" + fmt(eff.popBonus)));
@@ -885,7 +885,7 @@ function render() {
       ensurePlots(s.at);
       if (bldAction && !bldAction.plotId.startsWith(s.at + ":")) { bldAction = null; bldError = null; } // sailed away with an armed action
       const eff = cityEffects(g, s.at);
-      h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.pop + eff.popBonus)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
+      h += `<p>${t.bldInfo}</p>` + (eff.popBonus ? `<p><b>${t.bldPopLine.replace("{p}", fmt(eff.popEff)).replace("{b}", fmt(eff.popBonus))}</b></p>` : "");
       if (eff.jobs) h += `<p><b>${t.bldJobsLine.replace("{j}", fmt(eff.jobs)).replace("{f}", fmt(eff.free)).replace("{s}", Math.round(eff.staffing * 100))}</b></p>` + (eff.staffing < 1 ? `<p><b style="color:#a11">${t.bldJobsShort.replace("{s}", Math.round(eff.staffing * 100))}</b></p>` : "");
       h += bldCard();
       if (g.walls) h += wallsCityCard(g, s, t); // city walls (flag on): city-level works, no plot needed
@@ -1318,7 +1318,7 @@ function updateCityHeader(cityId) {
   const wl = wallsLevel(g, cityId); if (wl > 0) extra.push(`${lang === "es" ? "Murallas" : "Walls"} ${wl}`);
   if (hasOffice(g, cityId)) extra.push(t.tabOffice);
   if (warehouseOf(g, cityId)) extra.push(t.tabStore);
-  info.textContent = ` · ${fmt(eff.pop + eff.popBonus)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}${extra.length ? " · " + extra.join(" · ") : ""}`;
+  info.textContent = ` · ${fmt(eff.popEff)} ${t.cityCitizens} · ${lang === "es" ? "Respeto" : "Respect"}: ${RESPECT_NAMES[lang][rs.id]}${extra.length ? " · " + extra.join(" · ") : ""}`;
 }
 function open3d(s0) {
   if($("v3d")||s0.voyage)return;
