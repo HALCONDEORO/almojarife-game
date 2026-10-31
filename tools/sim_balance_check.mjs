@@ -21,6 +21,11 @@ const report = process.argv[2]
 const checks = [], warnings = [];
 const EXPECTED_H = [365, 1825, 3650, 10950, 18250, 36500].filter((h) => h <= (report.days ?? 0));
 if (JSON.stringify(report.horizons ?? null) !== JSON.stringify(EXPECTED_H)) { console.log("FAIL  report horizons " + JSON.stringify(report.horizons) + " do not match days " + report.days + " (expected " + JSON.stringify(EXPECTED_H) + ")"); process.exit(1); }
+
+// Split runs (the Balance workflow's weekly 100-year legs): BALANCE_BASE=0 legs carry only the
+// per-seed slice. Fail loudly on a mismatched slice so a missing base slice never skips checks silently.
+const baseExpected = process.env.BALANCE_BASE !== "0";
+if (baseExpected !== !!report.scenarios) { console.log("FAIL  base slice " + (report.scenarios ? "present" : "missing") + " but BALANCE_BASE=" + (baseExpected ? "1" : "0")); process.exit(1); }
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
 const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
@@ -65,23 +70,25 @@ for (const [key, sc] of Object.entries(report.scenarios ?? {})) {
 
 // Scenario D (free play, idle): bankruptcy resolves instead of ending the game; debt stays bounded.
 const D = report.scenarios?.D_freeplay_idle ?? {};
+if (baseExpected) {
 check("D: free play runs to the end", D.dayEnd ?? "missing", D.dayEnd === report.days, String(report.days));
 check("D: no game over in free play", D.over ?? "null", D.over === null, "null");
 check("D: debt stays bounded", D.cashMin ?? "missing", Number.isFinite(D.cashMin) && D.cashMin > -(OVERDRAFT_LIMIT + 500), `> -${OVERDRAFT_LIMIT + 500}`);
 check("D: cash stays finite", D.cashEnd ?? "missing", Number.isFinite(D.cashEnd), "finite");
 if ((report.days ?? 0) > 365) check("D: bankruptcy actually resolves", D.bankruptcies ?? 0, (D.bankruptcies ?? 0) >= 1, ">= 1"); // the idle trader needs a few years to hit the limit
+}
 
 const A = report.scenarios?.A_no_player ?? {};
-check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], within(A.priceIndex?.[1], 0.7, 1.6), "0.70-1.60");
+if (baseExpected) check("A: price index stays in band [0.70, 1.60] at 1y", A.priceIndex?.[1], within(A.priceIndex?.[1], 0.7, 1.6), "0.70-1.60");
 // npcCash[1] is the final snapshot of the complete run, which may span 100 years.
 // Evaluate the named 365-day horizon, never the final cash of a longer simulation.
 const npcCashYear1 = A.horizons?.[365]?.npcCash;
 const absoluteCashGrowth = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
 const absoluteWorthGrowth = A.npcWorth?.[0] > 0 ? A.horizons?.[365]?.npcWorth / A.npcWorth[0] : NaN;
-console.log(`info visible absolute NPC growth at 365d: cash ${absoluteCashGrowth.toFixed(2)}x, worth ${absoluteWorthGrowth.toFixed(2)}x. Legacy cash gate 0.215-30 was FAIL on activation (32.37x cash / 34.40x worth); it is not erased or called equivalent.`);
+if (baseExpected) console.log(`info visible absolute NPC growth at 365d: cash ${absoluteCashGrowth.toFixed(2)}x, worth ${absoluteWorthGrowth.toFixed(2)}x. Legacy cash gate 0.215-30 was FAIL on activation (32.37x cash / 34.40x worth); it is not erased or called equivalent.`);
 // Regional-rival warmup leaves 6,000 starting cash instead of legacy 48,521.
 // Compare simultaneous OFF/ON wealth (cash+cargo), not unlike post-warmup cash denominators.
-for (const h of H) {
+if (baseExpected) for (const h of H) {
  const off=report.npcOff?.horizons?.[h]?.npcWorth, on=A.horizons?.[h]?.npcWorth;
  const ratio=off>0?on/off:NaN;
  check(`NPC ON/OFF worth ratio @${h}d`,ratio,within(ratio,0.25,4),"0.25-4 (explicit relative guard, no formula change)");
@@ -96,7 +103,7 @@ const B = report.scenarios?.B_builder_bot ?? {}, C = report.scenarios?.C_poor_bo
 const NPC_WORTH_BAND = { 365: [103199, 1982492], 1825: [247812, 4110688], 3650: [565549, 6272164], 10950: [1529976, 13258576], 18250: [2075616, 17096684], 36500: [2740520, 22611680] }; // recalibrated 30/10 on the world-systems head (#639: household, calamities and regional rivals ON by default; expected drift, ON/OFF 30y ratio 1.37x inside the 0.25-4x policy): same documented rule (low = 0.5 x min, high = 4 x max of the +-2y window, windows clamped at year 1; fractional lows round UP), measured on scenario A's exact configuration (seed 0) with tools/sim_npc_worth_bands.mjs 100 0 (series sampled per game year, save/load chunks verified identical to a straight run at year 32); supersedes the 24/10 plague-head bands, which predate the world-systems defaults
 
 // Per-horizon hard checks: the economy must stay alive and sane at every game-year horizon.
-for (const h of H) {
+if (baseExpected) for (const h of H) {
   const tag = { 365: "1y", 1825: "5y", 3650: "10y", 10950: "30y", 18250: "50y", 36500: "100y" }[h] ?? (h + "d");
   const aH = A.horizons?.[h], bH = B.horizons?.[h], cH = C.horizons?.[h];
   if (aH) {
@@ -106,7 +113,7 @@ for (const h of H) {
   }
 }
 
-checkBC("", B, C);
+if (baseExpected) checkBC("", B, C);
 for (const seed of seeds) {
   const sr = report.seedRuns?.[seed];
   check(`seed ${seed}: B and C were run`, sr ? "present" : "missing", !!(sr?.B_builder_bot && sr?.C_poor_bot), "present");
@@ -114,7 +121,7 @@ for (const seed of seeds) {
 }
 
 // Paired controlled policies are mandatory, not an OFF replacement for the ON gate.
-for (const seed of [0,...seeds]) {
+for (const seed of baseExpected ? [0,...seeds] : seeds) {
  const pair=report.pairedBuilders?.[seed];
  check(`pair seed ${seed}: OFF/ON/legacy policies present`, !!pair, !!(pair?.off&&pair?.on&&pair?.legacyOn), "true");
  if(!pair) continue;
@@ -130,6 +137,7 @@ for (const seed of [0,...seeds]) {
 
 // Known long-term mechanics issues, measured: reported as WARN so the log shows them
 // without turning CI red. Tighten to hard checks when the mechanics get fixed.
+if (baseExpected) {
 const aEnd = A.horizons?.[Math.max(...H)] ?? {};
 // (was WARN A: "debt compounds without bound" - fixed by free-play bankruptcy resolution; D's hard checks now guard it)
 if ((B.upgrades ?? 0) === 0)
@@ -144,6 +152,7 @@ if (Number.isFinite(npcW0) && Number.isFinite(npcWMean) && npcWMean < npcW0)
 if (Number.isFinite(npcWEnd)) console.log(`info: NPC worth at the last snapshot ${npcWEnd} (start ${npcW0}, last-10-year mean ${npcWMean}); informational, not a warning by itself`);
 if ((B.finalLevel ?? 1) === 1 && (report.days ?? 0) > 365)
   warn("B: building level stuck at 1 over the whole run", B.finalLevel, "Consequence of the materials gate above: level-1 output and wages forever.");
+}
 
 const fails = checks.filter((c) => !c.ok);
 console.log("Balance regression check (" + report.days + " days, horizons " + H.join("/") + ", sim " + report.seconds + "s):");

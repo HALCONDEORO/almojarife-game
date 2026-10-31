@@ -1,12 +1,16 @@
 name: Balance
-# Cost policy (owner rule: stay inside the monthly Actions budget, ~$5 on top of the free tier).
-# The 100-year sim grew from ~51 to ~90+ minutes a run this month, so the horizons are spread:
+# Cost policy (owner rule: stay inside the monthly Actions budget).
+# The 100-year sim grew from ~51 to ~90+ minutes a run this month (cancelled at the 90-minute job
+# timeout on main 53d886c), so the horizons are spread and the deep run is split into legs:
 #   PR gate ......... 10 game years (3650 days), default + 3 extra seeds (unchanged)
 #   push to main .... 10 game years, default + 3 extra seeds (was 100 years; the same code just
-#                     passed the identical PR gate, and the weekly run keeps the 100y coverage)
+#                     passed the identical PR gate)
 #   nightly 02:17 ... 30 game years (10950 days), default game only
-#   weekly Sun 02:47  100 game years, default + 3 extra seeds (the full deep-horizon run,
-#                     identical coverage to the old main/nightly 100y, just scheduled weekly)
+#   weekly Sat 02:47  100 game years, split into 4 parallel legs (base + one per extra seed) that
+#                     together run the same scenarios and checks as the old single 100y run;
+#                     Saturday so it never overlaps the nightly cron (Sunday both would fire)
+#   manual dispatch . 100 game years, chosen extra seeds: unchanged, single job at the 90-minute
+#                     timeout (a rare manual tool; the weekly legs are the reliable deep check)
 # Both path filters are fail-closed: everything matches "**" except paths proven sim-irrelevant below.
 on:
   pull_request:
@@ -52,7 +56,7 @@ on:
       - "!**/*.svg"
   schedule:
     - cron: "17 2 * * *" # nightly, 02:17 UTC: 30-year mid-horizon run, default game only
-    - cron: "47 2 * * 0" # weekly, Sunday 02:47 UTC: the full 100-year run with one extra seed
+    - cron: "47 2 * * 6" # weekly, Saturday 02:47 UTC: the full 100-year run, split into parallel legs
   workflow_dispatch:
     inputs:
       seeds:
@@ -65,6 +69,9 @@ concurrency:
 
 jobs:
   balance:
+    # Everything except the weekly deep run: PR gate (10y), main push (10y), nightly (30y),
+    # manual dispatch (100y single shot, as before).
+    if: github.event.schedule != '47 2 * * 6'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -73,8 +80,35 @@ jobs:
         with:
           node-version: 20
       - run: sh tools/fetch_data.sh
-      - name: Balance gate (10y on PRs and main pushes, 30y nightly, 100y weekly)
+      - name: Balance gate (10y on PRs and main pushes, 30y nightly, 100y on manual dispatch)
         env:
           BALANCE_DAYS: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && '3650' || (github.event.schedule == '17 2 * * *' && '10950' || '36500') }}
           BALANCE_SEEDS: ${{ github.event.inputs.seeds || (github.event.schedule == '17 2 * * *' && 'none' || '1,2,3') }}
+        run: node tools/sim_balance_check.mjs
+
+  balance-weekly:
+    # The full 100-year deep run (default + seeds 1,2,3, same coverage as the old main/nightly
+    # 100y), split into parallel legs because the single run outgrew the 90-minute timeout
+    # (measured 51.4 -> 71.9 -> 90+ min cancelled). Each leg runs the same check tool on its own
+    # slice; the legs together cover every scenario, seed and paired policy. Leg wall time is
+    # ~15-35 min at current sim speed; total billed minutes are the single run's plus ~3 min of
+    # extra job setup. timeout-minutes 60 leaves each leg a wide margin.
+    if: github.event.schedule == '47 2 * * 6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: [base, seed1, seed2, seed3]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - run: sh tools/fetch_data.sh
+      - name: Balance 100y leg (${{ matrix.leg }})
+        env:
+          BALANCE_DAYS: "36500"
+          BALANCE_BASE: ${{ matrix.leg == 'base' && '1' || '0' }}
+          BALANCE_SEEDS: ${{ matrix.leg == 'base' && 'none' || (matrix.leg == 'seed1' && '1' || (matrix.leg == 'seed2' && '2' || '3')) }}
         run: node tools/sim_balance_check.mjs

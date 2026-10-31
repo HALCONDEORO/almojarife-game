@@ -125,9 +125,13 @@ function scenarioD() {
 const extraSeeds = (process.argv[3] ?? "").split(",").filter(Boolean).map((x) => (/^\d+$/.test(x) ? Number(x) : NaN));
 if (extraSeeds.some((x) => !Number.isSafeInteger(x) || x < 0 || x > 4294967295)) throw new Error("seeds must be uint32 integers");
 const WORLD_OFF = { ...FLAGS, household: false, calamities: false, regionalRivals: false };
+// BALANCE_BASE=0 runs only the per-seed slice: the Balance workflow splits the weekly 100-year run
+// into parallel legs (a base leg plus one leg per extra seed) so no leg nears the job timeout. The
+// default stays the single full run (PR gate, nightly, manual dispatch, local use).
+const BASE_ON = process.env.BALANCE_BASE !== "0";
 const t0 = Date.now();
-const report = { days, horizons: snaps, scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, seedRuns: Object.fromEntries(extraSeeds.map((x) => [x, { B_builder_bot: scenarioB(x), C_poor_bot: scenarioC(x) }])), npcOff: scenarioA(WORLD_OFF), flags: FLAGS,
-  pairedBuilders: Object.fromEntries([0,...extraSeeds].map(seed => [seed, {off:scenarioB(seed,WORLD_OFF),on:scenarioB(seed),legacyOn:scenarioB(seed,FLAGS,3)}])),
+const report = { days, horizons: snaps, ...(BASE_ON ? { scenarios: { A_no_player: scenarioA(), B_builder_bot: scenarioB(), C_poor_bot: scenarioC(), D_freeplay_idle: scenarioD() }, npcOff: scenarioA(WORLD_OFF) } : {}), seedRuns: Object.fromEntries(extraSeeds.map((x) => [x, { B_builder_bot: scenarioB(x), C_poor_bot: scenarioC(x) }])), flags: FLAGS,
+  pairedBuilders: Object.fromEntries([...(BASE_ON ? [0] : []),...extraSeeds].map(seed => [seed, {off:scenarioB(seed,WORLD_OFF),on:scenarioB(seed),legacyOn:scenarioB(seed,FLAGS,3)}])),
   seconds: +((Date.now() - t0) / 1000).toFixed(1),
   scope: "Real newGame/advanceDay/buyPlot/startConstruction/staffingRatio. Building upkeep+wages via accrueBuildings, halts via the piece-c rule, production via workshopTick, 3 NPC traders, no events, no loans. The bot does not trade by ship. Snapshots at 1/5/10/30 game years in sandbox mode: the campaign end (win/lose at day 365) is cleared so the economy keeps running; the first campaign end is reported as campaignEnd." };
 console.log(JSON.stringify(report, null, 1));

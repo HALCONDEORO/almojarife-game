@@ -48,3 +48,29 @@ test('paired gate rejects absent paired policy data and financial halts without 
  const missing=structuredClone(rep);delete missing.pairedBuilders;writeFileSync(f,JSON.stringify(missing));const a=run({BALANCE_SEEDS:'none'},[f]);assert.notEqual(a.status,0);assert.match(a.stdout,/pair seed 0: OFF\/ON\/legacy policies present.*false/);
  rep.scenarios.B_builder_bot.financialHalts=1;writeFileSync(f,JSON.stringify(rep));const b=run({BALANCE_SEEDS:'none'},[f]);assert.notEqual(b.status,0);assert.match(b.stdout,/no financial halts.*actual: 1/);
 });
+
+test('split run: BALANCE_BASE=0 legs carry and check only the per-seed slice; slices are fail-closed', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bal-split-'));
+  // Seed leg: no base slice, seed 1 only.
+  const seedRep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '365', '1'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, BALANCE_BASE: '0' } }));
+  assert.equal(seedRep.scenarios, undefined);
+  assert.equal(seedRep.npcOff, undefined);
+  assert.deepEqual(Object.keys(seedRep.seedRuns), ['1']);
+  assert.deepEqual(Object.keys(seedRep.pairedBuilders), ['1']); // pair 0 belongs to the base leg
+  const f = join(dir, 'seed.json'); writeFileSync(f, JSON.stringify(seedRep));
+  const ok = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [f]);
+  assert.equal(ok.status, 0, ok.stdout.slice(-800));
+  // The same seed-only report must FAIL with BALANCE_BASE unset (a full run missing its base slice is never a silent skip).
+  const missingBase = run({ BALANCE_SEEDS: '1' }, [f]);
+  assert.notEqual(missingBase.status, 0);
+  assert.match(missingBase.stdout, /base slice missing but BALANCE_BASE=1/);
+  // A full base report must FAIL in a seed leg.
+  const fullRep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '365', '1'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+  const f2 = join(dir, 'full.json'); writeFileSync(f2, JSON.stringify(fullRep));
+  const baseInSeedLeg = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [f2]);
+  assert.notEqual(baseInSeedLeg.status, 0);
+  assert.match(baseInSeedLeg.stdout, /base slice present but BALANCE_BASE=0/);
+  // And the full report still passes as a full run (the single-shot path is unchanged).
+  const fullOk = run({ BALANCE_SEEDS: '1' }, [f2]);
+  assert.equal(fullOk.status, 0, fullOk.stdout.slice(-800));
+});
