@@ -3,7 +3,7 @@
 import { loadWorld, route } from '../src/sim/world.mjs';
 import { newGame, advanceDay, doBuy, doSell, doSail, orderRepair, processRepairs, netWorth } from '../src/game/game.mjs';
 /** Sims keep the old instant repair: order and drain the yard the same day. */
-const repairShip = (g, ship) => { const r = orderRepair(g, [ship.id], ship.at); if (r.ok) { let n = 0; while ((ship.hull ?? 100) < 100 && n++ < 40) processRepairs(g); } return r; };
+const repairShip = (game, ship) => { const res = orderRepair(game, [ship.id], ship.at); if (res.ok) { let days = 0; while ((ship.hull ?? 100) < 100 && days++ < 40) processRepairs(game); } return res; };
 import { previewBuy, previewSell, SHIP_TYPES } from '../src/sim/trade.mjs';
 import { makeRng } from '../src/sim/rng.mjs';
 const w = loadWorld(), games = Number(process.argv[2] ?? 66), competition = process.argv[3] ?? 'default';

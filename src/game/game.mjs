@@ -454,7 +454,7 @@ export function doGoTo(g, ship, lat, lon) {
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
   if (convoy) {
     if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
-    const leg = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (sh) => repairOf(g, sh.id) });
+    const leg = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (sh) => repairOf(g, sh.id) }); // skipcq: JS-0129 - convoys.mjs is imported at the foot of this module to break the import cycle; ESM hoisting makes the call safe
     if (!leg.ok) return refuse(leg.reason);
     delete ship.navError;
     return { ...leg, toPort: true };

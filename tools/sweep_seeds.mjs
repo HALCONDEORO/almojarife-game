@@ -4,7 +4,7 @@
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, orderRepair, processRepairs, repairPrice, shipValue } from "../src/game/game.mjs";
 /** Sims keep the old instant repair: order and drain the yard the same day. */
-const repairShip = (g, ship) => { const r = orderRepair(g, [ship.id], ship.at); if (r.ok) { let n = 0; while ((ship.hull ?? 100) < 100 && n++ < 40) processRepairs(g); } return r; };
+const repairShip = (game, ship) => { const res = orderRepair(game, [ship.id], ship.at); if (res.ok) { let days = 0; while ((ship.hull ?? 100) < 100 && days++ < 40) processRepairs(game); } return res; };
 import { price } from "../src/sim/market.mjs";
 const world = loadWorld(), N = Number(process.argv[2] ?? 64), DAYS = Number(process.argv[3] ?? 365);
 const BASIC = ["grain", "fish", "salt", "wool", "wine", "olive_oil"], ROUTES = [["cadiz", "sevilla"], ["cadiz", "barcelona"]];
@@ -35,7 +35,7 @@ function netWorth(g, t) {
 function wealth(seed, extra) { const g = newGame(world, "cadiz", mkOpts(seed, extra)); for (let i = 0; i < DAYS && !g.over; i++) advanceDay(g); const bots = g.ai.map((t) => netWorth(g, t)); return { bots, median: median(bots), cash: g.ai.map((t) => Math.round(t.cash)), day: g.day }; }
 function repair(seed, extra) {
   const g = newGame(world, "cadiz", mkOpts(seed, extra)); const s = g.ships[0]; s.hull = 60; g.cash = 5000; const cash0 = g.cash, bill = repairPrice(g, s), res = repairShip(g, s);
-  return { ok: !!res.ok && s.hull === 100 && Math.round(cash0 - g.cash) === bill, price: bill };
+  return { ok: Boolean(res.ok) && s.hull === 100 && Math.round(cash0 - g.cash) === bill, price: bill };
 }
 function events(seed, extra) {
   try {
