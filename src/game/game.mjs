@@ -56,6 +56,7 @@ import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
+import { accrueWatch } from "./whwatch.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { prizeLocked } from "./privateering.mjs";
 import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf, noteTrade, decayRep } from "./reputation.mjs";
@@ -248,7 +249,8 @@ function dayTick(g) {
   }
   const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
   const wallCommit = accrueWalls(g, buildingCommit) ?? buildingCommit; // walls share today's cash budget with buildings (flag off: nothing)
-  accrueTowers(g, wallCommit); // towers share the same daily cash budget after walls (flag off: nothing)
+  const watchCommit = accrueTowers(g, wallCommit); // towers share the same daily cash budget after walls (flag off: nothing)
+  accrueWatch(g, (cid) => warehouseCap(g, cid), watchCommit ?? wallCommit); // warehouse guards accrue their wage into the same weekly book after the towers
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)

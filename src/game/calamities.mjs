@@ -7,6 +7,8 @@
 // Same rules for the player and the bots: the market and the buildings move for everyone.
 import { seeded } from "../view/cityscene.mjs";
 import { towersFireWatch } from "./towers.mjs"; // kept watchtowers spot fires early (own design, issue #363)
+import { warehouseCapBonus } from "./buildings.mjs"; // the warehouse watch's fire rounds scale with storage (P4-06 office notes, own design)
+import { watchFireWatch } from "./whwatch.mjs";
 
 // Own tuning constants (inference, not documented figures).
 export const CALAMITY = Object.freeze({
@@ -19,19 +21,22 @@ export const FAMINE_FOOD_MUL = 1.5;  // food demand while a famine lasts
 export const MALSANA_DEMAND = 0.9;   // demand while a sanitation scare lasts
 export const FIRE_MAX_HALTS = 2;     // buildings a fire can halt at once
 
+const WH_BASE_CAP = 300; // base warehouse capacity (game.mjs WAREHOUSE_CAP; local like almoneda.mjs's WAREHOUSE_BASE_CAP: importing game.mjs would cycle)
+const fireRounds = (g, cityId) => towersFireWatch(g, cityId) + watchFireWatch(g, cityId, WH_BASE_CAP + warehouseCapBonus(g, cityId)); // towers and the warehouse watch both walk fire rounds
+
 const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0);
 const levels = (g, cityId, table) => Object.keys(table).reduce((a, t) => a + workingLevels(g, cityId, t), 0);
 
 /** Weekly chance of one calamity in one city, cut by its mitigating buildings. */
 export function calamityChance(g, cityId, kind) {
   const spec = CALAMITY[kind];
-  const watch = kind === "incendio" ? towersFireWatch(g, cityId) : 0; // a manned tower is a fire watch (0 with the towers flag off)
+  const watch = kind === "incendio" ? fireRounds(g, cityId) : 0; // manned towers and the warehouse watch are fire watches (0 with their flags off / no guards hired)
   return spec.chance * Math.max(CHANCE_CAP, 1 - CHANCE_CUT * (levels(g, cityId, spec.mitigation) + watch));
 }
 /** How long one calamity sits on one city: mitigations shorten it, never below the floor. */
 export function calamityDays(g, cityId, kind) {
   const spec = CALAMITY[kind];
-  const watch = kind === "incendio" ? towersFireWatch(g, cityId) : 0; // the watch also shortens the fire
+  const watch = kind === "incendio" ? fireRounds(g, cityId) : 0; // the watch also shortens the fire
   const cut = Object.entries(spec.mitigation).reduce((a, [t, w]) => a + w * workingLevels(g, cityId, t), 0) + watch;
   return Math.max(spec.minDays, spec.days - cut);
 }
