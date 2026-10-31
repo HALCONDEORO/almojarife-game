@@ -94,10 +94,11 @@ test('language toggle re-translates the whole city chrome live (Boat #427 catch)
 
 test('inhabitants detail: true state composition, no decorative figures (Marco 25/10 14:38)', () => {
   // Class cards and counts use the same effective population the market demand uses.
-  assert.ok(js.includes('const popEff = (nd2.pop ?? 8000) + eff.popBonus + drift + wallPop'), 'popEff composition');
+  const cl = readFileSync('src/game/citylife.mjs', 'utf8');
+  assert.ok(js.includes('const popEff = effectivePop(g, s.at)'), 'popEff from the shared helper');
   assert.ok(js.includes('cityRows(popEff,'), 'class rows from effective pop');
-  assert.ok(js.includes('citylifeExtra(g, s.at)'), 'city-life drift included');
-  assert.ok(js.includes('WALL_POP * wallsKeptLevel(g, s.at)'), 'walls pop included');
+  assert.ok(cl.includes('citylifeExtra(g, cityId)'), 'city-life drift included in the helper');
+  assert.ok(cl.includes('WALL_POP * wallsKeptLevel(g, cityId)'), 'walls pop included in the helper');
   // Breakdown line always shows the composition; jobs line only with real jobs.
   assert.ok(js.includes('cityPopEff.replace("{p}", fmt(popEff))'), 'eff pop line');
   assert.ok(js.includes('if (eff.jobs > 0)'), 'jobs only when real');
