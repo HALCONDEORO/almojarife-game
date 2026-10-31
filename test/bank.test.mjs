@@ -101,3 +101,34 @@ test("tiny loan interest is rounded once across open and collected loans (old co
   g.loans = [{ id: 1, city: "cadiz", principal: 0.3, left: 0.3, taken: 0, due: 99 }]; g.weekLoanInterest = 0.003;
   assert.equal(dueNow(g), 0.01);
 });
+
+test("submission is acceptance: failed guards write nothing, the returned loan is the applied record, retries get fresh identities", () => {
+  const g = idle(), city = g.ships[0].at;
+  // a failed submission writes nothing: no record, no cash, no message
+  const cash0 = g.cash, box0 = (g.inbox ?? []).length;
+  assert.equal(borrow(g, city, 150).reason, "bad amount");
+  assert.equal(borrow(g, "lisboa", 100).reason, "no ship here");
+  assert.equal(borrow(g, city, bankRoom(g) + 100).reason, "over limit");
+  assert.equal(g.loans ?? null, null, "no record from a failed submission");
+  assert.equal(g.cash, cash0);
+  assert.equal((g.inbox ?? []).length, box0, "no message from a failed submission");
+  // acceptance is atomic: the returned loan IS the record, terms fixed at signing
+  const room0 = bankRoom(g);
+  const r = borrow(g, city, 500);
+  assert.ok(r.ok);
+  assert.equal(g.loans.length, 1);
+  assert.equal(g.loans[0], r.loan, "the returned handle is the applied record, not a copy or a pending request");
+  assert.equal(r.loan.left, 500);
+  assert.equal(r.loan.due, g.day + LOAN_TERM_DAYS);
+  assert.equal(g.cash, cash0 + 500);
+  assert.equal(bankRoom(g), room0 - 500, "the room reflects the applied loan at once");
+  // a duplicate retry is a second loan with its own identity, never a deduplication
+  const r2 = borrow(g, city, 500);
+  assert.ok(r2.ok);
+  assert.notEqual(r2.loan.id, r.loan.id);
+  assert.equal(g.loans.length, 2);
+  // there is no queued-but-unconsumed state: a reload carries exactly the applied loans
+  const back = deserialize(serialize(g, "X"), world).g;
+  assert.equal(back.loans.length, 2);
+  assert.deepEqual(back.loans.map((l) => [l.id, l.left, l.due]), g.loans.map((l) => [l.id, l.left, l.due]));
+});

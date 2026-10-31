@@ -22,7 +22,12 @@ export function loanRoom(g, netWorth, city) {
   return Math.max(0, (t && t.room < 1 ? Math.floor(total * t.room / LOAN_STEP) * LOAN_STEP : total) - owed); // good standing never lifts the room past the neutral cap (rank cap and half of net worth): it only buys a cheaper rate
 }
 const docked = (g, city) => g.ships.some((s) => s.at === city && !s.voyage);
-/** Borrow `amount` (a multiple of LOAN_STEP). Returns { ok, reason?, loan? }. */
+/** Borrow `amount` (a multiple of LOAN_STEP). Returns { ok, reason?, loan? }.
+ * Submission IS acceptance here: there is no queue. Every guard runs before any write, so a
+ * refused request leaves no record, no cash and no message; an accepted one writes record,
+ * cash and inbox notice together and returns the applied loan object itself (terms fixed at
+ * signing, room already reflecting it). A retry is a new loan with a fresh id, never a
+ * deduplication, and a reload carries exactly the applied loans. */
 export function takeLoan(g, city, amount, netWorth, post = () => {}) {
   amount = Math.floor(Number(amount));
   if (!Number.isFinite(amount) || amount < LOAN_STEP || amount % LOAN_STEP) return { ok: false, reason: "bad amount" };
