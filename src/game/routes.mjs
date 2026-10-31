@@ -56,7 +56,7 @@ function routeRepair(g, s, r, ops, brake) {
 }
 
 /** Run one step for every ship that has a route and is docked. `ops` are the game's own doBuy/doSell/doSail. */
-export function processRoutes(g, ops) {
+export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one yard guard, extraction is out of scope
   for (const s of g.ships) {
     const r = s.route;
     if (!r || s.voyage || g.over) continue;
@@ -146,7 +146,7 @@ function planBuy(g, s, good, room, budget, maxPrice) {
 }
 
 /** One docked day for a ship on an advanced route. */
-function processRouteAdv(g, s, r, ops) {
+function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds the yard hold, extraction is out of scope
   const n = r.stops.length, stop = r.stops[r.idx % n];
   if (s.at !== stop.city) { ops.doSail(g, s, stop.city); return; } // on the way to the next stop
   const quoteAt = (good) => price(g.world, g.market[s.at][good], good);
