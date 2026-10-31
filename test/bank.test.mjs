@@ -193,3 +193,43 @@ test("repay validates and normalizes before effects: the record only sees the fi
   assert.ok(p2.ok); assert.equal(p2.paid, 120.5, "clamped to the cash on hand");
   assert.equal(r2.loan.left, 379.5); assert.equal(g.cash, 0);
 });
+
+test("paired legs and separate score: cancel-out transfer with a lasting score, floating interest accumulation", () => {
+  const g = idle(); g.credit = true; const city = g.ships[0].at;
+  // same-account debit and credit cancel in money while the score update remains
+  const cash0 = g.cash, rep0 = (g.payRep ?? {})[city] ?? 0;
+  const r = borrow(g, city, 500);
+  r.loan.taken = g.day - 100; r.loan.paidInt = 500; // lived long and paid real interest
+  assert.ok(repay(g, r.loan.id, 99999).ok);
+  assert.equal(g.cash, cash0, "borrow and repay cancel out");
+  assert.equal((g.payRep ?? {})[city], rep0 + 1, "but the lender remembers the good payer");
+  // a default moves the score the other way, separately from the money leg
+  const r2 = borrow(g, city, 500);
+  r2.loan.due = g.day; g.cash = 0;
+  const rep1 = (g.payRep ?? {})[city];
+  processLoans(g, post);
+  assert.equal((g.payRep ?? {})[city], rep1 - 1, "the default is recorded");
+  assert.equal(g.cash, -500, "and the money leg still collected the full debt");
+  // the default's consequence: this lender is shut for a while
+  assert.equal(borrow(g, city, 100).reason, "over limit", "the lender stays shut after the default");
+  g.day = g.loanLock[city]; g.cash = 10000; // the lock expires; cash first: the room reads net worth
+  // collection with cash covers the debt and never touches the score
+  const r3 = borrow(g, city, 300);
+  assert.ok(r3.ok, "borrowing works again once the lock expires");
+  r3.loan.due = g.day;
+  const rep2 = (g.payRep ?? {})[city];
+  processLoans(g, post);
+  assert.equal((g.payRep ?? {})[city], rep2, "a covered collection leaves the score alone");
+  assert.equal(g.cash, 10000, "the paired legs match exactly: +300 borrowed, -300 collected");
+  // floating accumulation: weekly interest accrues as a float and settles rounded
+  g.cash = 10000; g.weekLoanInterest = 0;
+  const a = borrow(g, city, 500), b = borrow(g, city, 300);
+  a.loan.due = g.day; b.loan.due = g.day;
+  processLoans(g, post);
+  const rate = a.loan.rate ?? LOAN_RATE;
+  assert.ok(Math.abs(g.weekLoanInterest - (500 * rate + 300 * rate)) < 1e-9, "interest accumulates per loan as a float");
+  // rounding: sub-cent payment parts round to cents
+  const r4 = borrow(g, city, 500);
+  const p = repay(g, r4.loan.id, 33.333);
+  assert.ok(p.ok); assert.equal(p.paid, 33.33); assert.equal(r4.loan.left, 466.67);
+});
