@@ -67,10 +67,10 @@ test('membership exists only as registration plus backlinks, consistent through 
  assert.ok(membershipIsConsistent(g),'invariant after formation');
  assert.ok(leaveConvoy(g,s0.id).ok);assert.ok(membershipIsConsistent(g),'invariant after a member leaves');
  // s0 left: it is a retained candidate again, not a member - the group auto-disbanded to <2
- assert.equal(s0.convoy,undefined);assert.ok(membershipIsConsistent(g));
+ assert.equal(s0.convoy,undefined,'departed member has no backlink');assert.ok(membershipIsConsistent(g));
  const cv2=formConvoy(g,[s0.id,s1.id]).convoy;
  assert.ok(disbandConvoy(g,cv2.id).ok);assert.ok(membershipIsConsistent(g),'invariant after disband');
- assert.equal(s0.convoy,undefined);assert.equal(s1.convoy,undefined,'no dangling backlinks');
+ assert.equal(s0.convoy,undefined,'disband clears the first member backlink');assert.equal(s1.convoy,undefined,'no dangling backlinks');
  // the invariant survives a save/load round-trip:
  const cv3=formConvoy(g,[s0.id,s1.id]).convoy;
  const loaded=deserialize(serialize(g,'T'),world).g;
