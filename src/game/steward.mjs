@@ -22,7 +22,15 @@ const GOOD_NAMES = {
 };
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
 
-/** Set or replace the standing order for one good. Returns {ok} or {ok:false, reason}. */
+/** Set or replace the standing order for one good (configuración de mercancías).
+   The contract, named once: prices are coins per unit of the good, compared
+   against the market price BEFORE the port fee; buyTo and sellKeep are units of
+   the good. A 0 on a side disables that side only; the order's enabled state
+   lives apart, in admin.off (see setStewardRuleEnabled). Every field is
+   validated before anything is written, so a rejected configuration never
+   leaves a half-applied order behind; re-setting an existing good replaces the
+   numbers in place and keeps its position in the priority list.
+   Returns {ok} or {ok:false, reason}. */
 export function setStewardRule(g, city, good, rule, cap) {
   const w = g.warehouses?.[city];
   if (!w) return { ok: false, reason: "no warehouse here" };
@@ -33,7 +41,7 @@ export function setStewardRule(g, city, good, rule, cap) {
   // a key present but null/undefined/invalid fails validation below instead of defaulting to 0
   for (const k of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (Object.prototype.hasOwnProperty.call(src, k)) r[k] = src[k];
   for (const k of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (!Number.isFinite(r[k]) || r[k] < 0) return { ok: false, reason: "bad number" };
-  r.buyTo = Math.floor(r.buyTo); r.sellKeep = Math.floor(r.sellKeep);
+  r.buyTo = Math.floor(r.buyTo) + 0; r.sellKeep = Math.floor(r.sellKeep) + 0; r.buyBelow += 0; r.sellAbove += 0; // +0 normalizes a signed zero away
   if (r.buyBelow > 0 && !(r.buyTo > 0)) return { ok: false, reason: "buy needs a stock target" };
   if (r.buyTo > (cap ?? Infinity)) return { ok: false, reason: "target above warehouse capacity" };
   if (r.buyBelow > 0 && r.sellAbove > 0 && r.buyBelow >= r.sellAbove) return { ok: false, reason: "buy cap must stay below sell floor" }; // otherwise it churns and loses the fee both ways
