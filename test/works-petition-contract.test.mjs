@@ -26,9 +26,9 @@ test("P2 rejection: a refused petition is consumed with its cause, charges nothi
   councilWorksVote(gm);
   assert.deepEqual(workOf(gm, "lisboa", "pozo"), { level: 0, state: "active" }, "the refusal builds nothing and leaves no residue");
   assert.equal(cajaOf(gm, "lisboa"), 100, "a refusal charges the chest nothing");
-  assert.equal(posts(gm, /rechaza tu petición de el pozo/).length, 1, "the refusal is recorded once, with its cause");
+  assert.equal(posts(gm, /rechaza tu petición de el pozo: la caja no llega \(se piden 496\.8\)\./).length, 1, "the refusal is recorded once, WITH its cause and the asked estimate (kills the omitted-cause mutant)");
   councilWorksVote(gm); // a duplicate vote on the same meeting day must not refuse twice
-  assert.equal(posts(gm, /rechaza tu petición de el pozo/).length, 1, "the consumed petition is not refused again");
+  assert.equal(posts(gm, /rechaza tu petición/).length, 1, "the consumed petition is not refused again");
   assert.equal(proposeWork(gm, "lisboa", "pozo").ok, true, "rejection is not permanent: the merchant can petition again");
   richCaja(gm, "lisboa");
   gm.day = nextMeetingDay(world, "lisboa", gm.day);
@@ -71,17 +71,21 @@ test("P5 duplicate motion: a repeated petition of the same work is refused witho
   assert.equal(cajaOf(gm, "lisboa"), cajaBefore, "the repeated vote charges nothing twice");
 });
 
-test("P11 reload: a pending petition survives a save/load round-trip and is resolved exactly once; a refused petition stays refused after reload", () => {
+test("P11 reload: a pending petition survives the REAL save/load wire path and is resolved exactly once; a refused petition stays refused after reload", async () => {
+  const { serialize, deserialize } = await import("../src/game/gamesave.mjs"); // the same wire path as the shipped Guardar/Cargar, not a JSON clone
+  const roundTrip = (gm) => deserialize(JSON.parse(JSON.stringify(serialize(gm, "Casa Prueba"))), world).g;
   const gm = withRespect(richCaja(game()), "lisboa", 5000);
   assert.equal(proposeWork(gm, "lisboa", "pozo").ok, true);
   gm.day = nextMeetingDay(world, "lisboa", gm.day) - 1; // the day before the meeting
-  const copy = JSON.parse(JSON.stringify(gm)); // the save format
+  const copy = roundTrip(gm);
+  assert.equal(workOf(copy, "lisboa", "pozo").state, "solicitado", "the real deserialize keeps the pending petition (kills the drops-the-petition mutant)");
   copy.day = nextMeetingDay(world, "lisboa", copy.day);
   councilWorksVote(copy);
   const rec = workOf(copy, "lisboa", "pozo");
   assert.equal(rec.state, "building", "the reloaded petition is voted");
   assert.equal(posts(copy, /vota construir el pozo/).length, 1, "the resolution posts once after reload");
-  const again = JSON.parse(JSON.stringify(copy)); // a second save/load after the vote
+  const again = roundTrip(copy); // a second save/load after the vote
+  assert.equal(workOf(again, "lisboa", "pozo").state, "building", "the started work survives a second round-trip (kills the resets-the-petition mutant)");
   councilWorksVote(again);
   assert.equal(posts(again, /vota construir el pozo/).length, 1, "no duplicate resolution across another round-trip");
   assert.equal(workOf(gm, "lisboa", "pozo").state, "solicitado", "the pre-save game is untouched");
@@ -91,9 +95,9 @@ test("P11 reload: a pending petition survives a save/load round-trip and is reso
   refused.day = nextMeetingDay(world, "lisboa", refused.day);
   councilWorksVote(refused);
   assert.equal(workOf(refused, "lisboa", "pozo").state, "active");
-  const copyRefused = JSON.parse(JSON.stringify(refused));
+  const copyRefused = roundTrip(refused);
   councilWorksVote(copyRefused); // still the meeting day after reload: nothing may happen
   assert.deepEqual(workOf(copyRefused, "lisboa", "pozo"), { level: 0, state: "active" }, "the refusal survives reload without re-firing");
-  assert.equal(posts(copyRefused, /rechaza tu petición/).length, 1, "one refusal post in total");
+  assert.equal(posts(copyRefused, /rechaza tu petición de el pozo: la caja no llega \(se piden 496\.8\)\./).length, 1, "one refusal post in total, cause included");
   assert.equal(proposeWork(copyRefused, "lisboa", "pozo").ok, true, "after reload the merchant can petition again");
 });
