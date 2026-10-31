@@ -2,7 +2,9 @@
 // Blocks: routes (a one-way run of a basic cargo earns on cadiz->sevilla and cadiz->barcelona), rivals (median bot NET WORTH vs seed 0), repair, events (no crash, finite state).
 // Net worth of a rival = cash + hull value + cargo at its port market price + warehouse goods; rivals carry no debt in this model (no loan field on a trader).
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, repairShip, repairPrice, shipValue } from "../src/game/game.mjs";
+import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, orderRepair, repairPrice, shipValue } from "../src/game/game.mjs";
+/** Repairs cost real days here: the yard works REPAIR_POINTS_PER_DAY points a day, so after ordering, the calendar advances the quoted days (advanceDay runs the yard and the rest of the economy) and the ship waits in port meanwhile. */
+const repairShip = (game, ship) => { const res = orderRepair(game, [ship.id], ship.at); if (res.ok) { for (let dayNum = 0; dayNum < res.days && !game.over; dayNum++) advanceDay(game); } return res; };
 import { price } from "../src/sim/market.mjs";
 const world = loadWorld(), N = Number(process.argv[2] ?? 64), DAYS = Number(process.argv[3] ?? 365);
 const BASIC = ["grain", "fish", "salt", "wool", "wine", "olive_oil"], ROUTES = [["cadiz", "sevilla"], ["cadiz", "barcelona"]];
@@ -31,9 +33,9 @@ function netWorth(g, t) {
   return Math.round(w);
 }
 function wealth(seed, extra) { const g = newGame(world, "cadiz", mkOpts(seed, extra)); for (let i = 0; i < DAYS && !g.over; i++) advanceDay(g); const bots = g.ai.map((t) => netWorth(g, t)); return { bots, median: median(bots), cash: g.ai.map((t) => Math.round(t.cash)), day: g.day }; }
-function repair(seed, extra) {
-  const g = newGame(world, "cadiz", mkOpts(seed, extra)); const s = g.ships[0]; s.hull = 60; g.cash = 5000; const c = g.cash, price = repairPrice(g, s), r = repairShip(g, s);
-  return { ok: !!r.ok && s.hull === 100 && Math.round(c - g.cash) === price, price };
+function repair(seed, extra) { // the order model with real days: the bill is charged at order time and the quoted days pass before the hull is sound again; the day cost check tolerates the upkeep those days accrue
+  const game = newGame(world, "cadiz", mkOpts(seed, extra)); const ship = game.ships[0]; ship.hull = 60; game.cash = 5000; const cash0 = game.cash, day0 = game.day, bill = repairPrice(game, ship), res = repairShip(game, ship);
+  return { ok: Boolean(res.ok) && ship.hull === 100 && game.day - day0 === res.days && cash0 - game.cash >= bill, price: bill, days: res.days ?? 0 };
 }
 function events(seed, extra) {
   try {

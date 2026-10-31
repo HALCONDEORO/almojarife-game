@@ -1,7 +1,7 @@
 // Isolated pre-embargo trade-rule fixture; embargo-ON rejection is covered in pardonhost/embargo tests.
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
-import {newGame,doBuy,doSell,repairShip,repairCost,repairPrice} from '../src/game/game.mjs';
+import {newGame,doBuy,doSell,orderRepair,repairOf,repairCost,repairPrice} from '../src/game/game.mjs';
 import {noteTrade,decayRep,portRep,repTierOf,feeMul,repairMul,addRep,repOnSale,repOnBuy,scarcityOf,REP_MIN,REP_MAX,REP_TRADE_CAP} from '../src/game/reputation.mjs';
 import {FEE} from '../src/sim/trade.mjs';
 import {houseHtml} from '../src/view/rankview.mjs';
@@ -46,13 +46,13 @@ test('tiers move the market fee and the shipyard bill',()=>{
 test('the discount reaches real trades and real repairs',()=>{
  const cheap=mk(),dear=mk();
  addRep(cheap.g,'cadiz',100);addRep(dear.g,'cadiz',-20);
- for(const x of[cheap,dear]){x.g.market.cadiz.pepper.stock=x.g.market.cadiz.pepper.target*4;x.s.cargo={};} // pepper: dear enough that per-unit rounding keeps the fee visible
- const rc=doBuy(cheap.g,cheap.s,'pepper',10),rd=doBuy(dear.g,dear.s,'pepper',10);
- assert.ok(rc.ok&&rd.ok);assert.ok(rc.cost<rd.cost,`renowned pays less than ill-seen: ${rc.cost} < ${rd.cost}`);
- const{g,s}=mk();addRep(g,'cadiz',80);s.hull=50;
- const full=repairCost(s),disc=repairPrice(g,s);
- assert.ok(disc<full);const cash=g.cash;const r=repairShip(g,s);
- assert.ok(r.ok);assert.equal(r.cost,disc);assert.equal(s.hull,100);assert.equal(g.cash,cash-disc);
+ for(const fx of[cheap,dear]){fx.g.market.cadiz.pepper.stock=fx.g.market.cadiz.pepper.target*4;fx.s.cargo={};} // pepper: dear enough that per-unit rounding keeps the fee visible
+ const buyCheap=doBuy(cheap.g,cheap.s,'pepper',10),buyDear=doBuy(dear.g,dear.s,'pepper',10);
+ assert.ok(buyCheap.ok&&buyDear.ok);assert.ok(buyCheap.cost<buyDear.cost,`renowned pays less than ill-seen: ${buyCheap.cost} < ${buyDear.cost}`);
+ const{g:game,s:ship}=mk();addRep(game,'cadiz',80);ship.hull=50;
+ const full=repairCost(ship),disc=repairPrice(game,ship);
+ assert.ok(disc<full);const cash=game.cash;const res=orderRepair(game,[ship.id],ship.at);
+ assert.ok(res.ok);assert.equal(res.cost,disc);assert.equal(game.cash,cash-disc);assert.ok(repairOf(game,ship.id));
 });
 test('reputation is clamped and survives a save/load',()=>{
  const{g}=mk();

@@ -3,7 +3,9 @@
 // through doBuy/doSell/doSail, so its trades set the trade days like a player's. Reports, per horizon, the mean fee multiplier paid in the year
 // and the number of ports at each name tier. Run: node tools/sim_rep_decay.mjs <years=30> [start=cadiz]   Own design.
 import { loadWorld, route } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, repairShip } from "../src/game/game.mjs";
+import { newGame, advanceDay, doBuy, doSell, doSail, orderRepair } from "../src/game/game.mjs";
+/** Repairs cost real days here: the yard works REPAIR_POINTS_PER_DAY points a day, so after ordering, the calendar advances the quoted days (advanceDay runs the yard and the rest of the economy) and the ship waits in port meanwhile. */
+const repairShip = (game, ship) => { const res = orderRepair(game, [ship.id], ship.at); if (res.ok) { for (let dayNum = 0; dayNum < res.days && !game.over; dayNum++) advanceDay(game); } return res; };
 import { previewBuy, previewSell, SHIP_TYPES } from "../src/sim/trade.mjs";
 import { portRep, feeMul, repTierIndex } from "../src/game/reputation.mjs";
 

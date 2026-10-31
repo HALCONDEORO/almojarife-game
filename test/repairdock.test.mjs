@@ -1,20 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, repairShip } from "../src/game/game.mjs";
+import { newGame, orderRepair, repairOf } from "../src/game/game.mjs";
 import { repairGuns } from "../src/game/crew.mjs";
-const mk = () => { const g = newGame(loadWorld()), s = g.ships[0]; s.hull = 50; g.cash = 100000; return { g, s }; };
-test("repair from another port fails and changes nothing", () => {
-  const { g, s } = mk(), cash = g.cash, r = repairShip(g, s, "lisboa" === s.at ? "cadiz" : "lisboa");
-  assert.equal(r.ok, false); assert.equal(r.reason, "not in this port"); assert.equal(s.hull, 50); assert.equal(g.cash, cash);
+const mkGame = () => { const game = newGame(loadWorld()), ship = game.ships[0]; ship.hull = 50; game.cash = 100000; return { game, ship }; };
+test("a repair order from another port fails and changes nothing", () => {
+  const { game, ship } = mkGame(), cash = game.cash, res = orderRepair(game, [ship.id], ship.at === "lisboa" ? "cadiz" : "lisboa");
+  assert.equal(res.ok, false); assert.equal(res.reason, "not in this port"); assert.equal(ship.hull, 50); assert.equal(game.cash, cash);
+  assert.equal(repairOf(game, ship.id), null);
 });
-test("repair in the port where the ship is docked works", () => {
-  const { g, s } = mk(); assert.equal(repairShip(g, s, s.at).ok, true); assert.equal(s.hull, 100);
-});
-test("callers without a port (automatic routes) still repair the docked ship", () => {
-  const { g, s } = mk(); assert.equal(repairShip(g, s).ok, true);
+test("a repair order in the port where the ship is docked works", () => {
+  const { game, ship } = mkGame(); assert.equal(orderRepair(game, [ship.id], ship.at).ok, true); assert.ok(repairOf(game, ship.id));
 });
 test("gun repair follows the same port rule", () => {
-  const { g, s } = mk(); s.gunCond = 40; s.weapons = { cannon: 1 };
-  assert.equal(repairGuns(g, s, "elsewhere").reason, "not in this port");
+  const { game, ship } = mkGame(); ship.gunCond = 40; ship.weapons = { cannon: 1 };
+  assert.equal(repairGuns(game, ship, "elsewhere").reason, "not in this port");
 });

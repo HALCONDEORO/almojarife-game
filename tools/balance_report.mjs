@@ -6,7 +6,9 @@
 // Run: node tools/balance_report.mjs [games=24] [competition=default] [offset=0] [roster=core|styles|all]
 // Prints one JSON report. Deterministic given games/competition/offset/roster. Own design, no outside data.
 import { loadWorld, route } from '../src/sim/world.mjs';
-import { newGame, advanceDay, doBuy, doSell, doSail, repairShip, netWorth } from '../src/game/game.mjs';
+import { newGame, advanceDay, doBuy, doSell, doSail, orderRepair, netWorth } from '../src/game/game.mjs';
+/** Repairs cost real days here: the yard works REPAIR_POINTS_PER_DAY points a day, so after ordering, the calendar advances the quoted days (advanceDay runs the yard and the rest of the economy) and the ship waits in port meanwhile. */
+const repairShip = (game, ship) => { const res = orderRepair(game, [ship.id], ship.at); if (res.ok) { for (let dayNum = 0; dayNum < res.days && !game.over; dayNum++) advanceDay(game); } return res; };
 import { previewBuy, previewSell, SHIP_TYPES } from '../src/sim/trade.mjs';
 import { makeRng } from '../src/sim/rng.mjs';
 import { takeLoan, repayLoan, loanRoom, loansOf, LOAN_STEP } from '../src/game/bank.mjs';

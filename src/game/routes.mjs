@@ -36,28 +36,31 @@ export function routeStats(route) {
   return { laps, profit, perLap: laps > 0 ? Math.round((profit / laps) * 10) / 10 : null };
 }
 
-// Automatic routes take care of the hull: below ROUTE_REPAIR_HULL a docked route ship repairs
-// at the yard before loading, as long as the bill leaves the route's cash brake intact.
-// When the brake does not cover it the ship sails worn and the feed says so (once per stretch).
+// Automatic routes take care of the hull: below ROUTE_REPAIR_HULL a docked route ship orders a repair
+// at the yard before loading, as long as the bill leaves the route's cash brake intact, and waits in
+// port until the yard delivers. When the brake does not cover it the ship sails worn and the feed says
+// so (once per stretch).
 export const ROUTE_REPAIR_HULL = 50;
 function routeRepair(g, s, r, ops, brake) {
-  if (!ops.doRepair || !ops.repairQuote) return;
-  if ((s.hull ?? 100) >= ROUTE_REPAIR_HULL) { r.repairWarned = 0; return; }
+  if (!ops.doRepair || !ops.repairQuote) return false;
+  if ((s.hull ?? 100) >= ROUTE_REPAIR_HULL) { r.repairWarned = 0; return false; }
   const cost = ops.repairQuote(s);
-  if (cost <= 0) return;
+  if (cost <= 0) return false;
   if (g.cash - cost < Math.max(0, brake)) {
     if (!r.repairWarned) { r.repairWarned = 1; post(g, "routeRepairSkip", { ship: s.id, city: s.at, hull: Math.round(s.hull ?? 100), cost }); }
-    return;
+    return false;
   }
   const res = ops.doRepair(s);
-  if (res.ok) { r.repairWarned = 0; post(g, "routeRepair", { ship: s.id, city: s.at, cost: res.cost }); }
+  if (res.ok) { r.repairWarned = 0; post(g, "routeRepair", { ship: s.id, city: s.at, cost: res.cost, days: res.days }); return true; } // the ship waits in the yard: no loading today
+  return false;
 }
 
 /** Run one step for every ship that has a route and is docked. `ops` are the game's own doBuy/doSell/doSail. */
-export function processRoutes(g, ops) {
+export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one yard guard, extraction is out of scope
   for (const s of g.ships) {
     const r = s.route;
     if (!r || s.voyage || g.over) continue;
+    if (ops.inRepair?.(s)) continue; // the yard holds the ship: the route waits and resumes when the order closes
     if (r.v === 2) { processRouteAdv(g, s, r, ops); continue; } // advanced circuit; legacy A⇄B routes follow the original rules below
     if (s.at !== r.a && s.at !== r.b) { ops.doSail(g, s, r.a); continue; } // not on the route yet: go to A
     const atA = s.at === r.a, sellGood = atA ? r.back : r.out, buyGood = atA ? r.out : r.back;
@@ -65,7 +68,7 @@ export function processRoutes(g, ops) {
       const q = s.cargo[sellGood], res = ops.doSell(g, s, sellGood, q);
       if (res.ok) { r.legs++; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: sellGood, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     }
-    routeRepair(g, s, r, ops, 0);
+    if (routeRepair(g, s, r, ops, 0)) continue; // repair before loading: the yard holds the ship
     let buyRes = null;
     if (buyGood) buyRes = ops.doBuy(g, s, buyGood, Math.max(0, shipCapacity(s) - cargoUsed(s)));
     // At A never sail empty (wait and retry next day); at B always go home, empty if there is no return cargo.
@@ -143,7 +146,7 @@ function planBuy(g, s, good, room, budget, maxPrice) {
 }
 
 /** One docked day for a ship on an advanced route. */
-function processRouteAdv(g, s, r, ops) {
+function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds the yard hold, extraction is out of scope
   const n = r.stops.length, stop = r.stops[r.idx % n];
   if (s.at !== stop.city) { ops.doSail(g, s, stop.city); return; } // on the way to the next stop
   const quoteAt = (good) => price(g.world, g.market[s.at][good], good);
@@ -158,7 +161,7 @@ function processRouteAdv(g, s, r, ops) {
     if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
     else blocked("sell", rule.good, res.reason);
   }
-  routeRepair(g, s, r, ops, r.minCash);
+  if (routeRepair(g, s, r, ops, r.minCash)) return; // repair before loading: the yard holds the ship
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
     if (room <= 0) { blocked("buy", rule.good, "no_space"); break; }
