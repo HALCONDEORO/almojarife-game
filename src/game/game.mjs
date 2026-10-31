@@ -66,7 +66,7 @@ import { npcPlan } from "../sim/npcplan.mjs";
 import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
 import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
 import { embargoOn, embargoNotice, GRAIN } from "./embargo.mjs";
-import { entryBan, blockadeOn } from "./portmeasures.mjs";
+import { entryBan, blockadeOn, plannedEntryBan } from "./portmeasures.mjs";
 import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const HISTORY_DAYS = 30;
@@ -460,7 +460,7 @@ export function doGoTo(g, ship, lat, lon) {
   if (block) return refuse(block);
   const plan = planTrip(g.world, ship, lat, lon);
   if (!plan.ok) return plan.reason === "already there" ? plan : refuse(plan.reason);
-  if (plan.toPort) { const ban = entryBan(g, plan.to); if (ban) return refuse(ban); } // a closed harbour refuses the course change too
+  const destinationBan = plannedEntryBan(g, plan); if (destinationBan) return refuse(destinationBan); // a closed harbour refuses the course change too
   if (convoy) {
     if (!plan.toPort) return refuse("convoy"); // a convoy needs one port destination, never open sea
     const leg = sailConvoy(g, convoy.id, plan.to, { doSail, inRepair: (sh) => repairOf(g, sh.id) }); // skipcq: JS-0129 - convoys.mjs is imported at the foot of this module to break the import cycle; ESM hoisting makes the call safe

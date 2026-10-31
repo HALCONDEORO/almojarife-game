@@ -14,8 +14,11 @@
 // the blockade to holding docked ships is our design inference; the sources do not pin game rules.
 export const BOYCOTT = "boycott", BLOCKADE = "blockade";
 /** The measure on a port ("boycott" | "blockade"), or null. Unknown values count as no measure. */
-export const measureOf = (g, port) => { const m = g?.measures?.[port]; return m === BOYCOTT || m === BLOCKADE ? m : null; };
+export const measureOf = (g, port) => { const measure = g?.measures?.[port]; return measure === BOYCOTT || measure === BLOCKADE ? measure : null; };
 export const boycottOn = (g, port) => measureOf(g, port) === BOYCOTT;
 export const blockadeOn = (g, port) => measureOf(g, port) === BLOCKADE;
 /** Why no outside ship may set course for this port right now ("boycott" | "blockade"), or null. */
 export const entryBan = (g, port) => measureOf(g, port);
+
+/** Closed-port guard for a planned destination; free sea points have no port measure. */
+export const plannedEntryBan = (game, plan) => plan.toPort ? entryBan(game, plan.to) : null;
