@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
+import { readFileSync } from "node:fs";
 import { newGame, advanceDay, buyWarehouse, warehouseCap } from "../src/game/game.mjs";
 import { setStewardRule, clearStewardRule, setStewardRuleEnabled, stewardOf } from "../src/game/steward.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -93,4 +94,25 @@ test("pausing never reorders the priority list", () => {
   setStewardRuleEnabled(game, "cadiz", "wine", false);
   setStewardRuleEnabled(game, "cadiz", "grain", true);
   assert.deepEqual(Object.keys(stewardOf(game, "cadiz").rules), before);
+});
+
+test("the real UI toggle handler asks for the desired state: click pauses, click resumes", () => {
+  // Extract the actual onclick handler wired in web/main.mjs and execute it against the real
+  // engine - a click must CHANGE the state, never report changed:false (Audit on #747).
+  const src = readFileSync("web/main.mjs", "utf8");
+  const m = src.match(/\[data-admtog\]"\)\.forEach\(\(el\) => \{ el\.onclick = (\(\) => [^;]+); \}\);/);
+  assert.ok(m, "the pause/resume handler exists in web/main.mjs");
+  const makeClick = new Function("act", "g", "s", "el", "stewardOf", "setStewardRuleEnabled", "return (" + m[1] + ");");
+  const game = setup();
+  twoBuyRules(game);
+  const s = { at: "cadiz" }, el = { dataset: { admtog: "wine" } };
+  const act = (fn) => fn(); // the panel applies the command at once
+  const click = makeClick(act, game, s, el, stewardOf, setStewardRuleEnabled);
+  assert.ok(stewardOf(game, "cadiz").off?.wine !== true, "the rule starts active");
+  click(); // click pause on the active rule
+  assert.equal(stewardOf(game, "cadiz").off?.wine, true, "one click pauses the order");
+  click(); // click resume on the paused rule
+  assert.ok(stewardOf(game, "cadiz").off?.wine !== true, "the next click resumes the order");
+  click(); // and back: every click changes the state
+  assert.equal(stewardOf(game, "cadiz").off?.wine, true, "every click flips the state");
 });
