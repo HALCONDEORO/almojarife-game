@@ -13,21 +13,21 @@ import { serialize, deserialize } from "../src/game/gamesave.mjs";
 
 const world = loadWorld();
 const scene = ({ extra = 0, buildings = {}, walls = null } = {}) => {
-  const g = newGame(world, "cadiz", { seed: 7, freePlay: true, calamities: false });
-  g.day = 7;
-  g.citylife.cities.cadiz.extra = extra;
-  g.buildings = { cadiz: buildings };
-  if (walls) g.walls = { cadiz: walls };
-  return g;
+  const game = newGame(world, "cadiz", { seed: 7, freePlay: true, calamities: false });
+  game.day = 7;
+  game.citylife.cities.cadiz.extra = extra;
+  game.buildings = { cadiz: buildings };
+  if (walls) game.walls = { cadiz: walls };
+  return game;
 };
 const house = (type = "house_poor", level = 1, halted = false) => ({ type, level, halted, state: "active" });
 
 test("the helper composes base + houses + drift + kept walls, and only those", () => {
   const base = world.nodes.cadiz.pop;
   assert.equal(effectivePop(scene(), "cadiz"), base, "bare city reads its census");
-  const g = scene({ extra: 100, buildings: { poor: house("house_poor", 2), rich: house("house_rich", 1) }, walls: { level: 2, state: "active" } });
-  assert.ok(housePopBonus(g, "cadiz") > 0, "the scene really has house population");
-  assert.equal(effectivePop(g, "cadiz"), base + housePopBonus(g, "cadiz") + 100 + WALL_POP * 2);
+  const game = scene({ extra: 100, buildings: { poor: house("house_poor", 2), rich: house("house_rich", 1) }, walls: { level: 2, state: "active" } });
+  assert.ok(housePopBonus(game, "cadiz") > 0, "the scene really has house population");
+  assert.equal(effectivePop(game, "cadiz"), base + housePopBonus(game, "cadiz") + 100 + WALL_POP * 2);
 });
 
 test("drift and walls move the reading in both directions", () => {
@@ -41,29 +41,29 @@ test("drift and walls move the reading in both directions", () => {
 });
 
 test("every UI surface reads the helper: header, buildings tab and modal agree", () => {
-  const g = scene({ extra: 100, buildings: { poor: house("house_poor", 2) }, walls: { level: 1, state: "active" } });
-  const eff = cityEffects(g, "cadiz");
+  const game = scene({ extra: 100, buildings: { poor: house("house_poor", 2) }, walls: { level: 1, state: "active" } });
+  const eff = cityEffects(game, "cadiz");
   // port header (updateCityHeader) and buildings tab (bldPopLine) print eff.popEff;
-  // the city modal prints effectivePop(g, cityId) with its own base/houses/walls/drift breakdown
-  assert.equal(eff.popEff, effectivePop(g, "cadiz"));
-  const modalBreakdown = (world.nodes.cadiz.pop ?? 8000) + eff.popBonus + citylifeExtra(g, "cadiz") + WALL_POP * wallsKeptLevel(g, "cadiz");
+  // the city modal prints effectivePop(game, cityId) with its own base/houses/walls/drift breakdown
+  assert.equal(eff.popEff, effectivePop(game, "cadiz"));
+  const modalBreakdown = (world.nodes.cadiz.pop ?? 8000) + eff.popBonus + citylifeExtra(game, "cadiz") + WALL_POP * wallsKeptLevel(game, "cadiz");
   assert.equal(eff.popEff, modalBreakdown, "the modal breakdown sums to the same total");
   assert.equal(eff.pop + eff.popBonus + 100 + WALL_POP, eff.popEff, "the old header formula differed exactly by drift + walls");
 });
 
 test("market demand rows scale the same composition", () => {
-  const g = scene({ extra: 60, buildings: { poor: house() }, walls: { level: 1, state: "active" } });
-  advanceDay(g); // quiet scene: no plague, festival, growth or calamity, so every multiplier is 1
-  assert.equal(g.market.cadiz.grain.pop, effectivePop(g, "cadiz"), "grain demand reads the helper");
-  assert.equal(g.market.cadiz.wine.pop, effectivePop(g, "cadiz"), "and so does wine");
+  const game = scene({ extra: 60, buildings: { poor: house() }, walls: { level: 1, state: "active" } });
+  advanceDay(game); // quiet scene: no plague, festival, growth or calamity, so every multiplier is 1
+  assert.equal(game.market.cadiz.grain.pop, effectivePop(game, "cadiz"), "grain demand reads the helper");
+  assert.equal(game.market.cadiz.wine.pop, effectivePop(game, "cadiz"), "and so does wine");
 });
 
 test("save/load preserves the composition", () => {
-  const g = scene({ extra: 100, buildings: { poor: house("house_poor", 2) }, walls: { level: 2, state: "active" } });
-  const before = effectivePop(g, "cadiz");
-  const g2 = deserialize(JSON.parse(JSON.stringify(serialize(g, "Casa Vivienda", 1000))), world).g;
-  assert.equal(effectivePop(g2, "cadiz"), before);
-  assert.equal(cityEffects(g2, "cadiz").popEff, before);
+  const game = scene({ extra: 100, buildings: { poor: house("house_poor", 2) }, walls: { level: 2, state: "active" } });
+  const before = effectivePop(game, "cadiz");
+  const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Vivienda", 1000))), world).g;
+  assert.equal(effectivePop(loaded, "cadiz"), before);
+  assert.equal(cityEffects(loaded, "cadiz").popEff, before);
 });
 
 // Wiring guard (Auditoría 30/10): the semantic tests above stay green if web/main.mjs
