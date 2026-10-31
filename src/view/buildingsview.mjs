@@ -5,6 +5,7 @@ import { quoteRecipe, RECIPES, OUTPUTS } from "../sim/recipes.mjs";
 import { SEASON_PEAK } from "../sim/market.mjs";
 import { assetKey } from "./city2d.mjs";
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
+import { effectivePop } from "../game/citylife.mjs";
 
 export const TYPE_KEYS = Object.keys(BUILDING_TYPES);
 
@@ -73,11 +74,11 @@ export function upgradeOffer(g, cityId, plotId) {
   return { type: b.type, ok: true, level: q.level, cost: q.cost, materials: q.materials, fee: q.fee, days: q.ticks / TICKS_PER_DAY, upkeep: BUILDING_TYPES[b.type].upkeep * q.level, affordable: g.cash >= q.cost, maxLevel: BUILDING_TYPES[b.type].maxLevel, imported: q.imported };
 }
 
-/** Headline numbers for the tab: effective population with the house bonus, storage cap with the warehouse bonus. */
+/** Headline numbers for the tab: effective population (the shared composition: base + houses + drift + walls), storage cap with the warehouse bonus. */
 export function cityEffects(g, cityId) {
   const base = g.world.nodes[cityId]?.pop ?? 8000;
   const jobs = jobsNeeded(g, cityId), free = freeLabor(g, cityId);
-  return { pop: base, popBonus: housePopBonus(g, cityId), capBonus: warehouseCapBonus(g, cityId), jobs, free, staffing: staffingRatio(g, cityId) };
+  return { pop: base, popBonus: housePopBonus(g, cityId), popEff: effectivePop(g, cityId), capBonus: warehouseCapBonus(g, cityId), jobs, free, staffing: staffingRatio(g, cityId) };
 }
 export { WORKSHOP_BATCH_PATTERN };
 
