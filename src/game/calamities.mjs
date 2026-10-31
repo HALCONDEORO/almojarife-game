@@ -22,7 +22,12 @@ export const FIRE_MAX_HALTS = 2;     // buildings a fire can halt at once
 
 const fireRounds = (g, cityId) => towersFireWatch(g, cityId) + watchFireWatch(g, cityId, whCap(g, cityId)); // towers and the warehouse watch both walk fire rounds
 
-const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0);
+// Council works count too (follow-up (a) of #734): only their COMPLETED levels (rec.level)
+// mitigate — a level under construction (nextLevel) or a bare petition adds nothing yet, and an
+// upkeep-lapsed work (unkept) lapses its effect, as its own player text says ("queda sin efecto").
+// Council works never live in g.buildings (#763), so summing both registries cannot double-count.
+const civicLevels = (g, cityId, type) => { const rec = g.works?.[cityId]?.[type]; return rec && !rec.unkept ? rec.level ?? 0 : 0; };
+const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0) + civicLevels(g, cityId, type);
 const levels = (g, cityId, table) => Object.keys(table).reduce((a, t) => a + workingLevels(g, cityId, t), 0);
 
 /** Weekly chance of one calamity in one city, cut by its mitigating buildings. */
