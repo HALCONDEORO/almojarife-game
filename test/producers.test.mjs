@@ -210,3 +210,29 @@ test('every ratio in the production flow guards its actual denominator, never a 
  const b2=g2.buildings['cadiz']['cadiz:2'];
  assert.equal(b2.negDays??0,0,'unquotable recipe: no margin signal, no streak');
 });
+
+test('the staffing guard checks the same value the batch arithmetic consumes; a repair restores production',()=>{
+ // structural: workshopTick evaluates the ratio ONCE into a local and both the guard and the
+ // batches consume that local - no reload can diverge from the checked value
+ const src=readFileSync('src/game/buildings.mjs','utf8');
+ const tickBody=src.slice(src.indexOf('export function workshopTick'),src.indexOf('/** Building effects'));
+ assert.equal((tickBody.match(/staffingRatio\(/g)??[]).length,1,'the ratio is evaluated exactly once per tick');
+ assert.ok(/const staff = staffingRatio\(g, cityId\);[^\n]*\n  if \(staff <= 0\) return;/.test(tickBody),'the guard reads the same local the batches use');
+ assert.ok(!/\n\s*staff =/.test(tickBody),'and no later statement reassigns it');
+ // repair postcondition: a halted building produces nothing; after restartBuilding the very next
+ // tick on the same port produces again - the repair re-enables the real flow, not just a flag
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ buyPlot(g,'cadiz',{id:'cadiz:1',type:'fishery',w:4,d:4});
+ g.buildings['cadiz']['cadiz:1']={type:'fishery',level:3,state:'active',plotType:'fishery'};
+ const b=g.buildings['cadiz']['cadiz:1'];
+ b.halted=true;
+ g.tick=1*1440;workshopTick(g,'cadiz');
+ assert.equal(b.produced??0,0,'halted: nothing');
+ assert.ok(restartBuilding(g,'cadiz','cadiz:1').ok);
+ let producedAfter=0;
+ for(let t=2;t<=8&&producedAfter===0;t++){g.tick=t*1440;workshopTick(g,'cadiz');producedAfter=b.produced??0;}
+ assert.ok(producedAfter>0,'after the repair the building produces again');
+ // full-width accumulation: produced only ever grows by whole daily deltas, never partially written
+ let prev=0;
+ for(let t=9;t<=14;t++){g.tick=t*1440;workshopTick(g,'cadiz');const now=b.produced;assert.ok(Number.isInteger(now)&&now>=prev,'produced grows whole');prev=now;}
+});

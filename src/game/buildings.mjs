@@ -381,6 +381,11 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Checked value, used value: workshopTick evaluates the port ratio exactly once into a local and
+ * both the `staff <= 0` guard and the batch arithmetic consume that same local - no reload can
+ * diverge from the checked value. A repair must repair: restartBuilding's postcondition is that the
+ * building produces again on a later tick, not merely that a flag flipped. Counters are written
+ * full-width: produced only grows by whole daily deltas, never partially. */
 /** Denominator identity: every ratio's guard names the exact field it divides by. staffingRatio's
  * ternary guards `need < 1` and divides by that same `need`; staffed() divides by the length of the
  * level-selected pattern, which the PRODUCERS table keeps non-empty and positive for every level;
