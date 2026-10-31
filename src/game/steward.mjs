@@ -20,7 +20,7 @@ const GOOD_NAMES = {
   es: { grain: "trigo", fish: "pescado", esparto: "esparto", meat: "carne", pottery: "cerámica", legumes: "legumbres", leather: "cuero", salt: "sal", wool: "lana", iron: "hierro", ironware: "herrajes", bricks: "ladrillos", timber: "madera", cloth: "paño", olive_oil: "aceite", wine: "vino", silk: "seda", sugar: "azúcar", pepper: "pimienta", saffron: "azafrán", beer: "cerveza", soap: "jabón" },
   en: { grain: "grain", fish: "fish", esparto: "esparto", meat: "meat", pottery: "pottery", legumes: "legumes", leather: "leather", salt: "salt", wool: "wool", iron: "iron", ironware: "ironware", bricks: "bricks", timber: "timber", cloth: "cloth", olive_oil: "olive oil", wine: "wine", silk: "silk", sugar: "sugar", pepper: "pepper", saffron: "saffron", beer: "beer", soap: "soap" },
 };
-const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
+const whUsed = (wh) => Object.values(wh.goods).reduce((acc, qty) => acc + qty, 0);
 
 /** Set or replace the standing order for one good (configuración de mercancías).
    The contract, named once: prices are coins per unit of the good, compared
@@ -32,27 +32,27 @@ const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
    numbers in place and keeps its position in the priority list.
    Returns {ok} or {ok:false, reason}. */
 export function setStewardRule(g, city, good, rule, cap) {
-  const w = g.warehouses?.[city];
-  if (!w) return { ok: false, reason: "no warehouse here" };
+  const wh = g.warehouses?.[city];
+  if (!wh) return { ok: false, reason: "no warehouse here" };
   if (!g.world.goods[good]) return { ok: false, reason: "unknown good" };
   const src = rule ?? {};
-  const r = { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 };
+  const next = { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 };
   // whitelist: copy only own keys present (prototype-inherited values are ignored);
   // a key present but null/undefined/invalid fails validation below instead of defaulting to 0
-  for (const k of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (Object.prototype.hasOwnProperty.call(src, k)) r[k] = src[k];
-  for (const k of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (!Number.isFinite(r[k]) || r[k] < 0) return { ok: false, reason: "bad number" };
-  r.buyTo = Math.floor(r.buyTo) + 0; r.sellKeep = Math.floor(r.sellKeep) + 0; r.buyBelow += 0; r.sellAbove += 0; // +0 normalizes a signed zero away
-  if (r.buyBelow > 0 && !(r.buyTo > 0)) return { ok: false, reason: "buy needs a stock target" };
-  if (r.buyTo > (cap ?? Infinity)) return { ok: false, reason: "target above warehouse capacity" };
-  if (r.buyBelow > 0 && r.sellAbove > 0 && r.buyBelow >= r.sellAbove) return { ok: false, reason: "buy cap must stay below sell floor" }; // otherwise it churns and loses the fee both ways
-  (w.admin ??= { rules: {}, reserve: 0 }).rules[good] = r;
-  return { ok: true, rule: r };
+  for (const key of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (Object.prototype.hasOwnProperty.call(src, key)) next[key] = src[key];
+  for (const key of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (!Number.isFinite(next[key]) || next[key] < 0) return { ok: false, reason: "bad number" };
+  next.buyTo = Math.floor(next.buyTo) + 0; next.sellKeep = Math.floor(next.sellKeep) + 0; next.buyBelow += 0; next.sellAbove += 0; // +0 normalizes a signed zero away
+  if (next.buyBelow > 0 && !(next.buyTo > 0)) return { ok: false, reason: "buy needs a stock target" };
+  if (next.buyTo > (cap ?? Infinity)) return { ok: false, reason: "target above warehouse capacity" };
+  if (next.buyBelow > 0 && next.sellAbove > 0 && next.buyBelow >= next.sellAbove) return { ok: false, reason: "buy cap must stay below sell floor" }; // otherwise it churns and loses the fee both ways
+  (wh.admin ??= { rules: {}, reserve: 0 }).rules[good] = next;
+  return { ok: true, rule: next };
 }
 export function clearStewardRule(g, city, good) {
-  const a = stewardOf(g, city);
-  if (!a?.rules[good]) return { ok: false, reason: "no rule" };
-  delete a.rules[good];
-  if (a.off) delete a.off[good];
+  const adm = stewardOf(g, city);
+  if (!adm?.rules[good]) return { ok: false, reason: "no rule" };
+  delete adm.rules[good];
+  if (adm.off) delete adm.off[good];
   return { ok: true };
 }
 /** Reorder one standing order in the priority list (prioridad almacenero): the steward
@@ -99,87 +99,107 @@ export function setStewardRuleEnabled(g, city, good, enabled) {
   else (adm.off ??= {})[good] = true;
   return { ok: true, enabled, changed: true };
 }
+/** Dismiss the administrator: remove the whole automation record (every standing
+   order, the paused markers and the coin reserve) in one explicit command
+   (ciclo del almacenero). Lifecycle facts, established for this game and
+   documented where the contract asks: there is no hiring step and no fee - the
+   administrator comes free with the warehouse, so there is no cost to check or
+   refund; no scheduled work exists to cancel, because the orders run inline in
+   the day tick; and the goods in the store are never touched. Re-hiring is just
+   setting orders again. A dismiss with nothing to dismiss fails explicitly
+   ("nothing to dismiss"), so a stale or repeated removal has a defined outcome. */
+export function dismissSteward(g, city) {
+  const wh = g.warehouses?.[city];
+  if (!wh) return { ok: false, reason: "no warehouse here" };
+  const adm = wh.admin;
+  const rules = adm ? Object.keys(adm.rules).length : 0;
+  const paused = adm?.off ? Object.keys(adm.off).length : 0;
+  if (!adm || (rules === 0 && paused === 0 && !(adm.reserve > 0))) return { ok: false, reason: "nothing to dismiss" };
+  const reserve = adm.reserve ?? 0;
+  delete wh.admin;
+  return { ok: true, rules, reserve };
+}
 /** Cash the administrator must leave untouched. */
 export function setStewardReserve(g, city, amount) {
-  const w = g.warehouses?.[city];
-  if (!w || !Number.isFinite(amount) || amount < 0) return { ok: false, reason: "bad amount" };
+  const wh = g.warehouses?.[city];
+  if (!wh || !Number.isFinite(amount) || amount < 0) return { ok: false, reason: "bad amount" };
   const normalized = Math.floor(amount);
   if (amount > 0 && normalized === 0) return { ok: false, reason: "bad amount" }; // a positive reserve must survive normalization (setPriceAlert pattern)
-  (w.admin ??= { rules: {}, reserve: 0 }).reserve = normalized;
+  (wh.admin ??= { rules: {}, reserve: 0 }).reserve = normalized;
   return { ok: true };
 }
 
 /** One market slot for one port: run every standing order of its warehouse. */
 export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
-  const w = g.warehouses?.[city], a = w?.admin;
-  if (!a || g.over) return null;
-  if ((g.shocks ?? []).some((s) => s.type === "port_closed" && s.city === city && s.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
+  const wh = g.warehouses?.[city], adm = wh?.admin;
+  if (!adm || g.over) return null;
+  if ((g.shocks ?? []).some((shock) => shock.type === "port_closed" && shock.city === city && shock.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
   const did = [];
-  for (const [good, r] of Object.entries(a.rules)) {
-    if (a.off?.[good]) continue; // a paused order keeps its numbers but is not served
-    const e = g.market[city]?.[good];
-    if (!e) continue;
+  for (const [good, rule] of Object.entries(adm.rules)) {
+    if (adm.off?.[good]) continue; // adm paused order keeps its numbers but is not served
+    const entry = g.market[city]?.[good];
+    if (!entry) continue;
     // Sell first: it frees room and cash for the buy side.
-    if (r.sellAbove > 0 && !whLocked(w, good)) { // a locked good never leaves the store, not even on a standing order
-      const have = w.goods[good] ?? 0, can = have - r.sellKeep;
+    if (rule.sellAbove > 0 && !whLocked(wh, good)) { // a locked good never leaves the store, not even on a standing order
+      const have = wh.goods[good] ?? 0, can = have - rule.sellKeep;
       if (can > 0) {
-        let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell
+        let sold = 0, revenue = 0; // unit sold+1 joins the market at stock+sold+1 and fetches that price, as in trade.sell
         const purse = WHOLESALE_PURSE_BINDING ? commerceOf(g.market[city]) : null; // standing orders cannot draw more than the purse holds
         const cashCents = purse ? Math.round(purse.cash * 100) : 0; // integer cents, like trade.sell
         let revenueCents = 0;
-        while (n < can) { const p = price(g.world, { ...e, stock: e.stock + n + 1 }, good); if (p < r.sellAbove) break; const unit = floor2(p * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; n++; }
-        if (n > 0) {
-          const scarcity = scarcityOf(e); // shortage BEFORE the sale, as in doSell
-          e.stock += n;
-          const had = w.goods[good], paid = w.basis?.[good] ?? 0, spent = n === had ? paid : Math.round(paid * n / had);
-          w.goods[good] = had - n; if (w.basis) w.basis[good] = paid - spent;
-          if (!w.goods[good]) { delete w.goods[good]; if (w.basis) delete w.basis[good]; }
+        while (sold < can) { const px = price(g.world, { ...entry, stock: entry.stock + sold + 1 }, good); if (px < rule.sellAbove) break; const unit = floor2(px * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; sold++; }
+        if (sold > 0) {
+          const scarcity = scarcityOf(entry); // shortage BEFORE the sale, as in doSell
+          entry.stock += sold;
+          const had = wh.goods[good], paid = wh.basis?.[good] ?? 0, spent = sold === had ? paid : Math.round(paid * sold / had);
+          wh.goods[good] = had - sold; if (wh.basis) wh.basis[good] = paid - spent;
+          if (!wh.goods[good]) { delete wh.goods[good]; if (wh.basis) delete wh.basis[good]; }
           g.cash += revenue;
           noteTrade(g, city); // a standing-order sale keeps the name alive like a manual one
           repOnSale(g, city, scarcity, revenue); // standing orders earn (and lose) reputation like manual trades
-          if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); // relief into a starving port is remembered
-          relationsOnSale(g, city, good, n, revenue); // a standing-order sale earns the rival nod like a manual one
+          if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", sold); // relief into a starving port is remembered
+          relationsOnSale(g, city, good, sold, revenue); // a standing-order sale earns the rival nod like a manual one
           if (addRespect(g, city, revenue)) post(g, "respect", { city }); // and the house earns respect, as in doSell
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
-          if (docked) recordSale(g, docked, n, revenue, revenue - spent);
-          recordWholesaleSale(g.market[city], good, n, revenue); // telemetry: the port's purse paid for the goods
-          did.push({ good, sold: n, revenue });
+          if (docked) recordSale(g, docked, sold, revenue, revenue - spent);
+          recordWholesaleSale(g.market[city], good, sold, revenue); // telemetry: the port's purse paid for the goods
+          did.push({ good, sold, revenue });
         }
       }
     }
-    if (r.buyBelow > 0 && r.buyTo > 0) {
-      const room = cap - whUsed(w), want = r.buyTo - (w.goods[good] ?? 0);
-      let budget = Math.floor(g.cash - (a.reserve ?? 0));
+    if (rule.buyBelow > 0 && rule.buyTo > 0) {
+      const room = cap - whUsed(wh), want = rule.buyTo - (wh.goods[good] ?? 0);
+      const budget = Math.floor(g.cash - (adm.reserve ?? 0));
       if (room > 0 && want > 0 && budget > 0) {
-        const maxN = Math.min(want, room, e.stock); // fixed before the loop: e.stock shrinks as we buy
-        let n = 0, cost = 0;
-        while (n < maxN) {
-          const unit = price(g.world, e, good);
-          if (unit > r.buyBelow) break;
+        const maxN = Math.min(want, room, entry.stock); // fixed before the loop: entry.stock shrinks as we buy
+        let bought = 0, cost = 0;
+        while (bought < maxN) {
+          const unit = price(g.world, entry, good);
+          if (unit > rule.buyBelow) break;
           const charged = ceil2(unit * (1 + FEE));
           if (cost + charged > budget) break;
-          cost += charged; e.stock -= 1; n++;
+          cost += charged; entry.stock -= 1; bought++;
         }
-        if (n > 0) {
-          craftCount(g, city, good, n); // the steward's standing orders ship goods out like any buyer
+        if (bought > 0) {
+          craftCount(g, city, good, bought); // the steward's standing orders ship goods out like any buyer
           g.cash -= cost;
           noteTrade(g, city);
-          repOnBuy(g, city, scarcityOf(e), cost); // post-buy scarcity, as in doBuy
-          if (good === "grain" && scarcityOf(e) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "grievance", n); // hauling grain out of a starving port is remembered too
-          w.goods[good] = (w.goods[good] ?? 0) + n;
-          (w.basis ??= {})[good] = (w.basis[good] ?? 0) + cost;
-          recordMarketPurchase(g.market[city], good, n, cost, e.stock + n); // telemetry: the port's purse received the payment
-          did.push({ good, bought: n, cost });
+          repOnBuy(g, city, scarcityOf(entry), cost); // post-buy scarcity, as in doBuy
+          if (good === "grain" && scarcityOf(entry) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "grievance", bought); // hauling grain out of a starving port is remembered too
+          wh.goods[good] = (wh.goods[good] ?? 0) + bought;
+          (wh.basis ??= {})[good] = (wh.basis[good] ?? 0) + cost;
+          recordMarketPurchase(g.market[city], good, bought, cost, entry.stock + bought); // telemetry: the port's purse received the payment
+          did.push({ good, bought, cost });
         }
       }
     }
   }
   const cityName = g.world.nodes[city]?.name ?? city;
-  for (const d of did) {
-    const ges = GOOD_NAMES.es[d.good] ?? d.good, gen = GOOD_NAMES.en[d.good] ?? d.good;
-    const txt = d.sold
-      ? { es: `El administrador vendió ${d.sold} de ${ges} en ${cityName} por ${d.revenue}.`, en: `The steward sold ${d.sold} ${gen} in ${cityName} for ${d.revenue}.` }
-      : { es: `El administrador compró ${d.bought} de ${ges} en ${cityName} por ${d.cost}.`, en: `The steward bought ${d.bought} ${gen} in ${cityName} for ${d.cost}.` };
+  for (const row of did) {
+    const ges = GOOD_NAMES.es[row.good] ?? row.good, gen = GOOD_NAMES.en[row.good] ?? row.good;
+    const txt = row.sold
+      ? { es: `El administrador vendió ${row.sold} de ${ges} en ${cityName} por ${row.revenue}.`, en: `The steward sold ${row.sold} ${gen} in ${cityName} for ${row.revenue}.` }
+      : { es: `El administrador compró ${row.bought} de ${ges} en ${cityName} por ${row.cost}.`, en: `The steward bought ${row.bought} ${gen} in ${cityName} for ${row.cost}.` };
     post(g, "steward", { city, txt });
   }
   return did.length ? did : null;
