@@ -24,8 +24,11 @@ if (JSON.stringify(report.horizons ?? null) !== JSON.stringify(EXPECTED_H)) { co
 
 // Split runs (the Balance workflow's weekly 100-year legs): BALANCE_BASE=0 legs carry only the
 // per-seed slice. Fail loudly on a mismatched slice so a missing base slice never skips checks silently.
-const baseExpected = process.env.BALANCE_BASE !== "0";
-if (baseExpected !== !!report.scenarios) { console.log("FAIL  base slice " + (report.scenarios ? "present" : "missing") + " but BALANCE_BASE=" + (baseExpected ? "1" : "0")); process.exit(1); }
+const baseEnv = process.env.BALANCE_BASE ?? "1";
+if (baseEnv !== "0" && baseEnv !== "1") { console.log(`FAIL  BALANCE_BASE must be "0" or "1", got ${JSON.stringify(baseEnv)}`); process.exit(1); } // skipcq: JS-0002 - Node CLI script, not browser code
+const baseExpected = baseEnv === "1";
+if (!baseExpected && seeds.length === 0) { console.log("FAIL  BALANCE_BASE=0 seed leg requires at least one seed in BALANCE_SEEDS (an empty leg would pass with 0 checks)"); process.exit(1); } // skipcq: JS-0002 - Node CLI script, not browser code
+if (baseExpected !== Boolean(report.scenarios)) { console.log(`FAIL  base slice ${report.scenarios ? "present" : "missing"} but BALANCE_BASE=${baseEnv}`); process.exit(1); } // skipcq: JS-0002 - Node CLI script, not browser code
 const check = (name, actual, ok, expect) => checks.push({ name, actual, ok, expect });
 const warn = (name, actual, note) => warnings.push({ name, actual, note });
 const within = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
@@ -85,7 +88,7 @@ if (baseExpected) check("A: price index stays in band [0.70, 1.60] at 1y", A.pri
 const npcCashYear1 = A.horizons?.[365]?.npcCash;
 const absoluteCashGrowth = A.npcCash?.[0] > 0 ? npcCashYear1 / A.npcCash[0] : NaN;
 const absoluteWorthGrowth = A.npcWorth?.[0] > 0 ? A.horizons?.[365]?.npcWorth / A.npcWorth[0] : NaN;
-if (baseExpected) console.log(`info visible absolute NPC growth at 365d: cash ${absoluteCashGrowth.toFixed(2)}x, worth ${absoluteWorthGrowth.toFixed(2)}x. Legacy cash gate 0.215-30 was FAIL on activation (32.37x cash / 34.40x worth); it is not erased or called equivalent.`);
+if (baseExpected) console.log(`info visible absolute NPC growth at 365d: cash ${absoluteCashGrowth.toFixed(2)}x, worth ${absoluteWorthGrowth.toFixed(2)}x. Legacy cash gate 0.215-30 was FAIL on activation (32.37x cash / 34.40x worth); it is not erased or called equivalent.`); // skipcq: JS-0002 - Node CLI script, not browser code
 // Regional-rival warmup leaves 6,000 starting cash instead of legacy 48,521.
 // Compare simultaneous OFF/ON wealth (cash+cargo), not unlike post-warmup cash denominators.
 if (baseExpected) for (const h of H) {

@@ -53,24 +53,36 @@ test('split run: BALANCE_BASE=0 legs carry and check only the per-seed slice; sl
   const dir = mkdtempSync(join(tmpdir(), 'bal-split-'));
   // Seed leg: no base slice, seed 1 only.
   const seedRep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '365', '1'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, BALANCE_BASE: '0' } }));
-  assert.equal(seedRep.scenarios, undefined);
-  assert.equal(seedRep.npcOff, undefined);
+  assert.ok(!("scenarios" in seedRep), "seed leg carries no base scenarios");
+  assert.ok(!("npcOff" in seedRep), "seed leg carries no npcOff slice");
   assert.deepEqual(Object.keys(seedRep.seedRuns), ['1']);
   assert.deepEqual(Object.keys(seedRep.pairedBuilders), ['1']); // pair 0 belongs to the base leg
-  const f = join(dir, 'seed.json'); writeFileSync(f, JSON.stringify(seedRep));
-  const ok = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [f]);
+  const seedFile = join(dir, 'seed.json'); writeFileSync(seedFile, JSON.stringify(seedRep));
+  const ok = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [seedFile]);
   assert.equal(ok.status, 0, ok.stdout.slice(-800));
   // The same seed-only report must FAIL with BALANCE_BASE unset (a full run missing its base slice is never a silent skip).
-  const missingBase = run({ BALANCE_SEEDS: '1' }, [f]);
+  const missingBase = run({ BALANCE_SEEDS: '1' }, [seedFile]);
   assert.notEqual(missingBase.status, 0);
   assert.match(missingBase.stdout, /base slice missing but BALANCE_BASE=1/);
   // A full base report must FAIL in a seed leg.
   const fullRep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '365', '1'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
-  const f2 = join(dir, 'full.json'); writeFileSync(f2, JSON.stringify(fullRep));
-  const baseInSeedLeg = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [f2]);
+  const fullFile = join(dir, 'full.json'); writeFileSync(fullFile, JSON.stringify(fullRep));
+  const baseInSeedLeg = run({ BALANCE_SEEDS: '1', BALANCE_BASE: '0' }, [fullFile]);
   assert.notEqual(baseInSeedLeg.status, 0);
   assert.match(baseInSeedLeg.stdout, /base slice present but BALANCE_BASE=0/);
   // And the full report still passes as a full run (the single-shot path is unchanged).
-  const fullOk = run({ BALANCE_SEEDS: '1' }, [f2]);
+  const fullOk = run({ BALANCE_SEEDS: '1' }, [fullFile]);
   assert.equal(fullOk.status, 0, fullOk.stdout.slice(-800));
+});
+
+test('split run strict flags: a seed leg with no seeds passes 0 checks and must fail; BALANCE_BASE validates', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bal-split-strict-'));
+  const fullRep = JSON.parse(execFileSync(process.execPath, ['tools/sim_buildings_economy.mjs', '365'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+  const repFile = join(dir, 'rep.json'); writeFileSync(repFile, JSON.stringify(fullRep));
+  const emptyLeg = run({ BALANCE_SEEDS: 'none', BALANCE_BASE: '0' }, [repFile]);
+  assert.notEqual(emptyLeg.status, 0);
+  assert.match(emptyLeg.stdout, /requires at least one seed/);
+  const badFlag = run({ BALANCE_SEEDS: 'none', BALANCE_BASE: 'yes' }, [repFile]);
+  assert.notEqual(badFlag.status, 0);
+  assert.match(badFlag.stdout, /BALANCE_BASE must be "0" or "1"/);
 });

@@ -5,8 +5,8 @@ name: Balance
 #   PR gate ......... 10 game years (3650 days), default + 3 extra seeds, one job (unchanged)
 #   push to main .... 100 game years, default + 3 extra seeds, split into 4 parallel legs
 #   nightly 02:17 ... 100 game years, split into 4 parallel legs (restored from the old single run)
-#   weekly Sat 02:47  100 game years, split into 4 parallel legs; Saturday so it never shares a
-#                     morning with the nightly cron (on Sunday both would fire)
+#   weekly Sat 02:47  100 game years, split into 4 parallel legs; the nightly cron skips Saturday
+#                     (0-5) so the two never fire on the same morning
 #   manual dispatch . the same 100y legs, default + 3 extra seeds (the old seeds input is gone:
 #                     the legs cover the default set; a custom set runs locally with
 #                     BALANCE_DAYS/BALANCE_SEEDS + node tools/sim_balance_check.mjs)
@@ -57,8 +57,8 @@ on:
       - "!**/*.gif"
       - "!**/*.svg"
   schedule:
-    - cron: "17 2 * * *" # nightly, 02:17 UTC: the full 100-year run, split into parallel legs
-    - cron: "47 2 * * 6" # weekly, Saturday 02:47 UTC: the full 100-year run, split into parallel legs
+    - cron: "17 2 * * 0-5" # nightly Sunday-Friday, 02:17 UTC: the full 100-year run, split into parallel legs
+    - cron: "47 2 * * 6" # Saturday 02:47 UTC takes the weekly slot instead of the nightly run, so the two never fire on the same morning
   workflow_dispatch: # runs the same 100y legs (see the header note about the removed seeds input)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
