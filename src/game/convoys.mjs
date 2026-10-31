@@ -31,6 +31,10 @@ export function escortOf(g, ship) {
  * all members, so a failure always fires on the first call - departures are atomic, a failed
  * first leg strands nobody. Reset is selective: disband/leave clear exactly the backlink and
  * the registration; every other ship field (name, cargo, hull, position) is preserved.
+ * Batch contract: the size limit (2-5) binds the group, never the fleet - an oversized
+ * command fails whole and loses no ship, and a fleet of any size is fine. The candidate
+ * pool is answered from live state on every command: grouped or at-sea ships are not
+ * candidates, a docked free ship is, and where it is docked decides what it can join.
  * Removal contract: leaving is positional - survivors keep their relative order, dropping
  * under two hulls disbands (survivor backlink and registration cleared, disband posted). A
  * miss changes and posts nothing. Formation collapses duplicate inputs; a corrupt duplicate

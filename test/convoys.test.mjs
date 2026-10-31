@@ -221,6 +221,28 @@ test('roster removal is positional, normalizes duplicates, and never moves membe
  assert.ok(leaveConvoy(g,s0.id).ok,'the first leave succeeds');
  assert.equal(leaveConvoy(g,s0.id).reason,'no convoy','the second is a miss');
 });
+test('the batch limit is local to the group, not the fleet, and the candidate pool answers honestly',()=>{
+ const {g,s0,s1}=mk();g.noGoal=true;
+ for(let i=0;i<4;i++)assert.ok(buyCaravel(g,s0.at).ok); // fleet of 6
+ const ids=g.ships.map(s=>s.id);
+ assert.equal(ids.length,6);
+ // the batch limit binds the group, never the fleet: five fit, six do not, the fleet keeps all six
+ assert.equal(formConvoy(g,ids).reason,'bad size','six is over the batch limit');
+ assert.equal(g.ships.length,6,'an oversized command loses no ship');
+ const cv=formConvoy(g,ids.slice(0,5)).convoy;
+ assert.equal(cv.ships.length,5,'the full batch fits');
+ // the pool answers honestly after formation: members are no longer candidates, the sixth still is
+ assert.equal(formConvoy(g,ids.slice(0,2)).reason,'already grouped','a member cannot be re-picked');
+ assert.equal(formConvoy(g,[ids[5]]).reason,'bad size','the one free ship is a real candidate but not a group alone');
+ // an at-sea ship is out of the pool until it docks
+ doSail(g,g.ships[5],'sevilla');
+ assert.equal(formConvoy(g,[ids[0],ids[5]]).reason,'already grouped','the first invalid candidate decides the reason');
+ assert.equal(formConvoy(g,[ids[5],ids[0]]).reason,'at sea','an at-sea ship is out of the pool until it docks');
+ assert.equal(formConvoy(g,[ids[5],ids[5]]).reason,'bad size','duplicates collapse to one hull');
+ let n=0;while(g.ships[5].voyage&&n++<400)advanceDay(g);
+ assert.ok(disbandConvoy(g,cv.id).ok);
+ assert.equal(formConvoy(g,[ids[5],ids[0]]).reason,'scattered','docked again but in another port');
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;
