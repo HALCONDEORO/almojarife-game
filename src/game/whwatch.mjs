@@ -7,10 +7,13 @@
 //   the notes leave it open: the source's asymmetric clamp (a cut could stay above a
 //   lowered limit) is NOT adopted - a lowered cap never leaves guards above the limit,
 //   because the effective level re-clamps against the live cap at every read.
-// - Classification: security grade 0/1/2 from stored units M vs kept guards G with the
-//   source's sqrt shape (Q = trunc(sqrt(2M)); Q > 2G -> 0, Q < G -> 2, else 1; empty
-//   warehouse: M = G = 0 -> 1, M = 0 with guards -> 2). A classification shown to the
-//   player, not a theft probability: no theft mechanic exists.
+// - Classification: security grade 0/1/2 from stored units M vs kept guards G with a
+//   sqrt shape (L = trunc(sqrt(M/2)); L > 2G -> 0, L < G -> 2, else 1; empty warehouse:
+//   M = G = 0 -> 1, M = 0 with guards -> 2). Own tuning, halved 2026-10-31: the P3 study
+//   ties the watch requirement to the REQUIRED storage and keeps the sqrt shape but does
+//   not document its divisor, so one guard now covers twice the goods (L of M instead of
+//   trunc(sqrt(2M))). A classification shown to the player, not a theft probability:
+//   no theft mechanic exists.
 // - Accounting: the wage (kept guards x WH_WATCH_WAGE, an exact integer, the same figure
 //   the tab shows as the estimate) accrues once per day into the weekly book under
 //   accrued.buildings["whwatch:<city>"] - per period and per city identifier, the
@@ -32,8 +35,8 @@ export const whCap = (g, city) => WH_BASE_CAP + warehouseCapBonus(g, city);
 export const WH_WATCH_WAGE = 1;      // coins per guard and day (own tuning: a watchtower's upkeep)
 export const WH_WATCH_FIRE_EVERY = 5; // guards per fire-mitigation level (own tuning: five watchmen match one tower's round)
 
-/** Guard cap for a storage capacity: the full-load classification threshold, floored plus one, so grade 2 stays reachable even when sqrt(2 x cap) is an exact integer (cap 1800: threshold 60, cap 61). */
-export const watchMaxFor = (cap) => (cap > 0 ? Math.trunc(Math.sqrt(2 * cap)) + 1 : 0);
+/** Guard cap for a storage capacity: the full-load classification threshold, floored plus one, so grade 2 stays reachable even when sqrt(cap/2) is an exact integer (cap 1800: threshold 30, cap 31). Same own halved tuning as the classification. */
+export const watchMaxFor = (cap) => (cap > 0 ? Math.trunc(Math.sqrt(cap / 2)) + 1 : 0);
 
 /** The watch record of a port's warehouse, or null. */
 export const watchOf = (g, city) => g.warehouses?.[city]?.watch ?? null;
@@ -59,11 +62,11 @@ export function setWatch(g, city, n, cap) {
   return { ok: true, guards };
 }
 
-/** Security grade 0 (low), 1 (fair), 2 (high): stored units against kept guards, the source's sqrt shape. */
+/** Security grade 0 (low), 1 (fair), 2 (high): stored units against kept guards, the own halved sqrt shape. */
 export function watchSecurity(g, city, cap) {
   const stored = whUsed(g.warehouses?.[city] ?? { goods: {} }), onDuty = watchKept(g, city, cap);
   if (stored === 0) return onDuty > 0 ? 2 : 1; // nothing to guard: fair without a watch, high with one
-  const load = Math.trunc(Math.sqrt(2 * stored));
+  const load = Math.trunc(Math.sqrt(stored / 2));
   return load > 2 * onDuty ? 0 : load < onDuty ? 2 : 1;
 }
 

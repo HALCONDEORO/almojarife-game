@@ -20,10 +20,10 @@ test('contract: warehouse and game-state validation, whole-number clamp to the l
 });
 test('the max follows the storage capacity and grade 2 stays reachable at full load',()=>{
  assert.equal(watchMaxFor(0),0,'no capacity: no watch');
- assert.equal(watchMaxFor(300),25); // trunc(sqrt(600)) + 1
- assert.equal(watchMaxFor(1800),61,'an exact-integer threshold still admits one guard above it (perfect square)');
+ assert.equal(watchMaxFor(300),13); // trunc(sqrt(150)) + 1
+ assert.equal(watchMaxFor(1800),31,'an exact-integer threshold still admits one guard above it (perfect square: sqrt(900) = 30)');
  for(const cap of [300,600,1800]){
-  assert.ok(watchMaxFor(cap)>Math.trunc(Math.sqrt(2*cap)),`one guard above the full-load threshold, cap ${cap}`);
+  assert.ok(watchMaxFor(cap)>Math.trunc(Math.sqrt(cap/2)),`one guard above the full-load threshold, cap ${cap}`);
  }
  assert.ok(watchMaxFor(600)>watchMaxFor(300),'the limit moves with the capacity');
 });
@@ -32,14 +32,16 @@ test('classification: the sqrt shape and its edges',()=>{
  assert.equal(watchSecurity(gm,'cadiz',cap),1,'empty and unguarded: fair');
  assert.ok(setWatch(gm,'cadiz',3,cap).ok);
  assert.equal(watchSecurity(gm,'cadiz',cap),2,'empty and guarded: high');
- wh.goods.grain=50; // M=50, Q=trunc(sqrt(100))=10
- assert.equal(watchSecurity(gm,'cadiz',cap),0,'Q=10 > 2G=6: low');
+ // (goods added below replace the guard level case by case)
+ wh.goods.grain=50; // M=50, L=trunc(sqrt(25))=5 (own halved tuning)
+ assert.ok(setWatch(gm,'cadiz',2,cap).ok);
+ assert.equal(watchSecurity(gm,'cadiz',cap),0,'L=5 > 2G=4: low');
+ assert.ok(setWatch(gm,'cadiz',3,cap).ok);
+ assert.equal(watchSecurity(gm,'cadiz',cap),1,'L=5 <= 2G=6 and not below G: fair');
  assert.ok(setWatch(gm,'cadiz',5,cap).ok);
- assert.equal(watchSecurity(gm,'cadiz',cap),1,'Q=10 == 2G: fair (strict thresholds)');
- assert.ok(setWatch(gm,'cadiz',10,cap).ok);
- assert.equal(watchSecurity(gm,'cadiz',cap),1,'Q=10 == G: fair');
- assert.ok(setWatch(gm,'cadiz',11,cap).ok);
- assert.equal(watchSecurity(gm,'cadiz',cap),2,'Q=10 < G=11: high');
+ assert.equal(watchSecurity(gm,'cadiz',cap),1,'L=5 == G: fair (strict high edge)');
+ assert.ok(setWatch(gm,'cadiz',6,cap).ok);
+ assert.equal(watchSecurity(gm,'cadiz',cap),2,'L=5 < G=6: high');
  watchOf(gm,'cadiz').unkept=true; // mutating the saved record straight: an unpaid watch guards nothing
  assert.equal(watchSecurity(gm,'cadiz',cap),0,'unpaid: the watch counts as 0');
  assert.equal(watchKept(gm,'cadiz',cap),0);
@@ -104,15 +106,15 @@ test('day-loop wiring: an upgraded depot pays its full watch through advanceDay'
  gm.buildings={cadiz:{plot1:{type:'warehouse',state:'active',level:5}}}; // +1500: depot cap 300 -> 1800
  const cap=warehouseCap(gm,'cadiz');
  assert.equal(cap,1800,'the depot upgrade applies');
- assert.ok(setWatch(gm,'cadiz',60,cap).ok,'the live max admits 60 guards at cap 1800');
- assert.equal(watchKept(gm,'cadiz',cap),60);
+ assert.ok(setWatch(gm,'cadiz',30,cap).ok,'the live max admits 30 guards at cap 1800');
+ assert.equal(watchKept(gm,'cadiz',cap),30);
  gm.accrued={ships:{}};
  advanceDay(gm);
- assert.equal(gm.accrued.buildings['whwatch:cadiz'],60*WH_WATCH_WAGE,'the day loop charges the full watch, not the base-cap clamp');
+ assert.equal(gm.accrued.buildings['whwatch:cadiz'],30*WH_WATCH_WAGE,'the day loop charges the full watch, not the base-cap clamp');
 });
 test('the estimate shown is the charge booked: exact integer arithmetic, no rounding drift',()=>{
  const gm=mk(),cap=warehouseCap(gm,'cadiz');
- for(const lvl of [1,3,7,25]){
+ for(const lvl of [1,3,7,13]){
   assert.ok(setWatch(gm,"cadiz",lvl,cap).ok);
   gm.accrued={ships:{}};gm.day+=1;accrueWatch(gm,capOf(gm),0);
   assert.equal(gm.accrued.buildings['whwatch:cadiz'],lvl*WH_WATCH_WAGE,'the booked charge is exactly guards x wage');
