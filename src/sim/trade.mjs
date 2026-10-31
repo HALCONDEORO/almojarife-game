@@ -118,10 +118,12 @@ export function sell(world, market, ship, good, qty, fee = FEE) {
   recordWholesaleSale(market[ship.at], good, qty, revenue); // telemetry: the port's purse paid the seller
   return { ok: true, qty, revenue, profit: revenue - spent, spent };
 }
-/** What a buy of qty would do, without changing anything. Same rules as buy(). */
+/** What a buy of qty would do, without changing anything. Same rules as buy().
+   qty is a positive safe integer, or Infinity for the typed "all that fits":
+   a maximum-integer sentinel would silently underfill a hold larger than it. */
 export function previewBuy(world, market, ship, cash, good, qty, fee = FEE) {
   const e = market[ship.at]?.[good];
-  if (ship.voyage || !e || !Number.isSafeInteger(qty) || qty <= 0 || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
+  if (ship.voyage || !e || !(qty === Infinity || (Number.isSafeInteger(qty) && qty > 0)) || !(cash >= 0)) return { qty: 0, cost: 0, avg: 0, next: null };
   const room = Math.max(0, shipCapacity(ship) - cargoUsed(ship));
   const lim = Math.min(qty, e.stock, room);
   const sim = { ...e }; let n = 0, cost = 0;

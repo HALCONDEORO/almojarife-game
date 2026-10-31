@@ -580,7 +580,10 @@ export function storeGoods(g, ship, good, qty) {
   w.goods[good] = (w.goods[good] ?? 0) + qty;
   return { ok: true, qty };
 }
-/** Move goods from the warehouse into the hold (limited by the free room). */
+/** Move goods from the warehouse into the hold (limited by the free room).
+   qty is a positive number (non-integers are floored) or Infinity, the typed
+   "all that fits" - the clamp below turns it into the real amount; no maximum
+   integer sentinel. */
 export function takeGoods(g, ship, good, qty) {
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
   const w = warehouseOf(g, ship.at);
