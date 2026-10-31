@@ -35,10 +35,10 @@ test('convoy ids are minted once and never reused, even across disband and reloa
  assert.equal(g.convoys[cv1.id],undefined,'registration removed on disband');
  const cv2=formConvoy(g,[s0.id,s1.id]).convoy;
  assert.notEqual(cv2.id,cv1.id,'a disbanded id is never reused');
- const r=deserialize(serialize(g,'T'),world).g;
- assert.equal(r.convoySeq,g.convoySeq,'the sequence survives a save/load round-trip');
- assert.ok(disbandConvoy(r,cv2.id).ok);
- const cv3=formConvoy(r,[r.ships[0].id,r.ships[1].id]).convoy;
+ const loaded=deserialize(serialize(g,'T'),world).g;
+ assert.equal(loaded.convoySeq,g.convoySeq,'the sequence survives a save/load round-trip');
+ assert.ok(disbandConvoy(loaded,cv2.id).ok);
+ const cv3=formConvoy(loaded,[loaded.ships[0].id,loaded.ships[1].id]).convoy;
  assert.ok(![cv1.id,cv2.id].includes(cv3.id),'no id reuse after reload either');
 });
 test('the convoy sails together at the pace of the slowest hull',()=>{

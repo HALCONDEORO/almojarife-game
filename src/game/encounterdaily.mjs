@@ -89,23 +89,23 @@ export function prizeFor(g,encounterId){
  * no-op rejection and the fleet grows at most by one. The escort binding (escorted /
  * escortedBy) lives on the shared voyage record and dies with it on arrival. */
 export function claimPrize(g,keep){
- const e=g.encounterReport;
- if(g.over||!e?.prize)return{ok:false};
- const winner=g.ships.find(s=>s.id===e.ship);
+ const report=g.encounterReport;
+ if(g.over||!report?.prize)return{ok:false};
+ const winner=g.ships.find(s=>s.id===report.ship);
  if(keep&&!winner)return{ok:false};
  let prize=null;
  if(keep){
-  prize=makeShip(g.nextId++,e.prize.type,winner.at,g.ships);
-  prize.hull=e.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
+  prize=makeShip(g.nextId++,report.prize.type,winner.at,g.ships);
+  prize.hull=report.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
   if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
   g.ships.push(prize);
  }
  const txt=keep
-  ?{es:`Presa capturada: ${e.prize.type} se une a tu flota (casco ${e.prize.hull}%, sin tripulación).`,en:`Prize taken: a ${e.prize.type} joins your fleet (hull ${e.prize.hull}%, no crew).`}
+  ?{es:`Presa capturada: ${report.prize.type} se une a tu flota (casco ${report.prize.hull}%, sin tripulación).`,en:`Prize taken: a ${report.prize.type} joins your fleet (hull ${report.prize.hull}%, no crew).`}
   :{es:'Dejaste el barco pirata a la deriva.',en:'You left the pirate ship adrift.'};
- g.log.unshift({day:g.day,key:'event',txt,ship:e.ship});if(g.log.length>30)g.log.pop();
- post(g,'event',{txt,ship:e.ship});
- e.prize.taken=!!keep;
+ g.log.unshift({day:g.day,key:'event',txt,ship:report.ship});if(g.log.length>30)g.log.pop();
+ post(g,'event',{txt,ship:report.ship});
+ report.prize.taken=Boolean(keep);
  g.encounterReport=null;
  return{ok:true,ship:prize};
 }
