@@ -69,7 +69,12 @@ export function tickShip(ship, force = false) {
 }
 // Each unit is priced at the stock level it leaves or joins, so large deals move the
 // price against the trader and a buy-then-sell loop in one port always loses to fees.
-/** Buy up to qty, limited by stock, hold space and cash. `fee` overrides the market fee (port reputation). */
+/** Buy up to qty, limited by stock, free hold space and current cash.
+   fee overrides the market fee (port reputation). Quote and commit price each
+   unit on the changing stock curve with ceil2(price * (1 + fee)). For the
+   same valid inputs and unchanged state, previewBuy walks the same curve and
+   stops before the first unit the budget cannot cover. buy checks that budget
+   again; a stale quote is not permission to overdraw. */
 export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
