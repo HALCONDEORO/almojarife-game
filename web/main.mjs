@@ -1148,7 +1148,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     const r = setStewardRule(g, s.at, $("adm-good").value, { buyBelow: num("adm-buy"), buyTo: num("adm-to"), sellAbove: num("adm-sell"), sellKeep: num("adm-keep") }, warehouseCap(g, s.at));
     if (!r.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });
   P.querySelector("#adm-resset")?.addEventListener("click", () => act(() => setStewardReserve(g, s.at, Number($("adm-res").value) || 0)));
-  P.querySelector("#watch-set")?.addEventListener("click", () => { const r = setWatch(g, s.at, Number($("watch-n").value), warehouseCap(g, s.at)); if (!r.ok) { $("watch-msg").textContent = t.watchErr; return; } act(() => {}); });
+  P.querySelector("#watch-set")?.addEventListener("click", () => { const res = setWatch(g, s.at, Number($("watch-n").value), warehouseCap(g, s.at)); if (!res.ok) { $("watch-msg").textContent = t.watchErr; return; } act(() => { $("watch-msg").textContent = ""; }); });
   P.querySelectorAll("[data-order]").forEach((e) => e.onclick = () => act(() => orderShip(g, e.dataset.order, s.at)));
   P.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined)));
   P.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
