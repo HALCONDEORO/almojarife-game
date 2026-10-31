@@ -24,7 +24,7 @@ const sailIntoPirates = (game, ship) => {
     if (game.pending) return { prepared, tick: ticks };
     assert.equal(prepared, null, "a storm would have applied directly; this stream is walked for pirates");
   }
-  assert.fail("no pirates in 400000 ticks");
+  return assert.fail("no pirates in 400000 ticks");
 };
 
 test("prepared, queued and active are different states: the decision waits, the voyage does not change", () => {
