@@ -69,8 +69,8 @@ test('a prize resells at the lower prize rate; a normal ship keeps the standard 
  const prize=result.ship;
  assert.equal(shipValue(prize),Math.round(SHIP_TYPES[e.prize.type].price*PRIZE_SELL_RATE*(0.5+0.5*prize.hull/100)));
  assert.equal(shipValue(s),Math.round(SHIP_TYPES[s.type].price*SELL_RATE*(0.5+0.5*s.hull/100)),'standard ship unchanged');
- const cash=g.cash,v=shipValue(prize),sale=sellShip(g,prize);
- assert.ok(sale.ok,sale.reason);assert.equal(sale.value,v);assert.equal(Math.round(g.cash),Math.round(cash+v));
+ const cash=g.cash,value=shipValue(prize),sale=sellShip(g,prize);
+ assert.ok(sale.ok,sale.reason);assert.equal(sale.value,value);assert.equal(Math.round(g.cash),Math.round(cash+value));
  assert.ok(!g.ships.includes(prize));
 });
 test('the offer survives a save/load mid-report and claims identically',()=>{
