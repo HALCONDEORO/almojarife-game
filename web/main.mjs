@@ -1,3 +1,4 @@
+import {marketLabels,marketActionLabel} from '../src/view/marketlabels.mjs';
 import { originChoiceHtml, originTavernHtml } from "../src/view/originview.mjs";
 import { startSummaryHtml } from "../src/view/startsummary.mjs";
 import { foundingHarbor } from "../src/view/foundingharbor.mjs";
@@ -776,8 +777,8 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         h+=`<div class="market-tools mkt-tools"><label><input data-market-cargo type="checkbox" ${marketCargoOnly?'checked':''}> ${lang==='es'?'Solo mi carga':'My cargo only'}</label></div>`;
         
       }
-      const mktFee = FEE * feeMul(g, s.at);
-      h += `<div class="mkt-preview" data-market-preview aria-live="polite"></div><div class="mkt-table${market2d ? " ui2d-market" : ""}"><div class="mkt-heads"><div class="mkt-head">${["", t.good, t.price, t.stock, t.hold, t.avgLbl, t.buy, t.sell].map((x) => `<span>${esc(x)}</span>`).join("")}</div><div class="mkt-head mkt-head2">${["", t.good, t.price, t.stock, t.hold, t.avgLbl, t.buy, t.sell].map((x) => `<span>${esc(x)}</span>`).join("")}</div></div><div class="mkt-grid">`;
+      const mktFee = FEE * feeMul(g, s.at), marketCopy=marketLabels(lang);
+      h += `<div class="mkt-preview" data-market-preview aria-live="polite"></div><div class="mkt-table${market2d ? " ui2d-market" : ""}"><div class="mkt-heads"><div class="mkt-head">${["", t.good, marketCopy.unitPrice, t.stock, t.hold, t.avgLbl, marketCopy.buyTotal, marketCopy.sellTotal].map((x) => `<span>${esc(x)}</span>`).join("")}</div><div class="mkt-head mkt-head2">${["", t.good, marketCopy.unitPrice, t.stock, t.hold, t.avgLbl, marketCopy.buyTotal, marketCopy.sellTotal].map((x) => `<span>${esc(x)}</span>`).join("")}</div></div><div class="mkt-grid">`;
       for (const gd of Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang))) {
         if(market2d && wh && marketCargoOnly && !(s.cargo[gd]>0) && !(wh?.goods?.[gd]>0)) continue;
         // a locked good counts as unavailable in every sell number of the row (display keeps the real stock, with a lock mark)
@@ -791,10 +792,10 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
           `<div class="mkt-price" style="color:${col}" title="${col === "inherit" ? "" : col === "#161" ? t.cheap : t.dear}">${p}</div>` +
           `<div class="mkt-stock" style="color:${lvc}" title="${t.lvlInfo[lv]}">${g.market[s.at][gd].stock}</div>` +
           `<div class="mkt-hold">${have}${stored ? ` <small title="${t.warehouse}">+${stored}${gdLocked ? " 🔒" : ""}</small>` : ""}</div><div class="mkt-avg">${avg === null ? "—" : avg}</div>` +
-          `<div class="mkt-act mkt-act-buy"><button class="mkt-pill mkt-buy-btn" style="${pb.qty ? "background:#2e6b34;color:#fff0cd;border-color:#1d4a22;" : ""}border-left:4px solid #2e6b34" aria-label="${esc(t.buy)}" data-b="${gd}:${bq}" data-tip="${esc(buyTip)}" title="${esc(buyTip)}" ${pb.qty ? "" : "disabled"}>${pb.qty ? `+${pb.qty} → ${fmtM(buyCost)}` : t.buy}</button></div>` +
-          `<div class="mkt-act mkt-act-sell" style="padding-left:6px"><button class="mkt-pill mkt-sell mkt-sell-btn" style="${ps.qty ? "background:#8a5a17;color:#fff0cd;border-color:#5e3c0e;" : ""}border-left:4px solid #8a5a17" aria-label="${esc(t.sell)}" data-s="${gd}:${sq}" data-tip="${esc(sellTip)}" title="${esc(sellTip)}" ${ps.qty ? "" : "disabled"}>${ps.qty ? `−${ps.qty} → ${fmtM(sellPay)}` : t.sell}</button></div></div>`;
+          `<div class="mkt-act mkt-act-buy"><button class="mkt-pill mkt-buy-btn" style="${pb.qty ? "background:#2e6b34;color:#fff0cd;border-color:#1d4a22;" : ""}border-left:4px solid #2e6b34" aria-label="${esc(marketActionLabel(lang,"buy",t.goods[gd],pb.qty,fmtM(buyCost)))}" data-b="${gd}:${bq}" data-tip="${esc(buyTip)}" title="${esc(buyTip)}" ${pb.qty ? "" : "disabled"}>${pb.qty ? `+${pb.qty} → ${fmtM(buyCost)}` : t.buy}</button></div>` +
+          `<div class="mkt-act mkt-act-sell" style="padding-left:6px"><button class="mkt-pill mkt-sell mkt-sell-btn" style="${ps.qty ? "background:#8a5a17;color:#fff0cd;border-color:#5e3c0e;" : ""}border-left:4px solid #8a5a17" aria-label="${esc(marketActionLabel(lang,"sell",t.goods[gd],ps.qty,fmtM(sellPay)))}" data-s="${gd}:${sq}" data-tip="${esc(sellTip)}" title="${esc(sellTip)}" ${ps.qty ? "" : "disabled"}>${ps.qty ? `−${ps.qty} → ${fmtM(sellPay)}` : t.sell}</button></div></div>`;
       }
-      h += `</div></div><div class="mkt-qtybar"><span>${esc(t.qtyAll)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
+      h += `</div></div><div class="mkt-qtybar"><span>${esc(marketCopy.quantity)}</span>${[1, 5, 10, 50, "max"].map((v) => `<button data-market-qty="${v}" title="${esc(t.tipQty)}" aria-pressed="${marketQty === v}" class="${marketQty === v ? "on" : ""}">${marketQty === v ? "✓ " : ""}${v === "max" ? esc(t.maxLbl) : v}</button>`).join("")}</div>`;
     } else if (tab === "route") {
       const rt = s.route, gn = (k) => goodIcon(k, 16) + (t.goods[k] ?? k), gnTxt = (k) => t.goods[k] ?? k, routePorts = world.cities.filter((c) => isDiscovered(g, c.id)), others = routePorts.filter((c) => c.id !== s.at);
       h += `<p>${t.routeInfo}</p>`;
