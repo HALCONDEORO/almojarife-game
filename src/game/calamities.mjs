@@ -7,8 +7,7 @@
 // Same rules for the player and the bots: the market and the buildings move for everyone.
 import { seeded } from "../view/cityscene.mjs";
 import { towersFireWatch } from "./towers.mjs"; // kept watchtowers spot fires early (own design, issue #363)
-import { warehouseCapBonus } from "./buildings.mjs"; // the warehouse watch's fire rounds scale with storage (P4-06 office notes, own design)
-import { watchFireWatch } from "./whwatch.mjs";
+import { watchFireWatch, whCap } from "./whwatch.mjs"; // the warehouse watch's fire rounds scale with storage (P4-06 office notes, own design)
 
 // Own tuning constants (inference, not documented figures).
 export const CALAMITY = Object.freeze({
@@ -21,8 +20,7 @@ export const FAMINE_FOOD_MUL = 1.5;  // food demand while a famine lasts
 export const MALSANA_DEMAND = 0.9;   // demand while a sanitation scare lasts
 export const FIRE_MAX_HALTS = 2;     // buildings a fire can halt at once
 
-const WH_BASE_CAP = 300; // base warehouse capacity (game.mjs WAREHOUSE_CAP; local like almoneda.mjs's WAREHOUSE_BASE_CAP: importing game.mjs would cycle)
-const fireRounds = (g, cityId) => towersFireWatch(g, cityId) + watchFireWatch(g, cityId, WH_BASE_CAP + warehouseCapBonus(g, cityId)); // towers and the warehouse watch both walk fire rounds
+const fireRounds = (g, cityId) => towersFireWatch(g, cityId) + watchFireWatch(g, cityId, whCap(g, cityId)); // towers and the warehouse watch both walk fire rounds
 
 const workingLevels = (g, cityId, type) => Object.values(g.buildings?.[cityId] ?? {}).reduce((a, b) => a + (b.state === "active" && !b.halted && b.type === type ? b.level : 0), 0);
 const levels = (g, cityId, table) => Object.keys(table).reduce((a, t) => a + workingLevels(g, cityId, t), 0);

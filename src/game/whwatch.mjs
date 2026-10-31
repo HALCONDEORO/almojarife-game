@@ -21,6 +21,12 @@
 //   as the watchtowers). Own tuning throughout: no figure is documented.
 // No DOM here.
 import { post } from "./ledger.mjs";
+import { warehouseCapBonus } from "./buildings.mjs";
+
+const WH_BASE_CAP = 300; // base warehouse capacity (game.mjs WAREHOUSE_CAP; local like almoneda.mjs's WAREHOUSE_BASE_CAP: importing game.mjs would cycle)
+
+/** Total storage capacity of a port: the base warehouse plus each active warehouse-building level (same formula as game.mjs warehouseCap). */
+export const whCap = (g, city) => WH_BASE_CAP + warehouseCapBonus(g, city);
 
 export const WH_WATCH_WAGE = 1;      // coins per guard and day (own tuning: a watchtower's upkeep)
 export const WH_WATCH_FIRE_EVERY = 5; // guards per fire-mitigation level (own tuning: five watchmen match one tower's round)
