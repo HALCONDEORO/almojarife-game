@@ -44,6 +44,7 @@ export function clearStewardRule(g, city, good) {
   const a = stewardOf(g, city);
   if (!a?.rules[good]) return { ok: false, reason: "no rule" };
   delete a.rules[good];
+  if (a.off) delete a.off[good];
   return { ok: true };
 }
 /** Reorder one standing order in the priority list (prioridad almacenero): the steward
@@ -70,6 +71,26 @@ export function moveStewardRule(g, city, good, dir) {
   adm.rules = Object.fromEntries(keys.map((key) => [key, adm.rules[key]]));
   return { ok: true, from, to };
 }
+/** Pause or resume one standing order (activar/desactivar mercancía): the enabled
+   state lives apart from the numbers (w.admin.off), so pausing never rewrites the
+   prices or amounts and resuming brings the order back exactly as it was.
+   - Desired-state command, not a toggle: setting the state the order already has
+     is accepted and reports changed:false (idempotent, as in the goods lock).
+   - Strict boolean input: only true/false are accepted; numbers, strings and null
+     are rejected, never decoded.
+   - Old saves carry no off record and default to enabled, today's behavior. */
+export function setStewardRuleEnabled(g, city, good, enabled) {
+  if (enabled !== true && enabled !== false) return { ok: false, reason: "bad state" };
+  const w = g.warehouses?.[city];
+  if (!w) return { ok: false, reason: "no warehouse here" };
+  const adm = w.admin;
+  if (!adm || !Object.prototype.hasOwnProperty.call(adm.rules, good)) return { ok: false, reason: "no rule" };
+  const was = !adm.off?.[good];
+  if (was === enabled) return { ok: true, enabled, changed: false };
+  if (enabled) delete adm.off[good];
+  else (adm.off ??= {})[good] = true;
+  return { ok: true, enabled, changed: true };
+}
 /** Cash the administrator must leave untouched. */
 export function setStewardReserve(g, city, amount) {
   const w = g.warehouses?.[city];
@@ -87,6 +108,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
   if ((g.shocks ?? []).some((s) => s.type === "port_closed" && s.city === city && s.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
   const did = [];
   for (const [good, r] of Object.entries(a.rules)) {
+    if (a.off?.[good]) continue; // a paused order keeps its numbers but is not served
     const e = g.market[city]?.[good];
     if (!e) continue;
     // Sell first: it frees room and cash for the buy side.
