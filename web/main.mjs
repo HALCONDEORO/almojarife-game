@@ -1153,7 +1153,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-admup]").forEach((el) => { el.onclick = () => act(() => moveStewardRule(g, s.at, el.dataset.admup, -1)); });
   P.querySelectorAll("[data-admdown]").forEach((el) => { el.onclick = () => act(() => moveStewardRule(g, s.at, el.dataset.admdown, 1)); });
   // Pause/resume asks for the DESIRED state: a paused rule asks to resume (true), an active one asks to pause (false).
-  P.querySelectorAll("[data-admtog]").forEach((el) => { el.onclick = () => act(() => setStewardRuleEnabled(g, s.at, el.dataset.admtog, !!stewardOf(g, s.at)?.off?.[el.dataset.admtog])); });
+  P.querySelectorAll("[data-admtog]").forEach((el) => { el.onclick = () => act(() => setStewardRuleEnabled(g, s.at, el.dataset.admtog, Boolean(stewardOf(g, s.at)?.off?.[el.dataset.admtog]))); });
   P.querySelector("#adm-set")?.addEventListener("click", () => { const num = (id) => { const el = $(id); return el && el.value !== "" ? Number(el.value) : 0; };
     const r = setStewardRule(g, s.at, $("adm-good").value, { buyBelow: num("adm-buy"), buyTo: num("adm-to"), sellAbove: num("adm-sell"), sellKeep: num("adm-keep") }, warehouseCap(g, s.at));
     if (!r.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });

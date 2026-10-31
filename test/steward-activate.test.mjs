@@ -100,14 +100,14 @@ test("the real UI toggle handler asks for the desired state: click pauses, click
   // Extract the actual onclick handler wired in web/main.mjs and execute it against the real
   // engine - a click must CHANGE the state, never report changed:false (Audit on #747).
   const src = readFileSync("web/main.mjs", "utf8");
-  const m = src.match(/\[data-admtog\]"\)\.forEach\(\(el\) => \{ el\.onclick = (\(\) => [^;]+); \}\);/);
-  assert.ok(m, "the pause/resume handler exists in web/main.mjs");
-  const makeClick = new Function("act", "g", "s", "el", "stewardOf", "setStewardRuleEnabled", "return (" + m[1] + ");");
+  const hit = src.match(/\[data-admtog\]"\)\.forEach\(\(el\) => \{ el\.onclick = (\(\) => [^;]+); \}\);/);
+  assert.ok(hit, "the pause/resume handler exists in web/main.mjs");
+  const makeClick = new Function("act", "g", "s", "el", "stewardOf", "setStewardRuleEnabled", `return (${hit[1]});`);
   const game = setup();
   twoBuyRules(game);
-  const s = { at: "cadiz" }, el = { dataset: { admtog: "wine" } };
+  const ui = { at: "cadiz" }, el = { dataset: { admtog: "wine" } };
   const act = (fn) => fn(); // the panel applies the command at once
-  const click = makeClick(act, game, s, el, stewardOf, setStewardRuleEnabled);
+  const click = makeClick(act, game, ui, el, stewardOf, setStewardRuleEnabled);
   assert.ok(stewardOf(game, "cadiz").off?.wine !== true, "the rule starts active");
   click(); // click pause on the active rule
   assert.equal(stewardOf(game, "cadiz").off?.wine, true, "one click pauses the order");
