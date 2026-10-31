@@ -13,16 +13,16 @@ A maritime trading game set around Iberia and North Africa in the 15th-16th cent
 
 ## Version and beta status
 
-This README describes integrated source through `d17fa192b868f5635ac9121c962a4493b0a34daa` on 29 October 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
+This README describes integrated source through `a5a880cabd6fbf76d1a8cce858f32e9f32738a8f` on 31 October 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
 
 | Checkpoint | What it contains |
 | --- | --- |
 | [v0.5.0-beta.4](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.4) | Source-only checkpoint, published 28 October 2026 at immutable commit `b4abf57dc565b5858bdb30149627ae70e9c95af8`. No attached desktop packages. The later shipyard cargo-cost explanation (#671) is not in this tag. |
 | [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) | Source-only pre-release, published 28 October 2026 at immutable commit `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No attached desktop packages. Later main-branch navigation and Settings fixes are not in this tag. |
 | [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) | Desktop binary checkpoint. Six desktop packages and `SHA256SUMS.txt`, published 27 October 2026. These packages do not contain later main-branch work. |
-| Current source | Includes navigation and Settings fixes, keyboard-safe pause/save dialogs, save-failure recovery, creation-form draft retention, effective cargo labels and visible shipyard weapon cargo costs. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
+| Current source | Adds, since beta.4: visible shipyard weapon cargo costs, multi-day quoted hull **repair orders** with cancellation and proportional refund, warehouse **storage summary and hired watch** (guards, security grade, weekly wages), effective-population and housing fixes, plus navigation, Settings, pause/save and recovery fixes. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
 
-The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **1/20 since beta.4**, excluding merges into non-main branches. This is a dated count, not a live counter or a promise of another release. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
+The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **70/20 since beta.4**, excluding merges into non-main branches - the 20-PR threshold for the next checkpoint is already crossed; cutting it remains a manual release decision. This is a dated count, not a live counter or a promise of another release. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
 
 This is an unfinished beta. Campaign completion, economy balance, save migration, accessibility and browser coverage are not declared complete. Export a save backup before trying another version. Compatibility with every older save is not promised.
 
@@ -88,11 +88,15 @@ These are from a **real new game**, in Spanish at 1280×720, played on source `a
 
 ![Huelva Town hall at step 4/5, before setting the route and making the final visit](docs/img/player-guide/council.png)
 
-### Current shipyard cargo costs
+### Current build: shipyard repair orders and the warehouse watch
 
-![Spanish shipyard showing weapon purchase prices and cargo-space costs before purchase](docs/img/player-guide/shipyard-weight.png)
+![Spanish shipyard with an active multi-day hull repair order, progress bar and weapon cargo costs](docs/img/player-guide/shipyard-repair-order.png)
 
-Captured from the public browser game at source `d17fa192b868f5635ac9121c962a4493b0a34daa` on 29 October 2026, in a real new campaign at 1280×720. The hosted JavaScript and HTML matched that commit. A Balista purchase was separately checked to reduce available cargo space from 60 to 59; weapon costs are 1/2/3/5 cargo units. No private campaign data or injected campaign state. This is not a packaged-app or full-campaign certification.
+![Spanish warehouse tab with the storage summary line and goods table](docs/img/player-guide/warehouse-summary.png)
+
+![Spanish warehouse watch section with five hired guards and its control](docs/img/player-guide/warehouse-watch.png)
+
+Captured from the public browser game serving source `a5a880cabd6fbf76d1a8cce858f32e9f32738a8f` on 31 October 2026, in Spanish at 1280×720; the hosted JavaScript matched that commit. The save was prepared offline and loaded through the normal save system (Cádiz warehouse with goods, five hired guards, hull at 40%); the repair was then ordered in game. The shipyard panel also shows each weapon's cargo-space cost before purchase (1/2/3/5 units). No private campaign data. This is not a packaged-app or full-campaign certification. The older `shipyard-weight.png` capture (source `d17fa19`, 29 October 2026) predates repair orders and stays in `docs/img/player-guide/` only to preserve existing links.
 
 Older images remain in `docs/img/` to preserve existing links; they are not presented here as evidence of the current interface.
 
