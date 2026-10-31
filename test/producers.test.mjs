@@ -176,3 +176,37 @@ test('branch-specific arithmetic: the port ratio guards its own denominator, bat
   assert.ok(Number.isInteger(delta)&&delta>=0&&delta<=bound,'daily units stay a bounded integer: '+delta);}
  assert.ok(prev>0,'and the fishery does produce across the week');
 });
+
+test('every ratio in the production flow guards its actual denominator, never a nearby field',()=>{
+ // structural: the only division by `need` lives in the ternary gated on `need < 1` itself
+ const src=readFileSync('src/game/buildings.mjs','utf8');
+ const ratioLine=src.match(/export const staffingRatio = [^\n]+/)[0];
+ assert.ok(/need < 1 \? 1 : Math\.min\(1, freeLabor\(g, cityId\) \/ need\)/.test(ratioLine),'the guard and the denominator are the same field');
+ // data contract: staffed() divides by pattern.length, so every producer pattern is non-empty with a positive sum
+ for(const [type,def] of Object.entries(PRODUCERS)){
+  for(const lvl of [1,2,3]){
+   const pat=def.pattern[lvl];
+   assert.ok(Array.isArray(pat)&&pat.length>=1,type+' L'+lvl+': pattern non-empty (the denominator of staffed())');
+   assert.ok(pat.reduce((a,x)=>a+x,0)>0,type+' L'+lvl+': pattern sums positive');
+   assert.ok(pat.every(x=>Number.isInteger(x)&&x>=0),type+' L'+lvl+': integer batches');
+  }
+ }
+ // numerator boundary: zero free hands yields exactly 0, not NaN or a negative
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ buyPlot(g,'cadiz',{id:'cadiz:1',type:'workshop',w:4,d:4});
+ g.buildings['cadiz']['cadiz:1']={type:'workshop',level:1,state:'active',plotType:'workshop'};
+ g.world.nodes.cadiz.pop=1;
+ assert.equal(staffingRatio(g,'cadiz'),0,'zero numerator -> 0, finite');
+ // denominator boundary: exactly one wanted job divides cleanly
+ g.world.nodes.cadiz.pop=12000;
+ g.buildings['cadiz']['cadiz:1']={type:'warehouse',level:0,state:'active',plotType:'warehouse'};
+ assert.equal(staffingRatio(g,'cadiz'),1,'need 0 -> 1 without dividing');
+ // the margin signal: a coin difference computed only when the recipe quotes - no denominator exists to guard
+ const g2=newGame(world);g2.noGoal=true;g2.cash=100000;
+ buyPlot(g2,'cadiz',{id:'cadiz:2',type:'workshop',w:4,d:4});
+ g2.buildings['cadiz']['cadiz:2']={type:'workshop',level:1,state:'active',plotType:'workshop'}; // the real cloth processor
+ g2.market.cadiz.wool.stock=0;g2.market.cadiz.wool.target=300;
+ g2.tick=1;workshopTick(g2,'cadiz');
+ const b2=g2.buildings['cadiz']['cadiz:2'];
+ assert.equal(b2.negDays??0,0,'unquotable recipe: no margin signal, no streak');
+});

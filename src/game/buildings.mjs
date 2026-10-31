@@ -381,6 +381,11 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Denominator identity: every ratio's guard names the exact field it divides by. staffingRatio's
+ * ternary guards `need < 1` and divides by that same `need`; staffed() divides by the length of the
+ * level-selected pattern, which the PRODUCERS table keeps non-empty and positive for every level;
+ * the margin signal has no denominator at all - it is a difference, computed only when the recipe
+ * quotes. Zero free hands yields an exact 0, never NaN. */
 /** Arithmetic contract, per branch. The port's only quotient is staffingRatio's
  * freeLabor/need, and its guard `need < 1` names the very field it divides by. The margin
  * signal divides nothing: it is a coin difference (sellQuote - recipe cost) computed only
