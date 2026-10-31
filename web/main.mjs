@@ -1244,7 +1244,7 @@ function askDismissCaptain() {
 function sailToTarget() { if (!target) return; const to = target; const s0 = ship(); close3d();
   act(() => { const cv = convoyOf(g, s0);
     if (cv) { const mates = cv.ships.map((id) => g.ships.find((x) => x.id === id));
-      if (mates.every((m) => m && !m.voyage && m.at === s0.at)) return sailConvoy(g, cv.id, to, { doSail }); } // a grouped convoy departs together, at the pace of the slowest
+      if (mates.every((m) => m && !m.voyage && m.at === s0.at)) return sailConvoy(g, cv.id, to, { doSail, inRepair: (sh) => repairOf(g, sh.id) }); } // a grouped convoy departs together, at the pace of the slowest
     return doSail(g, s0, to); });
   if (s0.voyage) sfx("sail");
   if (automaticTime && s0.voyage) { playing = true; manualPause = false; }
