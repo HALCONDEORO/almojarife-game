@@ -30,9 +30,9 @@ test('a won fight offers a seeded prize; escaped and raided offer none',()=>{
 });
 test('keeping the prize adds a crewless ship that keeps station and arrives with the winner',()=>{
  const{g,s,e}=fight('repelled');
- const before=g.ships.length,r=claimPrize(g,true);
- assert.ok(r.ok);assert.equal(g.ships.length,before+1);assert.equal(g.encounterReport,null);
- const p=r.ship;assert.equal(p.type,e.prize.type);assert.equal(p.hull,e.prize.hull);assert.equal(p.prize,true);assert.equal(p.crew,0);
+ const before=g.ships.length,result=claimPrize(g,true);
+ assert.ok(result.ok);assert.equal(g.ships.length,before+1);assert.equal(g.encounterReport,null);
+ const p=result.ship;assert.equal(p.type,e.prize.type);assert.equal(p.hull,e.prize.hull);assert.equal(p.prize,true);assert.equal(p.crew,0);
  // DECLARED (hull-wear rebalance 26/10): the pair carries escort markers (escorted / escortedBy) so
  // hull drag leaves them in station; everything else about the shared voyage is identical.
  const{escorted,...pv}=p.voyage,{escortedBy,...wv}=s.voyage;
@@ -62,11 +62,11 @@ test('a kept prize registers once and the escort binding dies with the shared vo
 });
 test('leaving the prize adds nothing and closes the report',()=>{
  const{g}=fight('repelled');const before=g.ships.length;
- const r=claimPrize(g,false);assert.ok(r.ok);assert.equal(g.ships.length,before);assert.equal(g.encounterReport,null);
+ const result=claimPrize(g,false);assert.ok(result.ok);assert.equal(g.ships.length,before);assert.equal(g.encounterReport,null);
 });
 test('a prize resells at the lower prize rate; a normal ship keeps the standard rate',()=>{
- const{g,s,e}=fight('repelled');const r=claimPrize(g,true);arrive(g,s);
- const p=r.ship;
+ const{g,s,e}=fight('repelled');const result=claimPrize(g,true);arrive(g,s);
+ const p=result.ship;
  assert.equal(shipValue(p),Math.round(SHIP_TYPES[e.prize.type].price*PRIZE_SELL_RATE*(0.5+0.5*p.hull/100)));
  assert.equal(shipValue(s),Math.round(SHIP_TYPES[s.type].price*SELL_RATE*(0.5+0.5*s.hull/100)),'standard ship unchanged');
  const cash=g.cash,v=shipValue(p),sale=sellShip(g,p);
@@ -75,9 +75,9 @@ test('a prize resells at the lower prize rate; a normal ship keeps the standard 
 });
 test('the offer survives a save/load mid-report and claims identically',()=>{
  const{g,e}=fight('repelled');
- const r=deserialize(serialize(g,'T'),world).g;
- assert.deepEqual(r.encounterReport.prize,e.prize);
- const a=claimPrize(g,true),b=claimPrize(r,true);
+ const result=deserialize(serialize(g,'T'),world).g;
+ assert.deepEqual(result.encounterReport.prize,e.prize);
+ const a=claimPrize(g,true),b=claimPrize(result,true);
  assert.equal(a.ship.type,b.ship.type);assert.equal(a.ship.hull,b.ship.hull);
 });
 test('the dialog offers keep/leave only while a prize is pending (es/en)',()=>{
@@ -88,6 +88,6 @@ test('the dialog offers keep/leave only while a prize is pending (es/en)',()=>{
  assert.doesNotMatch(encounterDialogHtml(g2,'es'),/Quedarme el barco/);assert.match(encounterDialogHtml(g2,'es'),/Continuar/);
 });
 test('selling a prize still follows the normal guards (hold empty, not the last ship)',()=>{
- const{g,s}=fight('repelled');const r=claimPrize(g,true);arrive(g,s);
- r.ship.cargo={grain:1};assert.equal(sellShip(g,r.ship).reason,'hold not empty');
+ const{g,s}=fight('repelled');const result=claimPrize(g,true);arrive(g,s);
+ result.ship.cargo={grain:1};assert.equal(sellShip(g,result.ship).reason,'hold not empty');
 });

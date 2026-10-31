@@ -8,6 +8,9 @@ import { post } from "./ledger.mjs";
 
 export const CONVOY_MIN = 2, CONVOY_MAX = 5;
 
+// Reject ASCII controls while allowing all other Unicode characters unchanged.
+const hasControlCharacter=value=>Array.from(value).some(character=>{const code=character.codePointAt(0);return code<=31||code===127;});
+
 /** The convoy record a ship belongs to, or null. */
 export const convoyOf = (g, ship) => (ship?.convoy && g.convoys?.[ship.convoy]) || null;
 
@@ -38,22 +41,22 @@ export function escortOf(g, ship) {
 export function formConvoy(g, shipIds, name = "") {
   if (g.over) return { ok: false, reason: "game over" };
   if (!Array.isArray(shipIds)) return { ok: false, reason: "bad ships" };
-  if(typeof name!=='string'||name.trim().length>30||/[\u0000-\u001f\u007f]/u.test(name))return{ok:false,reason:'bad name'};
+  if(typeof name!=='string'||name.trim().length>30||hasControlCharacter(name))return{ok:false,reason:'bad name'};
   const ids = [...new Set(shipIds)];
   if (ids.length < CONVOY_MIN || ids.length > CONVOY_MAX) return { ok: false, reason: "bad size" };
   const ships = [];
   for (const id of ids) {
-    const s = g.ships.find((x) => x.id === id);
-    if (!s) return { ok: false, reason: "not your ship" };
-    if (s.voyage) return { ok: false, reason: "at sea" }; // convoys form in port, not mid-voyage
-    if (convoyOf(g, s)) return { ok: false, reason: "already grouped" };
-    ships.push(s);
+    const ship = g.ships.find((x) => x.id === id);
+    if (!ship) return { ok: false, reason: "not your ship" };
+    if (ship.voyage) return { ok: false, reason: "at sea" }; // convoys form in port, not mid-voyage
+    if (convoyOf(g, ship)) return { ok: false, reason: "already grouped" };
+    ships.push(ship);
   }
   if (ships.some((x) => x.at !== ships[0].at)) return { ok: false, reason: "scattered" }; // a convoy forms in one port, regroup first
-  const seq = (g.convoySeq = (g.convoySeq ?? 0) + 1), id = "cv" + seq;
-  const cv = { id, name: String(name || "").trim().slice(0, 30) || "Convoy " + seq, ships: ids, since: g.day };
+  const seq = (g.convoySeq = (g.convoySeq ?? 0) + 1), id = `cv${seq}`;
+  const cv = { id, name: String(name || "").trim().slice(0, 30) || `Convoy ${seq}`, ships: ids, since: g.day };
   (g.convoys ??= {})[id] = cv;
-  for (const s of ships) s.convoy = id;
+  for (const ship of ships) ship.convoy = id;
   post(g, "convoyFormed", { convoy: id, name: cv.name, ships: ids, txt: { es: `Se forma el convoy ${cv.name} (${ids.length} barcos).`, en: `Convoy ${cv.name} forms (${ids.length} ships).` } });
   return { ok: true, convoy: cv };
 }
@@ -63,17 +66,17 @@ export function renameConvoy(g,id,value){
  if(g.over)return{ok:false,reason:'game over'};
  if(typeof id!=='string'||!/^cv[1-9][0-9]*$/.test(id)||!g.convoys||!Object.hasOwn(g.convoys,id))return{ok:false,reason:'no convoy'};
  const cv=g.convoys[id];if(!cv||typeof cv!=='object'||Array.isArray(cv)||cv.id!==id||!Array.isArray(cv.ships))return{ok:false,reason:'no convoy'};
- if(typeof value!=='string'||!value.trim()||value.trim().length>30||/[\u0000-\u001f\u007f]/u.test(value))return{ok:false,reason:'bad name'};
+ if(typeof value!=='string'||!value.trim()||value.trim().length>30||hasControlCharacter(value))return{ok:false,reason:'bad name'};
  cv.name=value.trim();return{ok:true};
 }
 
 /** Take one ship out; a convoy reduced to a single hull disbands itself. */
 export function leaveConvoy(g, shipId) {
-  const s = g.ships.find((x) => x.id === shipId);
-  const cv = convoyOf(g, s);
+  const ship = g.ships.find((x) => x.id === shipId);
+  const cv = convoyOf(g, ship);
   if (!cv) return { ok: false, reason: "no convoy" };
-  if (s.voyage) return { ok: false, reason: "at sea" }; // you cannot desert the group mid-voyage
-  removeFromConvoy(g, s);
+  if (ship.voyage) return { ok: false, reason: "at sea" }; // you cannot desert the group mid-voyage
+  removeFromConvoy(g, ship);
   return { ok: true };
 }
 
@@ -92,8 +95,8 @@ export function removeFromConvoy(g, ship) {
 export function disbandConvoy(g, id) {
   const cv = g.convoys?.[id];
   if (!cv) return { ok: false, reason: "no convoy" };
-  for (const sid of cv.ships) { const s = g.ships.find((x) => x.id === sid); if (s?.voyage) return { ok: false, reason: "at sea" }; }
-  for (const sid of cv.ships) { const s = g.ships.find((x) => x.id === sid); if (s) delete s.convoy; }
+  for (const sid of cv.ships) { const ship = g.ships.find((x) => x.id === sid); if (ship?.voyage) return { ok: false, reason: "at sea" }; }
+  for (const sid of cv.ships) { const ship = g.ships.find((x) => x.id === sid); if (ship) delete ship.convoy; }
   delete g.convoys[id];
   post(g, "convoyDisbanded", { convoy: id, name: cv.name, txt: { es: `El convoy ${cv.name} se disuelve.`, en: `Convoy ${cv.name} disbands.` } });
   return { ok: true };
@@ -113,7 +116,7 @@ export function sailConvoy(g, id, to, ops) {
   const inRepair = ops.inRepair ?? ((sh) => (g.repairs ?? []).some((ord) => ord.ships.includes(sh.id))); // default from the game state: no caller can skip the yard check
   if (ships.some((s) => inRepair(s))) return { ok: false, reason: "in repair" }; // a ship in the yard keeps the whole convoy in port too; checked before any member leaves
   for (const s of ships) { if (speedFactor(s) <= 0) return { ok: false, reason: "crew" }; } // validate every hull before any leaves: a short-crewed member must not strand the rest mid-departure
-  for (const s of ships) { const r = ops.doSail(g, s, to); if (!r.ok) return r; }
+  for (const s of ships) { const departure = ops.doSail(g, s, to); if (!departure.ok) return departure; }
   let slow = 0;
   for (const s of ships) slow = Math.max(slow, s.voyage.ticksLeft);
   for (const s of ships) { s.voyage.ticksLeft = slow; s.voyage.totalTicks = Math.max(s.voyage.totalTicks ?? slow, slow); }
