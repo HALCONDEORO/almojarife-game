@@ -381,6 +381,11 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Configuration contract: fallback and feature-off are separate things. A missing pattern
+ * for the building's level falls back to the top level's pattern (never to zero, never an
+ * error), and an unknown type is simply skipped. Feature-off (halted or under construction)
+ * skips the building while preserving its whole state - produced, the margin streak, the
+ * warning mark; a restart flips the switch back without touching any counter. */
 /** Daily batch contract: the batch identity is (city, day) - batches come from the pattern
  * at the day's parity, applied at most once per day through the daily tick, and a quiet day
  * (zero batches) erases nothing: produced is a lifetime payload that never decreases, and

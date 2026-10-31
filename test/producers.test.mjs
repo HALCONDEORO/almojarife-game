@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,advanceDay,buyWarehouse} from '../src/game/game.mjs';
-import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
+import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,restartBuilding,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
 import {RECIPES,OUTPUTS} from '../src/sim/recipes.mjs';
 import {SEASON_PEAK} from '../src/sim/market.mjs';
 const world=loadWorld();
@@ -108,4 +108,34 @@ test('margin streak: unquotable keeps the state, negative days warn once, a prof
  g.tick=5*1440;workshopTick(g,'cadiz');
  assert.equal(b.negDays,0,'one profitable day clears the streak');
  assert.equal(b.negWarned,0,'and re-arms the warning');
+});
+
+test('configuration fallback and feature-off are separate contracts: missing config falls back, halted preserves everything',()=>{
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ const plot={id:'cadiz:1',type:'fishery',w:4,d:4};buyPlot(g,'cadiz',plot);
+ // unknown type: skipped without a sound - no production, no crash, market untouched
+ g.buildings['cadiz']['cadiz:1']={type:'mirador',level:1,state:'active',plotType:'fishery'};
+ const fish0=g.market.cadiz.fish.stock;
+ g.tick=1;workshopTick(g,'cadiz');
+ assert.equal(g.market.cadiz.fish.stock,fish0,'an unknown type produces nothing');
+ // out-of-range level: the pattern falls back to the top level, never to zero or an error
+ g.buildings['cadiz']['cadiz:1']={type:'fishery',level:9,state:'active',plotType:'fishery'};
+ const b=g.buildings['cadiz']['cadiz:1'];
+ let guard=0;while((b.produced??0)===0&&guard++<6){g.tick=guard*1440;workshopTick(g,'cadiz');}
+ assert.ok(b.produced>0,'a level without its own pattern uses the level-3 pattern');
+ // feature off: a halted building is skipped and its whole state is preserved, not reset
+ b.negDays=2;b.halted=true;
+ const producedHalt=b.produced,fishHalt=g.market.cadiz.fish.stock;
+ g.tick=7*1440;workshopTick(g,'cadiz');
+ assert.equal(b.produced,producedHalt,'halted: no production');
+ assert.equal(b.negDays,2,'halted: the margin streak is preserved, not reset');
+ assert.equal(g.market.cadiz.fish.stock,fishHalt);
+ // feature on again: the restart switches it back without touching the counters
+ assert.ok(restartBuilding(g,'cadiz','cadiz:1').ok);
+ assert.equal(b.halted,false);assert.equal(b.negDays,2);assert.equal(b.produced,producedHalt);
+ // under construction: not active, so no production either
+ g.buildings['cadiz']['cadiz:1']={type:'fishery',level:1,state:'construction',plotType:'fishery'};
+ const fishC=g.market.cadiz.fish.stock;
+ g.tick=8*1440;workshopTick(g,'cadiz');
+ assert.equal(g.market.cadiz.fish.stock,fishC,'under construction is off too');
 });
