@@ -29,20 +29,23 @@ test('candidate selection is construction-time advice; formation validates at ex
  assert.ok(buyCaravel(g,s0.at).ok);const s2=g.ships[2];
  // a stale candidate list (one ship sailed off, another got grouped elsewhere) fails whole:
  const cv=formConvoy(g,[s0.id,s1.id]).convoy;
- const seqBefore=g.convoySeq;
+ const seqBefore=g.convoySeq,groupedSnapshot=JSON.stringify(g);
  assert.equal(formConvoy(g,[s0.id,s2.id]).ok,false,'a grouped candidate rejects the command');
  assert.equal(formConvoy(g,[s0.id,s2.id]).reason,'already grouped');
+ assert.equal(JSON.stringify(g),groupedSnapshot,'rejected grouped candidate writes nothing');
  assert.equal(s2.convoy,undefined,'no partial assignment');
  assert.equal(g.convoySeq,seqBefore,'no id minted on failure');
  assert.deepEqual(Object.keys(g.convoys),[cv.id],'the existing registration is untouched');
  // candidate order at construction does not change membership:
  disbandConvoy(g,cv.id);
- const a=formConvoy(g,[s1.id,s0.id,s2.id]).convoy;
- assert.deepEqual([...a.ships].sort(),[s0.id,s1.id,s2.id].sort(),'same members regardless of candidate order');
- disbandConvoy(g,a.id);
+ const reformed=formConvoy(g,[s1.id,s0.id,s2.id]).convoy;
+ assert.deepEqual([...reformed.ships].sort(),[s0.id,s1.id,s2.id].sort(),'same members regardless of candidate order');
+ disbandConvoy(g,reformed.id);
  // a candidate that leaves port between selection and execution invalidates the whole command:
- doSail(g,s0,'barcelona');
+ assert.ok(doSail(g,s0,'barcelona').ok);
+ const sailedSnapshot=JSON.stringify(g);
  assert.equal(formConvoy(g,[s0.id,s1.id]).reason,'at sea');
+ assert.equal(JSON.stringify(g),sailedSnapshot,'rejected sailed candidate writes nothing');
  assert.equal(s1.convoy,undefined,'nobody is registered from a stale list');
  assert.equal(g.convoySeq,seqBefore+1,'only the successful re-formation consumed an id');
 });
