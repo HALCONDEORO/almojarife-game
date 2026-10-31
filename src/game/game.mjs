@@ -56,7 +56,7 @@ import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
-import { whLocked } from "./whlock.mjs";
+import { whLocked, whAvailable } from "./whlock.mjs";
 import { accrueWatch, whCap } from "./whwatch.mjs";
 import { aiStep } from "../sim/ai.mjs";
 import { prizeLocked } from "./privateering.mjs";
@@ -403,7 +403,7 @@ export function sellableHold(g, ship, good) {
 /** Quantity a sell button may request: clamped to the sellable hold plus the store stock,
  *  so a fixed-quantity click never asks for locked prize goods (the UI and doSellCombined() agree). */
 export function sellRequestQty(g, ship, good, qty, store) {
-  return Math.min(qty, sellableHold(g, ship, good) + (whLocked(store, good) ? 0 : (store?.goods?.[good] ?? 0)));
+  return Math.min(qty, sellableHold(g, ship, good) + whAvailable(store, good));
 }
 /** Combined sell preview with the same sellable hold, fee and purse the execution will use. */
 export function previewSellCombinedPort(g, ship, good, qty, store) {
@@ -412,11 +412,11 @@ export function previewSellCombinedPort(g, ship, good, qty, store) {
 }
 /** One sale click that empties the hold first and then the port warehouse, as a single transaction:
  *  one fee (computed before any respect gain), one effects pass, and a total that matches previewSellCombined(). */
-export function doSellCombined(g, ship, good, qty, store) {
+export function doSellCombined(g, ship, good, qty, store) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   if (g.over) return { ok: false, reason: "game over" };
   const city = ship.at;
   if (portClosed(g, city)) return { ok: false, reason: "port closed" };
-  const have = ship.cargo[good] ?? 0, stored = whLocked(store, good) ? 0 : (store?.goods?.[good] ?? 0); // a locked good never leaves the store, not even in a combined sale
+  const have = ship.cargo[good] ?? 0, stored = whAvailable(store, good); // a locked good never leaves the store, not even in a combined sale
   const avail = sellableHold(g, ship, good), locked = have - avail; // prize goods wait for a court: they stay in the hold (flag off: never locked); the UI previews with the same sellableHold()
   if (locked > 0 && qty > avail + stored) return { ok: false, reason: "prize" };
   qty = Math.min(qty, avail + stored);

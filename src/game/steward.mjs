@@ -57,7 +57,7 @@ export function setStewardReserve(g, city, amount) {
 }
 
 /** One market slot for one port: run every standing order of its warehouse. */
-export function stewardTick(g, city, cap) {
+export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   const w = g.warehouses?.[city], a = w?.admin;
   if (!a || g.over) return null;
   if ((g.shocks ?? []).some((s) => s.type === "port_closed" && s.city === city && s.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)

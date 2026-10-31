@@ -30,6 +30,9 @@ export const whLockOf = (g, city, good) => g.warehouses?.[city]?.locks?.[good] ?
 /** Is the good's outflow locked in this warehouse object? */
 export const whLocked = (wh, good) => Boolean(wh?.locks?.[good]?.outflow);
 
+/** Store stock available to outflows: zero while the good is locked. */
+export const whAvailable = (wh, good) => (whLocked(wh, good) ? 0 : (wh?.goods?.[good] ?? 0));
+
 /** Set the desired state of one lock. Returns {ok, locked} or {ok:false, reason}. */
 export function setWarehouseLock(g, city, good, type, desired) {
   if (g.over) return { ok: false, reason: "game over" };
