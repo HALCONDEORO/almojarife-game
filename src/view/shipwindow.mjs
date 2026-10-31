@@ -12,6 +12,7 @@ import { shipCapacity } from "../sim/trade.mjs";
 import { hullSpeedFactor } from "../game/seawear.mjs";
 import { armoryBlock, gearNextWeight } from "../sim/armory.mjs";
 import { cargoUsed, SHIP_TYPES, shipValue, repairPrice, repairOf, repairDays, warehouseOf, quote } from "../game/game.mjs";
+import { whLocked } from "../game/whlock.mjs";
 
 const WEAPON_NAME = { es: { ballista: "Ballesta", catapult: "Catapulta", cannon: "Cañón", bombard: "Bombarda" }, en: { ballista: "Ballista", catapult: "Catapult", cannon: "Cannon", bombard: "Bombard" } };
 export const SW = {
@@ -113,7 +114,7 @@ function cargoTab(g, s, t, hp, gn, cn) {
       h += `<tr><td>${goodIcon(gd)}${gn(gd)}</td><td>${qty}</td><td>${avg ?? "-"}</td><td>${local ?? "-"}</td>`;
       if (wh) {
         const inWh = wh.goods[gd] ?? 0;
-        h += `<td><button data-st="${gd}">${t.store}</button><button data-tk="${gd}" ${inWh ? "" : "disabled"}>${t.take}</button></td>`;
+        h += `<td><button data-st="${gd}">${t.store}</button><button data-tk="${gd}" ${inWh && !whLocked(wh, gd) ? "" : "disabled"}>${t.take}</button></td>`;
       }
       h += `</tr>`;
     }

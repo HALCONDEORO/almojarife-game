@@ -9,6 +9,7 @@ import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
 import { repOf, addRespect } from "./rank.mjs";
 import { wallsAllow } from "./plague.mjs";
+import { whLocked } from "./whlock.mjs";
 
 /** First-slice types (design doc section 3). Costs scale per level: materials x level, fee x level, time x level. */
 export const BUILDING_TYPES = Object.freeze({
@@ -208,10 +209,10 @@ export function quoteConstruction(g, cityId, plotId, type) {
   if (b.type && b.type !== type) return { ok: false, reason: "plot has another building" };
   if (level > spec.maxLevel) return { ok: false, reason: "max level" };
   const inputs = {}, fromStore = {}, missing = {};
-  const store = g.warehouses?.[cityId]?.goods ?? {};
+  const storeWh = g.warehouses?.[cityId], store = storeWh?.goods ?? {};
   for (const [good, qty] of Object.entries(RECIPES[spec.recipe])) {
     inputs[good] = qty * level;
-    fromStore[good] = Math.min(inputs[good], Math.max(0, store[good] ?? 0));
+    fromStore[good] = whLocked(storeWh, good) ? 0 : Math.min(inputs[good], Math.max(0, store[good] ?? 0)); // a locked good never leaves the store: the works buy it at the market instead
     missing[good] = inputs[good] - fromStore[good];
   }
   const q = quoteUnitsImport(g.world, g.market, cityId, missing); // warehouse first, then the market; what the port lacks is imported at IMPORT_MUL

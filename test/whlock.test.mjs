@@ -5,6 +5,9 @@ import {setStewardRule,stewardTick} from '../src/game/steward.mjs';
 import {LOCK_TYPES,setWarehouseLock,whLockOf,whLocked} from '../src/game/whlock.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 import {price} from '../src/sim/market.mjs';
+import {quoteTowers,startTowers,TOWER_RECIPE} from '../src/game/towers.mjs';
+import {buyOffice,buyPlot,quoteConstruction,startConstruction,BUILDING_TYPES} from '../src/game/buildings.mjs';
+import {RECIPES} from '../src/sim/recipes.mjs';
 const world=loadWorld();
 const mk=()=>{const g=newGame(world);const s=g.ships[0];g.cash=100000;assert.ok(buyWarehouse(g,'cadiz').ok);return{g,s};};
 const dear=(g,good='grain')=>{const e=g.market.cadiz[good];e.stock=1;return price(world,e,good);}; // clamp-high price
@@ -101,4 +104,43 @@ test('locks survive a save/load; an old save without locks loads clean',()=>{
  assert.equal(whLockOf(r2,'cadiz','grain'),null);
  assert.ok(!whLocked(r2.warehouses.cadiz,'grain'));
  assert.equal(takeGoods(r2,r2.ships[0],'grain',1).reason,'nothing to take','empty store still takes nothing, lock or no lock');
+});
+
+test('towers never draw a locked good: quote and execution agree, the market covers it',()=>{
+ const g=newGame(world,'cadiz',{freePlay:true,seed:7});
+ (g.rep??={}).cadiz=100;g.cash=1e6;buyOffice(g,'cadiz');
+ g.walls.cadiz={level:1,state:'active'};
+ assert.ok(buyWarehouse(g,'cadiz').ok);
+ const wh=g.warehouses.cadiz;
+ for(const gd of Object.keys(TOWER_RECIPE)){wh.goods[gd]=100;g.market.cadiz[gd].stock=g.market.cadiz[gd].target*4;}
+ assert.ok(setWarehouseLock(g,'cadiz','timber','outflow',true).ok);
+ const q=quoteTowers(g,'cadiz');
+ assert.ok(q.ok);
+ assert.equal(q.fromStore.timber,0,'locked timber stays');
+ assert.equal(q.missing.timber,TOWER_RECIPE.timber,'the market covers it');
+ assert.equal(q.fromStore.bricks,TOWER_RECIPE.bricks,'unlocked goods still come from the store');
+ const r=startTowers(g,'cadiz');
+ assert.ok(r.ok);
+ assert.equal(wh.goods.timber,100,'locked stock untouched by the works');
+ assert.equal(wh.goods.bricks,100-TOWER_RECIPE.bricks);
+ assert.equal(wh.goods.ironware,100-TOWER_RECIPE.ironware);
+});
+test('construction never draws a locked good: quote and execution agree',()=>{
+ const g=newGame(world,'cadiz',{cash:100000});
+ buyOffice(g,'cadiz');
+ assert.ok(buyWarehouse(g,'cadiz').ok);
+ const plot={id:'cadiz:7',type:'warehouse',w:4,d:4};
+ assert.ok(buyPlot(g,'cadiz',plot).ok);
+ const recipe=RECIPES[BUILDING_TYPES.warehouse.recipe];
+ const wh=g.warehouses.cadiz;
+ for(const gd of Object.keys(recipe)){wh.goods[gd]=100;g.market.cadiz[gd].stock=g.market.cadiz[gd].target*4;}
+ assert.ok(setWarehouseLock(g,'cadiz','bricks','outflow',true).ok);
+ const q=quoteConstruction(g,'cadiz','cadiz:7','warehouse');
+ assert.ok(q.ok);
+ assert.equal(q.fromStore.bricks,0,'locked bricks stay');
+ assert.equal(q.missing.bricks,recipe.bricks,'the market covers them');
+ const r=startConstruction(g,'cadiz','cadiz:7','warehouse');
+ assert.ok(r.ok);
+ assert.equal(wh.goods.bricks,100,'locked stock untouched by the works');
+ assert.equal(wh.goods.timber,100-recipe.timber,'unlocked goods still feed the works');
 });
