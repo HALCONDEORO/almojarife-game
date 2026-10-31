@@ -586,15 +586,15 @@ export function storeGoods(g, ship, good, qty) {
    integer sentinel. */
 export function takeGoods(g, ship, good, qty) {
   if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
-  const w = warehouseOf(g, ship.at);
-  if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
-  if (whLocked(w, good)) return { ok: false, reason: "locked" };
-  qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
+  const warehouse = warehouseOf(g, ship.at);
+  if (g.over || ship.voyage || !warehouse) return { ok: false, reason: "no warehouse here" };
+  if (whLocked(warehouse, good)) return { ok: false, reason: "locked" };
+  qty = Math.min(Math.floor(qty), warehouse.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
   if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
-  const had=w.goods[good],paid=w.basis?.[good]??0,transferred=qty===had?paid:Math.round(paid*qty/had);
-  if(w.basis)w.basis[good]=paid-transferred;
+  const had=warehouse.goods[good],paid=warehouse.basis?.[good]??0,transferred=qty===had?paid:Math.round(paid*qty/had);
+  if(warehouse.basis)warehouse.basis[good]=paid-transferred;
   (ship.basis??={})[good]=(ship.basis[good]??0)+transferred;
-  w.goods[good] -= qty; if (!w.goods[good]){delete w.goods[good];if(w.basis)delete w.basis[good];}
+  warehouse.goods[good] -= qty; if (!warehouse.goods[good]){delete warehouse.goods[good];if(warehouse.basis)delete warehouse.basis[good];}
   ship.cargo[good] = (ship.cargo[good] ?? 0) + qty;
   return { ok: true, qty };
 }
@@ -602,10 +602,10 @@ export function quote(g, city, good) { return price(g.world, g.market[city][good
 export { cargoUsed, SHIP_TYPES };
 /** A tavern rumour also puts the named port on the chart: now the trader knows where it is. */
 export function buyRumor(g, city, at) {
-  const r = buyRumorIntel(g, city, at);
-  if (r.ok && discover(g, city)) say(g, "discovered", { city });
-  if (r.ok) say(g, "rumor", { city, at, price: RUMOR_PRICE });
-  return r;
+  const result = buyRumorIntel(g, city, at);
+  if (result.ok && discover(g, city)) say(g, "discovered", { city });
+  if (result.ok) say(g, "rumor", { city, at, price: RUMOR_PRICE });
+  return result;
 }
 export { RUMOR_PRICE, isLive } from "./intel.mjs";
 export { isDiscovered } from "./fog.mjs";
@@ -619,15 +619,15 @@ export function bestPorts(g, ship) {
   const rows = [], { market: km, age } = knownMarket(g);
   for (const c of g.world.cities) {
     if (c.id === ship.at || !km[c.id]) continue; // unknown port: no price
-    const r = route(g.world, ship.at, c.id);
-    if (!r) continue;
+    const trip = route(g.world, ship.at, c.id);
+    if (!trip) continue;
     const there = { ...ship, at: c.id, voyage: null };
     let revenue = 0, profit = 0, any = false;
     for (const [good, q] of Object.entries(ship.cargo)) {
-      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, c.id));
-      if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
+      const preview = previewSell(g.world, km, there, good, q, FEE * feeMul(g, c.id));
+      if (preview.qty) { revenue += preview.revenue; profit += preview.profit; any = true; }
     }
-    if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
+    if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(trip.km / SHIP_TYPES[ship.type].kmPerDay)) });
   }
   return rows.sort((a, b) => b.revenue - a.revenue);
 }
