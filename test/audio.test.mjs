@@ -46,8 +46,8 @@ test("gull cries only under the port ambience, behind the same setting", () => {
   assert.match(credits, /rango-mango.*CC0/s);
 });
 test("buy and sell buttons play their effect, failures play error", () => {
-  assert.match(main, /sfx\(r\.ok \? "buy" : "error"\)/);
-  assert.match(main, /sfx\(r\.ok \? "sell" : "error"\)/);
+  assert.match(main, /sfx\(res\.ok \? "buy" : "error"\)/);
+  assert.match(main, /sfx\(res\.ok \? "sell" : "error"\)/);
 });
 
 test("Spanish sound labels are unique and never replaced by English entries", () => {

@@ -7,8 +7,8 @@ const html = readFileSync("web/index.html", "utf8");
 
 test("buy and sell confirm with a toast built from the real trade delta", () => {
   assert.match(main, /function toast\(msg, agg\)/);
-  assert.match(main, /t\.toastBought\.replace\("\{q\}", q\)/);
-  assert.match(main, /t\.toastSold\.replace\("\{q\}", q\)/);
+  assert.match(main, /t\.toastBought\.replace\("\{q\}", qty\)/);
+  assert.match(main, /t\.toastSold\.replace\("\{q\}", qty\)/);
   for (const k of ["toastBought", "toastSold"]) assert.equal((main.match(new RegExp(`${k}:"`, "g")) || []).length, 2, `${k} in both locales`);
 });
 
