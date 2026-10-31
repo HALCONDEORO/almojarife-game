@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,advanceDay,buyWarehouse} from '../src/game/game.mjs';
 import { readFileSync } from 'node:fs';
-import { SEASON_AMPLITUDE } from '../src/sim/market.mjs';
+import { SEASON_AMPLITUDE, seasonMul } from '../src/sim/market.mjs';
 import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,restartBuilding,staffingRatio,freeLabor,jobsNeeded,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
 import {RECIPES,OUTPUTS} from '../src/sim/recipes.mjs';
 import {SEASON_PEAK} from '../src/sim/market.mjs';
@@ -262,4 +262,22 @@ test('per-building state keeps its identity across the loop; the port ratio is o
  for(let t=7;t<=12;t++){g.tick=t*1440;workshopTick(g,'cadiz');}
  assert.equal(f.produced,fProd,'halted fishery: state frozen');
  assert.ok((wv.produced??0)>wvProd,'the weaver produces once it can quote');
+});
+
+test('proved arithmetic domains: the port ratio lives in [0,1], its components are uncapped, seasonMul in [0.65,1.35]',()=>{
+ // staffingRatio: 0 <= r <= 1 and finite across adversarial configurations (zero division excluded by the need<1 guard)
+ const mk=(pop,buildings)=>{const g=newGame(world);g.noGoal=true;g.world.nodes.cadiz.pop=pop;
+  g.buildings={...(g.buildings??{}),cadiz:{}};for(const [i,t] of buildings.entries())g.buildings.cadiz['cadiz:'+(i+1)]={type:t,level:3,state:'active',plotType:t};return g;};
+ for(const [pop,bs] of [[1,['mine']],[10,['mine','mine']],[12000,[]],[12000,['fishery']],[999999,['mine','armory','fishery']],[8000,['ranch','ranch','ranch','ranch']]]){
+  const r=staffingRatio(mk(pop,bs),'cadiz');
+  assert.ok(Number.isFinite(r)&&r>=0&&r<=1,'ratio in [0,1] for pop='+pop+' '+bs.join(','));
+ }
+ // per-component versus final: freeLabor is NOT capped at need - only the final ratio is
+ const g=mk(999999,['fishery']);
+ assert.ok(freeLabor(g,'cadiz')>jobsNeeded(g,'cadiz'),'raw components stay unbounded');
+ assert.equal(staffingRatio(g,'cadiz'),1,'the cap applies to the final ratio only');
+ assert.ok(freeLabor(mk(1,[]),'cadiz')>=0,'freeLabor never negative');
+ // seasonMul: bounded multiplier, symmetric around 1
+ for(let d=0;d<365;d+=7){const m=seasonMul('wool',d);assert.ok(m>=1-SEASON_AMPLITUDE&&m<=1+SEASON_AMPLITUDE,'seasonMul in band at day '+d);}
+ assert.equal(seasonMul('cloth',undefined),1,'no season data -> 1');
 });

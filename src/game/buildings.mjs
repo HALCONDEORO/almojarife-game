@@ -381,6 +381,10 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Proved domains: staffingRatio lives in [0,1] and is finite for every configuration - the
+ * need<1 guard excludes zero division, Math.min caps only the FINAL ratio while the components
+ * (freeLabor, jobsNeeded) stay raw and uncapped; seasonMul stays within [1-SEASON_AMPLITUDE,
+ * 1+SEASON_AMPLITUDE] and a good without season data multiplies by exactly 1. */
 /** Local identity across the loop: the port ratio is one local shared by every building (never
  * recomputed inside the loop), while each building's counters (produced, negDays, negWarned) are
  * its own - a short-of-input or halted building neither stops nor rewrites its neighbour. The
