@@ -141,6 +141,28 @@ test('registration starts no behavior; metadata fallback preserves old values; a
  assert.ok(buyCaravel(g,s0.at).ok);const s3=g.ships[g.ships.length-1];
  assert.equal(formConvoy(g,[s0.id,s3.id]).reason,'already grouped','membership binds even without any voyage');
 });
+test('departure validates before any callback; a failed first leg strands nobody; reset clears only the binding',()=>{
+ const {g,s0,s1}=mk();g.noGoal=true; // deadline off: the test waits out a voyage
+ const cv=formConvoy(g,[s0.id,s1.id],'Flota').convoy;
+ // callback failure policy: with the real doSail every failure mode is pre-validated identical
+ // for all members, so it fires on the first call - here a spy proves a first-call failure
+ // leaves the whole group in port, registration untouched:
+ let calls=0;
+ const r=sailConvoy(g,cv.id,'barcelona',{doSail:()=>{calls++;return{ok:false,reason:'no route'};}});
+ assert.equal(r.ok,false);assert.equal(calls,1,'the first failure stops the command');
+ assert.ok(!s0.voyage&&!s1.voyage,'nobody sailed');
+ assert.ok(g.convoys[cv.id],'the registration survives a failed departure');
+ // selective reset: disband clears exactly the binding - ships keep every other field
+ doSail(g,s0,'barcelona');assert.ok(s0.voyage); // s0 sails off alone; disband now refuses
+ assert.equal(disbandConvoy(g,cv.id).reason,'at sea');
+ let n=0;while(s0.voyage&&n++<400)advanceDay(g);
+ const snap=JSON.parse(JSON.stringify(s0));delete snap.convoy;
+ assert.ok(disbandConvoy(g,cv.id).ok);
+ assert.equal(s0.convoy,undefined);assert.equal(s1.convoy,undefined);
+ assert.deepEqual(JSON.parse(JSON.stringify(s0)),snap,'every other ship field preserved');
+ assert.equal(g.convoys[cv.id],undefined,'registration released');
+ assert.equal(s0.at,'barcelona');assert.equal(s1.at,'cadiz','positions untouched by the reset');
+});
 test('convoy ids are minted once and never reused, even across disband and reload',()=>{
  const {g,s0,s1}=mk();
  const cv1=formConvoy(g,[s0.id,s1.id]).convoy;

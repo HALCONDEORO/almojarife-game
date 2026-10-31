@@ -26,6 +26,11 @@ export function escortOf(g, ship) {
 
 /** Group 2-5 docked owned ships into a convoy. */
 /**
+ * Departure contract: every member is validated before any doSail callback runs, and the
+ * real doSail's remaining failure modes (route, port, crew, held, repair) are identical for
+ * all members, so a failure always fires on the first call - departures are atomic, a failed
+ * first leg strands nobody. Reset is selective: disband/leave clear exactly the backlink and
+ * the registration; every other ship field (name, cargo, hull, position) is preserved.
  * Stage contract: registration starts no behavior - a convoy forms without any voyage and
  * never sails on its own; sailing is a separate explicit command. Metadata policy: an
  * unnamed convoy gets a default name and a rejected rename keeps the old one. A sold member
