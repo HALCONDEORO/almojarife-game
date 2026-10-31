@@ -70,6 +70,12 @@ export function tickShip(ship, force = false) {
 // Each unit is priced at the stock level it leaves or joins, so large deals move the
 // price against the trader and a buy-then-sell loop in one port always loses to fees.
 /** Buy up to qty, limited by stock, hold space and cash. `fee` overrides the market fee (port reputation). */
+/** Buy qty of a good on the local market. One documented conversion rule for
+   quote and commit alike: each unit costs ceil2(price * (1 + fee)), priced on
+   the live curve as the stock moves. The same per-unit loop is also the
+   affordability inverse - it stops the first unit the cash cannot cover - so
+   the proposed effective quantity and its forward cost can never disagree
+   about rounding, and the balance is checked again at commit, unit by unit. */
 export function buy(world, market, ship, cash, good, qty, fee = FEE) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
   if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, reason: "bad quantity" };
