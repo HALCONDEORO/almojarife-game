@@ -8,7 +8,7 @@ Before a merge:
 node tools/delivery/verify.mjs candidate PR_NUMBER FULL_HEAD_SHA
 ```
 
-This reads the current PR head, the newest run of each check and commit statuses. It requires test, gitleaks, CodeQL, the three Analyze checks, DeepSource, and no pending or failed extra check. A truncated check list fails closed. It does not read or supply independent approval and never merges anything. The operator must still obtain independent approval for the exact head and re-read the head immediately before a separately authorized merge.
+This reads the current PR head, the newest run of each check and commit statuses. It conservatively requires balance for every candidate, plus test, gitleaks, CodeQL, the three Analyze checks, DeepSource, and no pending or failed extra check. A truncated check list fails closed. Each check must name the requested head SHA and an explicitly recognized app ID; required checks must come from GitHub Actions or, for CodeQL, GitHub Advanced Security. The exported JSON includes that provenance. If workflow path filters omit balance, the script returns failure rather than assuming exemption: the operator must separately validate applicability against the current workflow. It does not read or supply independent approval and never merges anything. The operator must still obtain independent approval for the exact head and re-read the head immediately before a separately authorized merge.
 
 After a merge:
 

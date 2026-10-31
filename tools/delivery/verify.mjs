@@ -2,7 +2,7 @@
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 
-export const REQUIRED_CHECKS = ['test', 'gitleaks', 'CodeQL', 'Analyze (python)', 'Analyze (actions)', 'Analyze (javascript-typescript)'];
+export const REQUIRED_CHECKS = ['balance', 'test', 'gitleaks', 'CodeQL', 'Analyze (python)', 'Analyze (actions)', 'Analyze (javascript-typescript)'];
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const shaPattern = /^[a-f0-9]{40}$/;
 
@@ -10,10 +10,18 @@ export function candidateEvidence(pr, expectedHead, checks, status, required = R
   const errors = [];
   if (!shaPattern.test(expectedHead) || pr.head?.sha !== expectedHead) errors.push('PR head does not match the requested full SHA');
   if (pr.state !== 'open' || pr.merged) errors.push('PR is not an open candidate');
+  if (status.sha !== expectedHead) errors.push('Commit status SHA does not match requested head');
   if (checks.total_count !== checks.check_runs?.length) errors.push('Check list is incomplete');
   // Check-runs are newest first. A later rerun must not be hidden by an older success.
   const latest = new Map();
   for (const check of checks.check_runs ?? []) if (!latest.has(check.name)) latest.set(check.name, check);
+  const trustedApps = { 'github-actions': 15368, 'github-advanced-security': 57789, coderabbitai: 347564 };
+  for (const check of latest.values()) {
+    if (check.head_sha !== expectedHead) errors.push(`Check SHA mismatch: ${check.name}`);
+    if (trustedApps[check.app?.slug] !== check.app?.id || !check.app?.id) errors.push(`Unrecognized check app: ${check.name}`);
+    const requiredApp = check.name === 'CodeQL' ? 'github-advanced-security' : 'github-actions';
+    if (required.includes(check.name) && check.app?.slug !== requiredApp) errors.push(`Wrong required-check app: ${check.name}`);
+  }
   for (const name of required) {
     const check = latest.get(name);
     if (!check || check.status !== 'completed' || check.conclusion !== 'success') errors.push(`Required check is not successful: ${name}`);
@@ -23,7 +31,7 @@ export function candidateEvidence(pr, expectedHead, checks, status, required = R
   }
   const deepSource = status.statuses?.find(entry => entry.context === 'DeepSource: JavaScript');
   if (status.state !== 'success' || deepSource?.state !== 'success') errors.push('Commit statuses or DeepSource are not successful');
-  return { ok: errors.length === 0, errors, head: pr.head?.sha, pr: pr.html_url, checks: [...latest.values()].map(check => ({ name: check.name, conclusion: check.conclusion, url: check.html_url })), deepSource: deepSource?.target_url, independentReview: 'Not verified by this script. Exact-head independent approval is still required.' };
+  return { ok: errors.length === 0, errors, head: pr.head?.sha, pr: pr.html_url, checks: [...latest.values()].map(check => ({ name: check.name, head: check.head_sha, app: check.app?.slug, appId: check.app?.id, conclusion: check.conclusion, url: check.html_url })), deepSource: deepSource?.target_url, balancePolicy: 'Balance is conservatively required for every candidate. If path filters omit it, this script cannot declare the candidate fully green; validate applicability separately against the current workflow.', independentReview: 'Not verified by this script. Exact-head independent approval is still required.' };
 }
 
 export function deploymentEvidence(pr, expectedMerge, runs, requestedPaths, comparisons) {

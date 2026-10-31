@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { candidateEvidence, deploymentEvidence, REQUIRED_CHECKS, safePath } from '../tools/delivery/verify.mjs';
 const head = 'a'.repeat(40), merge = 'b'.repeat(40);
 const candidate = () => ({ state: 'open', merged: false, head: { sha: head }, html_url: 'fixture:pr' });
-const checks = () => ({ total_count: REQUIRED_CHECKS.length, check_runs: REQUIRED_CHECKS.map(name => ({ name, status: 'completed', conclusion: 'success' })) });
-const status = () => ({ state: 'success', statuses: [{ context: 'DeepSource: JavaScript', state: 'success' }] });
+const checks = () => ({ total_count: REQUIRED_CHECKS.length, check_runs: REQUIRED_CHECKS.map(name => ({ name, head_sha: head, app: name === 'CodeQL' ? { slug: 'github-advanced-security', id: 57789 } : { slug: 'github-actions', id: 15368 }, status: 'completed', conclusion: 'success' })) });
+const status = () => ({ sha: head, state: 'success', statuses: [{ context: 'DeepSource: JavaScript', state: 'success' }] });
 const merged = () => ({ merged: true, merge_commit_sha: merge });
 const runs = () => ({ workflow_runs: [{ path: 'dynamic/pages/pages-build-deployment', head_sha: merge, status: 'completed', conclusion: 'success' }] });
 
@@ -26,7 +26,7 @@ test('newest rerun, incomplete lists, extra failed or pending checks all fail cl
   }
   const partial = checks(); partial.total_count++;
   assert.equal(candidateEvidence(candidate(), head, partial, status()).ok, false);
-  const failed = checks(); failed.check_runs.push({ name: 'balance', status: 'completed', conclusion: 'failure' }); failed.total_count++;
+  const failed = checks(); failed.check_runs.push({ name: 'extra-check', status: 'completed', conclusion: 'failure' }); failed.total_count++;
   assert.equal(candidateEvidence(candidate(), head, failed, status()).ok, false);
 });
 
@@ -47,4 +47,19 @@ test('delivery requires merged SHA, successful exact-SHA Pages run and all reque
 test('file paths cannot escape the requested production tree', () => {
   assert.equal(safePath('src/game/game.mjs'), 'src/game/game.mjs');
   for (const value of ['../secret', '/web/main.mjs', 'web//main.mjs', 'web/./main.mjs', 'web/main.mjs?x=1', 'https://elsewhere.test']) assert.throws(() => safePath(value));
+});
+
+
+test('candidate checks provenance as well as a green name and exports the verified identity', () => {
+  const valid = candidateEvidence(candidate(), head, checks(), status());
+  assert.equal(valid.ok, true);
+  assert.equal(valid.checks[0].head, head);
+  assert.equal(valid.checks[0].appId, 15368);
+  for (const mutate of [check => { check.head_sha = merge; }, check => { check.app.id = 999; }, check => { check.app = { slug: 'coderabbitai', id: 347564 }; }]) {
+    const changed = checks(); mutate(changed.check_runs[0]);
+    assert.equal(candidateEvidence(candidate(), head, changed, status()).ok, false);
+  }
+  assert.equal(candidateEvidence(candidate(), head, checks(), { ...status(), sha: merge }).ok, false);
+  const absentBalance = checks(); absentBalance.check_runs.shift(); absentBalance.total_count--;
+  assert.equal(candidateEvidence(candidate(), head, absentBalance, status()).ok, false, 'missing balance never implies that the paths are exempt');
 });
