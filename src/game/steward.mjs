@@ -6,6 +6,7 @@
 import { price } from "../sim/market.mjs";
 import { craftCount } from "./crafts.mjs";
 import { FEE, ceil2, floor2 } from "../sim/trade.mjs";
+import { whLocked } from "./whlock.mjs";
 import { post } from "./ledger.mjs";
 import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
 import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
@@ -56,7 +57,7 @@ export function setStewardReserve(g, city, amount) {
 }
 
 /** One market slot for one port: run every standing order of its warehouse. */
-export function stewardTick(g, city, cap) {
+export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   const w = g.warehouses?.[city], a = w?.admin;
   if (!a || g.over) return null;
   if ((g.shocks ?? []).some((s) => s.type === "port_closed" && s.city === city && s.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
@@ -65,7 +66,7 @@ export function stewardTick(g, city, cap) {
     const e = g.market[city]?.[good];
     if (!e) continue;
     // Sell first: it frees room and cash for the buy side.
-    if (r.sellAbove > 0) {
+    if (r.sellAbove > 0 && !whLocked(w, good)) { // a locked good never leaves the store, not even on a standing order
       const have = w.goods[good] ?? 0, can = have - r.sellKeep;
       if (can > 0) {
         let n = 0, revenue = 0; // unit n+1 joins the market at stock+n+1 and fetches that price, as in trade.sell

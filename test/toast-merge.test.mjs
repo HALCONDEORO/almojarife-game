@@ -9,7 +9,7 @@ test("mergeTrade sums quantity and cost", () => {
 });
 test("main.mjs merges buy and sell toasts per good", () => {
   const src = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-  assert.match(src, /key: "buy:" \+ gd/);
-  assert.match(src, /key: "sell:" \+ gd/);
+  assert.match(src, /key: `buy:\$\{gd\}`/);
+  assert.match(src, /key: `sell:\$\{gd\}`/);
   assert.match(src, /last\.dataset\.key === agg\.key/);
 });

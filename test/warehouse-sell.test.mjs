@@ -169,8 +169,8 @@ test("fixed sell buttons clamp to the sellable stock (the exact quantity the han
 
 test("market sell button preview uses cargo plus warehouse stock (UI wiring)", () => {
   const src = fs.readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
-  assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, free \+ stored\) : marketQty/);
-  assert.match(src, /ps = previewSellCombined\(g\.world, g\.market, s, wh, gd, sq, mktFee, free\)/);
-  assert.match(src, /const want = v === "all" \? sellableHold\(g, s, gd\) \+ \(wh\?\.goods\?\.\[gd\] \?\? 0\) : sellRequestQty\(g, s, gd, \+v, wh\)/);
+  assert.match(src, /sq = marketQty === "max" \? Math\.max\(1, free \+ storedEff\) : marketQty/); // MAX asks for hold plus lock-filtered store stock
+  assert.match(src, /ps = previewSellCombined\(g\.world, g\.market, s, whEff, gd, sq, mktFee, free\)/); // the painted preview reads the same lock-filtered store
+  assert.match(src, /const want = amt === "all" \? sellableHold\(g, s, gd\) \+ \(whLocked\(wh, gd\) \? 0 : \(wh\?\.goods\?\.\[gd\] \?\? 0\)\) : sellRequestQty\(g, s, gd, Number\(amt\), wh\)/);
   assert.match(src, /doSellCombined\(g, s, gd, want, wh\)/);
 });

@@ -17,6 +17,7 @@ import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { quoteUnits, consumeUnits } from "../sim/recipes.mjs";
 import { post } from "./ledger.mjs";
 import { wallsLevel } from "./walls.mjs";
+import { whLocked } from "./whlock.mjs";
 
 export const TOWERS_PER_WALL_LEVEL = 2;                    // the wall carries the towers
 export const TOWER_RECIPE = Object.freeze({ bricks: 8, timber: 3, ironware: 1 }); // per tower, own tuning: a third of a wall level
@@ -52,10 +53,10 @@ export function quoteTowers(g, cityId) {
   const count = towersCount(g, cityId) + 1;
   if (count > towersMax(g, cityId)) return { ok: false, reason: "max level" };
   const inputs = {}, fromStore = {}, missing = {};
-  const store = g.warehouses?.[cityId]?.goods ?? {};
+  const storeWh = g.warehouses?.[cityId], store = storeWh?.goods ?? {};
   for (const [good, qty] of Object.entries(TOWER_RECIPE)) {
     inputs[good] = qty;
-    fromStore[good] = Math.min(qty, Math.max(0, store[good] ?? 0));
+    fromStore[good] = whLocked(storeWh, good) ? 0 : Math.min(qty, Math.max(0, store[good] ?? 0)); // a locked good never leaves the store: the works buy it at the market instead
     missing[good] = qty - fromStore[good];
   }
   const q = quoteUnits(g.world, g.market, cityId, missing);
