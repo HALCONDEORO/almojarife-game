@@ -781,7 +781,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       for (const gd of Object.keys(g.world.goods).sort((a, b) => t.goods[a].localeCompare(t.goods[b], lang))) {
         if(market2d && wh && marketCargoOnly && !(s.cargo[gd]>0) && !(wh?.goods?.[gd]>0)) continue;
         // a locked good counts as unavailable in every sell number of the row (display keeps the real stock, with a lock mark)
-        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, free = sellableHold(g, s, gd), gdLocked = whLocked(wh, gd), whEff = gdLocked ? { ...wh, goods: { ...wh?.goods, [gd]: 0 } } : wh, storedEff = whEff?.goods?.[gd] ?? 0, bq = marketQty === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, 9999, mktFee).qty) : marketQty, sq = marketQty === "max" ? Math.max(1, free + storedEff) : marketQty, pb = previewBuy(g.world, g.market, s, g.cash, gd, bq, mktFee), ps = previewSellCombined(g.world, g.market, s, whEff, gd, sq, mktFee, free), spb = s.basis?.[gd], avg = spb != null && spb > 0 && have > 0 ? Math.round(spb / have) : null;
+        const have = s.cargo[gd] ?? 0, stored = wh?.goods?.[gd] ?? 0, free = sellableHold(g, s, gd), gdLocked = whLocked(wh, gd), whEff = gdLocked ? { ...wh, goods: { ...wh?.goods, [gd]: 0 } } : wh, storedEff = whEff?.goods?.[gd] ?? 0, bq = marketQty === "max" ? marketQuantity(previewBuy(g.world, g.market, s, g.cash, gd, Infinity, mktFee).qty) : marketQty, sq = marketQty === "max" ? Math.max(1, free + storedEff) : marketQty, pb = previewBuy(g.world, g.market, s, g.cash, gd, bq, mktFee), ps = previewSellCombined(g.world, g.market, s, whEff, gd, sq, mktFee, free), spb = s.basis?.[gd], avg = spb != null && spb > 0 && have > 0 ? Math.round(spb / have) : null;
         const p = quote(g, s.at, gd), base = g.world.goods[gd].base, col = p < base * 0.9 ? "#161" : p > base * 1.2 ? "#a11" : "inherit";
         const buyCost = Math.round(pb.cost), sellPay = Math.round(ps.revenue); // whole-coin display only: the trade itself still settles with cents
         const buyTip = pb.qty ? t.dealBuy.replace("{q}", pb.qty).replace("{c}", fmtM(buyCost)).replace("{a}", Math.round(pb.avg)).replace("{n}", pb.next) + (pb.limit ? " - " + t[pb.limit === "cash" ? "capCash" : pb.limit === "stock" ? "capStock" : "capRoom"] : "") : "", sellTip = ps.qty ? t.dealSell.replace("{q}", ps.qty).replace("{c}", fmtM(sellPay)).replace("{a}", Math.round(ps.avg)).replace("{n}", ps.next) + (ps.hasBasis ? ` (${fmtM(Math.round(Math.abs(ps.profit)))} ${ps.profit >= 0 ? t.profit : t.loss})` : "") : "";
@@ -1146,7 +1146,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-repay]").forEach((e) => e.onclick = () => act(() => { const [id, v] = e.dataset.repay.split(":"); repay(g, +id, v === "all" ? 1e9 : +v); }));
   P.querySelectorAll("[data-wh]").forEach((e) => e.onclick = () => act(() => buyWarehouse(g, s.at)));
   P.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
-  P.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
+  P.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)));
   // warehouse resolved at click time, like the data-s handler (30/10 sell bug)
   P.querySelectorAll("[data-whlock]").forEach((el) => { el.onclick = () => act(() => { const good = el.dataset.whlock; setWarehouseLock(g, s.at, good, "outflow", !whLocked(warehouseOf(g, s.at), good)); }); });
   P.querySelectorAll("[data-admclr]").forEach((e) => e.onclick = () => act(() => clearStewardRule(g, s.at, e.dataset.admclr)));
@@ -1238,7 +1238,7 @@ function renderShipWin() {
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
   d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { if (shipWin.tab !== e.dataset.swtab) sfx("click"); shipWin.tab = e.dataset.swtab; render(); });
   d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
-  d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, 9999)));
+  d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)));
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   d.querySelector("[data-swfollow]").onclick=()=>{sfx("click");mapControls.cancel();if(toggleFollow(follow,s.id)&&cam.zoom<2){zoomAt(cam,2/cam.zoom);applyCam();}render();};
