@@ -6,15 +6,14 @@ export const REQUIRED_CHECKS = ['balance', 'test', 'gitleaks', 'CodeQL', 'Analyz
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const shaPattern = /^[a-f0-9]{40}$/;
 
-export function candidateEvidence(pr, expectedHead, checks, status, required = REQUIRED_CHECKS) {
-  const errors = [];
-  if (!shaPattern.test(expectedHead) || pr.head?.sha !== expectedHead) errors.push('PR head does not match the requested full SHA');
-  if (pr.state !== 'open' || pr.merged) errors.push('PR is not an open candidate');
-  if (status.sha !== expectedHead) errors.push('Commit status SHA does not match requested head');
-  if (checks.total_count !== checks.check_runs?.length) errors.push('Check list is incomplete');
-  // Check-runs are newest first. A later rerun must not be hidden by an older success.
+// Check-runs are newest first. A later rerun must not be hidden by an older success.
+function latestChecks(checks) {
   const latest = new Map();
-  for (const check of checks.check_runs ?? []) if (!latest.has(check.name)) latest.set(check.name, check);
+  for (const check of checks) if (!latest.has(check.name)) latest.set(check.name, check);
+  return latest;
+}
+
+function validateProvenance(latest, expectedHead, required, errors) {
   const trustedApps = { 'github-actions': 15368, 'github-advanced-security': 57789, coderabbitai: 347564 };
   for (const check of latest.values()) {
     if (check.head_sha !== expectedHead) errors.push(`Check SHA mismatch: ${check.name}`);
@@ -22,6 +21,9 @@ export function candidateEvidence(pr, expectedHead, checks, status, required = R
     const requiredApp = check.name === 'CodeQL' ? 'github-advanced-security' : 'github-actions';
     if (required.includes(check.name) && check.app?.slug !== requiredApp) errors.push(`Wrong required-check app: ${check.name}`);
   }
+}
+
+function validateConclusions(latest, required, errors) {
   for (const name of required) {
     const check = latest.get(name);
     if (!check || check.status !== 'completed' || check.conclusion !== 'success') errors.push(`Required check is not successful: ${name}`);
@@ -29,6 +31,17 @@ export function candidateEvidence(pr, expectedHead, checks, status, required = R
   for (const check of latest.values()) {
     if (check.status !== 'completed' || !['success', 'neutral', 'skipped'].includes(check.conclusion)) errors.push(`Unfinished or failed check: ${check.name}`);
   }
+}
+
+export function candidateEvidence(pr, expectedHead, checks, status, required = REQUIRED_CHECKS) {
+  const errors = [];
+  if (!shaPattern.test(expectedHead) || pr.head?.sha !== expectedHead) errors.push('PR head does not match the requested full SHA');
+  if (pr.state !== 'open' || pr.merged) errors.push('PR is not an open candidate');
+  if (status.sha !== expectedHead) errors.push('Commit status SHA does not match requested head');
+  if (checks.total_count !== checks.check_runs?.length) errors.push('Check list is incomplete');
+  const latest = latestChecks(checks.check_runs ?? []);
+  validateProvenance(latest, expectedHead, required, errors);
+  validateConclusions(latest, required, errors);
   const deepSource = status.statuses?.find(entry => entry.context === 'DeepSource: JavaScript');
   if (status.state !== 'success' || deepSource?.state !== 'success') errors.push('Commit statuses or DeepSource are not successful');
   return { ok: errors.length === 0, errors, head: pr.head?.sha, pr: pr.html_url, checks: [...latest.values()].map(check => ({ name: check.name, head: check.head_sha, app: check.app?.slug, appId: check.app?.id, conclusion: check.conclusion, url: check.html_url })), deepSource: deepSource?.target_url, balancePolicy: 'Balance is conservatively required for every candidate. If path filters omit it, this script cannot declare the candidate fully green; validate applicability separately against the current workflow.', independentReview: 'Not verified by this script. Exact-head independent approval is still required.' };
