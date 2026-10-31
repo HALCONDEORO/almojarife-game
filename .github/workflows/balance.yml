@@ -5,8 +5,8 @@ name: Balance
 #   push to main .... 10 game years, default + 3 extra seeds (was 100 years; the same code just
 #                     passed the identical PR gate, and the weekly run keeps the 100y coverage)
 #   nightly 02:17 ... 30 game years (10950 days), default game only
-#   weekly Sun 02:47  100 game years, default + 1 extra seed (the deep-horizon run; further seeds
-#                     stay available on demand via workflow_dispatch)
+#   weekly Sun 02:47  100 game years, default + 3 extra seeds (the full deep-horizon run,
+#                     identical coverage to the old main/nightly 100y, just scheduled weekly)
 # Both path filters are fail-closed: everything matches "**" except paths proven sim-irrelevant below.
 on:
   pull_request:
@@ -76,5 +76,5 @@ jobs:
       - name: Balance gate (10y on PRs and main pushes, 30y nightly, 100y weekly)
         env:
           BALANCE_DAYS: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && '3650' || (github.event.schedule == '17 2 * * *' && '10950' || '36500') }}
-          BALANCE_SEEDS: ${{ github.event.inputs.seeds || (github.event.schedule == '17 2 * * *' && 'none' || (github.event.schedule == '47 2 * * 0' && '1' || '1,2,3')) }}
+          BALANCE_SEEDS: ${{ github.event.inputs.seeds || (github.event.schedule == '17 2 * * *' && 'none' || '1,2,3') }}
         run: node tools/sim_balance_check.mjs
