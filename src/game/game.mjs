@@ -445,6 +445,13 @@ function legWind(g, ship, from, toId, lat, lon) {
 
 /** Why a docked ship cannot leave right now, or null: the court holds it, or the yard does. */
 const dockBlocker = (g, ship) => heldNow(g, ship) ? "held" : repairOf(g, ship.id) ? "in repair" : null;
+/** Course-order contract (148p): replacing the route is not a halt - a mid-leg order swaps
+ * the voyage wholesale (the ship's current position becomes the new leg's origin, the old
+ * target reference is gone) and the ship keeps sailing; wind and sailLogged carry over and
+ * the ledger retargets the open entry instead of adding one. A refused order stops nothing,
+ * keeps the route untouched and leaves its reason on the ship until a new order succeeds.
+ * The only acknowledged halt is the anchor: a free endpoint stops the world step
+ * (sailTick), the route survives, and the next order is what lifts it. */
 export function doGoTo(g, ship, lat, lon) {
   if (g.freeNav !== true) return { ok: false, reason: "off" };
   if (g.over) return { ok: false, reason: "game over" };

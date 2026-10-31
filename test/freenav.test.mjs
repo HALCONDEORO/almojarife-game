@@ -147,3 +147,38 @@ test("wiring: serialized OFF games carry no freeNav key; ON games keep it", asyn
   const off = JSON.stringify(serialize(newGame(w), "Co", 0)); assert.ok(!off.includes('"freeNav"'), "OFF save has no freeNav key");
   const on = JSON.stringify(serialize(newGame(w, "cadiz", { freeNav: true }), "Co", 0)); assert.ok(on.includes('"freeNav":true'));
 });
+
+test('course replacement is not a halt: the position becomes the origin, wind and sail log carry, refusal keeps its reason',()=>{
+ const g=mk(),s=g.ships[0];g.noGoal=true;
+ assert.ok(doSail(g,s,'barcelona').ok);
+ let n=0;while(n++<30)advanceTick(g); // well underway
+ assert.ok(s.voyage&&!s.voyage.anchored);
+ const wind=s.voyage.wind,legs=(g.voyages??[]).filter(v=>v.ship===s.id).length;
+ // mid-leg reroute: the current position, not the origin port, is the new leg's origin
+ const r=doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon);
+ assert.equal(r.ok,true);assert.equal(r.toPort,true);
+ assert.equal(s.voyage.to,'valencia','the target reference is replaced');
+ assert.notEqual(s.voyage.from,'cadiz','the new leg starts where the ship is');
+ assert.ok(!s.voyage.anchored&&s.voyage.ticksLeft>0,'no halt: the ship keeps sailing');
+ assert.equal(s.voyage.wind,wind,'changing course keeps the wind it already had');
+ assert.equal(s.voyage.sailLogged,true,'the outing stays the one already logged');
+ const legs2=(g.voyages??[]).filter(v=>v.ship===s.id);
+ assert.equal(legs2.length,legs,'the ledger retargets the open entry instead of adding one');
+ assert.equal(legs2[0].to,'valencia');
+ // a refused change stops nothing and keeps its reason until a new order succeeds
+ const before=JSON.stringify(s.voyage);
+ assert.equal(doGoTo(g,s,50,-30).reason,'no sea there');
+ assert.equal(s.navError,'no sea there');
+ assert.equal(JSON.stringify(s.voyage),before,'the route survives a failed order untouched');
+ assert.ok(doGoTo(g,s,w.nodes.palma.lat,w.nodes.palma.lon).ok);
+ assert.equal(s.navError,undefined,'a successful order clears the last refusal');
+ // the only acknowledged halt is the anchor: a free endpoint stops the world step, keeping the route
+ const wp=Object.values(w.waypoints)[3];
+ assert.ok(doGoTo(g,s,wp.lat,wp.lon).ok&&s.voyage.free);
+ n=0;while(s.voyage&&!s.voyage.anchored&&n++<20000)advanceTick(g);
+ assert.ok(s.voyage?.anchored,'the world step acknowledges the halt, not the command');
+ assert.ok(s.at==='cadiz','anchored at sea: no port claim');
+ // a new order lifts the anchor: cleanup happens on the next command, not on the halt
+ assert.ok(doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon).ok);
+ assert.ok(!s.voyage.anchored&&s.voyage.to==='valencia');
+});
