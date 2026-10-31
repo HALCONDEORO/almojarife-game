@@ -23,7 +23,7 @@ test('the max follows the storage capacity and grade 2 stays reachable at full l
  assert.equal(watchMaxFor(300),25); // trunc(sqrt(600)) + 1
  assert.equal(watchMaxFor(1800),61,'an exact-integer threshold still admits one guard above it (perfect square)');
  for(const cap of [300,600,1800]){
-  assert.ok(watchMaxFor(cap)>Math.trunc(Math.sqrt(2*cap)),'one guard above the full-load threshold, cap '+cap);
+  assert.ok(watchMaxFor(cap)>Math.trunc(Math.sqrt(2*cap)),`one guard above the full-load threshold, cap ${cap}`);
  }
  assert.ok(watchMaxFor(600)>watchMaxFor(300),'the limit moves with the capacity');
 });
