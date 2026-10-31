@@ -143,11 +143,11 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
     if (rule.sellAbove > 0 && !whLocked(wh, good)) { // a locked good never leaves the store, not even on a standing order
       const have = wh.goods[good] ?? 0, can = have - rule.sellKeep;
       if (can > 0) {
-        let sold = 0, revenue = 0; // unit sold+1 joins the market at stock+sold+1 and fetches that price, as in trade.sell
+        let sold = 0, revenue = 0, feeCents = 0; // unit sold+1 joins the market at stock+sold+1 and fetches that price, as in trade.sell
         const purse = WHOLESALE_PURSE_BINDING ? commerceOf(g.market[city]) : null; // standing orders cannot draw more than the purse holds
         const cashCents = purse ? Math.round(purse.cash * 100) : 0; // integer cents, like trade.sell
         let revenueCents = 0;
-        while (sold < can) { const px = price(g.world, { ...entry, stock: entry.stock + sold + 1 }, good); if (px < rule.sellAbove) break; const unit = floor2(px * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; sold++; }
+        while (sold < can) { const px = price(g.world, { ...entry, stock: entry.stock + sold + 1 }, good); if (px < rule.sellAbove) break; const unit = floor2(px * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; feeCents += Math.round((px - unit) * 100); sold++; }
         if (sold > 0) {
           const scarcity = scarcityOf(entry); // shortage BEFORE the sale, as in doSell
           entry.stock += sold;
@@ -163,7 +163,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
           const docked = g.ships.find((sh) => sh.at === city && !sh.voyage); // the goods arrived by ship: the sale counts for its voyage
           if (docked) recordSale(g, docked, sold, revenue, revenue - spent);
           recordWholesaleSale(g.market[city], good, sold, revenue); // telemetry: the port's purse paid for the goods
-          did.push({ good, sold, revenue });
+          did.push({ good, sold, revenue, fee: feeCents / 100 }); // fee: the port's cut of the committed sale
         }
       }
     }
@@ -172,13 +172,13 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
       const budget = Math.floor(g.cash - (adm.reserve ?? 0));
       if (room > 0 && want > 0 && budget > 0) {
         const maxN = Math.min(want, room, entry.stock); // fixed before the loop: entry.stock shrinks as we buy
-        let bought = 0, cost = 0;
+        let bought = 0, cost = 0, feeCents = 0;
         while (bought < maxN) {
           const unit = price(g.world, entry, good);
           if (unit > rule.buyBelow) break;
           const charged = ceil2(unit * (1 + FEE));
           if (cost + charged > budget) break;
-          cost += charged; entry.stock -= 1; bought++;
+          cost += charged; feeCents += Math.round((charged - unit) * 100); entry.stock -= 1; bought++;
         }
         if (bought > 0) {
           craftCount(g, city, good, bought); // the steward's standing orders ship goods out like any buyer
@@ -189,7 +189,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
           wh.goods[good] = (wh.goods[good] ?? 0) + bought;
           (wh.basis ??= {})[good] = (wh.basis[good] ?? 0) + cost;
           recordMarketPurchase(g.market[city], good, bought, cost, entry.stock + bought); // telemetry: the port's purse received the payment
-          did.push({ good, bought, cost });
+          did.push({ good, bought, cost, fee: feeCents / 100 }); // fee: the port's cut inside the committed cost
         }
       }
     }
@@ -198,8 +198,8 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
   for (const row of did) {
     const ges = GOOD_NAMES.es[row.good] ?? row.good, gen = GOOD_NAMES.en[row.good] ?? row.good;
     const txt = row.sold
-      ? { es: `El administrador vendió ${row.sold} de ${ges} en ${cityName} por ${row.revenue}.`, en: `The steward sold ${row.sold} ${gen} in ${cityName} for ${row.revenue}.` }
-      : { es: `El administrador compró ${row.bought} de ${ges} en ${cityName} por ${row.cost}.`, en: `The steward bought ${row.bought} ${gen} in ${cityName} for ${row.cost}.` };
+      ? { es: `El administrador vendió ${row.sold} de ${ges} en ${cityName} por ${row.revenue} (tasa ${row.fee}).`, en: `The steward sold ${row.sold} ${gen} in ${cityName} for ${row.revenue} (fee ${row.fee}).` }
+      : { es: `El administrador compró ${row.bought} de ${ges} en ${cityName} por ${row.cost} (tasa ${row.fee}).`, en: `The steward bought ${row.bought} ${gen} in ${cityName} for ${row.cost} (fee ${row.fee}).` };
     post(g, "steward", { city, txt });
   }
   return did.length ? did : null;
