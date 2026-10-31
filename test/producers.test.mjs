@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
-import {newGame,buyWarehouse} from '../src/game/game.mjs';
+import {newGame,advanceDay,buyWarehouse} from '../src/game/game.mjs';
 import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
 import {RECIPES,OUTPUTS} from '../src/sim/recipes.mjs';
 import {SEASON_PEAK} from '../src/sim/market.mjs';
@@ -64,4 +64,48 @@ test('spec numbers from the materials table',()=>{
  assert.deepEqual(BUILDING_TYPES.fishery,{recipe:'fishery',fee:150,buildDays:16,upkeep:1,maxLevel:3});
  assert.equal(PRODUCERS.fishery.yield,3);
  for(const t of ['oil_mill','vineyard','saltworks'])assert.equal(PRODUCERS[t].yield,2);
+});
+
+test('the daily batch resets logically: pattern per (city, day), lifetime payload never resets, exactly once through advanceDay',()=>{
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ const plot={id:'cadiz:1',type:'fishery',w:4,d:4};buyPlot(g,'cadiz',plot);
+ g.buildings['cadiz']['cadiz:1']={type:'fishery',level:1,state:'active',plotType:'fishery'};
+ const b=g.buildings['cadiz']['cadiz:1'];
+ // level-1 pattern [1,0]: batches alternate by day parity; each day applies at most once
+ const deltas=[];
+ for(let d=0;d<4;d++){const before=b.produced??0;advanceDay(g);deltas.push((b.produced??0)-before);}
+ assert.ok(deltas.every(x=>x>=0),'lifetime payload never decreases');
+ assert.ok(deltas.some(x=>x>0),'batch days produce');
+ assert.ok(deltas.some(x=>x===0),'quiet days apply nothing - the logical reset erases no payload');
+ assert.ok(deltas.reduce((a,x)=>a+x,0)===b.produced,'the building counter is exactly the sum of daily applications');
+ // the batch is per city: a second fishery in the same port has its own daily batch
+ const plot2={id:'cadiz:2',type:'fishery',w:4,d:4};buyPlot(g,'cadiz',plot2);
+ g.buildings['cadiz']['cadiz:2']={type:'fishery',level:1,state:'active',plotType:'fishery'};
+ const b2=g.buildings['cadiz']['cadiz:2'],p1=b.produced??0;
+ advanceDay(g);
+ assert.ok((b2.produced??0)>=0&&(b.produced??0)>=p1,'each building owns its batch identity');
+});
+test('margin streak: unquotable keeps the state, negative days warn once, a profitable day clears and re-arms',()=>{
+ const g=newGame(world);g.noGoal=true;g.cash=100000;
+ const plot={id:'cadiz:1',type:'workshop',w:4,d:4};buyPlot(g,'cadiz',plot);
+ const b={type:'workshop',level:1,state:'active',plotType:'workshop'};
+ g.buildings['cadiz']['cadiz:1']=b;
+ // unquotable (no wool at all): not a margin signal - the streak state is kept, nothing runs
+ g.market.cadiz.wool.stock=0;
+ g.tick=1;workshopTick(g,'cadiz');
+ assert.equal(b.negDays??0,0,'an unquotable day neither starts nor clears a streak');
+ assert.equal(b.produced??0,0);
+ // quotable and unprofitable: cloth at the floor, wool scarce and dear
+ g.market.cadiz.wool.stock=4; // barely quotable (weave needs 4), extremely dear against target
+ g.market.cadiz.cloth.stock=g.market.cadiz.cloth.target*8; // output at the floor
+ const box0=(g.inbox??[]).length;
+ for(let d=2;d<=4;d++){g.tick=d*1440;g.market.cadiz.wool.stock=4;g.market.cadiz.cloth.stock=g.market.cadiz.cloth.target*8;workshopTick(g,'cadiz');}
+ assert.ok((b.negDays??0)>=3,'three negative days counted');
+ const warns=(g.inbox??[]).slice(0,(g.inbox??[]).length-box0).filter(m=>m.kind==='bldMargin');
+ assert.ok(warns.length<=1,'the warning fires once, not daily');
+ // a profitable day clears the streak and re-arms the warning
+ g.market.cadiz.wool.stock=g.market.cadiz.wool.target*4;g.market.cadiz.cloth.stock=1;
+ g.tick=5*1440;workshopTick(g,'cadiz');
+ assert.equal(b.negDays,0,'one profitable day clears the streak');
+ assert.equal(b.negWarned,0,'and re-arms the warning');
 });

@@ -381,6 +381,13 @@ export const MARGIN_WARN_DAYS = 3;
  *  it sees fresh prices. Each producer runs the largest batch count (up to its pattern cap) that still
  *  turns a profit after both market fees: inputs are bought and output sold at the local market, so
  *  dear inputs slow production and missing stock, cash or margin stop it. The market decides; no magic numbers. */
+/** Daily batch contract: the batch identity is (city, day) - batches come from the pattern
+ * at the day's parity, applied at most once per day through the daily tick, and a quiet day
+ * (zero batches) erases nothing: produced is a lifetime payload that never decreases, and
+ * each building owns its own batch. Margin streak state follows the same rule: an
+ * unquotable day (no input stock) is not a margin signal and keeps the state, a negative
+ * quotable day counts and warns once, and one profitable day clears the streak and re-arms
+ * the warning. */
 export function workshopTick(g, cityId) {
   const plots = g.buildings?.[cityId];
   if (!plots) return;
