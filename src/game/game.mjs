@@ -250,7 +250,7 @@ function dayTick(g) {
   const buildingCommit = accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
   const wallCommit = accrueWalls(g, buildingCommit) ?? buildingCommit; // walls share today's cash budget with buildings (flag off: nothing)
   const watchCommit = accrueTowers(g, wallCommit); // towers share the same daily cash budget after walls (flag off: nothing)
-  accrueWatch(g, whCap, watchCommit); // warehouse guards accrue their wage into the same weekly book after the towers (undefined start is safe: it defaults to 0)
+  accrueWatch(g, (cid) => whCap(g, cid), watchCommit); // warehouse guards accrue their wage into the same weekly book after the towers (undefined start is safe: it defaults to 0)
   citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
   if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
   seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)

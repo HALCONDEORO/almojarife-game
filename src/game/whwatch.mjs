@@ -11,10 +11,11 @@
 //   source's sqrt shape (Q = trunc(sqrt(2M)); Q > 2G -> 0, Q < G -> 2, else 1; empty
 //   warehouse: M = G = 0 -> 1, M = 0 with guards -> 2). A classification shown to the
 //   player, not a theft probability: no theft mechanic exists.
-// - Accounting: the wage (guards x WH_WATCH_WAGE, an exact integer, the same figure the
-//   tab shows as the estimate) accrues once per day into the weekly book under
+// - Accounting: the wage (kept guards x WH_WATCH_WAGE, an exact integer, the same figure
+//   the tab shows as the estimate) accrues once per day into the weekly book under
 //   accrued.buildings["whwatch:<city>"] - per period and per city identifier, the
-//   watchtowers' convention, so a repeated period cannot charge twice. Unpaid guards
+//   watchtowers' convention. The watch record carries its last accrued day, so a repeated
+//   call the same day (a re-run period) cannot charge twice. Unpaid guards
 //   stand down (unkept) and resume with the towers' hysteresis.
 // - Effect TODAY: the kept watch patrols the warehouse district and spots fires early,
 //   one fire-mitigation level per WH_WATCH_FIRE_EVERY guards (calamities.mjs, same seam
@@ -31,8 +32,8 @@ export const whCap = (g, city) => WH_BASE_CAP + warehouseCapBonus(g, city);
 export const WH_WATCH_WAGE = 1;      // coins per guard and day (own tuning: a watchtower's upkeep)
 export const WH_WATCH_FIRE_EVERY = 5; // guards per fire-mitigation level (own tuning: five watchmen match one tower's round)
 
-/** Guard cap for a storage capacity: the full-load classification threshold, rounded up so grade 2 stays reachable. */
-export const watchMaxFor = (cap) => Math.ceil(Math.sqrt(2 * Math.max(0, cap)));
+/** Guard cap for a storage capacity: the full-load classification threshold, floored plus one, so grade 2 stays reachable even when sqrt(2 x cap) is an exact integer (cap 1800: threshold 60, cap 61). */
+export const watchMaxFor = (cap) => (cap > 0 ? Math.trunc(Math.sqrt(2 * cap)) + 1 : 0);
 
 /** The watch record of a port's warehouse, or null. */
 export const watchOf = (g, city) => g.warehouses?.[city]?.watch ?? null;
@@ -75,6 +76,8 @@ export function accrueWatch(g, capOf, priorCommitted = 0) {
   for (const [cityId, wh] of Object.entries(g.warehouses ?? {})) {
     const rec = wh.watch;
     if (!rec || !rec.guards) continue;
+    if (rec.lastDay === g.day) continue; // one accrual per day per city, even on a repeated call
+    rec.lastDay = g.day;
     const cost = Math.min(rec.guards, watchMaxFor(capOf(cityId))) * WH_WATCH_WAGE;
     if (!cost) continue;
     if (rec.unkept) {
