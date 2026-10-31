@@ -445,7 +445,13 @@ function legWind(g, ship, from, toId, lat, lon) {
 
 /** Why a docked ship cannot leave right now, or null: the court holds it, or the yard does. */
 const dockBlocker = (g, ship) => heldNow(g, ship) ? "held" : repairOf(g, ship.id) ? "in repair" : null;
-/** Course-order contract (148p): replacing the route is not a halt - a mid-leg order swaps
+/** Payload contract (151p): the voyage owns a copy of the plan - planTrip returns provisional
+ * records, planning alone installs nothing, and installation consumes the payload by
+ * replacing the old voyage whole (never patched). An equal endpoint and an absent target
+ * (docked) both permit installation; a replay re-executes from the current position with no
+ * deduplication. An order to where the ship already is answers already-there: a recognized
+ * no-op, not a refusal (no navError, nothing installed).
+ * Course-order contract (148p): replacing the route is not a halt - a mid-leg order swaps
  * the voyage wholesale (the ship's current position becomes the new leg's origin, the old
  * target reference is gone) and the ship keeps sailing; wind and sailLogged carry over and
  * the ledger retargets the open entry instead of adding one. A refused order stops nothing,

@@ -182,3 +182,32 @@ test('course replacement is not a halt: the position becomes the origin, wind an
  assert.ok(doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon).ok);
  assert.ok(!s.voyage.anchored&&s.voyage.to==='valencia');
 });
+
+test('deferred route change: the voyage owns a copy of the plan, equal and absent targets pass, an empty route is a clean no-op',()=>{
+ const g=mk(),s=g.ships[0];g.noGoal=true;
+ assert.ok(doSail(g,s,'barcelona').ok);
+ let n=0;while(n++<30)advanceTick(g);
+ // the voyage owns its copy: a fresh plan for the same target is a different object and changes nothing
+ const v1=s.voyage,path1=v1.path,pts1=v1.pts;
+ const again=planTrip(w,s,w.nodes.valencia.lat,w.nodes.valencia.lon);
+ assert.ok(again.ok);assert.notEqual(again.path,v1.path,'the planner returns provisional records');
+ assert.equal(s.voyage,v1,'planning alone installs nothing');
+ // installation consumes the payload: the old voyage is replaced whole, never patched
+ const r=doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon);
+ assert.ok(r.ok);
+ assert.notEqual(s.voyage,v1);assert.equal(s.voyage.path!==path1,true);
+ assert.equal(v1.to,'barcelona','the consumed payload still reads as it was');
+ // equal endpoint: re-ordering where you already go is permitted - and it re-executes fresh
+ const v2=s.voyage;
+ const r2=doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon);
+ assert.equal(r2.ok,true,'equal endpoint permits installation');
+ assert.equal(s.voyage.to,'valencia');
+ assert.notEqual(s.voyage,v2,'replay replaces the voyage again: nothing is deduplicated');
+ // empty route: an order to where the ship is answers already-there without a refusal mark
+ waitUntilArrival(g,s);
+ assert.equal(s.at,'valencia');
+ const e=doGoTo(g,s,w.nodes.valencia.lat,w.nodes.valencia.lon);
+ assert.equal(e.reason,'already there');
+ assert.equal(s.navError,undefined,'a no-op order is not a refusal');
+ assert.ok(!s.voyage,'and installs nothing');
+});
