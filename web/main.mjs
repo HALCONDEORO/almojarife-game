@@ -1146,7 +1146,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-repay]").forEach((e) => e.onclick = () => act(() => { const [id, v] = e.dataset.repay.split(":"); repay(g, +id, v === "all" ? 1e9 : +v); }));
   P.querySelectorAll("[data-wh]").forEach((e) => e.onclick = () => act(() => buyWarehouse(g, s.at)));
   P.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
-  P.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)));
+  P.querySelectorAll("[data-tk]").forEach((e) => { e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)); });
   // warehouse resolved at click time, like the data-s handler (30/10 sell bug)
   P.querySelectorAll("[data-whlock]").forEach((el) => { el.onclick = () => act(() => { const good = el.dataset.whlock; setWarehouseLock(g, s.at, good, "outflow", !whLocked(warehouseOf(g, s.at), good)); }); });
   P.querySelectorAll("[data-admclr]").forEach((e) => e.onclick = () => act(() => clearStewardRule(g, s.at, e.dataset.admclr)));
@@ -1239,7 +1239,7 @@ function renderShipWin() {
   d.querySelector("[data-swclose]").onclick = () => { sfx("close"); shipWin = null; render(); };
   d.querySelectorAll("[data-swtab]").forEach((e) => e.onclick = () => { if (shipWin.tab !== e.dataset.swtab) sfx("click"); shipWin.tab = e.dataset.swtab; render(); });
   d.querySelectorAll("[data-st]").forEach((e) => e.onclick = () => act(() => storeGoods(g, s, e.dataset.st, s.cargo[e.dataset.st] ?? 0)));
-  d.querySelectorAll("[data-tk]").forEach((e) => e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)));
+  d.querySelectorAll("[data-tk]").forEach((e) => { e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)); });
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
   d.querySelector("[data-swfollow]").onclick=()=>{sfx("click");mapControls.cancel();if(toggleFollow(follow,s.id)&&cam.zoom<2){zoomAt(cam,2/cam.zoom);applyCam();}render();};
