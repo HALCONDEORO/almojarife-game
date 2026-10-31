@@ -16,18 +16,18 @@ test("no measures: the harbour is open both ways (no navigation blocking exists 
 test("boycott: the harbour refuses new arrivals but lets its own ships leave and trade", () => {
   const { g, s } = mk(); g.measures = { sevilla: BOYCOTT };
   assert.equal(boycottOn(g, "sevilla"), true); assert.equal(blockadeOn(g, "sevilla"), false);
-  const in_ = doSail(g, s, "sevilla"); assert.equal(in_.ok, false); assert.equal(in_.reason, "boycott"); assert.equal(s.voyage, null);
+  const arrival = doSail(g, s, "sevilla"); assert.equal(arrival.ok, false); assert.equal(arrival.reason, "boycott"); assert.equal(s.voyage, null);
   s.at = "sevilla"; // already inside when the boycott was declared: not trapped
   assert.equal(doSail(g, s, "cadiz").ok, true);
-  const t = mk(); t.g.measures = { cadiz: BOYCOTT }; assert.equal(doBuy(t.g, t.s, "grain", 1).reason, undefined); // a boycott does not close the market
+  const trader = mk(); trader.g.measures = { cadiz: BOYCOTT }; assert.equal(doBuy(trader.g, trader.s, "grain", 1).ok, true); // a boycott does not close the market
 });
 test("blockade: the harbour is sealed both ways and holds the ships inside", () => {
   const { g, s } = mk(); g.measures = { malaga: BLOCKADE };
   assert.equal(blockadeOn(g, "malaga"), true); assert.equal(entryBan(g, "malaga"), "blockade");
-  const in_ = doSail(g, s, "malaga"); assert.equal(in_.ok, false); assert.equal(in_.reason, "blockade");
+  const arrival = doSail(g, s, "malaga"); assert.equal(arrival.ok, false); assert.equal(arrival.reason, "blockade");
   s.at = "malaga"; const out = doSail(g, s, "cadiz"); assert.equal(out.ok, false); assert.equal(out.reason, "blockade"); // trapped
   g.freeNav = true; const go = doGoTo(g, s, world.nodes.cadiz.lat, world.nodes.cadiz.lon); assert.equal(go.ok, false); assert.equal(go.reason, "blockade"); // free navigation cannot slip out either
-  const r = mk(); assert.equal(doSail(r.g, r.s, "malaga").ok, true); // a measure on one port never closes another
+  const unaffected = mk(); assert.equal(doSail(unaffected.g, unaffected.s, "malaga").ok, true); // a measure on one port never closes another
 });
 test("a course change at sea into a closed harbour is refused and the reason stays on the ship", () => {
   const { g, s } = mk(); g.freeNav = true;
@@ -43,7 +43,7 @@ test("the grain embargo stays a trade refusal, not a harbour ban: separate permi
   assert.equal(doSail(g, s, "sevilla").ok, true); s.at = "cadiz"; s.voyage = null;
   g.measures = { cadiz: BLOCKADE };
   assert.equal(embargoOn(g, "cadiz"), true); assert.equal(doSail(g, s, "sevilla").reason, "blockade"); // both at once, each on its own rule
-  const t = mk(); t.g.measures = { cadiz: BOYCOTT }; assert.equal(embargoOn(t.g, "cadiz"), false); // a boycott never starves the market by itself
+  const trader = mk(); trader.g.measures = { cadiz: BOYCOTT }; assert.equal(embargoOn(trader.g, "cadiz"), false); // a boycott never starves the market by itself
 });
 test("measures survive a save and reload", () => {
   const { g, s } = mk(); g.measures = { sevilla: BOYCOTT, malaga: BLOCKADE };
