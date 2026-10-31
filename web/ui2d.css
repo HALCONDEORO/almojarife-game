@@ -114,3 +114,11 @@ body.in-city-3d .city-window,body.in-city-3d .city-window.ui2d-market-window{max
 
 /* Smaller desktop windows need shared row tracks too, not row-local max-content. */
 @media(min-width:651px) and (max-width:899px){.mkt-head,.mkt-row{grid-template-columns:24px 130px 54px 60px 30px 36px 76px 76px}}
+
+/* Original customs-ledger treatment: plain figures, explicit totals, selection beyond colour. */
+.mkt-table,.mkt-qtybar{font-variant-numeric:tabular-nums lining-nums}
+.mkt-head{color:#233d39;background:#f8efd9}
+.mkt-head>span{white-space:normal;line-height:1.15}
+.mkt-qtybar button.on{outline:2px solid #183d59;outline-offset:1px;font-weight:bold}
+.mkt-pill:focus-visible,.mkt-qtybar button:focus-visible{outline:3px solid #183d59;outline-offset:2px}
+.mkt-row:focus-within{box-shadow:inset 3px 0 #183d59}
