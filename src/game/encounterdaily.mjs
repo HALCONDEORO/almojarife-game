@@ -84,7 +84,10 @@ export function prizeFor(g,encounterId){
  for(const[t,p]of PRIZE_ROLL){x-=p;if(x<0){type=t;break;}}
  return{type,hull:PRIZE_HULL_MIN+Math.floor(r()*PRIZE_HULL_SPAN)};
 }
-/** Keep or leave the prize of the open report. Closes the report; the choice is logged. */
+/** Keep or leave the prize of the open report. Closes the report; the choice is logged.
+ * Registration is exactly-once: the report closes with the first claim, so any replay is a
+ * no-op rejection and the fleet grows at most by one. The escort binding (escorted /
+ * escortedBy) lives on the shared voyage record and dies with it on arrival. */
 export function claimPrize(g,keep){
  const e=g.encounterReport;
  if(g.over||!e?.prize)return{ok:false};

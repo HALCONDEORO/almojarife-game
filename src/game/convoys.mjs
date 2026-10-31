@@ -25,6 +25,12 @@ export function escortOf(g, ship) {
 }
 
 /** Group 2-5 docked owned ships into a convoy. */
+/**
+ * Registration contract: a convoy id is minted from the monotonic convoySeq only after every
+ * guard passes, so a rejected attempt (including a replay on already-grouped ships) consumes
+ * nothing. disbandConvoy removes the registration but never the sequence: an id, once used,
+ * is never reused, even across a save/load round-trip.
+ */
 export function formConvoy(g, shipIds, name = "") {
   if (g.over) return { ok: false, reason: "game over" };
   if (!Array.isArray(shipIds)) return { ok: false, reason: "bad ships" };
