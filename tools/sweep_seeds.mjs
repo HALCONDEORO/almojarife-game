@@ -2,7 +2,9 @@
 // Blocks: routes (a one-way run of a basic cargo earns on cadiz->sevilla and cadiz->barcelona), rivals (median bot NET WORTH vs seed 0), repair, events (no crash, finite state).
 // Net worth of a rival = cash + hull value + cargo at its port market price + warehouse goods; rivals carry no debt in this model (no loan field on a trader).
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, repairShip, repairPrice, shipValue } from "../src/game/game.mjs";
+import { newGame, advanceDay, doBuy, doSell, doSail, waitUntilArrival, orderRepair, processRepairs, repairPrice, shipValue } from "../src/game/game.mjs";
+/** Sims keep the old instant repair: order and drain the yard the same day. */
+const repairShip = (g, ship) => { const r = orderRepair(g, [ship.id], ship.at); if (r.ok) { let n = 0; while ((ship.hull ?? 100) < 100 && n++ < 40) processRepairs(g); } return r; };
 import { price } from "../src/sim/market.mjs";
 const world = loadWorld(), N = Number(process.argv[2] ?? 64), DAYS = Number(process.argv[3] ?? 365);
 const BASIC = ["grain", "fish", "salt", "wool", "wine", "olive_oil"], ROUTES = [["cadiz", "sevilla"], ["cadiz", "barcelona"]];

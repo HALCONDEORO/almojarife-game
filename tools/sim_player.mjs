@@ -1,7 +1,9 @@
 // Player benchmark: real game functions, fixed policies, deterministic starting ports.
 // No claim that these simple policies represent human skill or all game systems.
 import { loadWorld, route } from '../src/sim/world.mjs';
-import { newGame, advanceDay, doBuy, doSell, doSail, repairShip, netWorth } from '../src/game/game.mjs';
+import { newGame, advanceDay, doBuy, doSell, doSail, orderRepair, processRepairs, netWorth } from '../src/game/game.mjs';
+/** Sims keep the old instant repair: order and drain the yard the same day. */
+const repairShip = (g, ship) => { const r = orderRepair(g, [ship.id], ship.at); if (r.ok) { let n = 0; while ((ship.hull ?? 100) < 100 && n++ < 40) processRepairs(g); } return r; };
 import { previewBuy, previewSell, SHIP_TYPES } from '../src/sim/trade.mjs';
 import { makeRng } from '../src/sim/rng.mjs';
 const w = loadWorld(), games = Number(process.argv[2] ?? 66), competition = process.argv[3] ?? 'default';
@@ -48,7 +50,7 @@ for (const strategy of ['greedy-preview', 'random-destination']) for (let i = of
 const med = (xs) => [...xs].sort((a,b) => a-b)[Math.floor(xs.length/2)];
 console.log(JSON.stringify({
   competition, flags, npcCount:competition==='planned'?48:3, elapsedMs:Math.round(performance.now()-started),
-  scope: 'Real newGame/doBuy/doSell/doSail/advanceDay/repairShip; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.',
+  scope: 'Real newGame/doBuy/doSell/doSail/advanceDay/repair orders; includes selected NPC competition from 60-day warmup onward, weekly upkeep/wages, arrival tolls, price impact, hull repairs and mission end. No loans, factories, buildings, extra ships or random events. Perfect current-price information for greedy policy.',
   gamesPerStrategy: games, offset, ports: w.cities.length, summaries: Object.fromEntries(['greedy-preview','random-destination'].map((s) => {
     const rs = results.filter((r) => r.strategy === s);
     return [s, { wins: rs.filter((r) => r.outcome === 'win').length, bankrupt: rs.filter((r) => r.reason === 'bankrupt').length, deadlineLosses: rs.filter((r) => r.outcome === 'lose' && r.reason !== 'bankrupt').length, medianFinalCash: med(rs.map((r) => r.cash)), medianFinalNetWorth: med(rs.map((r) => r.netWorth)), medianEndDay: med(rs.map((r) => r.day)) }];

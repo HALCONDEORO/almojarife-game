@@ -3,7 +3,9 @@
 // through doBuy/doSell/doSail, so its trades set the trade days like a player's. Reports, per horizon, the mean fee multiplier paid in the year
 // and the number of ports at each name tier. Run: node tools/sim_rep_decay.mjs <years=30> [start=cadiz]   Own design.
 import { loadWorld, route } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy, doSell, doSail, repairShip } from "../src/game/game.mjs";
+import { newGame, advanceDay, doBuy, doSell, doSail, orderRepair, processRepairs } from "../src/game/game.mjs";
+/** Sims keep the old instant repair: order and drain the yard the same day. */
+const repairShip = (g, ship) => { const r = orderRepair(g, [ship.id], ship.at); if (r.ok) { let n = 0; while ((ship.hull ?? 100) < 100 && n++ < 40) processRepairs(g); } return r; };
 import { previewBuy, previewSell, SHIP_TYPES } from "../src/sim/trade.mjs";
 import { portRep, feeMul, repTierIndex } from "../src/game/reputation.mjs";
 
