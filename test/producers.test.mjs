@@ -1,7 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame,advanceDay,buyWarehouse} from '../src/game/game.mjs';
-import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,restartBuilding,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
+import { readFileSync } from 'node:fs';
+import { SEASON_AMPLITUDE } from '../src/sim/market.mjs';
+import {BUILDING_TYPES,PRODUCERS,producerCities,cityAllowsProducer,quoteConstruction,buyPlot,workshopTick,restartBuilding,staffingRatio,freeLabor,jobsNeeded,WORKSHOP_BATCH_PATTERN} from '../src/game/buildings.mjs';
 import {RECIPES,OUTPUTS} from '../src/sim/recipes.mjs';
 import {SEASON_PEAK} from '../src/sim/market.mjs';
 const world=loadWorld();
@@ -138,4 +140,39 @@ test('configuration fallback and feature-off are separate contracts: missing con
  const fishC=g.market.cadiz.fish.stock;
  g.tick=8*1440;workshopTick(g,'cadiz');
  assert.equal(g.market.cadiz.fish.stock,fishC,'under construction is off too');
+});
+
+test('branch-specific arithmetic: the port ratio guards its own denominator, batches are a bounded integer delta',()=>{
+ // staffingRatio: need < 1 returns 1 WITHOUT dividing; need >= 1 divides freeLabor by need, capped at 1
+ const g=newGame(world);g.noGoal=true;
+ assert.equal(staffingRatio(g,'cadiz'),1,'no buildings: no division at all');
+ // a staffed-out port: one worker available, eight wanted -> ratio 1/8 (real path, real fields)
+ g.world.nodes.cadiz.pop=10;
+ buyPlot(g,'cadiz',{id:'cadiz:1',type:'workshop',w:4,d:4});
+ g.buildings['cadiz']['cadiz:1']={type:'workshop',level:1,state:'active',plotType:'workshop'};
+ assert.ok(Math.abs(staffingRatio(g,'cadiz')-Math.min(1,freeLabor(g,'cadiz')/jobsNeeded(g,'cadiz')))<1e-12,'ratio = free/need when short');
+ assert.ok(staffingRatio(g,'cadiz')<1,'shortage slows the port');
+ // zero free hands: ratio 0 and the port tick returns before any building runs
+ g.world.nodes.cadiz.pop=1;
+ assert.equal(freeLabor(g,'cadiz'),0);
+ assert.equal(staffingRatio(g,'cadiz'),0);
+ const g2=newGame(world);g2.noGoal=true;g2.cash=100000;
+ buyPlot(g2,'cadiz',{id:'cadiz:1',type:'fishery',w:4,d:4});
+ g2.buildings['cadiz']['cadiz:1']={type:'fishery',level:3,state:'active',plotType:'fishery'};
+ g2.world.nodes.cadiz.pop=1; // one inhabitant: zero free hands, ratio 0
+ const fish0=g2.market.cadiz.fish.stock;
+ for(let t=1;t<=6;t++){g2.tick=t*1440;workshopTick(g2,'cadiz');}
+ assert.equal(g2.market.cadiz.fish.stock,fish0,'staff 0: the port produces nothing');
+ // batches today: min(level, cumulative staffing delta) - an integer between 0 and the level
+ const g3=newGame(world);g3.noGoal=true;g3.cash=100000;
+ buyPlot(g3,'cadiz',{id:'cadiz:1',type:'fishery',w:4,d:4});
+ g3.buildings['cadiz']['cadiz:1']={type:'fishery',level:3,state:'active',plotType:'fishery'};
+ const b3=g3.buildings['cadiz']['cadiz:1'];
+ // units/day <= round(yield * level * (1+SEASON_AMPLITUDE)) + rounding: batches/day <= level, season <= 1.35
+ const bound=Math.round(PRODUCERS.fishery.yield*3*(1+SEASON_AMPLITUDE))+1;
+ let prev=0;
+ for(let t=1;t<=8;t++){g3.tick=t*1440;workshopTick(g3,'cadiz');const now=b3.produced??0;
+  const delta=now-prev;prev=now;
+  assert.ok(Number.isInteger(delta)&&delta>=0&&delta<=bound,'daily units stay a bounded integer: '+delta);}
+ assert.ok(prev>0,'and the fishery does produce across the week');
 });
