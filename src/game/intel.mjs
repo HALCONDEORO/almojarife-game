@@ -2,7 +2,8 @@
 // or from what he saw last time, or from a bought rumour (stale and inexact).
 import { seeded } from "../view/cityscene.mjs";
 export const RUMOR_PRICE = 40, RUMOR_ERROR = 0.25;
-const clone = (c) => Object.fromEntries(Object.entries(c).map(([k, v]) => [k, { ...v }]));
+// Snapshots must own nested commerce/household records too, including bot views.
+const clone = (c) => structuredClone(c);
 export function isLive(g, city) {
   return !!g.warehouses?.[city] || g.ships.some((s) => !s.voyage && s.at === city);
 }
