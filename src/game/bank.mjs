@@ -27,7 +27,10 @@ const docked = (g, city) => g.ships.some((s) => s.at === city && !s.voyage);
  * refused request leaves no record, no cash and no message; an accepted one writes record,
  * cash and inbox notice together and returns the applied loan object itself (terms fixed at
  * signing, room already reflecting it). A retry is a new loan with a fresh id, never a
- * deduplication, and a reload carries exactly the applied loans. */
+ * deduplication, and a reload carries exactly the applied loans.
+ * Reservation contract: the id sequence (g.nextLoan) is monotonic for the whole game - a
+ * refused request consumes no id, a closed record frees no id, a reloaded game continues the
+ * sequence without rewinding, and a stale handle to a closed record commits nothing. */
 export function takeLoan(g, city, amount, netWorth, post = () => {}) {
   amount = Math.floor(Number(amount));
   if (!Number.isFinite(amount) || amount < LOAN_STEP || amount % LOAN_STEP) return { ok: false, reason: "bad amount" };

@@ -233,3 +233,32 @@ test("paired legs and separate score: cancel-out transfer with a lasting score, 
   const p = repay(g, r4.loan.id, 33.333);
   assert.ok(p.ok); assert.equal(p.paid, 33.33); assert.equal(r4.loan.left, 466.67);
 });
+
+test("record reservation: failed requests consume no id, ids are never reused, stale handles commit nothing", () => {
+  const g = idle(), city = g.ships[0].at;
+  // a refused request reserves nothing: the sequence does not move
+  const a = borrow(g, city, 100); assert.ok(a.ok);
+  const seq = g.nextLoan;
+  assert.equal(borrow(g, city, 150).reason, "bad amount");
+  assert.equal(borrow(g, "lisboa", 100).reason, "no ship here");
+  assert.equal(g.nextLoan, seq, "failed requests consume no id");
+  const b = borrow(g, city, 100);
+  assert.equal(b.loan.id, seq + 1, "the next accepted request gets the next id");
+  // a closed record frees no id: reservation is monotonic across the whole game
+  assert.ok(repay(g, a.loan.id, 99999).ok);
+  assert.equal(g.loans.length, 1);
+  const c = borrow(g, city, 100);
+  assert.ok(c.loan.id > a.loan.id, "no id is ever reused after closing");
+  // a stale handle commits nothing: the closed record is out of the pool
+  const stale = b.loan;
+  assert.ok(repay(g, b.loan.id, 99999).ok);
+  stale.left = 12345; // mutating the old handle
+  assert.equal(g.loans.some((l) => l.left === 12345), false, "stale writes do not reach the pool");
+  assert.equal(repay(g, stale.id, 100).reason, "no loan");
+  // reload: the sequence survives, fresh ids never collide with reloaded records
+  const back = deserialize(serialize(g, "X"), world).g;
+  const d = (() => { const bb = borrow(back, city, 100); return bb; })();
+  assert.ok(d.ok);
+  assert.ok(back.loans.filter((l) => l !== d.loan).every((l) => l.id !== d.loan.id), "fresh id after reload: no collision with the reloaded records");
+  assert.ok(d.loan.id >= g.nextLoan, "the sequence continues, never rewinds");
+});
