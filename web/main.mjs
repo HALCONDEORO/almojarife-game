@@ -1179,7 +1179,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-caravel]").forEach((e) => e.onclick = () => act(() => { const r = buyCaravel(g, s.at); if (r.ok) sel = g.ships.length - 1; }));
   P.querySelectorAll("[data-arrive]").forEach((e) => e.onclick = () => act(() => waitUntilArrival(g, s)));
   renderShipWin();
-  if ($("v3d")) updateCityHeader(city3dId);
+  if ($("v3d")) updateCityHeader(g.ships[sel]?.at);
   sfxEventWatch();
   syncAmbience($("v3d") || !ship()?.voyage ? "port" : "sea"); // waves under way, harbour murmur ashore
   syncMusic();
@@ -1329,12 +1329,13 @@ function syncCityControls() {
     const cb = d.querySelector("[data-close-panel]"); if (cb) { cb.setAttribute("aria-label", `${t.close} (Esc)`); cb.title = `${t.close} (Esc)`; }
     const hd = d.querySelector(".city-window-handle"); if (hd) hd.setAttribute("aria-label", lang === "es" ? "Mover ventana con las flechas" : "Move window with arrow keys");
   }
-  if (city3dId) updateCityHeader(city3dId);
+  const s0 = ship(); if (s0 && !s0.voyage) updateCityHeader(s0.at);
 }
 function cityPanelTitle(tb) {
   return ({ market: t.tabMarket, yard: t.tabYard, tavern: t.tabTavern, bank: t.tabBank, city: t.tabCity, hall: t.tabHall, buildings: t.bldBuild, route: t.tabRoute, house: premises(g, ship().at, lang).label, lonja: t.tabLonja, store: t.tabStore, neighbors: lang === "es" ? "Viviendas de vecinos" : "Neighbours' homes", plot: (() => { const r = buildingsRows(g, ship().at).find((x) => x.plotId === bldSelPlot); return r ? (r.state === "plot" ? (lang === "es" ? "Tu solar" : "Your plot") : buildingLabel(t, r)) : t.tabBuildings; })(), town: t.townTypes[townSel] ?? t.tabCity })[tb] || t.tabCity;
 }
 function updateCityHeader(cityId) {
+  cityId = city3dId ?? cityId; // the open scene owns its header even when another ship is selected
   const d = $("v3d"); if (!d || !cityId || !world.nodes[cityId]) return;
   const nm = d.querySelector("#city-header-name"), info = d.querySelector("#city-header-info");
   if (!nm || !info) return;
