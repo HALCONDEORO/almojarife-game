@@ -26,12 +26,12 @@ test('failed, skipped and legacy lessons award nothing', () => {
  const game = makeGame(), cash = game.cash;
  tutorialNote(game,'sell',{profit:1,spent:10}); assert.equal(game.cash,cash);
  skipTutorial(game); tutorialNote(game,'buy'); assert.equal(game.cash,cash); assert.equal(tutorialStoryNotice(game,'done','es'),null);
- const legacy = {cash:100,tut:{v:3}}; tutorialNote(legacy,'buy'); assert.equal(legacy.cash,100); assert.equal(legacy.tutorialAwards,undefined);
+ const legacy = {cash:100,tut:{v:3}}; tutorialNote(legacy,'buy'); assert.equal(legacy.cash,100); assert.equal(Object.hasOwn(legacy,'tutorialAwards'),false);
 });
 test('story acknowledgement persists but rewards cannot be claimed by reading a popup', () => {
  const game = makeGame(), cash = game.cash; acknowledgeTutorialStory(game,'buy');
  const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game,'Casa'))),world).g;
- assert.equal(tutorialStoryNotice(loaded,'buy','es'),null); assert.equal(loaded.cash,cash); assert.equal(loaded.tutorialAwards,undefined);
+ assert.equal(tutorialStoryNotice(loaded,'buy','es'),null); assert.equal(loaded.cash,cash); assert.equal(Object.hasOwn(loaded,'tutorialAwards'),false);
 });
 
 test('trade feedback uses transaction amounts, not the balance delta containing an award', async () => {
@@ -46,7 +46,7 @@ test('actual buy handler reports full price even when the first purchase pays a 
  const source = readFileSync('web/main.mjs','utf8');
  const binding = source.split('\n').find(line => line.startsWith('  P.querySelectorAll("[data-b]")'));
  const button = { dataset: { b: 'salt:1' } }, game = {cash:1000}, ship = {cargo:{}}, messages=[];
- vm.runInNewContext(binding,{P:{querySelectorAll:()=>[button]},g:game,s:ship,sfx:()=>{},act:()=>{},fmtM:String,
+ vm.runInNewContext(binding,{P:{querySelectorAll:()=>[button]},g:game,s:ship,sfx:sound=>assert.equal(sound,'buy'),act:callback=>assert.equal(callback().ok,true),fmtM:String,
   t:{toastBought:'Paid {c} for {q} {g}',goods:{salt:'Sal'}},toast:(message)=>messages.push(message),
   doBuy:()=>{game.cash-=75; ship.cargo.salt=1; return {ok:true,cost:100};}});
  button.onclick(); assert.deepEqual(messages,['Paid 100 for 1 Sal']); assert.equal(game.cash,925);
