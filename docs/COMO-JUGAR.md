@@ -6,7 +6,7 @@ Guía del código integrado en `main` hasta `6102bc80` (28 de octubre de 2026). 
 
 Crea tu casa mercantil y elige el puerto de origen. La partida nueva abre la ciudad. Haz clic en un edificio para abrir su ventana; el Mercado es el primer destino del tutorial. Puedes cerrar esa ventana y seguir viendo la ciudad. **Volver al mapa** cambia a la carta de navegación.
 
-El tutorial actual tiene cinco pasos: comprar, vender con beneficio, navegar, fijar una ruta automática y visitar el Ayuntamiento. Un viaje hecho después de comprar queda registrado aunque la venta con beneficio ocurra al llegar. La campaña de misiones queda en espera mientras el tutorial siga activo. Puedes usar **Saltar tutorial**; en Ajustes se puede reiniciar uno ya terminado o saltado. Las partidas antiguas pueden conservar un tutorial distinto.
+El tutorial actual tiene seis pasos: comprar, vender con beneficio, navegar, revisar el casco en el Astillero, visitar el Ayuntamiento y aceptar un encargo del concejo. Si el casco está sano, la revisión es gratis. Si está dañado, hay que encargar su reparación al precio normal indicado; abrir el presupuesto no gasta monedas. No se provoca daño para enseñar el tutorial. Un viaje hecho después de comprar queda registrado aunque la venta con beneficio ocurra al llegar. La campaña de misiones queda en espera mientras el tutorial siga activo. Puedes usar **Saltar tutorial**; en Ajustes se puede reiniciar uno ya terminado o saltado. Las partidas antiguas pueden conservar un tutorial distinto.
 
 ## 2. Compra y vende con cuidado
 
@@ -40,7 +40,7 @@ Los atajos de cámara no actúan mientras escribes en una entrada de texto. En l
 
 En una ciudad, abre **Barcos**. La ruta sencilla permite elegir los puertos y la mercancía de cada sentido; pulsa **Fijar ruta** para aplicarla. Comprueba el resumen del barco. Las opciones avanzadas permiten varias escalas, bienes de compra/venta, límites de precio y una reserva mínima de dinero.
 
-Una ruta fijada no garantiza beneficio: puede quedarse sin mercancía, dinero o condiciones adecuadas. Revisa la carga, los avisos, las vueltas y las cuentas. Para el tutorial actual, fija la ruta después del primer viaje y de la venta con beneficio; visita entonces el **Ayuntamiento**.
+Una ruta fijada no garantiza beneficio: puede quedarse sin mercancía, dinero o condiciones adecuadas. Revisa la carga, los avisos, las vueltas y las cuentas. El tutorial actual no exige crear una ruta automática: después del viaje y la venta con beneficio, visita el **Astillero** con tu barco para revisar el casco o encargar su reparación. Las partidas antiguas pueden conservar el paso de ruta.
 
 ![Ventana de rutas abierta durante la partida real de prueba](img/player-guide/routes.png)
 

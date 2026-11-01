@@ -207,6 +207,7 @@ export function orderRepair(g, shipIds, at) {
   const total = ships.reduce((sum, sh) => sum + repairDamage(sh), 0);
   const order = { id: (g.nextRepairId = (g.nextRepairId ?? 0) + 1), at, ships: quoted.ships, cost: quoted.cost, days: quoted.days, total, left: total, day: g.day };
   (g.repairs ??= []).push(order);
+  tutorialNote(g, "yard"); // only a successful manual order counts; automatic route repairs run quietly
   post(g, "repairOrder", { city: at, ships: quoted.ships, nships: quoted.ships.length, cost: quoted.cost, days: quoted.days, orderId: order.id });
   return { ok: true, id: order.id, cost: quoted.cost, days: quoted.days };
 }
