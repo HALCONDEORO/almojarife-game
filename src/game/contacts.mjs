@@ -34,7 +34,7 @@ export function tickContacts(g) {
     if (g.day < c.nextDay) continue;
     const rnd = seeded(`contact:${g.seed ?? 0}:${c.city}:${g.day}`);
     const wrong = rnd() < CONTACT_FALSE_CHANCE, err = wrong ? CONTACT_FALSE_ERROR : CONTACT_ERROR;
-    const cells = Object.fromEntries(Object.entries(g.market[c.city]).map(([k, e]) => [k, { ...e, stock: Math.max(0, Math.round(e.stock * (1 + (rnd() * 2 - 1) * err))) }]));
+    const cells = Object.fromEntries(Object.entries(g.market[c.city]).map(([k, e]) => [k, { ...structuredClone(e), stock: Math.max(0, Math.round(e.stock * (1 + (rnd() * 2 - 1) * err))) }]));
     (g.intel ??= {})[c.city] = { day: g.day, exact: false, cells };
     c.reports++; c.nextDay += CONTACT_EVERY;
     post(g, "info", { txt: { es: `Tu informante en ${name(c.city)} envía precios nuevos (imprecisos).`, en: `Your contact in ${name(c.city)} sends new (inexact) prices.` } });
