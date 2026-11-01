@@ -1542,6 +1542,12 @@ function showSlots() {
     try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     showSlots(); say(n2(x.saved, n));
   });
+  el.querySelectorAll("[data-sl-export]").forEach((b) => { b.onclick = () => {
+    const raw = readSlot(localStorage, Number(b.dataset.slExport));
+    if (raw == null) { say(x.err); return; }
+    try { const stored = unpackGame(JSON.parse(raw), world); exportSave(raw, stored.g.day); }
+    catch (error) { say(slotError(error, lang)); }
+ }; });
   el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slDel; if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
     if (!clearSlot(localStorage, n)) { showSlots(); say(x.err); return; }
