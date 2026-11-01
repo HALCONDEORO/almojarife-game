@@ -359,7 +359,7 @@ function updateWinZoom() { const z = !(window.CSS && CSS.supports && CSS.support
 updateWinZoom(); addEventListener("resize", updateWinZoom);
 let marketCargoOnly = false, marketQty = 10; let nbSel = null; // the neighbours' house card opened from the city map (read only)
 let city3dId = null; // city shown in the 3D/2D view, for the right-panel badges
-let tab = "market"; let rumorNote = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
+let tab = "market"; let rumorNote = null; let rumorCity = null; let almNote = null; // transient almoneda feedback for the max-bid button // transient tavern feedback for the round-for-a-rumour button // per-good quantity chosen in the market table
 let shipWin = null; // open ship window { tab }: always shows the selected ship (docs/design/ship-window.md)
 let bldAction = null, bldError = null, bldJustBought = null; const plotsCache = {}; // armed Buildings-tab action; seeded layout plots per city (async)
 function ensurePlots(city) { if (plotsCache[city] && plotsCache[city] !== "error") return; plotsCache[city] = "loading"; cityPlots(city, world.nodes[city]?.pop ?? 8000).then((l) => { plotsCache[city] = l.plots; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }).catch(() => { plotsCache[city] = "error"; if ((tab === "buildings" || tab === "plot") && ship().at === city) render(); }); }
@@ -969,7 +969,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       h += originTavernHtml(g,s.at,lang);
       h += tavernCaptainsHtml(g,s,lang);
       const unk = world.cities.filter((c) => !isLive(g, c.id));
-      h += `<p>${t.tavernInfo}</p>` + (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}">${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
+      h += `<p>${t.tavernInfo}</p>` + (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}"${c.id === rumorCity ? " selected" : ""}>${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
       { const offers = chartOffers(g, s.at);
         if (offers.length) h += `<div class="rumor"><b>${t.chartTitle}</b> <small>${t.chartInfo}</small><br>` + offers.map((k) => `<button data-chart="${k}" ${g.cash < chartPrice(k) ? "disabled" : ""}>${t.chartBuy.replace("{c}", t.chartNames[k]).replace("{p}", fmt(chartPrice(k)))}</button>`).join(" ") + `</div>`;
         if (routeRumorTarget(g, s.at)) h += `<div class="rumor"><button id="rrumbtn" ${g.cash < ROUTE_RUMOR_PRICE ? "disabled" : ""}>${t.routeRumorBtn.replace("{p}", ROUTE_RUMOR_PRICE)}</button> <small>${t.routeRumorInfo}</small></div>`; }
@@ -1060,7 +1060,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-trader-attack]").forEach(b=>b.onclick=()=>{if(!confirm(lang==="es"?"¿Atacar al mercante? Puedes perder el barco y recibir cargos sin carta válida.":"Attack this trader? You may lose the ship and face charges without a valid letter."))return;act(()=>attackTrader(g,justiceRealms,s.id,Number(b.dataset.traderAttack),privateeringPeaces,{unlicensed:true}));});
   P.querySelector("[data-buy-pardon]")?.addEventListener("click",()=>act(()=>buyPardon(g,justiceRealms,s.at)));
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
-  P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; rumorCity = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
   P.querySelectorAll("[data-market-qty]").forEach((e) => e.onclick = () => { marketQty = e.dataset.marketQty === "max" ? "max" : +e.dataset.marketQty; render(); });
   P.querySelector("[data-al-set]")?.addEventListener("click", () => {
@@ -1082,7 +1082,8 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   });
   P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
   P.querySelectorAll("[data-almbid]").forEach((e) => e.onclick = () => { const v = Math.floor(+P.querySelector(`[data-alminput="${e.dataset.almbid}"]`)?.value); const r = placeBid(g, s.at, v, e.dataset.almbid); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); });
-  const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => { const city = P.querySelector("#rum").value, r = buyRumor(g, city, s.at); rumorNote = r.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: r.reason === "already known" ? t.rumorErrKnown : r.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : r.reason }; act(() => {}); };
+  const rum = P.querySelector("#rum"); if (rum) rum.onchange = () => { rumorCity = rum.value; };
+  const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => { const city = P.querySelector("#rum").value; rumorCity = city; const r = buyRumor(g, city, s.at); rumorNote = r.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: r.reason === "already known" ? t.rumorErrKnown : r.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : r.reason }; act(() => {}); };
   P.querySelectorAll("[data-chart]").forEach((e) => e.onclick = () => act(() => buyChart(g, e.dataset.chart, s.at)));
   const ch = P.querySelector("#cta-hire"); if (ch) ch.onclick = () => { const r = hireContact(g, s.at); if (!r.ok) toast(t.ctaWhy?.[r.reason] ?? r.reason); act(() => r); };
   P.querySelectorAll("[data-cta-x]").forEach((e) => e.onclick = () => act(() => fireContact(g, e.dataset.ctaX)));
@@ -1092,7 +1093,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>openLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; if (tab === "hall") tutorialNote(g, "hall"); if (tab === "hall") autosave(); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; rumorCity = null; if (tab === "hall") tutorialNote(g, "hall"); if (tab === "hall") autosave(); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
@@ -1285,7 +1286,7 @@ function close3d() {
 }
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
-  const d=$("v3d");if(!d)return;if(tb!==tab)rumorNote=null;tab=tb;
+  const d=$("v3d");if(!d)return;if(tb!==tab){rumorNote=null;rumorCity=null;}tab=tb;
   if (tb === "hall") tutorialNote(g, "hall"); if (tb === "hall") autosave(); // the city-view council visit closes the tutorial, same as the map-panel tab
   const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;if(w.hidden)sfx("open");w.hidden=false;d.classList.add("win-open");
   render();
@@ -1349,7 +1350,7 @@ function open3d(s0) {
   if($("v3d")||s0.voyage)return;
   city3dId = s0.at;
   if (automaticTime) { planningResume = playing && !manualPause; playing = false; }
-  shipWin=null;rumorNote=null;document.getElementById("shipwin")?.remove();
+  shipWin=null;rumorNote=null;rumorCity=null;document.getElementById("shipwin")?.remove();
   const nd = world.nodes[s0.at], q = new URLSearchParams({ ...(city2dEnabled(location.search) ? { chrome: "0" } : {}), city: s0.at, pop: nd.pop ?? 8000, ships: g.ships.filter((x) => x.at === s0.at && !x.voyage).length || 1, wh: warehouseOf(g, s0.at) ? "1" : "0", tod: String(0.35 + progress * 0.4), hud: t.hud3d, bnames: JSON.stringify(t.bldTypes), names: JSON.stringify({ market: t.tabMarket, tavern: t.tabTavern, shipyard: t.tabYard, bank: t.tabBank, office: t.tabOffice, ...(warehouseOf(g, s0.at) ? { warehouse: t.tabStore } : {}) }), tnames: JSON.stringify(Object.fromEntries(portLayout(s0.at, nd.pop ?? 8000).houses.filter((h) => h.type !== "house").map((h) => ["town:" + h.type, t.townTypes[h.type] ?? h.type]))), walls:String(wallsLevel(g,s0.at)), bld: JSON.stringify(g.buildings?.[s0.at] ?? {}), tick: String(g.tick), labels: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, buildingLabel(t, r)]))), pnames: JSON.stringify(Object.fromEntries(buildingsRows(g, s0.at).map((r) => [r.plotId, (r.type ? (t.bldTypes[r.type] ?? r.type) + (r.state === "construction" ? ` ${r.nextLevel}` : r.level ? ` ${r.level}` : "") : t.bldState.plot) + " · " + (r.state === "construction" ? t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100)) : (t.bldState[r.state] ?? r.state))]))) });
 function wireCityViewControls(cornerCmd) { // the view buttons live in the top bar (Marco 30/10: no floating bar over the city)
   for (const c of ["fit", "zoom-in", "zoom-out"]) { const b = document.querySelector(`#cityview-ctl [data-corner="${c}"]`); if (b) b.onclick = () => cornerCmd(c); }
