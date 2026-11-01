@@ -71,7 +71,7 @@ export function messageText(m, lang, fmt, cityName = (x) => x, goodName = (x) =>
   const t = LT[lang], tpl = m.kind === "routeStuck" && m.cause ? routeStuckTemplate(m, lang) : t.msg[m.kind] ?? t.msg.info;
   const txt = typeof m.txt === "object" ? (m.txt?.[lang] ?? "") : (m.txt ?? "");
   return tpl.replace("{debt}", m.debt ? t.debtTxt.replace("{debt}", fmt(m.debt)) : "").replace(/\{(\w+)\}/g, (_, k) =>
-    k === "city" || k === "destination" ? cityName(m[k]) : k === "good" ? goodName(m.good) : k === "profit" ? fmt(m.profit ?? 0) : k === "type" ? typeName(lang, m.type) : k === "paid" ? fmt(m.paid ?? 0) : k === "due" ? fmt(m.due ?? 0) : k === "cash" ? fmt(m.cash ?? 0) : k === "amt" ? fmt(m.amt ?? 0) : k === "margin" ? fmt(m.margin ?? 0) : k === "owed" ? fmt(m.owed ?? 0) : k === "limit" ? fmt(m.limit ?? OVERDRAFT_LIMIT) : k === "rate" ? String(m.rate ?? Math.round(OVERDRAFT_RATE * 100)) : k === "rank" ? rankName(lang, m.rank) : k === "loanCap" ? fmt(m.loanCap ?? 0) : k === "txt" ? txt : (m[k] ?? ""));
+    ["city", "destination"].includes(k) ? cityName(m[k]) : k === "good" ? goodName(m.good) : k === "profit" ? fmt(m.profit ?? 0) : k === "type" ? typeName(lang, m.type) : k === "paid" ? fmt(m.paid ?? 0) : k === "due" ? fmt(m.due ?? 0) : k === "cash" ? fmt(m.cash ?? 0) : k === "amt" ? fmt(m.amt ?? 0) : k === "margin" ? fmt(m.margin ?? 0) : k === "owed" ? fmt(m.owed ?? 0) : k === "limit" ? fmt(m.limit ?? OVERDRAFT_LIMIT) : k === "rate" ? String(m.rate ?? Math.round(OVERDRAFT_RATE * 100)) : k === "rank" ? rankName(lang, m.rank) : k === "loanCap" ? fmt(m.loanCap ?? 0) : k === "txt" ? txt : (m[k] ?? ""));
 }
 export function inboxHtml(g, lang, fmt, cityName, goodName) {
   const t = LT[lang], en = lang === "en", box = g.inbox ?? [];

@@ -37,7 +37,7 @@ for (const advanced of [false, true]) for (const away of [false, true]) test(`de
  advanceDay(restored); assert.equal(notices(restored).length, 1, 'dedup survives reload');
  restored.ships[0].crew = 12; advanceDay(restored);
  assert.ok(restored.ships[0].voyage, 'real departure recovers after hiring crew');
- assert.equal(restored.ships[0].route.sailBlockKey, undefined);
+ assert.ok(!Object.hasOwn(restored.ships[0].route, 'sailBlockKey'));
 });
 
 test('changed cause reports once and successful departure clears the key without changing advanced indices', () => {
@@ -48,7 +48,7 @@ test('changed cause reports once and successful departure clears the key without
  const index = ship.route.idx;
  processRoutes(game, { ...ops, doSail: () => ({ ok: true }) });
  assert.equal(ship.route.idx, index, 'already selected next stop is preserved');
- assert.equal(ship.route.sailBlockKey, undefined);
+ assert.ok(!Object.hasOwn(ship.route, 'sailBlockKey'));
  processRoutes(game, { ...ops, doSail: () => ({ ok: false, reason: 'blockade' }) });
  assert.equal(notices(game).length, 3, 'new blocked stretch warns again');
 });

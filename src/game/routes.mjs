@@ -19,7 +19,11 @@ export function setRoute(g, ship, a, b, out, back = "") {
 }
 export function clearRoute(ship) {
   const had = !!ship.route;
-  if (had) { const { legs, stuck, stuckKey, sailBlockKey, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
+  if (had) {
+    const keep = { ...ship.route };
+    for (const key of ["legs", "stuck", "stuckKey", "sailBlockKey", "since", "profit", "idx"]) delete keep[key];
+    ship.lastRoute = keep;
+  } // remembered so "repeat route" can bring it back
   delete ship.route; return had;
 }
 /** Bring back the route this ship had before it was cancelled. Same checks as setting it by hand; the counters start from zero. */
