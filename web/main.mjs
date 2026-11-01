@@ -642,7 +642,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   if (!dayEl.firstChild) { dayEl.append(document.createTextNode(dayText), Object.assign(document.createElement("span"), { className: "clk" }), document.createTextNode(tailText)); }
   dayEl.firstChild.nodeValue = dayText; dayEl.querySelector(".clk").textContent = clkText; dayEl.lastChild.nodeValue = tailText;
   $("todbar").firstElementChild.style.width = `${Math.round(dayFrac * 100)}%`; // the bar filling is the time-passing indicator
-  $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : "";
+  $("cash").textContent = `${t.cash}: ${fmt(g.cash)}`; $("cash").style.color = g.cash < 0 ? "#b3261e" : ""; $("cash").title = lang === "es" ? "Ver informes y desglose de gastos" : "View reports and expense breakdown";
   $("rep").textContent = LT[lang].reports; $("msg").textContent = badge(LT[lang].messages, actionUnread(g)); $("rep").title = t.tipReports; $("msg").title = t.tipMsgs; $("lang").title = t.tipLang; $("new").title = t.tipMenu;
   $("goal").textContent = g.noGoal || g.freePlay ? "" : `${t.goal}: ${fmt(GOAL_CASH)}`; // an open-ended game has no goal to show
   $("ships").textContent = `${t.ships}: ${g.ships.length}`;
@@ -1482,6 +1482,7 @@ function showLedger(kind) {
   if(styled)$("l-close").focus();
 }
 $("rep").onclick = () => openLedger("rep");
+$("cash").onclick = () => openLedger("rep");
 $("msg").onclick = () => openLedger("msg");
 $("lang").onclick = () => { applyLang(lang === "es" ? "en" : "es"); render(); };
 $("hint-mission-toggle").onclick = () => { localStorage.setItem("missionMin", localStorage.getItem("missionMin") === "1" ? "0" : "1"); render(); };
