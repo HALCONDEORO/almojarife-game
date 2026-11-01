@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { initTutorial, tutorialNote, tutorialStep, tutorialHint, tutorialLine, tutorialActive, skipTutorial, TUT_TEXT } from "../src/game/tutorial.mjs";
+import { initTutorial as initCurrentTutorial, tutorialNote, tutorialStep, tutorialHint, tutorialLine, tutorialActive, skipTutorial, TUT_TEXT } from "../src/game/tutorial.mjs";
+// These are legacy v3 regression cases; new v4 behavior has dedicated tests.
+const initTutorial = (g) => { initCurrentTutorial(g); g.tut.v = 3; return g.tut; };
 
 test("tutorial off: no key, no step, no hint", () => {
   const g = {};
@@ -95,6 +97,7 @@ test("a real game: off by default, on with opts.tutorial, advances on real trade
   assert.equal(newGame(world, "cadiz").tut, undefined);
   const g = newGame(world, "cadiz", { ...difficultyOpts("easy"), tutorial: true }), ship = g.ships[0];
   assert.equal(tutorialStep(g), "buy");
+  g.tut.v = 3; // preserve the shipped v3 route progression contract
   const good = Object.keys(world.goods).find((k) => doBuy(g, ship, k, 1).ok);
   assert.ok(good, "bought something");
   assert.equal(tutorialStep(g), "sell");

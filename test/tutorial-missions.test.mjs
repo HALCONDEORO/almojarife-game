@@ -44,7 +44,7 @@ test("skipping the tutorial releases the mission arc the same day", () => {
 
 test("finishing the tutorial by hand releases the mission arc", () => {
   const g = withTut();
-  for (const k of ["buy", "sell", "sail", "route", "hall", "contract"]) tutorialNote(g, k, { profit: 1, spent: 10 });
+  for (const k of ["buy", "sell", "sail", "yard", "hall", "contract"]) tutorialNote(g, k, { profit: 1, spent: 10 });
   assert.equal(missionView(g, "es", MISSION).length, 1);
   campaignTick(g, MISSION); // deadlines and activation run again
   assert.equal(g.campaign.missions["m1-oficio"].failed, false);

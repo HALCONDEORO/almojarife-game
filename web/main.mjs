@@ -121,7 +121,7 @@ import { contractMaxFor } from "../src/game/rankperks.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
 import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
-import { tutorialLine, tutorialActive, tutorialNote, skipTutorial, restartTutorial, tutorialStep } from "../src/game/tutorial.mjs"; // progressive tutorial hint (opt-in per game); it gates the mission arc
+import { tutorialLine, tutorialActive, tutorialNote, skipTutorial, restartTutorial, tutorialStep, reviewTutorialHull } from "../src/game/tutorial.mjs"; // progressive tutorial hint (opt-in per game); it gates the mission arc
 
 const esc = (txt) => String(txt ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 let mapMode = "geographic";
@@ -1287,6 +1287,7 @@ function close3d() {
 let bldSelPlot=null, townSel=null;
 function openCityPanel(tb) {
   const d=$("v3d");if(!d)return;if(tb!==tab)rumorNote=null;tab=tb;
+  if (tb === "yard" && reviewTutorialHull(g, g.ships[sel], city3dId)) autosave(); // inspection costs nothing and never damages a sound ship
   if (tb === "hall") tutorialNote(g, "hall"); if (tb === "hall") autosave(); // the city-view council visit closes the tutorial, same as the map-panel tab
   const w=d.querySelector(".city-window");w.dataset.cityPanel=tb;if(w.hidden)sfx("open");w.hidden=false;d.classList.add("win-open");
   render();

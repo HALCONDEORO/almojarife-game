@@ -34,10 +34,10 @@ English button names are used below; the screenshots show the Spanish interface.
 2. Open **Market**, choose a quantity and buy a good. Check the price, your coins and available cargo space before buying.
 3. Use **Back to map**. With your ship selected, **right-click** an explored port to sail in a new free-navigation game. Left-clicking is not a sail order. A charted but unexplored port is not the same as an explored destination.
 4. Press **Resume** so time advances. At the destination, sell in its Market. The tutorial requires a manual, profitable sale of purchased cargo, not selling at a loss or letting an automatic route do it for you.
-5. Open **Ships** in the city, configure an automatic route and choose **Set route**. Then visit **Town hall** to complete the current five-step tutorial. Missions wait while the tutorial is active; you can skip it or replay a completed/skipped tutorial from Settings.
+5. Visit the **Shipyard** with your docked ship. A sound hull completes the inspection for free; a damaged hull needs a normal repair order at the quoted price. Then visit **Town hall** and accept a council contract to complete the six-step tutorial. Missions wait while the tutorial is active; you can skip it or replay a completed/skipped tutorial from Settings.
 6. Keep coins for upkeep and settlements. **Reports** holds trading history and accounts; **Messages** holds notices and events. Cargo value is not cash available to pay a bill.
 
-The tutorial tracks buying, a profitable sale, sailing, setting a route and visiting Town hall. The voyage after your purchase still counts when the profitable sale happens on arrival. Older saves may retain different rules, goals or tutorial steps.
+The tutorial tracks buying, a profitable sale, sailing, a shipyard inspection or repair, visiting Town hall and accepting a council contract. The voyage after your purchase still counts when the profitable sale happens on arrival. Older saves may retain different rules, goals or tutorial steps.
 
 ## Map controls
 
