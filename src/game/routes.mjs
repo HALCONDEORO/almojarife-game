@@ -19,7 +19,7 @@ export function setRoute(g, ship, a, b, out, back = "") {
 }
 export function clearRoute(ship) {
   const had = !!ship.route;
-  if (had) { const { legs, stuck, stuckKey, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
+  if (had) { const { legs, stuck, stuckKey, sailBlockKey, since, profit, idx, ...keep } = ship.route; ship.lastRoute = keep; } // remembered so "repeat route" can bring it back
   delete ship.route; return had;
 }
 /** Bring back the route this ship had before it was cancelled. Same checks as setting it by hand; the counters start from zero. */
@@ -55,6 +55,17 @@ function routeRepair(g, s, r, ops, brake) {
   return false;
 }
 
+/** Report a rejected departure without changing route progress or the sailing rules. */
+function routeSail(g, ship, destination, ops) {
+  const result = ops.doSail(g, ship, destination), route = ship.route;
+  if (result?.ok) { delete route.sailBlockKey; return result; }
+  const cause = result?.reason ?? "sail_failed";
+  const key = JSON.stringify([ship.at, destination, cause]);
+  if (route.sailBlockKey !== key) post(g, "routeStuck", { ship: ship.id, city: ship.at, destination, action: "sail", cause });
+  route.sailBlockKey = key;
+  return result;
+}
+
 /** Run one step for every ship that has a route and is docked. `ops` are the game's own doBuy/doSell/doSail. */
 export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one yard guard, extraction is out of scope
   for (const s of g.ships) {
@@ -62,7 +73,7 @@ export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing compl
     if (!r || s.voyage || g.over) continue;
     if (ops.inRepair?.(s)) continue; // the yard holds the ship: the route waits and resumes when the order closes
     if (r.v === 2) { processRouteAdv(g, s, r, ops); continue; } // advanced circuit; legacy A⇄B routes follow the original rules below
-    if (s.at !== r.a && s.at !== r.b) { ops.doSail(g, s, r.a); continue; } // not on the route yet: go to A
+    if (s.at !== r.a && s.at !== r.b) { routeSail(g, s, r.a, ops); continue; } // not on the route yet: go to A
     const atA = s.at === r.a, sellGood = atA ? r.back : r.out, buyGood = atA ? r.out : r.back;
     if (sellGood && (s.cargo[sellGood] ?? 0) > 0) {
       const q = s.cargo[sellGood], res = ops.doSell(g, s, sellGood, q);
@@ -85,7 +96,7 @@ export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing compl
       continue;
     }
     r.stuck = 0;
-    ops.doSail(g, s, atA ? r.b : r.a);
+    routeSail(g, s, atA ? r.b : r.a, ops);
   }
 }
 
@@ -148,7 +159,7 @@ function planBuy(g, s, good, room, budget, maxPrice) {
 /** One docked day for a ship on an advanced route. */
 function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds the yard hold, extraction is out of scope
   const n = r.stops.length, stop = r.stops[r.idx % n];
-  if (s.at !== stop.city) { ops.doSail(g, s, stop.city); return; } // on the way to the next stop
+  if (s.at !== stop.city) { routeSail(g, s, stop.city, ops); return; } // on the way to the next stop
   const quoteAt = (good) => price(g.world, g.market[s.at][good], good);
   let traded = false, blocker = null;
   // Deterministic precedence: the first blocked sell, then the first blocked buy.
@@ -190,5 +201,5 @@ function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing comp
   delete r.stuckKey;
   r.idx = (r.idx + 1) % n;
   if (r.idx === 0) r.legs++; // a full circuit counts as one completed run
-  ops.doSail(g, s, r.stops[r.idx].city);
+  routeSail(g, s, r.stops[r.idx].city, ops);
 }
