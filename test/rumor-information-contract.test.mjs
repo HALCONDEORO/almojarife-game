@@ -11,10 +11,10 @@ const state = game => serialize(game, 'Rumour contract', 0).state;
 
 for (const [label, prepare, target, at, reason] of [
  ['game over', game => { game.over = 'win'; }, 'huelva', 'cadiz', 'game over'],
- ['unknown destination', () => {}, 'atlantis', 'cadiz', 'unknown city'],
- ['no local ship', () => {}, 'huelva', 'malaga', 'no ship here'],
+ ['unknown destination', game => game, 'atlantis', 'cadiz', 'unknown city'],
+ ['no local ship', game => game, 'huelva', 'malaga', 'no ship here'],
  ['ship underway', game => { game.ships[0].voyage = { path: ['cadiz', 'huelva'], km: 100, totalTicks: 20, ticksLeft: 20 }; }, 'huelva', 'cadiz', 'no ship here'],
- ['live destination', () => {}, 'cadiz', 'cadiz', 'already known'],
+ ['live destination', game => game, 'cadiz', 'cadiz', 'already known'],
  ['insufficient coins', game => { game.cash = RUMOR_PRICE - 1; }, 'huelva', 'cadiz', 'no cash'],
 ]) test(`rejected tavern information changes no game state: ${label}`, () => {
  const game = fresh(); prepare(game); const before = state(game);
