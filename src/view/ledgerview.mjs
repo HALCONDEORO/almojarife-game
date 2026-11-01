@@ -24,6 +24,13 @@ const ROUTE_CAUSES = {
 };
 function routeStuckTemplate(m, lang) {
   const es = lang === "es";
+  if (m.action === "sail") {
+    const reasons = es
+      ? { crew: "falta tripulación mínima; un capitán no la sustituye", held: "el tribunal retiene el barco", "in repair": "el astillero retiene el barco", blockade: "un bloqueo impide zarpar o entrar", boycott: "un boicot impide entrar", "port closed": "el puerto está cerrado" }
+      : { crew: "minimum crew is missing; a captain does not replace it", held: "the court is holding the ship", "in repair": "the yard is holding the ship", blockade: "a blockade prevents departure or entry", boycott: "a boycott prevents entry", "port closed": "the port is closed" };
+    const reason = reasons[m.cause] ?? (es ? "la orden de navegación no pudo completarse" : "the sailing order could not be completed");
+    return es ? `Barco {ship}: su ruta no pudo zarpar de {city} hacia {destination}: ${reason}. Reintenta cada día.` : `Ship {ship}: its route could not sail from {city} to {destination}: ${reason}. It retries every day.`;
+  }
   if (m.cause === "no_trade" || m.action === "wait") return es ? "Barco {ship}: su ruta está parada en {city}; no hay ninguna operación aplicable. Reintenta cada día." : "Ship {ship}: its route is stalled at {city}; no trade rule applies. It retries every day.";
   const reason = ROUTE_CAUSES[lang][m.cause] ?? ROUTE_CAUSES[lang].trade_failed;
   const action = m.action === "sell" ? (es ? "vender" : "sell") : (es ? "comprar" : "buy");
@@ -64,7 +71,7 @@ export function messageText(m, lang, fmt, cityName = (x) => x, goodName = (x) =>
   const t = LT[lang], tpl = m.kind === "routeStuck" && m.cause ? routeStuckTemplate(m, lang) : t.msg[m.kind] ?? t.msg.info;
   const txt = typeof m.txt === "object" ? (m.txt?.[lang] ?? "") : (m.txt ?? "");
   return tpl.replace("{debt}", m.debt ? t.debtTxt.replace("{debt}", fmt(m.debt)) : "").replace(/\{(\w+)\}/g, (_, k) =>
-    k === "city" ? cityName(m.city) : k === "good" ? goodName(m.good) : k === "profit" ? fmt(m.profit ?? 0) : k === "type" ? typeName(lang, m.type) : k === "paid" ? fmt(m.paid ?? 0) : k === "due" ? fmt(m.due ?? 0) : k === "cash" ? fmt(m.cash ?? 0) : k === "amt" ? fmt(m.amt ?? 0) : k === "margin" ? fmt(m.margin ?? 0) : k === "owed" ? fmt(m.owed ?? 0) : k === "limit" ? fmt(m.limit ?? OVERDRAFT_LIMIT) : k === "rate" ? String(m.rate ?? Math.round(OVERDRAFT_RATE * 100)) : k === "rank" ? rankName(lang, m.rank) : k === "loanCap" ? fmt(m.loanCap ?? 0) : k === "txt" ? txt : (m[k] ?? ""));
+    ["city", "destination"].includes(k) ? cityName(m[k]) : k === "good" ? goodName(m.good) : k === "profit" ? fmt(m.profit ?? 0) : k === "type" ? typeName(lang, m.type) : k === "paid" ? fmt(m.paid ?? 0) : k === "due" ? fmt(m.due ?? 0) : k === "cash" ? fmt(m.cash ?? 0) : k === "amt" ? fmt(m.amt ?? 0) : k === "margin" ? fmt(m.margin ?? 0) : k === "owed" ? fmt(m.owed ?? 0) : k === "limit" ? fmt(m.limit ?? OVERDRAFT_LIMIT) : k === "rate" ? String(m.rate ?? Math.round(OVERDRAFT_RATE * 100)) : k === "rank" ? rankName(lang, m.rank) : k === "loanCap" ? fmt(m.loanCap ?? 0) : k === "txt" ? txt : (m[k] ?? ""));
 }
 export function inboxHtml(g, lang, fmt, cityName, goodName) {
   const t = LT[lang], en = lang === "en", box = g.inbox ?? [];
