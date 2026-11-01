@@ -1,3 +1,4 @@
+import { awardTutorialStep } from "./tutorialstory.mjs";
 // Progressive tutorial: it teaches one thing at a time and reveals the next only when the
 // previous one is done - first a purchase, then a profitable sale, then sailing, then a shipyard inspection (legacy saves keep their standing route),
 // then a visit to the town council, then taking a council contract. Opt-in per game (newGame opts.tutorial === true); a game
@@ -14,7 +15,7 @@
 // Existing v1-v3 progress is not migrated or reset.
 
 /** Start v4: shipyard inspection replaces the standing route. Legacy tutorials keep their own rules. */
-export const initTutorial = (g) => { g.tut = { v: 4, reviewed: false, bought: false, sold: false, sailed: false, routed: false, hall: false, contract: false, skipped: false }; return g.tut; };
+export const initTutorial = (g) => { g.tut = { v: 4, story: true, reviewed: false, bought: false, sold: false, sailed: false, routed: false, hall: false, contract: false, skipped: false }; return g.tut; };
 
 const live = (g) => { const t = g?.tut; return t !== null && typeof t === "object" && !Array.isArray(t) ? t : null; }; // a damaged save key (true, 5, "x", [], null) counts as tutorial off, never throws
 const v2 = (t) => t.v === 2 || t.v === 3 || t.v === 4; // v2+ knows the route and council steps; older data follows the original three steps
@@ -43,7 +44,9 @@ export function tutorialNote(g, kind, trade = {}) {
   if (!progress || progress.skipped === true || quiet > 0) return false;
   const action = Object.hasOwn(TUTORIAL_ACTIONS, kind) ? TUTORIAL_ACTIONS[kind] : null;
   if (!action || !action.allowed(progress, trade)) return false;
+  const wasComplete = progress[action.field] === true;
   progress[action.field] = true;
+  awardTutorialStep(g, action.field, wasComplete);
   return true;
 }
 

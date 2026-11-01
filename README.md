@@ -37,6 +37,8 @@ English button names are used below; the screenshots show the Spanish interface.
 5. Visit the **Shipyard** with your docked ship. A sound hull completes the inspection for free; a damaged hull needs a normal repair order at the quoted price. Then visit **Town hall** and accept a council contract to complete the six-step tutorial. Missions wait while the tutorial is active; you can skip it or replay a completed/skipped tutorial from Settings.
 6. Keep coins for upkeep and settlements. **Reports** holds trading history and accounts; **Messages** holds notices and events. Cargo value is not cash available to pay a bill.
 
+The new tutorial tells each lesson through your father's popups. Successful lessons award 25 game coins each, up to 150 per game. Reading or skipping a popup earns nothing; reloading or replaying cannot repeat awards. Older saves keep their existing guide until replayed.
+
 The tutorial tracks buying, a profitable sale, sailing, a shipyard inspection or repair, visiting Town hall and accepting a council contract. The voyage after your purchase still counts when the profitable sale happens on arrival. Older saves may retain different rules, goals or tutorial steps.
 
 ## Map controls
