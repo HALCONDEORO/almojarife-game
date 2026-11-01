@@ -1335,6 +1335,7 @@ function cityPanelTitle(tb) {
   return ({ market: t.tabMarket, yard: t.tabYard, tavern: t.tabTavern, bank: t.tabBank, city: t.tabCity, hall: t.tabHall, buildings: t.bldBuild, route: t.tabRoute, house: premises(g, ship().at, lang).label, lonja: t.tabLonja, store: t.tabStore, neighbors: lang === "es" ? "Viviendas de vecinos" : "Neighbours' homes", plot: (() => { const r = buildingsRows(g, ship().at).find((x) => x.plotId === bldSelPlot); return r ? (r.state === "plot" ? (lang === "es" ? "Tu solar" : "Your plot") : buildingLabel(t, r)) : t.tabBuildings; })(), town: t.townTypes[townSel] ?? t.tabCity })[tb] || t.tabCity;
 }
 function updateCityHeader(cityId) {
+  cityId = city3dId ?? cityId; // the open scene owns its header even when another ship is selected
   const d = $("v3d"); if (!d || !cityId || !world.nodes[cityId]) return;
   const nm = d.querySelector("#city-header-name"), info = d.querySelector("#city-header-info");
   if (!nm || !info) return;
