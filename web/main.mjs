@@ -1536,6 +1536,11 @@ function showSlots() {
   el.innerHTML = slotsHtml(listSlots(localStorage, (raw) => unpackGame(JSON.parse(raw), world)), { lang, inGame, fmt, defCo: t.defCo });
   el.hidden = false;
   $("sl-back").onclick = () => { if (inTitle) showTitle(); else showMenu(); };
+  el.querySelector(".sl-win").addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    event.preventDefault(); event.stopPropagation(); $("sl-back").click();
+  });
+  $("sl-back").focus();
   el.querySelectorAll("[data-sl-save]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slSave;
     if (readSlot(localStorage, n) != null && !await confirmDialog(el, n2(x.confirmOver, n), lang)) { showSlots(); return; }
