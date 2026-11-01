@@ -121,6 +121,7 @@ import { contractMaxFor } from "../src/game/rankperks.mjs";
 import { townIndustry, salesOf } from "../src/game/townindustry.mjs"; // the town's own works behind the market (townIndustry flag)
 import { lotsOfDay, sellerOf, biddersOf, nextAuctionDay, placeBid } from "../src/game/almoneda.mjs"; // the weekly town auction (same flag)
 import { setLiveText } from "./livetext.mjs"; // live regions: write only on change
+import { tutorialStoryNotice, acknowledgeTutorialStory } from "../src/game/tutorialstory.mjs";
 import { tutorialLine, tutorialActive, tutorialNote, skipTutorial, restartTutorial, tutorialStep, reviewTutorialHull } from "../src/game/tutorial.mjs"; // progressive tutorial hint (opt-in per game); it gates the mission arc
 
 const esc = (txt) => String(txt ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
@@ -593,6 +594,26 @@ const wallsCityCard = (gm, st, tt) => {
   else if (!wr?.nextLevel) html += `<p><small>${whyText(tt, wq.reason)}</small></p>`; // works under way already show their progress line above
   return html;
 };
+function syncTutorialStory() {
+  const previous = $("tutorial-story");
+  if (inTitle || !$("title").hidden || g.pending || g.over) { previous?.remove(); return; }
+  const notice = tutorialStoryNotice(g, tutorialStep(g), lang);
+  if (!notice) { previous?.remove(); return; }
+  if (previous?.dataset.step === notice.step && previous.dataset.lang === lang) { playing = false; return; }
+  previous?.remove(); playing = false;
+  const shade = document.createElement("div"); shade.id = "tutorial-story"; shade.className = "sea-shade";
+  shade.dataset.step = notice.step; shade.dataset.lang = lang;
+  shade.innerHTML = `<section class="sea-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-story-title"><h2 id="tutorial-story-title">${esc(notice.title)}</h2><p>${esc(notice.body)}</p><p>${lang === "es" ? `Premio por cada lección: ${notice.reward} monedas, una sola vez por partida. Ya recibidas: ${notice.total}. Repetir el tutorial no repite los premios.` : `Each lesson awards ${notice.reward} coins once per game. Already received: ${notice.total}. Replaying the tutorial does not repeat awards.`}</p><button data-story-continue>${lang === "es" ? "Entendido, padre" : "Understood, father"}</button><button data-story-skip>${t.tutSkip}</button></section>`;
+  document.body.append(shade);
+  shade.onkeydown = event => {
+    event.stopPropagation();
+    if (event.key === "Escape") { event.preventDefault(); shade.querySelector("[data-story-continue]").click(); }
+    if (event.key === "Tab") { event.preventDefault(); const buttons = [...shade.querySelectorAll("button")]; const current = buttons.indexOf(document.activeElement); buttons[(current + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus(); }
+  };
+  shade.querySelector("[data-story-continue]").onclick = () => { acknowledgeTutorialStory(g, notice.step); autosave(); shade.remove(); };
+  shade.querySelector("[data-story-skip]").onclick = () => { skipTutorial(g); autosave(); shade.remove(); render(); };
+  shade.querySelector("[data-story-continue]").focus();
+}
 function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits lines inside render() but does not grow it, extraction is out of scope
   sel = fleetSelection(g, sel);
   if (sel < 0) {
@@ -1070,9 +1091,9 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   });
   P.querySelectorAll("[data-al-del]").forEach((btn) => { btn.onclick = () => act(() => clearPriceAlert(g, s.at, btn.dataset.alDel)); });
   { const pv = P.querySelector("[data-market-preview]"); if (pv) P.querySelectorAll(".mkt-pill").forEach((btn) => { const show = () => { pv.textContent = btn.dataset.tip || ""; }, hide = () => { pv.textContent = ""; }; btn.addEventListener("mouseenter", show); btn.addEventListener("focus", show); btn.addEventListener("mouseleave", hide); btn.addEventListener("blur", hide); }); }
-  P.querySelectorAll("[data-b]").forEach((btn) => { btn.onclick = () => { const [gd, amt] = btn.dataset.b.split(":"); const cash0 = g.cash, hold0 = s.cargo[gd] ?? 0; const res = doBuy(g, s, gd, Number(amt)); sfx(res.ok ? "buy" : "error"); act(() => res); const dq = (s.cargo[gd] ?? 0) - hold0, dc = cash0 - g.cash; if (dq > 0 && dc > 0) { const render = (qty, cost) => t.toastBought.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(cost)); toast(render(dq, dc), { key: `buy:${gd}`, q: dq, c: dc, render }); } }; }); // skipcq: JS-0123 - pre-existing shadow in the buy handler; the line only moved with this PR's additions
+  P.querySelectorAll("[data-b]").forEach((btn) => { btn.onclick = () => { const [gd, amt] = btn.dataset.b.split(":"); const hold0 = s.cargo[gd] ?? 0; const res = doBuy(g, s, gd, Number(amt)); sfx(res.ok ? "buy" : "error"); act(() => res); const dq = (s.cargo[gd] ?? 0) - hold0, dc = res.ok ? res.cost : 0; if (dq > 0 && dc > 0) { const render = (qty, cost) => t.toastBought.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(cost)); toast(render(dq, dc), { key: `buy:${gd}`, q: dq, c: dc, render }); } }; }); // skipcq: JS-0123 - pre-existing shadow in the buy handler; the line only moved with this PR's additions
   // skipcq: JS-0086 - pre-existing captain-review handler below (arrow assignment); the line only moved with this PR's additions
-  P.querySelectorAll("[data-s]").forEach((btn) => { btn.onclick = () => { const [gd, amt] = btn.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const cash0 = g.cash, q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = amt === "all" ? sellableHold(g, s, gd) + (whLocked(wh, gd) ? 0 : (wh?.goods?.[gd] ?? 0)) : sellRequestQty(g, s, gd, Number(amt), wh); /* fixed buttons and sell-all never ask for locked prize goods */ const res = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(res.ok ? "sell" : "error"); act(() => res); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = g.cash - cash0; if (dq > 0 && dc > 0) { const render = (qty, gain) => t.toastSold.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(gain)); toast(render(dq, dc), { key: `sell:${gd}`, q: dq, c: dc, render }); } }; });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{ // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
+  P.querySelectorAll("[data-s]").forEach((btn) => { btn.onclick = () => { const [gd, amt] = btn.dataset.s.split(":"); const wh = warehouseOf(g, s.at); /* resolved at click time: the render-scope wh is out of scope in this handler (30/10 sell bug) */ const q0 = (s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0); const want = amt === "all" ? sellableHold(g, s, gd) + (whLocked(wh, gd) ? 0 : (wh?.goods?.[gd] ?? 0)) : sellRequestQty(g, s, gd, Number(amt), wh); /* fixed buttons and sell-all never ask for locked prize goods */ const res = doSellCombined(g, s, gd, want, wh); /* one transaction: hold first, then the warehouse, one fee */ sfx(res.ok ? "sell" : "error"); act(() => res); const dq = q0 - ((s.cargo[gd] ?? 0) + (wh?.goods?.[gd] ?? 0)), dc = res.ok ? res.revenue : 0; if (dq > 0 && dc > 0) { const render = (qty, gain) => t.toastSold.replace("{q}", qty).replace("{g}", t.goods[gd] ?? gd).replace("{c}", fmtM(gain)); toast(render(dq, dc), { key: `sell:${gd}`, q: dq, c: dc, render }); } }; });  P.querySelectorAll("[data-captain-review]").forEach(b=>b.onclick=()=>{ // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
     const c=captainRoster(g,s.at).find(x=>x.id===b.dataset.captainReview);if(!c)return;
     const el=$("title"),t=CT[lang],was=playing;playing=false;el.hidden=false; // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
     el.innerHTML=`<div class="box capdlg"><div class="capdlg-handle"><h2>${t.confirm}</h2></div><div class="capdlg-body"><p>${t.fee}: ${c.fee} · ${c.wage} ${t.day} (${c.wage*7}/${lang==="es"?"semana":"week"})</p><p>${t.info}</p><p>${t.navigation}: +${c.navigation*4}% ${lang==="es"?"velocidad":"speed"}</p><button id="cap-confirm">${t.confirm}</button><button id="cap-cancel">${t.cancel}</button><p id="cap-msg"></p></div></div>`;
@@ -1183,6 +1204,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   sfxEventWatch();
   syncAmbience($("v3d") || !ship()?.voyage ? "port" : "sea"); // waves under way, harbour murmur ashore
   syncMusic();
+  requestAnimationFrame(syncTutorialStory);
 }
 
 // Event effects: fresh inbox messages and the pirate encounter get their own stinger, matched

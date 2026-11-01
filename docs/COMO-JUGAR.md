@@ -6,6 +6,8 @@ Guía del código integrado en `main` hasta `6102bc80` (28 de octubre de 2026). 
 
 Crea tu casa mercantil y elige el puerto de origen. La partida nueva abre la ciudad. Haz clic en un edificio para abrir su ventana; el Mercado es el primer destino del tutorial. Puedes cerrar esa ventana y seguir viendo la ciudad. **Volver al mapa** cambia a la carta de navegación.
 
+Las partidas nuevas presentan las lecciones en popups, como un padre enseñando a su hijo. Cada lección completada da 25 monedas del juego, hasta 150 por partida. Leer o saltar un popup no da monedas; recargar o repetir el tutorial no repite los premios. Las partidas anteriores conservan su guía hasta repetirla.
+
 El tutorial actual tiene seis pasos: comprar, vender con beneficio, navegar, revisar el casco en el Astillero, visitar el Ayuntamiento y aceptar un encargo del concejo. Si el casco está sano, la revisión es gratis. Si está dañado, hay que encargar su reparación al precio normal indicado; abrir el presupuesto no gasta monedas. No se provoca daño para enseñar el tutorial. Un viaje hecho después de comprar queda registrado aunque la venta con beneficio ocurra al llegar. La campaña de misiones queda en espera mientras el tutorial siga activo. Puedes usar **Saltar tutorial**; en Ajustes se puede reiniciar uno ya terminado o saltado. Las partidas antiguas pueden conservar un tutorial distinto.
 
 ## 2. Compra y vende con cuidado

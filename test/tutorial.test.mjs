@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { initTutorial as initCurrentTutorial, tutorialNote, tutorialStep, tutorialHint, tutorialLine, tutorialActive, skipTutorial, TUT_TEXT } from "../src/game/tutorial.mjs";
 // These are legacy v3 regression cases; new v4 behavior has dedicated tests.
-const initTutorial = (g) => { initCurrentTutorial(g); g.tut.v = 3; return g.tut; };
+const initTutorial = (g) => { initCurrentTutorial(g); g.tut.v = 3; delete g.tut.story; return g.tut; };
 
 test("tutorial off: no key, no step, no hint", () => {
   const g = {};
