@@ -224,11 +224,13 @@ export function processRepairs(g) {
     if (done) { g.repairs.splice(g.repairs.indexOf(ord), 1); post(g, "repairDone", { city: ord.at, ships: ord.ships, nships: ord.ships.length, orderId: ord.id }); }
   }
 }
+/** Refund for work not yet delivered, under Almojarife's existing repair contract. Pure. */
+export const repairRefund = (order) => order.total > 0 ? Math.floor((order.cost * order.left) / order.total) : 0;
 /** Cancel a repair order: the yard keeps what it already delivered and refunds the rest, floor(cost x left/total). */
 export function cancelRepair(g, orderId) {
   const ord = (g.repairs ?? []).find((entry) => entry.id === orderId);
   if (!ord) return { ok: false, reason: "no order" };
-  const refund = ord.total > 0 ? Math.floor((ord.cost * ord.left) / ord.total) : 0;
+  const refund = repairRefund(ord);
   g.cash += refund;
   g.repairs.splice(g.repairs.indexOf(ord), 1);
   post(g, "repairCancel", { city: ord.at, ships: ord.ships, nships: ord.ships.length, orderId: ord.id, refund });
