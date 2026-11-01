@@ -35,6 +35,10 @@ export function arrivalNews(g, at) {
   const txt = { es: newsEs(gEs, dear, cName, about), en: dear
     ? `Sailors passing through ${cName} say ${good} is dear there: it fetches about ${about} coins.`
     : `Sailors passing through ${cName} say ${good} is cheap there: it barely fetches ${about} coins.` };
-  post(g, "news", { txt });
+  txt.es += " Noticia de paso: precio aproximado, no confirmado; puede haber cambiado.";
+  txt.en += " Dockside report: approximate, unconfirmed price; it may have changed.";
+  // Receipt time is the inbox day. Do not invent when a sailor observed the market.
+  // Store only the rounded report, never the exact hidden price or a live intel cell.
+  post(g, "news", { txt, source: "passing-sailors", status: "reported", receivedAt: at, city, good, reportedPrice: about });
   return { city, good, dear, price: now };
 }

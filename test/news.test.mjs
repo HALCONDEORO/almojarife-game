@@ -2,6 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {loadWorld} from '../src/sim/world.mjs';
 import {newGame} from '../src/game/game.mjs';
 import {arrivalNews, newsEs,fairPrice} from '../src/game/news.mjs';
+import {messageText,inboxHtml} from '../src/view/ledgerview.mjs';
 import {price} from '../src/sim/market.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
 const world=loadWorld();
@@ -54,4 +55,49 @@ test('Spanish price news agree in gender and number',()=>{
  assert.match(newsEs('las legumbres',true,'Sevilla',45),/las legumbres están caras allí: las pagan/);
  assert.match(newsEs('las legumbres',false,'Sevilla',20),/las legumbres están baratas allí: apenas las pagan/);
  assert.match(newsEs('el vino',false,'Sevilla',20),/el vino está barato allí: apenas lo pagan/);
+});
+
+test('dockside reports retain their source, receipt port and date without becoming current intel',()=>{
+ const game=mk();know(game,'sevilla');
+ for(const gd of Object.keys(game.market.sevilla))game.market.sevilla[gd].stock=1;
+ const before=JSON.stringify({intel:game.intel,cash:game.cash,ships:game.ships,contracts:game.contracts});
+ const news=untilNews(game,'cadiz');assert.ok(news);
+ const report=game.inbox.find(m=>m.kind==='news'),receivedDay=game.day;
+ assert.equal(report.source,'passing-sailors');assert.equal(report.status,'reported');
+ assert.equal(report.receivedAt,'cadiz');assert.equal(report.city,'sevilla');assert.equal(report.good,news.good);
+ assert.equal(report.reportedPrice,Math.round(news.price/5)*5);
+ assert.ok(!Object.hasOwn(report,'price'),'no exact hidden price stored');
+ assert.ok(!Object.hasOwn(report,'observedDay'),'receipt does not invent an observation time');
+ assert.match(report.txt.es,/precio aproximado, no confirmado; puede haber cambiado/);
+ assert.match(report.txt.en,/approximate, unconfirmed price; it may have changed/);
+ for(const lang of ['es','en']){assert.ok(messageText(report,lang,String).includes(report.txt[lang]));assert.ok(inboxHtml(game,lang,String,x=>x,x=>x).includes(report.txt[lang]));}
+ assert.equal(JSON.stringify({intel:game.intel,cash:game.cash,ships:game.ships,contracts:game.contracts}),before);
+ const copy=JSON.parse(JSON.stringify(report));game.day+=10;
+ for(const entry of Object.values(game.market.sevilla))entry.stock=entry.target*4;
+ const loaded=deserialize(serialize(game,'News'),world).g;
+ assert.deepEqual(loaded.inbox.find(m=>m.id===report.id),copy);
+ assert.equal(copy.day,receivedDay,'age retains the original receipt date');
+ assert.equal(loaded.intel.sevilla.day,0,'report never refreshes confirmed intel');
+});
+
+test('legacy text-only news loads without inventing provenance or upgrading its status',()=>{
+ const game=mk();game.inbox=[{id:1,kind:'news',day:3,read:false,txt:{es:'Noticia antigua',en:'Old news'}}];
+ const loaded=deserialize(serialize(game,'Old news'),world).g;
+ assert.deepEqual(loaded.inbox,game.inbox);
+ assert.ok(!Object.hasOwn(loaded.inbox[0],'source'));
+ assert.ok(!Object.hasOwn(loaded.inbox[0],'status'));
+});
+
+test('a non-multiple-of-five market price never leaks through reportedPrice',()=>{
+ const game=mk();know(game,'sevilla');
+ for(const entry of Object.values(game.market.sevilla))entry.stock=1;
+ // Explicit fixture below the scarcity ceiling: target 1200, stock 194 => exact 119.
+ game.market.sevilla.pottery.stock=194;game.day=1;
+ assert.equal(price(game.world,game.market.sevilla.pottery,'pottery'),119);
+ const news=arrivalNews(game,'cadiz');assert.ok(news);assert.equal(news.good,'pottery');assert.equal(news.price,119);
+ const report=game.inbox.find(m=>m.kind==='news');
+ assert.notEqual(report.reportedPrice,news.price);
+ assert.equal(report.reportedPrice,120);
+ assert.ok(!Object.hasOwn(report,'price'));
+ for(const lang of ['es','en']){assert.ok(report.txt[lang].includes('120'));assert.ok(!report.txt[lang].includes('119'));}
 });
