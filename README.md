@@ -13,16 +13,16 @@ A maritime trading game set around Iberia and North Africa in the 15th-16th cent
 
 ## Version and beta status
 
-This README describes integrated source through `a5a880cabd6fbf76d1a8cce858f32e9f32738a8f` on 31 October 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
+This README describes integrated source through `1682657f585398e8419c7f3ea03b898ba33478d5` on 1 November 2026. **Source, the hosted game and desktop downloads are separate checkpoints.** An open PR is not a released feature, and this document does not certify the currently hosted build.
 
 | Checkpoint | What it contains |
 | --- | --- |
 | [v0.5.0-beta.4](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.4) | Source-only checkpoint, published 28 October 2026 at immutable commit `b4abf57dc565b5858bdb30149627ae70e9c95af8`. No attached desktop packages. The later shipyard cargo-cost explanation (#671) is not in this tag. |
 | [v0.5.0-beta.3](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.3) | Source-only pre-release, published 28 October 2026 at immutable commit `0a885d4db2b698bbe33ba4cf3d2b62407ba82bc1`. No attached desktop packages. Later main-branch navigation and Settings fixes are not in this tag. |
 | [v0.5.0-beta.2](https://github.com/HALCONDEORO/almojarife-game/releases/tag/v0.5.0-beta.2) | Desktop binary checkpoint. Six desktop packages and `SHA256SUMS.txt`, published 27 October 2026. These packages do not contain later main-branch work. |
-| Current source | Adds, since beta.4: visible shipyard weapon cargo costs, multi-day quoted hull **repair orders** with cancellation and proportional refund, warehouse **storage summary and hired watch** (guards, security grade, weekly wages), effective-population and housing fixes, plus navigation, Settings, pause/save and recovery fixes. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
+| Current source | Adds, since beta.4: visible shipyard weapon cargo costs, multi-day quoted hull **repair orders** with a visible cancellation refund and retained cost, warehouse **storage summary, outflow locks and hired watch** (guards, security grade, weekly wages), explicitly unconfirmed dockside price reports, effective-population and housing fixes, plus navigation, Settings, pause/save and recovery fixes. See the [changes since beta.4](https://github.com/HALCONDEORO/almojarife-game/compare/v0.5.0-beta.4...main); this comparison advances as main changes. |
 
-The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The verified count at the source checkpoint above is **70/20 since beta.4**, excluding merges into non-main branches - the 20-PR threshold for the next checkpoint is already crossed; cutting it remains a manual release decision. This is a dated count, not a live counter or a promise of another release. Release preparation is manual and still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages.
+The next beta checkpoint is due after **20 mainline merged PRs, or a large change**. The earlier dated source checkpoint `a5a880c` recorded 70 mainline PRs since beta.4, already past that threshold; this README does not maintain a live merge counter. Cutting a new release remains a manual decision. Release preparation still needs exact-commit review, green CI, relevant playtests and honest notes; the preparation workflow does not automatically publish or build desktop packages. No new release or installer is announced here.
 
 This is an unfinished beta. Campaign completion, economy balance, save migration, accessibility and browser coverage are not declared complete. Export a save backup before trying another version. Compatibility with every older save is not promised.
 
@@ -65,10 +65,11 @@ Older saves without free navigation keep the older destination-selection and **S
 
 The current base world data contains **33 cities and 20 goods**. These are game data, not a claim of historically exact populations, borders or production.
 
-- **Trading and information:** changing markets, cargo and warehouses, paid rumors/reports and incomplete knowledge of other ports. A price estimate is not a guaranteed profit.
-- **Ships and crews:** construction, hull repairs, equipment, captains and convoys. Weapons occupy cargo space; the Shipyard shows each weapon's cargo cost before purchase. Rename a ship from the Fleet dropdown or its window. Sell ships at the **Town hall auction**, not the Shipyard; the last ship and ships with cargo cannot be sold.
+- **Trading and information:** changing markets, cargo and warehouses, paid rumors/reports and incomplete knowledge of other ports. Dockside price reports are approximate and unconfirmed, may have changed, and keep their receipt day. They do not refresh confirmed market intelligence or accept a job. A price estimate is not a guaranteed profit.
+- **Ships and crews:** construction, hull repairs, equipment, captains and convoys. Weapons occupy cargo space; the Shipyard shows each weapon's cargo cost before purchase. Repair cancellation shows the refund, original payment and retained cost before clicking; completed hull work remains. Rename a ship from the Fleet dropdown or its window. Sell ships at the **Town hall auction**, not the Shipyard; the last ship and ships with cargo cannot be sold.
 - **Automatic routes:** simple return routes or advanced multi-stop buy/sell rules, price limits and a cash reserve. Routes can stall when stock, money or conditions are missing. Read their feedback and accounts rather than assuming steady profit.
 - **Cities and your house:** a 2D city with selectable buildings, plots, warehouses, stewards, workshops, banking, contracts and council services. Costs and requirements are shown in each window; some buildings are scenery without services.
+- **Warehouse automation:** a steward buys only the deficit to a stock target and sells above a chosen stock floor. A full outflow lock blocks voluntary sales, loading and construction withdrawals while still allowing storing and purchases; it is not a partial stock reservation or protection from legal seizure.
 - **Voyage and campaign decisions:** weather, sea events, pirates, ranks, missions and council/justice systems. Availability depends on the game state; this is not a claim that the campaign has been fully playtested.
 - **Settings:** language, text size, reduced motion, sound and time options. Large text keeps the Settings window within the viewport and scrolls its body when needed.
 
@@ -80,7 +81,7 @@ The game attempts additional autosaves every three minutes and when the page is 
 
 ## Real gameplay screenshots
 
-These are from a **real new game**, in Spanish at 1280×720, played on source `ace71d6` on 28 October 2026, without injecting campaign state: buy in Cádiz, sail to Huelva, sell profitably, set an automatic route and visit Town hall. The playthrough completed all five tutorial flags and verified **Continue** after reload. These older market, route and council captures remain an explicitly dated playthrough, not a current-build or installer certification. The shipyard capture below is a separate current-source checkpoint.
+These are from a **real new game**, in Spanish at 1280×720, played on source `ace71d6` on 28 October 2026, without injecting campaign state: buy in Cádiz, sail to Huelva, sell profitably, set an automatic route and visit Town hall. The playthrough completed all five tutorial flags and verified **Continue** after reload. These older market, route and council captures remain an explicitly dated playthrough, not a current-build or installer certification. The newer screenshots below are separate, dated source/hosted checkpoints, with synthetic fixture provenance.
 
 | Market after arrival | Setting a route |
 | --- | --- |
@@ -88,15 +89,27 @@ These are from a **real new game**, in Spanish at 1280×720, played on source `a
 
 ![Huelva Town hall at step 4/5, before setting the route and making the final visit](docs/img/player-guide/council.png)
 
-### Current build: shipyard repair orders and the warehouse watch
+### Dated checkpoints: repair refund, warehouse lock and price reports
 
-![Spanish shipyard with an active multi-day hull repair order, progress bar and weapon cargo costs](docs/img/player-guide/shipyard-repair-order.png)
+![Spanish shipyard showing refund 300, original payment 400, retained cost 100 and retained hull work](docs/img/player-guide/shipyard-refund-2026-11-01.png)
 
-![Spanish warehouse tab with the storage summary line and goods table](docs/img/player-guide/warehouse-summary.png)
+Captured from the public browser game on 1 November 2026 after #770, serving source `67356e7e4e49afcc67accbe92aad71fda842dc6c` ([deployment evidence](https://github.com/HALCONDEORO/almojarife-game/actions/runs/41272302265)). The hosted repair, game and interface modules matched the reviewed code byte for byte. Synthetic save: Cádiz, hull 0% before ordering a 400-coin repair, one work step delivered, hull 25%, refund 300, retained 100. Time paused; city loaded behind the Shipyard.
 
-![Spanish warehouse watch section with five hired guards and its control](docs/img/player-guide/warehouse-watch.png)
+![Spanish warehouse showing 20 grain, Take and Lock controls, and the administrator stock target](docs/img/player-guide/warehouse-lock-2026-11-01.png)
 
-Captured from the public browser game serving source `a5a880cabd6fbf76d1a8cce858f32e9f32738a8f` on 31 October 2026, in Spanish at 1280×720; the hosted JavaScript matched that commit. The save was prepared offline and loaded through the normal save system (Cádiz warehouse with goods, five hired guards, hull at 40%); the repair was then ordered in game. The shipyard panel also shows each weapon's cargo-space cost before purchase (1/2/3/5 units). No private campaign data. This is not a packaged-app or full-campaign certification. The older `shipyard-weight.png` capture (source `d17fa19`, 29 October 2026) predates repair orders and stays in `docs/img/player-guide/` only to preserve existing links.
+Captured locally on 1 November 2026 from test-only head `db6c3dfec6bf9e3795e3a7c093f157b94d8a0ca4`; its runtime and UI are byte-identical to source `1682657f585398e8419c7f3ea03b898ba33478d5`. This is a regression view of existing features, not a new #773 feature or a deployed-build claim. Synthetic save: Cádiz warehouse, one actual daily automatic purchase to 20 grain, empty ship cargo, target 20, cash reserve 0. The enabled **Bloquear** button sets the full outflow lock; the screenshot shows it currently unlocked.
+
+![Spanish Messages showing a day-1 unconfirmed approximate price report while the game is on day 11](docs/img/player-guide/dockside-news-2026-11-01.png)
+
+Captured from the public browser game on 1 November 2026 after #772, source `1682657f585398e8419c7f3ea03b898ba33478d5` ([deployment evidence](https://github.com/HALCONDEORO/almojarife-game/actions/runs/41275072241)). The hosted news module matched the reviewed code byte for byte. Synthetic save: a day-1 passing-sailor report about Sevilla, then day 11 without refreshing the report. The text warns that the approximate price is unconfirmed and may have changed; the original receipt day remains visible.
+
+All three newer captures use Spanish desktop at 1600×1000 with browser cache disabled. Saves were prepared for the stated scenarios and loaded through the normal save system. No private campaign data. These captures are not packaged-app or full-campaign certification.
+
+The older warehouse-watch image remains a separate checkpoint, not a current screenshot:
+
+![Spanish warehouse watch section with five hired guards, older dated capture](docs/img/player-guide/warehouse-watch.png)
+
+The watch image was captured on 31 October 2026 at source `a5a880cabd6fbf76d1a8cce858f32e9f32738a8f`, Spanish 1280×720, using an offline-prepared save with five guards. The older `shipyard-repair-order.png`, `warehouse-summary.png` and `shipyard-weight.png` files remain only to preserve existing links; they predate the newer refund/lock evidence above.
 
 Older images remain in `docs/img/` to preserve existing links; they are not presented here as evidence of the current interface.
 
