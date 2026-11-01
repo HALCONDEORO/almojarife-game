@@ -44,7 +44,7 @@ test('failed purchase also retains the selected port without a charge or a saved
 });
 
 test('changing the ship, tab or opened city clears the transient choice alongside feedback', () => {
- assert.match(source, /sel = \+e.dataset.sel; rumorNote = null; rumorCity = null/);
+ assert.match(source, /sel = Number\(e.dataset.sel\); rumorNote = null; rumorCity = null/);
  assert.match(source, /townSel = null; rumorNote = null; rumorCity = null/);
  assert.match(source, /if\(tb!==tab\)\{rumorNote=null;rumorCity=null;\}/);
  assert.match(source, /shipWin=null;rumorNote=null;rumorCity=null/);
