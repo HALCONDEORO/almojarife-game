@@ -33,7 +33,7 @@ export function creditCaja(g, city, amount) {
 }
 /** One meeting per city per MEETING_EVERY days, staggered deterministically by city. */
 export const meetingDay = (world, city, day) => { const r = seeded("meet:" + city)(); return day % MEETING_EVERY === Math.floor(r * MEETING_EVERY); };
-export const nextMeetingDay = (world, city, day) => { const off = Math.floor(seeded("meet:" + city)() * MEETING_EVERY); return day + ((off - (day % MEETING_EVERY)) + MEETING_EVERY) % MEETING_EVERY || day + MEETING_EVERY; };
+export const nextMeetingDay = (world, city, day) => { const off = Math.floor(seeded("meet:" + city)() * MEETING_EVERY); const wait = ((off - (day % MEETING_EVERY)) + MEETING_EVERY) % MEETING_EVERY; return day + (wait || MEETING_EVERY); };
 
 /** Daily council work: citizens' sisas in, watch and walls out, and the meeting on its day. */
 export function councilDay(g) {
