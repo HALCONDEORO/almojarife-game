@@ -87,3 +87,17 @@ test('legacy text-only news loads without inventing provenance or upgrading its 
  assert.ok(!Object.hasOwn(loaded.inbox[0],'source'));
  assert.ok(!Object.hasOwn(loaded.inbox[0],'status'));
 });
+
+test('a non-multiple-of-five market price never leaks through reportedPrice',()=>{
+ const g=mk();know(g,'sevilla');
+ for(const e of Object.values(g.market.sevilla))e.stock=1;
+ // Explicit fixture below the scarcity ceiling: target 1200, stock 194 => exact 119.
+ g.market.sevilla.pottery.stock=194;g.day=1;
+ assert.equal(price(g.world,g.market.sevilla.pottery,'pottery'),119);
+ const n=arrivalNews(g,'cadiz');assert.ok(n);assert.equal(n.good,'pottery');assert.equal(n.price,119);
+ const report=g.inbox.find(m=>m.kind==='news');
+ assert.notEqual(report.reportedPrice,n.price);
+ assert.equal(report.reportedPrice,120);
+ assert.ok(!Object.hasOwn(report,'price'));
+ for(const lang of ['es','en']){assert.ok(report.txt[lang].includes('120'));assert.ok(!report.txt[lang].includes('119'));}
+});
