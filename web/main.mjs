@@ -969,7 +969,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       h += originTavernHtml(g,s.at,lang);
       h += tavernCaptainsHtml(g,s,lang);
       const unk = world.cities.filter((c) => !isLive(g, c.id));
-      h += `<p>${t.tavernInfo}</p>` + (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}"${c.id === rumorCity ? " selected" : ""}>${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
+      h += `<p>${t.tavernInfo}</p>`; h += (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}"${c.id === rumorCity ? " selected" : ""}>${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
       { const offers = chartOffers(g, s.at);
         if (offers.length) h += `<div class="rumor"><b>${t.chartTitle}</b> <small>${t.chartInfo}</small><br>` + offers.map((k) => `<button data-chart="${k}" ${g.cash < chartPrice(k) ? "disabled" : ""}>${t.chartBuy.replace("{c}", t.chartNames[k]).replace("{p}", fmt(chartPrice(k)))}</button>`).join(" ") + `</div>`;
         if (routeRumorTarget(g, s.at)) h += `<div class="rumor"><button id="rrumbtn" ${g.cash < ROUTE_RUMOR_PRICE ? "disabled" : ""}>${t.routeRumorBtn.replace("{p}", ROUTE_RUMOR_PRICE)}</button> <small>${t.routeRumorInfo}</small></div>`; }
@@ -1060,7 +1060,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-trader-attack]").forEach(b=>b.onclick=()=>{if(!confirm(lang==="es"?"¿Atacar al mercante? Puedes perder el barco y recibir cargos sin carta válida.":"Attack this trader? You may lose the ship and face charges without a valid letter."))return;act(()=>attackTrader(g,justiceRealms,s.id,Number(b.dataset.traderAttack),privateeringPeaces,{unlicensed:true}));});
   P.querySelector("[data-buy-pardon]")?.addEventListener("click",()=>act(()=>buyPardon(g,justiceRealms,s.at)));
   P.querySelectorAll("[data-ev]").forEach((e) => e.onclick = () => act(() => resolveEvent(g, e.dataset.ev)));
-  P.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; rumorCity = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); });
+  P.querySelectorAll("[data-sel]").forEach((e) => { e.onclick = () => { sel = +e.dataset.sel; rumorNote = null; rumorCity = null; if (!shipWin) shipWin = { tab: "cargo" }; render(); }; });
   P.querySelector('[data-market-cargo]')?.addEventListener('change',e=>{marketCargoOnly=e.target.checked;render();});
   P.querySelectorAll("[data-market-qty]").forEach((e) => e.onclick = () => { marketQty = e.dataset.marketQty === "max" ? "max" : +e.dataset.marketQty; render(); });
   P.querySelector("[data-al-set]")?.addEventListener("click", () => {
@@ -1083,7 +1083,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
   P.querySelectorAll("[data-almbid]").forEach((e) => e.onclick = () => { const v = Math.floor(+P.querySelector(`[data-alminput="${e.dataset.almbid}"]`)?.value); const r = placeBid(g, s.at, v, e.dataset.almbid); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); });
   const rum = P.querySelector("#rum"); if (rum) rum.onchange = () => { rumorCity = rum.value; };
-  const rb = P.querySelector("#rumbtn"); if (rb) rb.onclick = () => { const city = P.querySelector("#rum").value; rumorCity = city; const r = buyRumor(g, city, s.at); rumorNote = r.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: r.reason === "already known" ? t.rumorErrKnown : r.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : r.reason }; act(() => {}); };
+  const rumorButton = P.querySelector("#rumbtn"); if (rumorButton) rumorButton.onclick = () => { const city = P.querySelector("#rum").value; rumorCity = city; const result = buyRumor(g, city, s.at); rumorNote = result.ok ? { err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { err: true, text: result.reason === "already known" ? t.rumorErrKnown : result.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : result.reason }; act(() => result); };
   P.querySelectorAll("[data-chart]").forEach((e) => e.onclick = () => act(() => buyChart(g, e.dataset.chart, s.at)));
   const ch = P.querySelector("#cta-hire"); if (ch) ch.onclick = () => { const r = hireContact(g, s.at); if (!r.ok) toast(t.ctaWhy?.[r.reason] ?? r.reason); act(() => r); };
   P.querySelectorAll("[data-cta-x]").forEach((e) => e.onclick = () => act(() => fireContact(g, e.dataset.ctaX)));
@@ -1093,7 +1093,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelector("[data-local-reports]")?.addEventListener("click",()=>openLedger("rep"));
   P.querySelectorAll("[data-pick]").forEach((e) => e.onclick = () => { target = e.dataset.pick; render(); });
   P.querySelectorAll("[data-go]").forEach((e) => e.onclick = () => sailToTarget());
-  P.querySelectorAll("[data-tab]").forEach((e) => e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; rumorCity = null; if (tab === "hall") tutorialNote(g, "hall"); if (tab === "hall") autosave(); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; });
+  P.querySelectorAll("[data-tab]").forEach((e) => { e.onclick = () => { if (tab !== e.dataset.tab) sfx("click"); tab = e.dataset.tab; bldAction = null; bldError = null; bldSelPlot = null; townSel = null; rumorNote = null; rumorCity = null; if (tab === "hall") tutorialNote(g, "hall"); if (tab === "hall") autosave(); render(); const title=$("v3d")?.querySelector(".city-window-title"); if(title)title.textContent=e.textContent; }; });
   P.querySelectorAll("[data-bldact]").forEach((e) => e.onclick = () => {
     if (e.dataset.bldact.startsWith("sel|")) { bldSelPlot = e.dataset.bldact.slice(4); bldAction = null; bldError = null; if ($("v3d")) openCityPanel("plot"); else { tab = "plot"; render(); } return; }
     if (e.dataset.bldact === "office|buy") { act(() => buyOffice(g, s.at)); return; }
