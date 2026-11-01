@@ -17,7 +17,8 @@ import { growthLine } from "../game/growth.mjs";
 /** Everything the tab shows for one city, numbers already rounded for display. */
 export function hallView(g, cityId) {
   const c = townCouncil(g.world, cityId);
-  const pts = repOf(g, cityId), ri = respectIndex(pts);
+  // Legacy reputation normalization belongs to the read projection, not the saved game.
+  const pts = repOf({ ...g }, cityId), ri = respectIndex(pts);
   return {
     mayor: c.mayor,
     councillors: c.councillors,
