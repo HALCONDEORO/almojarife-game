@@ -25,17 +25,25 @@ let quiet = 0; // depth of automated trading (standing routes): it must not teac
 /** Run automated trading without advancing the tutorial. */
 export function quietly(fn) { quiet++; try { return fn(); } finally { quiet--; } }
 
+const profitableTutorialSale = (progress, trade) => progress.bought === true &&
+  (!v2(progress) || (Number.isFinite(trade.profit) && trade.profit > 0 && Number.isFinite(trade.spent) && trade.spent > 0));
+const tutorialVoyageReady = (progress) => progress.sold === true && progress.sailed === true;
+const TUTORIAL_ACTIONS = {
+  buy: { field: "bought", allowed: () => true },
+  sell: { field: "sold", allowed: profitableTutorialSale },
+  sail: { field: "sailed", allowed: (progress) => progress.sold === true || (v2(progress) && progress.bought === true) },
+  route: { field: "routed", allowed: (progress) => progress.v !== 4 && v2(progress) && tutorialVoyageReady(progress) },
+  yard: { field: "reviewed", allowed: (progress) => progress.v === 4 && tutorialVoyageReady(progress) },
+  hall: { field: "hall", allowed: (progress) => v2(progress) && (progress.v === 4 ? progress.reviewed === true : progress.routed === true) },
+  contract: { field: "contract", allowed: (progress) => v3(progress) && progress.hall === true },
+};
+
 export function tutorialNote(g, kind, trade = {}) {
-  const t = live(g);
-  if (!t || t.skipped === true || quiet > 0) return false;
-  if (kind === "buy") t.bought = true;
-  else if (kind === "sell" && t.bought === true && (!v2(t) || (Number.isFinite(trade.profit) && trade.profit > 0 && Number.isFinite(trade.spent) && trade.spent > 0))) t.sold = true; // v2 needs an actual gain on known paid cargo
-  else if (kind === "sail" && (t.sold === true || (v2(t) && t.bought === true))) t.sailed = true; // keep a real voyage made while carrying the first purchase
-  else if (kind === "route" && t.v !== 4 && v2(t) && t.sold === true && t.sailed === true) t.routed = true; // a standing route only counts once under sail
-  else if (kind === "yard" && t.v === 4 && t.sold === true && t.sailed === true) t.reviewed = true;
-  else if (kind === "hall" && v2(t) && (t.v === 4 ? t.reviewed === true : t.routed === true)) t.hall = true; // the council visit opens the last step
-  else if (kind === "contract" && v3(t) && t.hall === true) t.contract = true; // taking a council contract closes the tutorial
-  else return false;
+  const progress = live(g);
+  if (!progress || progress.skipped === true || quiet > 0) return false;
+  const action = Object.hasOwn(TUTORIAL_ACTIONS, kind) ? TUTORIAL_ACTIONS[kind] : null;
+  if (!action || !action.allowed(progress, trade)) return false;
+  progress[action.field] = true;
   return true;
 }
 
