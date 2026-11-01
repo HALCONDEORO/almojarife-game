@@ -60,7 +60,7 @@ export function buyRouteRumor(g, at) {
   g.cash -= ROUTE_RUMOR_PRICE;
   discover(g, target);
   const rnd = seeded(`route:${target}:${g.day}`), cells = {};
-  for (const [k, e] of Object.entries(g.market[target])) cells[k] = { ...e, stock: Math.max(0, Math.round(e.stock * (1 + (rnd() * 2 - 1) * 0.25))) };
+  for (const [k, e] of Object.entries(g.market[target])) cells[k] = { ...structuredClone(e), stock: Math.max(0, Math.round(e.stock * (1 + (rnd() * 2 - 1) * 0.25))) };
   (g.intel ??= {})[target] = { day: g.day, exact: false, cells };
   const nm = g.world.nodes[target]?.name ?? target;
   post(g, "info", { city: target, txt: { es: `Un rumor de ruta te descubre ${nm}: ya está en la carta (mercado aproximado). Coste ${ROUTE_RUMOR_PRICE}.`, en: `A route rumour reveals ${nm}: it is on your chart now (approximate market). Cost ${ROUTE_RUMOR_PRICE}.` } });

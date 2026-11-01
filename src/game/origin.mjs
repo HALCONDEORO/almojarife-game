@@ -36,7 +36,7 @@ export function initOrigin(g) {
     if (city && g.market[city] && !g.intel?.[city]) {
       const rnd = seeded(`origin:${city}:${g.seed}`), cells = {};
       for (const [good, entry] of Object.entries(g.market[city])) cells[good] = {
-        ...entry, stock: Math.max(0, Math.round(entry.stock * (1 + (rnd() * 2 - 1) * RUMOR_ERROR))),
+        ...structuredClone(entry), stock: Math.max(0, Math.round(entry.stock * (1 + (rnd() * 2 - 1) * RUMOR_ERROR))),
       };
       (g.intel ??= {})[city] = { day: g.day, exact: false, cells };
       receipt.city = city;
