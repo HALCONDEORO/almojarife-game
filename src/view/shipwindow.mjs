@@ -1,3 +1,4 @@
+import { repairCancelHtml } from './repaircancel.mjs';
 import {shipNameForm} from './shipnameform.mjs';
 import {shipDisplayName} from '../sim/shipnames.mjs';
 // Ship window (design: docs/design/ship-window.md): one floating window per ship with
@@ -148,7 +149,7 @@ function crewTab(g, s, lang, t, fmt, fmtM = fmt) {
 function dataTab(g, s, t, hp) {
   const fmt = hp.fmt, cn = hp.cityName, rp = repairPrice(g, s), ro = repairOf(g, s.id), sv = shipValue(s);
   let h = "";
-  h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} ${ro ? `<small>${t.repairActive.replace("{d}", ro.day + ro.days)}</small> <button data-repaircancel="${ro.id}">${t.cancel}</button>` : `<button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp)).replace("{d}", repairDays([s]))}</button>`}<br>`;
+  h += `<p>${t.hull.replace("{h}", Math.round(s.hull ?? 100))} ${ro ? `<small>${t.repairActive.replace("{d}", ro.day + ro.days)}</small> ${repairCancelHtml(ro, t === SW.en ? "en" : "es", fmt)}` : `<button data-repair="1" ${s.voyage || g.over || rp <= 0 || g.cash < rp ? "disabled" : ""}>${t.repair.replace("{p}", fmt(rp)).replace("{d}", repairDays([s]))}</button>`}<br>`;
   { const hs = Math.round((1 - hullSpeedFactor(s.hull)) * 100); if (s.voyage && hs > 0) h += `<small class="warn">${t.hullSlow.replace("{p}", hs)}</small><br>`; }
   h += `${t.upkeep.replace("{u}", SHIP_TYPES[s.type].upkeepPerDay)} · ${t.value.replace("{v}", fmt(sv))}</p>`;
   h += s.voyage
