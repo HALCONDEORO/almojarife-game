@@ -11,7 +11,7 @@ const bindings = source.slice(source.indexOf('  const rum = P.querySelector("#ru
 function setup() {
  const game = newGame(loadWorld(), 'cadiz', { seed: 501 });
  const select = { value: 'barcelona' }, button = {};
- const context = vm.createContext({ g: game, s: game.ships[0], rumorCity: null, rumorNote: null, buyRumor, RUMOR_PRICE,
+ const context = vm.createContext({ g: game, s: game.ships[0], rumorNote: null, buyRumor, RUMOR_PRICE,
   unk: [{ id: 'sevilla' }, { id: 'barcelona' }], cityName: city => city,
   t: { rumorOk: 'Recorded {city}', rumorErrKnown: 'Known', rumorErrCash: 'Need {price}' },
   P: { querySelector: id => id === '#rum' ? select : button }, act: callback => callback() });
@@ -25,7 +25,7 @@ test('actual selection and buy handlers preserve the intended port across render
  assert.match(vm.runInContext(optionExpression, context), /value="barcelona" selected/);
  button.onclick();
  assert.match(vm.runInContext(optionExpression, context), /value="barcelona" selected/);
- assert.equal(context.rumorCity, 'barcelona');
+ assert.equal(context.rumorNote.city, 'barcelona');
  assert.equal(game.cash, cash - RUMOR_PRICE);
  assert.equal(game.log.filter(row => row.key === 'rumor' && row.city === 'barcelona').length, 1);
  assert.match(context.rumorNote.text, /barcelona/);
@@ -37,17 +37,17 @@ test('failed purchase also retains the selected port without a charge or a saved
  const { game, context, button } = setup(); game.cash = RUMOR_PRICE - 1;
  const before = JSON.stringify(game); button.onclick();
  assert.equal(JSON.stringify(game), before);
- assert.equal(context.rumorCity, 'barcelona');
+ assert.equal(context.rumorNote.city, 'barcelona');
  assert.match(vm.runInContext(optionExpression, context), /value="barcelona" selected/);
  assert.equal(context.rumorNote.err, true);
  assert.ok(!Object.hasOwn(game, 'rumorCity'));
 });
 
-test('changing the ship, tab or opened city clears the transient choice alongside feedback', () => {
- assert.match(source, /sel = Number\(e.dataset.sel\); rumorNote = null; rumorCity = null/);
- assert.match(source, /townSel = null; rumorNote = null; rumorCity = null/);
- assert.match(source, /if\(tb!==tab\)\{rumorNote=null;rumorCity=null;\}/);
- assert.match(source, /shipWin=null;rumorNote=null;rumorCity=null/);
+test('changing the ship, tab or opened city clears the feedback object containing the transient choice', () => {
+ assert.match(source, /sel = \+e.dataset.sel; rumorNote = null/);
+ assert.match(source, /townSel = null; rumorNote = null/);
+ assert.match(source, /if\(tb!==tab\)rumorNote=null/);
+ assert.match(source, /shipWin=null;rumorNote=null/);
 });
 
 test('a port no longer eligible for rumours is not reintroduced by the retained choice', () => {
