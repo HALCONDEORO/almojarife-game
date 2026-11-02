@@ -8,7 +8,7 @@ async function waitForMenuSnapshot(evaluate, { attempts = 90, delay = () => new 
     }
     const raw = response?.result?.value;
     if (typeof raw === 'string') {
-      let snapshot;
+      let snapshot = null;
       try { snapshot = JSON.parse(raw); }
       catch { throw new Error('Packaged menu returned malformed JSON'); }
       if (!snapshot || typeof snapshot !== 'object' || typeof snapshot.start !== 'boolean') {
