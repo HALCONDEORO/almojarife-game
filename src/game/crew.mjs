@@ -60,6 +60,19 @@ export function dismissCrew(g, ship, n) {
   if (!Number.isFinite(n) || n < 1 || crewOf(ship) <= 0) return { ok: false, reason: "bad amount" };
   n = Math.min(n, crewOf(ship)); ship.crew = crewOf(ship) - n; return { ok: true, dismissed: n, crew: ship.crew };
 }
+/** Move sailors between two of your ships docked in the same port. Free: they are already on the payroll. Wages simply follow the headcount. */
+export function transferCrew(g, fromShip, toShip, n) {
+  n = Math.floor(Number(n));
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!fromShip || !toShip || fromShip === toShip) return { ok: false, reason: "bad ship" };
+  if (fromShip.voyage || toShip.voyage) return { ok: false, reason: "at sea" };
+  if (fromShip.at !== toShip.at) return { ok: false, reason: "not together" };
+  if (!Number.isFinite(n) || n < 1) return { ok: false, reason: "bad amount" }; // a zero request is rejected by design, not a silent no-op
+  const room = crewLimits(toShip).max - crewOf(toShip), moved = Math.min(n, crewOf(fromShip), room);
+  if (moved < 1) return { ok: false, reason: crewOf(fromShip) < 1 ? "no sailors" : "no room" };
+  fromShip.crew = crewOf(fromShip) - moved; toShip.crew = crewOf(toShip) + moved;
+  return { ok: true, requested: n, moved, from: crewOf(fromShip), to: crewOf(toShip) }; // requested vs moved vs what stays behind
+}
 /** Extra daily upkeep of the cannons of one ship. */
 export const cannonUpkeep = (ship) => Object.entries(weaponsOf(ship)).reduce((s, [t, n]) => s + WEAPON_TYPES[t].upkeep * n, 0);
 export const buyCannon = (g, ship) => buyWeapon(g, ship, "cannon");
