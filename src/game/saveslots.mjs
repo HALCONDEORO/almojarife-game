@@ -34,5 +34,5 @@ export function writeSlot(store, n, raw, isValid = () => true) {
 
 export function clearSlot(store, n) {
   if (!okSlot(n)) return false;
-  try { store.removeItem(slotKey(n)); return true; } catch { return false; }
+  try { store.removeItem(slotKey(n)); return store.getItem(slotKey(n)) === null; } catch { return false; }
 }
