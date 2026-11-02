@@ -1,4 +1,5 @@
 import { originHouseHtml } from "./originview.mjs";
+import { achievementsHtml } from "./achievementsview.mjs";
 // Rank and respect text (ES/EN) and the "House" panel. No game rules here.
 import { RANKS, RESPECT, nextRank, respectIndex, repOf, loanCapFor, heldRank, ensureRep } from "../game/rank.mjs";
 import { REP_TIERS, repTierIndex, portRep, REP_FEE_MUL, REP_REPAIR_MUL } from "../game/reputation.mjs";
@@ -36,5 +37,6 @@ export function houseHtml(g, lang, worth, fmt, cityName, loanBase = 5000) {
   h += `<h4>${t.respect}</h4>` + (cities.length ? `<table class="of-table">` + cities.map(([c, pts]) => `<tr><td>${esc(cityName(c))}</td><td>${RESPECT_NAMES[lang][RESPECT[respectIndex(pts)].id]}</td><td class="num">${Math.floor(pts)}</td></tr>`).join("") + `</table>` : `<p class="of-empty">${t.none}</p>`);
   const reps = Object.keys(g.portRep ?? {}).map((c) => [c, portRep(g, c)]).filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]);
   h += `<h4>${t.reputation}</h4>` + (reps.length ? `<table class="of-table">` + reps.map(([c, v]) => { const k = repTierIndex(v); return `<tr><td>${esc(cityName(c))}</td><td>${REP_NAMES[lang][REP_TIERS[k].id]}</td><td class="num">${Math.round(v)}</td><td><small>${t.repFee} ${Math.round(REP_FEE_MUL[k] * 100)}% · ${t.repRepair} ${Math.round(REP_REPAIR_MUL[k] * 100)}%</small></td></tr>`; }).join("") + `</table><details class="of-help"><summary>?</summary><p>${t.repInfo}</p></details>` : `<p class="of-empty">${t.repNone}</p>`);
+  h += achievementsHtml(g, lang); // milestones of the house, at the foot of its own panel
   return h + `</div>`;
 }
