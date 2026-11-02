@@ -26,7 +26,8 @@ test("the tavern section asks for a warehouse, offers the level 1 hire and shows
   upgradeGovernor(game, "cadiz", 2);
   const promoted = tavernGovernorHtml(game, "cadiz", "es");
   assert.match(promoted, /Nivel 2/);
-  assert.match(promoted, /data-governor-upgrade="3"/); // and level 3 is already listed as coming
+  assert.doesNotMatch(promoted, /data-governor-upgrade/); // level 3 is not for sale yet: no promotion offer
+  assert.match(promoted, /llega después/); // only the note that it comes later
   assert.doesNotMatch(promoted, /data-governor-hire/);
   game.cash = 0;
   governorDay(game, "cadiz"); // suspends
