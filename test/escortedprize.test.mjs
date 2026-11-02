@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, doSail } from "../src/game/game.mjs";
 import { automaticEncounter, resolvePirates, claimPrize } from "../src/game/encounterdaily.mjs";
+import { rollEvent } from "../src/game/events.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 
 const world = loadWorld();
@@ -72,4 +73,17 @@ test("a prize left adrift records no ship identity", () => {
   assert.ok(claimPrize(game, false).ok);
   assert.equal(game.encounters[0].prize.taken, false);
   assert.equal(game.encounters[0].prize.shipId, undefined, "no transfer, no identity");
+});
+
+test("an escorted prize draws no sea events either: the escort rolls for the pair", () => {
+  const { game, ship } = wonFightWithPrize();
+  const claimed = claimPrize(game, true);
+  assert.ok(claimed.ok);
+  const lastDay = game.day + 400;
+  for (let day = game.day + 1; day < lastDay; day++) {
+    game.day = day;
+    const rolled = rollEvent(game);
+    if (rolled) { assert.equal(rolled.ship, ship.id, "a sea event always names the escort, never the prize"); game.pending = null; }
+    assert.equal(game.pending?.ship === claimed.ship.id, false, "the crewless prize never holds a decision");
+  }
 });

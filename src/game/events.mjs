@@ -40,7 +40,7 @@ export function rollEvent(g) {
   const list = g.world.events ?? [];
   if (!g.eventsOn || g.pending || g.encounterReport || !list.length || g.over) return null; // off unless the game was started with events
   for (const ship of g.ships) {
-    if (!ship.voyage) continue;
+    if (!ship.voyage || ship.voyage.escorted) continue; // an escorted prize keeps station in its escort's wake: the winner rolls for the pair
     const r = seeded(`ev:${g.day}:${ship.id}:${g.seed ?? 0}`);
     if (r() >= EVENT_CHANCE) continue;
     const ok = list.filter((e) => !["pirates","storm"].includes(e.id) && (e.minDay ?? 0) <= g.day);
