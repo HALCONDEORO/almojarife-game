@@ -57,6 +57,7 @@ import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
+import { governorDay, governorWorks } from "./governor.mjs";
 import { whLocked, whAvailable } from "./whlock.mjs";
 import { accrueWatch, whCap } from "./whwatch.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -336,7 +337,8 @@ function marketTick(g) {
     growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
-    stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
+    governorDay(g, c.id); // a hired governor draws his daily wage first; short cash suspends him with a notice, never a debt
+    if (governorWorks(g, c.id)) stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices; a suspended governor pauses them
     const hist = (g.hist ??= {});
     for (const [good, e] of Object.entries(g.market[c.id])) {
       const a = ((hist[c.id] ??= {})[good] ??= []);
