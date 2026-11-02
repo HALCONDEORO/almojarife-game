@@ -98,7 +98,7 @@ export function shipWindowHtml(g, s, lang, tab, hp) {
   const t = SW[lang] ?? SW.es, fmt = hp.fmt, fmtM = hp.fmtM, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
-  return swCard(g, s, lang, t, hp) + shipNameForm(s,lang) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt, fmtM, hp) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
+  return `${swCard(g, s, lang, t, hp)}${shipNameForm(s, lang)}<div class="tabs">${tabs}</div>${tab === "crew" ? crewTab(g, s, lang, t, hp) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn)}`;
 }
 
 function cargoTab(g, s, t, hp, gn, cn) {
@@ -125,7 +125,8 @@ function cargoTab(g, s, t, hp, gn, cn) {
   return h;
 }
 
-function crewTab(g, s, lang, t, fmt, fmtM = fmt, hp) {
+function crewTab(g, s, lang, t, hp) {
+  const fmt = hp.fmt, fmtM = hp.fmtM ?? hp.fmt;
   const L = crewLimits(s), c = crewOf(s), sp = speedFactor(s);
   let h = `<div><b>${t.crew}</b>: ${c} (${t.min} ${L.min} · ${t.opt} ${L.opt} · ${t.max} ${L.max})<br>`;
   h += c < L.min ? `<b>${t.crewShort}</b>` : t.crewSpeed.replace("{s}", Math.round(sp * 100));

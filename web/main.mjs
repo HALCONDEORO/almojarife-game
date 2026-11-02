@@ -1281,8 +1281,8 @@ function renderShipWin() {
   d.querySelectorAll("[data-tk]").forEach((e) => { e.onclick = () => act(() => takeGoods(g, s, e.dataset.tk, Infinity)); });
   d.querySelectorAll("[data-hire]").forEach((e) => e.onclick = () => act(() => hireCrew(g, s, Number(e.dataset.hire))));
   d.querySelectorAll("[data-dismiss]").forEach((e) => e.onclick = () => act(() => dismissCrew(g, s, Number(e.dataset.dismiss))));
-  d.querySelectorAll("[data-cwtake]").forEach((btn) => { btn.onclick = () => { const [srcId, amount] = btn.dataset.cwtake.split(","); const src = g.ships.find((ship) => ship.id === Number(srcId)); if (src) act(() => transferCrew(g, src, s, Number(amount))); }; });
-  d.querySelectorAll("[data-cwgive]").forEach((btn) => { btn.onclick = () => { const [dstId, amount] = btn.dataset.cwgive.split(","); const dst = g.ships.find((ship) => ship.id === Number(dstId)); if (dst) act(() => transferCrew(g, s, dst, Number(amount))); }; });
+  d.querySelectorAll("[data-cwtake]").forEach((btn) => { btn.onclick = () => { const [srcId, amount] = btn.dataset.cwtake.split(","); const src = g.ships.find((mate) => mate.id === Number(srcId)); if (src) act(() => transferCrew(g, src, s, Number(amount))); }; });
+  d.querySelectorAll("[data-cwgive]").forEach((btn) => { btn.onclick = () => { const [dstId, amount] = btn.dataset.cwgive.split(","); const dst = g.ships.find((mate) => mate.id === Number(dstId)); if (dst) act(() => transferCrew(g, s, dst, Number(amount))); }; });
   d.querySelector("[data-swfollow]").onclick=()=>{sfx("click");mapControls.cancel();if(toggleFollow(follow,s.id)&&cam.zoom<2){zoomAt(cam,2/cam.zoom);applyCam();}render();};
   d.querySelectorAll("[data-gunrepair]").forEach((e) => e.onclick = () => act(() => repairGuns(g, s, city3dId ?? undefined))); // skipcq: JS-0086 - pre-existing handler pattern; the line only moved with this PR's additions
   d.querySelectorAll("[data-weapon]").forEach((e) => e.onclick = () => { let r = null; act(() => (r = buyWeapon(g, s, e.dataset.weapon, g, city3dId ?? undefined))); if (r && !r.ok) armFailNote(r.reason); }); // skipcq: JS-0086 - pre-existing handler pattern; the line only moved with this PR's additions
