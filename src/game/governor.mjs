@@ -7,6 +7,8 @@
 import { post } from "./ledger.mjs";
 
 export const GOVERNOR_LEVELS = Object.freeze({ 1: { fee: 100, wage: 2 }, 2: { fee: 200, wage: 4 }, 3: { fee: 300, wage: 7 } });
+/** Highest level whose trades are actually delivered: hiring or promoting past it is refused (level 3 arrives with its own PR). */
+export const GOVERNOR_MAX_IMPLEMENTED = 2;
 
 /** The port's governor, sanitized; null when the warehouse has none (level 0: the free administrator). */
 export function governorOf(g, city) {
@@ -26,7 +28,7 @@ export function hireGovernor(g, city, level) {
   if (g.over) return { ok: false, reason: "game over" };
   const wh = g.warehouses?.[city];
   if (!wh) return { ok: false, reason: "no warehouse here" };
-  if (!Number.isSafeInteger(level) || !GOVERNOR_LEVELS[level]) return { ok: false, reason: "bad level" };
+  if (!Number.isSafeInteger(level) || !GOVERNOR_LEVELS[level] || level > GOVERNOR_MAX_IMPLEMENTED) return { ok: false, reason: "bad level" };
   if (governorOf(g, city)) return { ok: false, reason: "governor hired" };
   const { fee, wage } = GOVERNOR_LEVELS[level];
   if (!Number.isFinite(g.cash) || g.cash < fee) return { ok: false, reason: "no cash" };
@@ -37,6 +39,21 @@ export function hireGovernor(g, city, level) {
 
 /** Dismiss the governor: the record goes away and the free administrator takes the orders back.
     The hire fee is never refunded (the captain contract works the same way). */
+/** Raise a hired governor one level: the fee is only the difference still owed (100 per level, GOVERNOR_LEVELS). */
+export function upgradeGovernor(g, city, level) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const governor = governorOf(g, city);
+  if (!governor || governor.state !== "active") return { ok: false, reason: "no governor hired" };
+  const spec = GOVERNOR_LEVELS[level];
+  if (!spec || level <= governor.level || level > GOVERNOR_MAX_IMPLEMENTED) return { ok: false, reason: "unknown or not higher level" };
+  const due = spec.fee - GOVERNOR_LEVELS[governor.level].fee;
+  if (g.cash < due) return { ok: false, reason: "not enough cash" };
+  g.cash -= due;
+  g.warehouses[city].governor.level = level; // write through: governorOf hands out a sanitized copy
+  post(g, "governor_upgrade", { city, level, fee: due });
+  return { ok: true, level, fee: due };
+}
+
 export function dismissGovernor(g, city) {
   if (g.over) return { ok: false, reason: "game over" };
   const wh = g.warehouses?.[city];
