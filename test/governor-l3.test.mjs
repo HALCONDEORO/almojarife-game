@@ -106,7 +106,7 @@ test("a stockpile goal posts one notice the day it is met and stays quiet after"
 
 test("the stockpile goal is watched without steward orders: stocking by hand completes it", () => {
   const game = withGovernor3(house()); // no setStewardRule: the warehouse has no standing orders at all
-  assert.equal(game.warehouses.cadiz.admin, undefined);
+  assert.equal("admin" in game.warehouses.cadiz, false);
   assert.equal(setGovernorGoal(game, "cadiz", "grain", 30).ok, true);
   game.warehouses.cadiz.goods.grain = 50; // unloaded by hand, not by any order
   const before = game.inbox.filter((mail) => mail.topic === "governor").length;
@@ -119,7 +119,7 @@ test("the stockpile goal is watched without steward orders: stocking by hand com
 
 test("the daily loop reaches the goal monitor without steward orders", () => {
   const game = withGovernor3(house());
-  assert.equal(game.warehouses.cadiz.admin, undefined);
+  assert.equal("admin" in game.warehouses.cadiz, false);
   assert.equal(setGovernorGoal(game, "cadiz", "grain", 30).ok, true);
   game.warehouses.cadiz.goods.grain = 50;
   const before = game.inbox.filter((mail) => mail.topic === "governor").length;
