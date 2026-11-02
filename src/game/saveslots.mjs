@@ -32,7 +32,9 @@ export function writeSlot(store, n, raw, isValid = () => true) {
   if (store.getItem(slotKey(n)) !== raw) throw new Error("write not verified");
 }
 
+/** true: absent after deletion; false: rejected/retained; null: removal attempted but readback unavailable. */
 export function clearSlot(store, n) {
   if (!okSlot(n)) return false;
-  try { store.removeItem(slotKey(n)); return true; } catch { return false; }
+  try { store.removeItem(slotKey(n)); } catch { return false; }
+  try { return store.getItem(slotKey(n)) === null; } catch { return null; }
 }
