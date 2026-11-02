@@ -37,6 +37,7 @@ export const SW = {
     backGoods: " y trae {g}",
     routeAdv: "Ruta activa (circuito): {stops}. Parada actual: {cur}. Vueltas completadas: {n}.",
     advBuy: "compra {g}", advSell: "vende {g}", advMinCash: "freno de caja {p}",
+    rtDiary: "Diario de ruta: lo previsto y lo que pasó", dayLbl: "Día", rtSold: "vendió {q} {g} (+{a})", rtBought: "compró {q} {g} ({a})", rtSkippedSell: "no vendió {g}: {c}", rtSkippedBuy: "no compró {g}: {c}", rtCause: { min_price: "precio bajo el mínimo", max_price: "precio sobre el máximo", no_stock: "sin existencias", no_space: "bodega llena", cash_brake: "freno de caja", no_cargo: "no iba en la bodega", "no market": "sin mercado", "no cash": "sin caja", trade_failed: "falló el trato", repair: "en reparación" },
     prize: "Presa capturada: el astillero paga menos por ella.",
     sellShip: "Vender barco ({p})",
   },
@@ -60,6 +61,7 @@ export const SW = {
     backGoods: " and brings back {g}",
     routeAdv: "Active route (circuit): {stops}. Current stop: {cur}. Runs completed: {n}.",
     advBuy: "buys {g}", advSell: "sells {g}", advMinCash: "cash brake {p}",
+    rtDiary: "Route log: what was planned and what happened", dayLbl: "Day", rtSold: "sold {q} {g} (+{a})", rtBought: "bought {q} {g} ({a})", rtSkippedSell: "did not sell {g}: {c}", rtSkippedBuy: "did not buy {g}: {c}", rtCause: { min_price: "price under the floor", max_price: "price over the cap", no_stock: "out of stock", no_space: "hold full", cash_brake: "cash brake", no_cargo: "not aboard", "no market": "no market", "no cash": "no cash", trade_failed: "trade failed", repair: "under repair" },
     prize: "Captured prize: the shipyard pays less for it.",
     sellShip: "Sell ship ({p})",
   },
@@ -165,6 +167,13 @@ function dataTab(g, s, t, hp) {
         const parts = [...st.buy.map((x) => rule(x, "advBuy", "maxPrice", "≤")), ...st.sell.map((x) => rule(x, "advSell", "minPrice", "≥"))];
         return `<b>${cn(st.city)}</b>: ${parts.join(", ") || "—"}`;
       }).join(" · ") + (r.minCash > 0 ? ` · ${t.advMinCash.replace("{p}", fmt(r.minCash))}` : "") + `</small></p>`;
+      if (r.log?.length) { // the stop journal: each rule's planned order and its actual result, with the concrete reason a rule did not fire
+        const entryText = (entry) => { const causeTxt = t.rtCause[entry.skip] ?? entry.skip, goodTxt = hp.goods[entry.good] ?? entry.good;
+          if (entry.qty != null) return (entry.action === "sell" ? t.rtSold : t.rtBought).replace("{q}", entry.qty).replace("{g}", goodTxt).replace("{a}", fmt(entry.amt));
+          return (entry.action === "sell" ? t.rtSkippedSell : t.rtSkippedBuy).replace("{g}", goodTxt).replace("{c}", causeTxt); };
+        const diaryRows = r.log.slice(0, 4).map((dayLog) => `<p><small><b>${t.dayLbl} ${dayLog.day} · ${cn(dayLog.city)}</b>: ${dayLog.entries.map(entryText).join(" · ")}</small></p>`).join("");
+        h += `<p><small>${t.rtDiary}</small></p>${diaryRows}`;
+      }
     } else h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;
   if (s.prize) h += `<p><i>${t.prize}</i></p>`;
