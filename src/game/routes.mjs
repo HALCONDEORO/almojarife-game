@@ -160,6 +160,8 @@ function planBuy(g, s, good, room, budget, maxPrice) {
   return n;
 }
 
+const ROUTE_DIARY_MAX = 12; // the panel shows the last days; older days drop off
+
 /** Record one stop's journal day (newest first, bounded): what each rule planned and what actually happened. */
 function pushRouteDiary(g, s, r, entries) {
   if (!entries.length) return;
@@ -167,7 +169,6 @@ function pushRouteDiary(g, s, r, entries) {
   log.unshift({ day: g.day, city: s.at, stop: (r.idx % r.stops.length) + 1, entries });
   if (log.length > ROUTE_DIARY_MAX) log.length = ROUTE_DIARY_MAX;
 }
-const ROUTE_DIARY_MAX = 12; // the panel shows the last days; older days drop off
 
 /** One docked day for a ship on an advanced route. */
 function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds the yard hold, extraction is out of scope

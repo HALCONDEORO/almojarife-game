@@ -171,7 +171,8 @@ function dataTab(g, s, t, hp) {
         const entryText = (entry) => { const causeTxt = t.rtCause[entry.skip] ?? entry.skip, goodTxt = hp.goods[entry.good] ?? entry.good;
           if (entry.qty != null) return (entry.action === "sell" ? t.rtSold : t.rtBought).replace("{q}", entry.qty).replace("{g}", goodTxt).replace("{a}", fmt(entry.amt));
           return (entry.action === "sell" ? t.rtSkippedSell : t.rtSkippedBuy).replace("{g}", goodTxt).replace("{c}", causeTxt); };
-        h += `<p><small>${t.rtDiary}</small></p>` + r.log.slice(0, 4).map((dayLog) => `<p><small><b>${t.dayLbl} ${dayLog.day} · ${cn(dayLog.city)}</b>: ${dayLog.entries.map(entryText).join(" · ")}</small></p>`).join("");
+        const diaryRows = r.log.slice(0, 4).map((dayLog) => `<p><small><b>${t.dayLbl} ${dayLog.day} · ${cn(dayLog.city)}</b>: ${dayLog.entries.map(entryText).join(" · ")}</small></p>`).join("");
+        h += `<p><small>${t.rtDiary}</small></p>${diaryRows}`;
       }
     } else h += `<p>${t.route.replace("{a}", cn(r.a)).replace("{b}", cn(r.b)).replace("{out}", goodsName(r.out)).replace("{back}", r.back ? t.backGoods.replace("{g}", goodsName(r.back)) : "").replace("{n}", r.legs ?? 0)}</p>`;
   } else h += `<p>${t.noRoute}</p>`;

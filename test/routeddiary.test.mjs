@@ -7,21 +7,21 @@ import { price } from "../src/sim/market.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { shipWindowHtml } from "../src/view/shipwindow.mjs";
 const world = loadWorld();
-const game = () => { const g = newGame(world, "cadiz", { embargo: false }); g.eventsOn = false; g.cash = 50000; return g; };
-const run = (g, n) => { for (let i = 0; i < n; i++) advanceDay(g); };
-const ports = (g, n) => { const a = g.ships[0].at; return [a, ...world.cities.filter((c) => c.id !== a).slice(0, n - 1).map((c) => c.id)]; };
+const freshGame = () => { const game = newGame(world, "cadiz", { embargo: false }); game.eventsOn = false; game.cash = 50000; return game; };
+const runDays = (game, days) => { for (let dayIndex = 0; dayIndex < days; dayIndex++) advanceDay(game); };
+const twoPorts = (game) => { const homePort = game.ships[0].at; return [homePort, ...world.cities.filter((city) => city.id !== homePort).slice(0, 1).map((city) => city.id)]; };
 
 test("a stop's journal records the done trade and the concrete reason a rule did not fire", () => {
-  const g = game(), s = g.ships[0], [a, b] = ports(g, 2);
-  const grainToday = price(world, g.market[a].grain, "grain");
-  setRouteAdv(g, s, [
-    { city: a, buy: [{ good: "grain", maxPrice: Math.floor(grainToday) - 1 }, { good: "wine" }], sell: [{ good: "salt" }] }, // grain over the cap, salt not aboard
-    { city: b },
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  const grainToday = price(world, game.market[portA].grain, "grain");
+  setRouteAdv(game, ship, [
+    { city: portA, buy: [{ good: "grain", maxPrice: Math.floor(grainToday) - 1 }, { good: "wine" }], sell: [{ good: "salt" }] }, // grain over the cap, salt not aboard
+    { city: portB },
   ]);
-  run(g, 1);
-  const dayLog = s.route.log?.[0];
+  runDays(game, 1);
+  const dayLog = ship.route.log?.[0];
   assert.ok(dayLog, "a journal day was recorded");
-  assert.equal(dayLog.city, a);
+  assert.equal(dayLog.city, portA);
   assert.equal(dayLog.stop, 1);
   const byKey = (entry) => `${entry.action}:${entry.good}`;
   const entries = Object.fromEntries(dayLog.entries.map((entry) => [byKey(entry), entry]));
@@ -29,44 +29,44 @@ test("a stop's journal records the done trade and the concrete reason a rule did
   assert.equal(entries["sell:salt"].skip, "no_cargo"); // the planned sell had nothing aboard
   assert.equal(entries["buy:wine"].qty > 0, true); // and the rule that could fire did, with quantity and cost
   assert.equal(entries["buy:wine"].amt > 0, true);
-  run(g, 40); // the journal stays bounded over long runs
-  assert.ok(s.route.log.length <= 12, String(s.route.log.length));
+  runDays(game, 40); // the journal stays bounded over long runs
+  assert.ok(ship.route.log.length <= 12, String(ship.route.log.length));
 });
 
 test("the journal survives the save round trip", () => {
-  const g = game(), s = g.ships[0], [a, b] = ports(g, 2);
-  setRouteAdv(g, s, [{ city: a, buy: [{ good: "grain" }] }, { city: b }]);
-  run(g, 1);
-  assert.ok(s.route.log?.length >= 1);
-  const { g: loaded } = deserialize(serialize(g, "Prueba"), world);
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  setRouteAdv(game, ship, [{ city: portA, buy: [{ good: "grain" }] }, { city: portB }]);
+  runDays(game, 1);
+  assert.ok(ship.route.log?.length >= 1);
+  const { g: loaded } = deserialize(serialize(game, "Prueba"), world);
   const loadedLog = loaded.ships[0].route.log;
-  assert.deepEqual(loadedLog[0], s.route.log[0]);
+  assert.deepEqual(loadedLog[0], ship.route.log[0]);
 });
 
 test("a docked stop with no rules records nothing", () => {
-  const g = game(), s = g.ships[0], [a, b] = ports(g, 2);
-  setRouteAdv(g, s, [{ city: a }, { city: b }]);
-  run(g, 1);
-  assert.equal(s.route.log ?? null, null); // no rules, no journal day
-  doBuy(g, s, "grain", 5);
-  run(g, 1);
-  assert.equal(s.route.log ?? null, null);
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  setRouteAdv(game, ship, [{ city: portA }, { city: portB }]);
+  runDays(game, 1);
+  assert.equal(ship.route.log ?? null, null); // no rules, no journal day
+  doBuy(game, ship, "grain", 5);
+  runDays(game, 1);
+  assert.equal(ship.route.log ?? null, null);
 });
 
 test("the ship window shows the journal in Spanish and English, planned next to actual", () => {
-  const g = game(), s = g.ships[0], [a, b] = ports(g, 2);
-  const grainToday = price(world, g.market[a].grain, "grain");
-  setRouteAdv(g, s, [
-    { city: a, buy: [{ good: "grain", maxPrice: Math.floor(grainToday) - 1 }], sell: [{ good: "salt" }] },
-    { city: b },
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  const grainToday = price(world, game.market[portA].grain, "grain");
+  setRouteAdv(game, ship, [
+    { city: portA, buy: [{ good: "grain", maxPrice: Math.floor(grainToday) - 1 }], sell: [{ good: "salt" }] },
+    { city: portB },
   ]);
-  run(g, 1);
-  const hp = { fmt: (n) => String(Math.round(n)), cityName: (id) => id, types: { cog: "Coca" }, goods: { grain: "Trigo", salt: "Sal" }, eta: () => "" };
-  const es = shipWindowHtml(g, s, "es", "data", hp);
+  runDays(game, 1);
+  const helpers = { fmt: (amount) => String(Math.round(amount)), cityName: (id) => id, types: { cog: "Coca" }, goods: { grain: "Trigo", salt: "Sal" }, eta: () => "" };
+  const es = shipWindowHtml(game, ship, "es", "data", helpers);
   assert.match(es, /Diario de ruta/);
   assert.match(es, /no compró Trigo: precio sobre el máximo/);
   assert.match(es, /no vendió Sal: no iba en la bodega/);
-  const en = shipWindowHtml(g, s, "en", "data", { ...hp, goods: { grain: "Grain", salt: "Salt" } });
+  const en = shipWindowHtml(game, ship, "en", "data", { ...helpers, goods: { grain: "Grain", salt: "Salt" } });
   assert.match(en, /Route log/);
   assert.match(en, /did not buy Grain: price over the cap/);
   assert.ok(!es.includes("undefined"), "no undefined placeholders");
