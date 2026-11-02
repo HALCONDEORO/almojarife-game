@@ -12,7 +12,8 @@ test('slot operations and previous-backup restore use game confirmations',()=>{
 test('quota failure has a specific non-destructive message in both languages',()=>{
  assert.match(slotError({name:'QuotaExceededError'},'es'),/Almacenamiento lleno/);
  assert.match(slotError({name:'NS_ERROR_DOM_QUOTA_REACHED'},'en'),/Storage is full/);
- assert.match(slotError(Error('bad'),'en'),/Could not finish/);
+ assert.match(slotError(Error('bad'),'en'),/could not be verified/);
+ assert.doesNotMatch(slotError(Error('bad'),'en'),/nothing was changed/);
 });
 
 test('confirmation Tab handler respects the outer modal capture handler',()=>{
