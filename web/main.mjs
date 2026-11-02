@@ -1541,14 +1541,14 @@ function showSlots() {
     event.preventDefault(); event.stopPropagation(); $("sl-back").click();
   });
   $("sl-back").focus();
-  el.querySelectorAll("[data-sl-save]").forEach((b) => b.onclick = async () => {
+  el.querySelectorAll("[data-sl-save]").forEach((b) => { b.onclick = async () => {
     const n = +b.dataset.slSave;
     const existing = readSlot(localStorage, n);
     if (existing === undefined) { showSlots(); say(x.readError); return; }
     if (existing !== null && !await confirmDialog(el, n2(x.confirmOver, n), lang)) { showSlots(); return; }
     try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     showSlots(); say(n2(x.saved, n));
-  });
+  }; });
   el.querySelectorAll("[data-sl-export]").forEach((b) => { b.onclick = () => {
     const raw = readSlot(localStorage, Number(b.dataset.slExport));
     if (raw === undefined) { showSlots(); say(x.readError); return; }
@@ -1564,7 +1564,7 @@ function showSlots() {
     if (deleted !== true) { showSlots(); say(deleted === null ? x.deleteUnverified : x.err); return; }
     showSlots(); say(n2(x.deleted, n));
   }; });
-  el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = async () => {
+  el.querySelectorAll("[data-sl-load]").forEach((b) => { b.onclick = async () => {
     const n = +b.dataset.slLoad, raw = readSlot(localStorage, n);
     if (raw === undefined) { showSlots(); say(x.readError); return; }
     if (raw === null) return;
@@ -1576,7 +1576,7 @@ function showSlots() {
     else try { localStorage.setItem(SAVE_KEY, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
-  });
+  }; });
 }
 
 function showCredits() {

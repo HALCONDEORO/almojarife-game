@@ -9,10 +9,10 @@ const markers=['save','export','del','load'].map(action=>`  el.querySelectorAll(
 function binding(action){const index=['save','export','del','load'].indexOf(action),start=source.indexOf(markers[index]);return source.slice(start,index===3?source.indexOf('\n}',start):source.indexOf(markers[index+1],start));}
 test('unreadable slots differ from empty and corrupt and recover on the next read',()=>{
  let blocked=true;const store={getItem:key=>{if(blocked&&key.endsWith('.4'))throw Error('denied');return null;}};
- assert.equal(readSlot(store,4),undefined);assert.equal(readSlot(store,1),null);
+ assert.ok(readSlot(store,4) === undefined);assert.equal(readSlot(store,1),null);
  const slots=listSlots(store,()=>assert.fail('nothing to parse'));
  assert.equal(slots[3].state,'unavailable');assert.equal(slots[0].state,'empty');blocked=false;
- assert.equal(listSlots(store,()=>{})[3].state,'empty');
+ assert.equal(listSlots(store,()=>assert.fail("nothing to parse"))[3].state,'empty');
 });
 test('unavailable slots show localized status and disable every action without changing healthy slots',()=>{
  for(const lang of ['es','en']){
