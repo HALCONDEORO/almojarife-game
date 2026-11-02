@@ -24,7 +24,7 @@ export const SW = {
     crew: "Tripulación", min: "mínima", opt: "óptima", max: "máxima",
     crewShort: "Faltan marineros: con menos del mínimo el barco no zarpa.",
     crewSpeed: "Velocidad: {s} %",
-    hire: "Contratar {n} ({p})", dismiss: "Despedir {n}",
+    hire: "Contratar {n} ({p})", dismiss: "Despedir {n}", cwTransfer: "Trasvasar marineros con tus otros barcos en este puerto (sin coste):", cwTake: "Traer {n}", cwGive: "Dar {n}",
     captainTavern: "Contrata capitanes en la taberna.",
     guns: "Armamento", gunCond: "Estado {c}%", gunNone: "Sin cañones",
     gunRepair: "Reparar armamento ({p})", cannonBuy: "Comprar cañón ({p})",
@@ -48,7 +48,7 @@ export const SW = {
     crew: "Crew", min: "minimum", opt: "optimal", max: "maximum",
     crewShort: "Short of sailors: below the minimum the ship will not sail.",
     crewSpeed: "Speed: {s}%",
-    hire: "Hire {n} ({p})", dismiss: "Dismiss {n}",
+    hire: "Hire {n} ({p})", dismiss: "Dismiss {n}", cwTransfer: "Move sailors to or from your other ships docked in this port (free):", cwTake: "Take {n}", cwGive: "Give {n}",
     captainTavern: "Hire captains at the tavern.",
     guns: "Armament", gunCond: "Condition {c}%", gunNone: "No cannons",
     gunRepair: "Repair armament ({p})", cannonBuy: "Buy a cannon ({p})",
@@ -97,10 +97,10 @@ function swCard(g, s, lang, t, hp) {
 
 /** helpers: { fmt, fmtM, cityName, types, goods, eta } — eta(ship) renders the arrival estimate; fmtM is the money format (cents), fmt the count format. */
 export function shipWindowHtml(g, s, lang, tab, hp) {
-  const t = SW[lang] ?? SW.es, fmt = hp.fmt, fmtM = hp.fmtM, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
+  const t = SW[lang] ?? SW.es, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k; // fmt/fmtM live in hp; tabs that need them read them there
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
-  return swCard(g, s, lang, t, hp) + shipNameForm(s,lang) + `<div class="tabs">${tabs}</div>` + (tab === "crew" ? crewTab(g, s, lang, t, fmt, fmtM) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn));
+  return `${swCard(g, s, lang, t, hp)}${shipNameForm(s, lang)}<div class="tabs">${tabs}</div>${tab === "crew" ? crewTab(g, s, lang, t, hp) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn)}`;
 }
 
 function cargoTab(g, s, t, hp, gn, cn) {
@@ -127,12 +127,23 @@ function cargoTab(g, s, t, hp, gn, cn) {
   return h;
 }
 
-function crewTab(g, s, lang, t, fmt, fmtM = fmt) {
+function crewTab(g, s, lang, t, hp) {
+  const fmt = hp.fmt, fmtM = hp.fmtM ?? hp.fmt;
   const L = crewLimits(s), c = crewOf(s), sp = speedFactor(s);
   let h = `<div><b>${t.crew}</b>: ${c} (${t.min} ${L.min} · ${t.opt} ${L.opt} · ${t.max} ${L.max})<br>`;
   h += c < L.min ? `<b>${t.crewShort}</b>` : t.crewSpeed.replace("{s}", Math.round(sp * 100));
   h += `<br>` + [1, 5].map((n) => `<button data-hire="${n}" ${s.voyage || g.over || c >= L.max || g.cash < n * HIRE_FEE ? "disabled" : ""}>${t.hire.replace("{n}", n).replace("{p}", fmt(n * HIRE_FEE))}</button>`).join(" ");
   h += " " + [1, 5].map((n) => `<button data-dismiss="${n}" ${s.voyage || g.over || c <= 0 ? "disabled" : ""}>${t.dismiss.replace("{n}", n)}</button>`).join(" ") + `</div>`;
+  const dockedHere = g.ships.filter((other) => other !== s && !other.voyage && other.at === s.at); // crew can only move between ships moored together
+  if (dockedHere.length) {
+    const transferRows = dockedHere.map((other) => {
+      const otherCrew = crewOf(other), otherRoom = crewLimits(other).max - otherCrew;
+      const takeButtons = [1, 5].map((amount) => `<button data-cwtake="${other.id},${amount}" ${s.voyage || g.over || otherCrew < 1 || c >= L.max ? "disabled" : ""}>${t.cwTake.replace("{n}", amount)}</button>`).join(" ");
+      const giveButtons = [1, 5].map((amount) => `<button data-cwgive="${other.id},${amount}" ${s.voyage || g.over || c < 1 || otherRoom < 1 ? "disabled" : ""}>${t.cwGive.replace("{n}", amount)}</button>`).join(" ");
+      return `<br>${escA(shipDisplayName(other, hp.types))} (${otherCrew}): ${takeButtons} ${giveButtons}`;
+    }).join("");
+    h += `<div><small>${t.cwTransfer}</small>${transferRows}</div>`;
+  }
   h += `<div class="captain">${assignedCaptainHtml(s, lang)}`;
   h += captainOfShip(s) ? `<button data-captain-dismiss>${CT[lang].dismiss}</button>` : `<p><small>${t.captainTavern}</small></p>`;
   h += `</div>`;
