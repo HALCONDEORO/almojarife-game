@@ -10,7 +10,7 @@ function fixture(action,after,{initial='original',accepted=true}={}){
  const button={dataset:action==='save'?{slSave:'4'}:{slDel:'4'}},messages=[];
  let reads=0,writes=0,deletes=0,confirmations=0;
  const context={el:{querySelectorAll:()=>[button]},readSlot:()=>reads++===0?(initial===false?undefined:initial):after===true?initial:after,
-  confirmDialog:async()=>{confirmations++;return accepted;},n2:text=>text,lang:'es',x:SLOT_TEXT.es,
+  confirmDialog:()=>{confirmations++;return Promise.resolve(accepted);},n2:text=>text,lang:'es',x:SLOT_TEXT.es,
   showSlots:()=>true,say:message=>messages.push(message),localStorage:{},g:{day:3},company:'House',
   packGame:(game,company)=>({g:game,company}),isValidSaveText:()=>true,writeSlot:()=>{writes++;},clearSlot:()=>{deletes++;return true;},slotError:()=>SLOT_TEXT.es.err};
  vm.runInNewContext(source.slice(start,end),context);
