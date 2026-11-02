@@ -14,7 +14,7 @@ function storeFixture(mode) {
 async function click(store,confirmed=true) {
  const button={dataset:{slDel:'4'}},messages=[];let redraws=0;
  vm.runInNewContext(binding,{el:{querySelectorAll:()=>[button]},confirmDialog:()=>Promise.resolve(confirmed),n2:(text,n)=>text.replace('{n}',n),
-  x:{confirmDel:'Delete {n}?',err:'Not completed',deleteUnverified:'Check the slot',deleted:'Deleted {n}'},lang:'en',localStorage:store,clearSlot,
+  readSlot:()=> 'fixture save',x:{confirmDel:'Delete {n}?',err:'Not completed',deleteUnverified:'Check the slot',deleted:'Deleted {n}'},lang:'en',localStorage:store,clearSlot,
   showSlots:()=>{redraws++;},say:message=>messages.push(message)});
  await button.onclick();return {messages,redraws};
 }
