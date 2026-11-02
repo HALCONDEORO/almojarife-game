@@ -1553,12 +1553,12 @@ function showSlots() {
     try { const stored = unpackGame(JSON.parse(raw), world); exportSave(raw, stored.g.day); }
     catch (error) { say(slotError(error, lang)); }
  }; });
-  el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = async () => {
+  el.querySelectorAll("[data-sl-del]").forEach((b) => { b.onclick = async () => {
     const n = +b.dataset.slDel; if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
     const deleted = clearSlot(localStorage, n);
     if (deleted !== true) { showSlots(); say(deleted === null ? x.deleteUnverified : x.err); return; }
     showSlots(); say(n2(x.deleted, n));
-  });
+  }; });
   el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slLoad, raw = readSlot(localStorage, n); if (raw == null) return;
     let r; try { r = unpackGame(JSON.parse(raw), world); } catch { say(x.err); return; }
