@@ -77,7 +77,7 @@ jobs:
       - name: Smoke packaged title menu only
         working-directory: source/desktop
         run: node smoke-packaged.cjs
-      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3 (peeled commit)
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4 (peeled commit)
         with:
           subject-path: |
             source/desktop/dist/*.AppImage
@@ -142,7 +142,7 @@ jobs:
           for f in *.AppImage *.deb *.dmg *.zip *.exe SHA256SUMS.txt; do
             printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor --output "$f.asc" "$f"
           done
-      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3 (peeled commit)
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4 (peeled commit)
         with:
           subject-path: dist/SHA256SUMS.txt
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
