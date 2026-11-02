@@ -37,6 +37,21 @@ export function hireGovernor(g, city, level) {
 
 /** Dismiss the governor: the record goes away and the free administrator takes the orders back.
     The hire fee is never refunded (the captain contract works the same way). */
+/** Raise a hired governor one level: the fee is only the difference still owed (100 per level, GOVERNOR_LEVELS). */
+export function upgradeGovernor(g, city, level) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const governor = governorOf(g, city);
+  if (!governor || governor.state !== "active") return { ok: false, reason: "no governor hired" };
+  const spec = GOVERNOR_LEVELS[level];
+  if (!spec || level <= governor.level) return { ok: false, reason: "unknown or not higher level" };
+  const due = spec.fee - GOVERNOR_LEVELS[governor.level].fee;
+  if (g.cash < due) return { ok: false, reason: "not enough cash" };
+  g.cash -= due;
+  g.warehouses[city].governor.level = level; // write through: governorOf hands out a sanitized copy
+  post(g, "governor_upgrade", { city, level, fee: due });
+  return { ok: true, level, fee: due };
+}
+
 export function dismissGovernor(g, city) {
   if (g.over) return { ok: false, reason: "game over" };
   const wh = g.warehouses?.[city];

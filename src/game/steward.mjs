@@ -8,6 +8,7 @@ import { craftCount } from "./crafts.mjs";
 import { FEE, ceil2, floor2 } from "../sim/trade.mjs";
 import { whLocked } from "./whlock.mjs";
 import { post } from "./ledger.mjs";
+import { governorOf } from "./governor.mjs";
 import { repOnBuy, repOnSale, scarcityOf, noteTrade } from "./reputation.mjs";
 import { memoryDeed, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
 import { relationsOnSale } from "./relations.mjs";
@@ -36,11 +37,12 @@ export function setStewardRule(g, city, good, rule, cap) {
   if (!wh) return { ok: false, reason: "no warehouse here" };
   if (!g.world.goods[good]) return { ok: false, reason: "unknown good" };
   const src = rule ?? {};
-  const next = { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 };
+  const next = { buyBelow: 0, buyTo: 0, sellAbove: 0, sellKeep: 0 }; // percent keys join only when the caller sets them, so old rules keep their shape
   // whitelist: copy only own keys present (prototype-inherited values are ignored);
   // a key present but null/undefined/invalid fails validation below instead of defaulting to 0
-  for (const key of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (Object.prototype.hasOwnProperty.call(src, key)) next[key] = src[key];
+  for (const key of ["buyBelow", "buyTo", "sellAbove", "sellKeep", "buyBelowPct", "sellAbovePct"]) if (Object.prototype.hasOwnProperty.call(src, key)) next[key] = src[key];
   for (const key of ["buyBelow", "buyTo", "sellAbove", "sellKeep"]) if (!Number.isFinite(next[key]) || next[key] < 0) return { ok: false, reason: "bad number" };
+  for (const key of ["buyBelowPct", "sellAbovePct"]) { if (!Object.prototype.hasOwnProperty.call(next, key)) continue; next[key] += 0; if (!Number.isFinite(next[key]) || next[key] < 0) return { ok: false, reason: "bad number" }; if (next[key] !== 0 && (next[key] < 1 || next[key] > 1000)) return { ok: false, reason: "bad percent" }; } // percent of the port's recent mean price; 0 leaves the side on its absolute number
   next.buyTo = Math.floor(next.buyTo) + 0; next.sellKeep = Math.floor(next.sellKeep) + 0; next.buyBelow += 0; next.sellAbove += 0; // +0 normalizes a signed zero away
   if (next.buyBelow > 0 && !(next.buyTo > 0)) return { ok: false, reason: "buy needs a stock target" };
   if (next.buyTo > (cap ?? Infinity)) return { ok: false, reason: "target above warehouse capacity" };
@@ -130,24 +132,39 @@ export function setStewardReserve(g, city, amount) {
 }
 
 /** One market slot for one port: run every standing order of its warehouse. */
+/** Mean of the port's recent daily prices for a good, or null without enough history (historia persists ~14 days). */
+export const HISTORY_MIN_DAYS = 3;
+function histMean(histPrices) { if (!Array.isArray(histPrices) || histPrices.length < HISTORY_MIN_DAYS) return null; return histPrices.reduce((sum, px) => sum + px, 0) / histPrices.length; }
+/** The bounds a standing order uses today: with a working level 2+ governor the percent fields resolve against the port's recent mean price;
+   without him (or without enough history) the absolute numbers rule, exactly as before. buyBelowPct/sellAbovePct mean "percent of the mean". */
+export function effectiveBounds(rule, histPrices, governorLevel) {
+  const mean = governorLevel >= 2 ? histMean(histPrices) : null;
+  const buyBelow = mean !== null && (rule.buyBelowPct ?? 0) > 0 ? floor2(mean * rule.buyBelowPct / 100) : rule.buyBelow;
+  const sellAbove = mean !== null && (rule.sellAbovePct ?? 0) > 0 ? floor2(mean * rule.sellAbovePct / 100) : rule.sellAbove;
+  // A resolved window that inverts (buy at or above the sell line) would churn goods in place: the buy side pauses that day.
+  return { buyBelow: buyBelow > 0 && sellAbove > 0 && buyBelow >= sellAbove ? 0 : buyBelow, sellAbove };
+}
+
 export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   const wh = g.warehouses?.[city], adm = wh?.admin;
   if (!adm || g.over) return null;
   if ((g.shocks ?? []).some((shock) => shock.type === "port_closed" && shock.city === city && shock.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
   const did = [];
+  const governorLevel = governorOf(g, city)?.level ?? 0; // the tick only runs with a working governor (game.mjs gate), level 0 when none
   for (const [good, rule] of Object.entries(adm.rules)) {
     if (adm.off?.[good]) continue; // adm paused order keeps its numbers but is not served
     const entry = g.market[city]?.[good];
     if (!entry) continue;
+    const bounds = effectiveBounds(rule, g.hist?.[city]?.[good], governorLevel);
     // Sell first: it frees room and cash for the buy side.
-    if (rule.sellAbove > 0 && !whLocked(wh, good)) { // a locked good never leaves the store, not even on a standing order
+    if (bounds.sellAbove > 0 && !whLocked(wh, good)) { // a locked good never leaves the store, not even on a standing order
       const have = wh.goods[good] ?? 0, can = have - rule.sellKeep;
       if (can > 0) {
         let sold = 0, revenue = 0, feeCents = 0; // unit sold+1 joins the market at stock+sold+1 and fetches that price, as in trade.sell
         const purse = WHOLESALE_PURSE_BINDING ? commerceOf(g.market[city]) : null; // standing orders cannot draw more than the purse holds
         const cashCents = purse ? Math.round(purse.cash * 100) : 0; // integer cents, like trade.sell
         let revenueCents = 0;
-        while (sold < can) { const px = price(g.world, { ...entry, stock: entry.stock + sold + 1 }, good); if (px < rule.sellAbove) break; const unit = floor2(px * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; feeCents += Math.round((px - unit) * 100); sold++; }
+        while (sold < can) { const px = price(g.world, { ...entry, stock: entry.stock + sold + 1 }, good); if (px < bounds.sellAbove) break; const unit = floor2(px * (1 - FEE)); if (purse && revenueCents + Math.round(unit * 100) > cashCents) break; revenueCents += Math.round(unit * 100); revenue += unit; feeCents += Math.round((px - unit) * 100); sold++; }
         if (sold > 0) {
           const scarcity = scarcityOf(entry); // shortage BEFORE the sale, as in doSell
           entry.stock += sold;
@@ -167,7 +184,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
         }
       }
     }
-    if (rule.buyBelow > 0 && rule.buyTo > 0) {
+    if (bounds.buyBelow > 0 && rule.buyTo > 0) {
       const room = cap - whUsed(wh), want = rule.buyTo - (wh.goods[good] ?? 0);
       const budget = Math.floor(g.cash - (adm.reserve ?? 0));
       if (room > 0 && want > 0 && budget > 0) {
@@ -175,7 +192,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
         let bought = 0, cost = 0, feeCents = 0;
         while (bought < maxN) {
           const unit = price(g.world, entry, good);
-          if (unit > rule.buyBelow) break;
+          if (unit > bounds.buyBelow) break;
           const charged = ceil2(unit * (1 + FEE));
           if (cost + charged > budget) break;
           cost += charged; feeCents += Math.round((charged - unit) * 100); entry.stock -= 1; bought++;
