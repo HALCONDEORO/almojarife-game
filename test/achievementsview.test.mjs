@@ -4,18 +4,18 @@ import { achievementsHtml } from "../src/view/achievementsview.mjs";
 import { ACHIEVEMENTS } from "../src/game/achievements.mjs";
 
 test("the ES view lists earned and pending milestones", () => {
-  const h = achievementsHtml({ achievements: { unlocked: { first_sale: 3 } } }, "es");
-  assert.match(h, /Logros/);
-  assert.match(h, /Primer trueque/);
-  assert.match(h, new RegExp("1 de " + ACHIEVEMENTS.length));
-  assert.match(h, /día 3/);
-  assert.match(h, /Por conseguir/); // the rest stay pending, faded
-  assert.match(h, /style="opacity:.55"/);
-  assert.match(h, /Casa poderosa/);
+  const html = achievementsHtml({ achievements: { unlocked: { first_sale: 3 } } }, "es");
+  assert.match(html, /Logros/);
+  assert.match(html, /Primer trueque/);
+  assert.match(html, new RegExp(`1 de ${ACHIEVEMENTS.length}`));
+  assert.match(html, /día 3/);
+  assert.match(html, /Por conseguir/); // the rest stay pending, faded
+  assert.match(html, /style="opacity:.55"/);
+  assert.match(html, /Casa poderosa/);
 });
 test("the EN view and a missing state render without it", () => {
-  const h = achievementsHtml({}, "en");
-  assert.match(h, /Achievements/);
-  assert.match(h, /First trade/);
-  assert.match(h, new RegExp("0 of " + ACHIEVEMENTS.length));
+  const html = achievementsHtml({}, "en");
+  assert.match(html, /Achievements/);
+  assert.match(html, /First trade/);
+  assert.match(html, new RegExp(`0 of ${ACHIEVEMENTS.length}`));
 });
