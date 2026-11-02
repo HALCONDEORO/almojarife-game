@@ -103,14 +103,14 @@ test("templates save, apply atomically, delete and survive a save round trip", (
   assert.equal(deleteGovTemplate(round, "grano").reason, "no such template");
 });
 
-test("level 3 is not for sale yet: hiring or promoting to it is refused", () => {
+test("nothing past the highest delivered level is for sale", () => {
   const game = house();
-  assert.equal(hireGovernor(game, "cadiz", 3).reason, "bad level");
-  hireGovernor(game, "cadiz", 2);
+  assert.equal(hireGovernor(game, "cadiz", 4).reason, "bad level");
+  hireGovernor(game, "cadiz", 3);
   const cash = game.cash;
-  assert.equal(upgradeGovernor(game, "cadiz", 3).reason, "unknown or not higher level");
+  assert.equal(upgradeGovernor(game, "cadiz", 4).reason, "unknown or not higher level");
   assert.equal(game.cash, cash); // no coin left the box for an undelivered level
-  assert.equal(governorOf(game, "cadiz").level, 2);
+  assert.equal(governorOf(game, "cadiz").level, 3);
 });
 
 test("template names never fight the object prototype", () => {
