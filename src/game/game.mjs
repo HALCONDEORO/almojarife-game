@@ -57,6 +57,7 @@ import { configureWorks, worksDay, councilWorksVote } from "./works.mjs";
 import { initTowers, tickTowers, accrueTowers } from "./towers.mjs";
 import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
 import { stewardTick } from "./steward.mjs";
+import { governorDay, governorWorks } from "./governor.mjs";
 import { whLocked, whAvailable } from "./whlock.mjs";
 import { accrueWatch, whCap } from "./whwatch.mjs";
 import { aiStep } from "../sim/ai.mjs";
@@ -321,6 +322,9 @@ export function advanceDay(g) {
   } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
 }
 /** The slot inside the day at which port i ticks its market (P3-style stagger: updates spread through the day). */
+export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
+/** Storage cap at a port: the base warehouse plus each active warehouse-building level (design doc piece 5). */
+export const warehouseCap = (g, city) => WAREHOUSE_CAP + warehouseCapBonus(g, city);
 export const marketSlot = (world, i) => Math.floor(i * TICKS_PER_DAY / world.cities.length);
 /** Ports whose daily market tick is this tick run it now, with their own day count (bit-identical per port to a daily tick). */
 function marketTick(g) {
@@ -336,7 +340,8 @@ function marketTick(g) {
     growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
     tickMarketCity(g.market[c.id], day, g.world);
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
-    stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
+    governorDay(g, c.id); // a hired governor draws his daily wage first; short cash suspends him with a notice, never a debt
+    if (governorWorks(g, c.id)) stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices; a suspended governor pauses them
     const hist = (g.hist ??= {});
     for (const [good, e] of Object.entries(g.market[c.id])) {
       const a = ((hist[c.id] ??= {})[good] ??= []);
@@ -566,9 +571,6 @@ export function sellShip(g, ship) {
   removeFromConvoy(g, ship); // a sold ship leaves its convoy (posted); a single hull is no convoy
   return { ok: true, value: v };
 }
-export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
-/** Storage cap at a port: the base warehouse plus each active warehouse-building level (design doc piece 5). */
-export const warehouseCap = (g, city) => WAREHOUSE_CAP + warehouseCapBonus(g, city);
 const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
 export const warehouseOf = (g, city) => g.warehouses?.[city] ?? null;
 /** Buy a warehouse in the port where a ship is docked. One per port. */
