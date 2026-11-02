@@ -55,6 +55,8 @@ import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/enco
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
 import {captainRoster,captainOf,hireCaptain,dismissCaptain} from "../src/game/captains.mjs";
 import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview.mjs";
+import {tavernGovernorHtml} from "../src/view/governorview.mjs";
+import {hireGovernor,dismissGovernor} from "../src/game/governor.mjs";
 import { shipWindowHtml, SW } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
@@ -989,6 +991,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     } else if (tab === "tavern") {
       h += originTavernHtml(g,s.at,lang);
       h += tavernCaptainsHtml(g,s,lang);
+      h += tavernGovernorHtml(g,s.at,lang); // the port governor is hired at the tavern too (needs your own warehouse here)
       const unk = world.cities.filter((c) => !isLive(g, c.id));
       h += `<p>${t.tavernInfo}</p>`; h += (unk.length ? `<div class="rumor">${t.rumorPick}: <select id="rum">${unk.map((c) => `<option value="${c.id}"${c.id === rumorNote?.city ? " selected" : ""}>${cityName(c.id)}${g.intel?.[c.id] ? ` (${g.day - g.intel[c.id].day} d)` : ""}</option>`).join("")}</select> <button id="rumbtn" ${g.cash >= RUMOR_PRICE ? "" : "disabled"}>${t.rumorBtn.replace("{p}", RUMOR_PRICE)}</button> <small id="rum-msg"${rumorNote?.err ? ' style="color:#a11"' : ""}>${esc(rumorNote?.text ?? "")}</small></div>` : `<p><i>${t.tavernNone}</i></p>`);
       { const offers = chartOffers(g, s.at);
@@ -1102,6 +1105,8 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
     $("cap-confirm").onclick=()=>{const r=hireCaptain(g,s,c.id);if(!r.ok){$("cap-msg").textContent=t.failed;return;}el.hidden=true;playing=was;autosave();render();};
   });
   P.querySelector("[data-captain-dismiss]")?.addEventListener("click", askDismissCaptain);
+  P.querySelectorAll("[data-governor-hire]").forEach((btn) => { btn.onclick = () => { const result = hireGovernor(g, s.at, Number(btn.dataset.governorHire)); if (!result.ok) toast(result.reason === "no cash" ? (lang === "es" ? "No hay caja suficiente." : "Not enough cash.") : result.reason); act(() => result); }; }); // governor: hire at the tavern
+  P.querySelector("[data-governor-dismiss]")?.addEventListener("click", () => act(() => dismissGovernor(g, s.at))); // governor: dismiss (fee never refunded)
   P.querySelectorAll("[data-almbid]").forEach((e) => e.onclick = () => { const v = Math.floor(+P.querySelector(`[data-alminput="${e.dataset.almbid}"]`)?.value); const r = placeBid(g, s.at, v, e.dataset.almbid); almNote = r.ok ? null : (r.reason === "no cash" ? t.almErrCash : t.almErr); act(() => {}); });
   const rum = P.querySelector("#rum"); if (rum) rum.onchange = () => { rumorNote = { ...rumorNote, city: rum.value }; };
   const rumorButton = P.querySelector("#rumbtn"); if (rumorButton) rumorButton.onclick = () => { const city = P.querySelector("#rum").value, result = buyRumor(g, city, s.at); rumorNote = result.ok ? { city, err: false, text: t.rumorOk.replace("{city}", cityName(city)) } : { city, err: true, text: result.reason === "already known" ? t.rumorErrKnown : result.reason === "no cash" ? t.rumorErrCash.replace("{price}", RUMOR_PRICE) : result.reason }; act(() => undefined); };
