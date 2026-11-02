@@ -32,7 +32,7 @@ function encounterInStorm(g,ship,world){
  return Boolean(pos&&Number.isFinite(pos.lat)&&Number.isFinite(pos.lon)&&inStorm(pos.lat,pos.lon,g.day,g.seed??0));
 }
 export function automaticEncounter(g,ship,world){
- if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored)return null;
+ if(!g.eventsOn||g.over||g.pending||g.encounterReport||!g.ships.includes(ship)||!ship.voyage||ship.voyage.anchored||ship.voyage.escorted)return null; // an escorted prize keeps station in its escort's wake: the winner rolls for the pair
  const key=String(ship.id);if(g.encounterTicks?.[key]===g.tick)return null;
  (g.encounterTicks??={})[key]=g.tick;
  const random=seeded(`sea-v2:${g.seed??0}:${g.tick}:${ship.id}`);
@@ -103,7 +103,8 @@ export function claimPrize(g,keep){
  if(keep){
   prize=makeShip(g.nextId++,report.prize.type,winner.at,g.ships);
   prize.hull=report.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
-  if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
+  report.prize.shipId=prize.id; // the history entry names the fleet ship the prize became (identity through the transfer)
+ if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
   g.ships.push(prize);
  }
  const txt=keep
