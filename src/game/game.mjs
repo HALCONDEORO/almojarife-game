@@ -9,6 +9,7 @@ import { chronicleWeek, chronicleTick } from "./chronicle.mjs";
 import { buyCannon as buyCannonShip, buyWeapon as buyWeaponShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
 export const buyCannon = buyCannonShip, buyWeapon = buyWeaponShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
 import { openVoyage, recordSale } from "./voyages.mjs";
+import { achievementsTick } from "./achievements.mjs";
 import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
@@ -278,6 +279,7 @@ function dayTick(g) {
   const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
   if (hc && g.reports?.[0]?.day === g.day) { g.reports[0].household = hc; g.reports[0].cashAfter = g.cash; } // the weekly line shows the tribute, so its cash-after figure must include it
   updateRank(g, netWorth(g), post);
+  achievementsTick(g, netWorth(g)); // house milestones unlock once, right after the day's rank check
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   expireContracts(g); // a council contract past its due day lapses
   if (g.day % 7 === 0) rollContracts(g); // town councils post their weekly offers
@@ -380,7 +382,7 @@ export function doSell(g, ship, good, qty) {
   const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, ship.at);
   const r = sell(g.world, g.market, ship, good, qty, f);
-  if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; } // victory is checked right after a sale
+  if (r.ok) { g.salesMade = (g.salesMade ?? 0) + 1; noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; } // victory is checked right after a sale
   if (r.ok) tutorialNote(g, "sell", r);
   return r;
 }
@@ -395,7 +397,7 @@ export function doSellStored(g, city, good, qty) {
   const scarcity = scarcityOf(g.market[city]?.[good] ?? { stock: 1, target: 1 });
   const f = FEE * feeMul(g, city);
   const r = sellStored(g.world, g.market, city, w, good, qty, f);
-  if (r.ok) { noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); logSell(g, good, r.qty, r.revenue); /* the warehouse sale counts in the weekly trade ledger and lowers the book cost, exactly like a hold sale */ contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city }, MISSION); /* campaign sell missions advance with store sales too */ if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
+  if (r.ok) { g.salesMade = (g.salesMade ?? 0) + 1; noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", r.qty); relationsOnSale(g, city, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, city, Math.round(r.revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, r.revenue); logSell(g, good, r.qty, r.revenue); /* the warehouse sale counts in the weekly trade ledger and lowers the book cost, exactly like a hold sale */ contractOnSale(g, city, good, r.qty); /* council contracts count warehouse sales too */ if (addRespect(g, city, r.revenue)) post(g, "respect", { city }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city }, MISSION); /* campaign sell missions advance with store sales too */ if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; }
   if (r.ok) tutorialNote(g, "sell", r);
   return r;
 }
@@ -434,7 +436,7 @@ export function doSellCombined(g, ship, good, qty, store) { // skipcq: JS-R1005 
   if (n <= 0) return r1.ok ? r2 : r1;
   const revenue = Math.round(((r1.ok ? r1.revenue : 0) + (r2.ok ? r2.revenue : 0)) * 100) / 100;
   const r = { ok: true, qty: n, revenue, profit: Math.round(((r1.profit ?? 0) + (r2.profit ?? 0)) * 100) / 100, spent: Math.round(((r1.spent ?? 0) + (r2.spent ?? 0)) * 100) / 100 }; /* profit/spent across both parts: the tutorial sell step needs a real gain */
-  noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); relationsOnSale(g, city, good, n, revenue); g.cash += revenue; creditCaja(g, city, Math.round(revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, revenue); if (r1.ok && r1.qty > 0) recordSale(g, ship, r1.qty, r1.revenue, r1.profit); /* the voyage record only tracks the hold part */ logSell(g, good, n, revenue); /* one ledger entry for the combined sale */ contractOnSale(g, city, good, n); /* council contracts count warehouse sales too */ if (addRespect(g, city, revenue)) post(g, "respect", { city }); say(g, "sell", { qty: n, good, sum: revenue }); campaignEvent(g, { kind: "sell", good, qty: n, city }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; // victory is checked right after a sale
+  g.salesMade = (g.salesMade ?? 0) + 1; noteTrade(g, city); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "favor", n); relationsOnSale(g, city, good, n, revenue); g.cash += revenue; creditCaja(g, city, Math.round(revenue * f / (1 - f) * 100) / 100); repOnSale(g, city, scarcity, revenue); if (r1.ok && r1.qty > 0) recordSale(g, ship, r1.qty, r1.revenue, r1.profit); /* the voyage record only tracks the hold part */ logSell(g, good, n, revenue); /* one ledger entry for the combined sale */ contractOnSale(g, city, good, n); /* council contracts count warehouse sales too */ if (addRespect(g, city, revenue)) post(g, "respect", { city }); say(g, "sell", { qty: n, good, sum: revenue }); campaignEvent(g, { kind: "sell", good, qty: n, city }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay && !g.noGoal) g.over = "win"; // victory is checked right after a sale
   tutorialNote(g, "sell", r);
   return r;
 }
