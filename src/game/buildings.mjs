@@ -235,9 +235,9 @@ export const cityQueue = (g, cityId) => Object.entries(g.buildings?.[cityId] ?? 
  *  one waits behind the active work and the orders ahead of it, so its day is a lower bound
  *  (new orders can push it later) and the UI always labels it as an estimate. */
 export function constructionEstimate(g, cityId, plotId) {
-  const b = buildingAt(g, cityId, plotId);
-  if (b?.state === "construction") return { state: "construction", ahead: 0, readyDay: Math.ceil(b.readyTick / TICKS_PER_DAY) };
-  if (b?.state !== "queued") return null;
+  const order = buildingAt(g, cityId, plotId);
+  if (order?.state === "construction") return { state: "construction", ahead: 0, readyDay: Math.ceil(order.readyTick / TICKS_PER_DAY) };
+  if (order?.state !== "queued") return null;
   const active = cityActiveConstruction(g, cityId);
   let waitTicks = active ? Math.max(0, active[1].readyTick - g.tick) : 0, ahead = 0;
   for (const [otherId, other] of cityQueue(g, cityId)) {
@@ -245,7 +245,7 @@ export function constructionEstimate(g, cityId, plotId) {
     ahead++;
     waitTicks += BUILDING_TYPES[other.type].buildDays * other.nextLevel * TICKS_PER_DAY;
   }
-  const ownTicks = BUILDING_TYPES[b.type].buildDays * b.nextLevel * TICKS_PER_DAY;
+  const ownTicks = BUILDING_TYPES[order.type].buildDays * order.nextLevel * TICKS_PER_DAY;
   return { state: "queued", ahead, startsInDays: Math.ceil(waitTicks / TICKS_PER_DAY), readyDay: Math.ceil((g.tick + waitTicks + ownTicks) / TICKS_PER_DAY) };
 }
 
@@ -295,10 +295,10 @@ export function tickBuildings(g) {
     if (cityActiveConstruction(g, cityId)) continue;
     const next = cityQueue(g, cityId)[0];
     if (!next) continue;
-    const b = next[1];
-    b.state = "construction";
-    b.readyTick = g.tick + BUILDING_TYPES[b.type].buildDays * b.nextLevel * TICKS_PER_DAY;
-    post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${b.type} nivel ${b.nextLevel})`, en: `Construction started in ${cityId} (${b.type} level ${b.nextLevel})` } });
+    const job = next[1];
+    job.state = "construction";
+    job.readyTick = g.tick + BUILDING_TYPES[job.type].buildDays * job.nextLevel * TICKS_PER_DAY;
+    post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${job.type} nivel ${job.nextLevel})`, en: `Construction started in ${cityId} (${job.type} level ${job.nextLevel})` } });
   }
 }
 

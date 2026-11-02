@@ -9,6 +9,21 @@ import { effectivePop } from "../game/citylife.mjs";
 
 export const TYPE_KEYS = Object.keys(BUILDING_TYPES);
 
+/** Progress fields for a row whose plot has a work active or queued: an active work knows its
+ *  exact ready day and percent; a queued one shows the explained estimate (position and earliest
+ *  day), never a promise. */
+function worksProgressRow(g, cityId, plotId, b, spec, row) {
+  if (b.state === "construction") {
+    const total = spec.buildDays * b.nextLevel * TICKS_PER_DAY, left = Math.max(0, b.readyTick - g.tick);
+    row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
+    row.progress = total > 0 ? Math.min(1, Math.max(0, 1 - left / total)) : 1;
+  }
+  if (b.state === "queued") { // waiting for the city crew: the ready day is an explained estimate, not a promise
+    const est = constructionEstimate(g, cityId, plotId);
+    row.nextLevel = b.nextLevel; row.readyDay = est?.readyDay; row.queueAhead = est?.ahead ?? 0; row.progress = 0;
+  }
+}
+
 /** One row per owned plot/building in a city, ready to render. */
 export function buildingsRows(g, cityId) {
   const plots = g.buildings?.[cityId] ?? {};
@@ -17,15 +32,7 @@ export function buildingsRows(g, cityId) {
     const halted = b.state === "active" && !!b.halted; // halted: workers walked for lack of cash, no costs and no output
     const fire = b.state === "active" && b.halted === "incendio"; // fire-halted: closed until the fire is out (not a cash problem)
     const row = { plotId, type: b.type, plotType: b.plotType, level: b.level, state: b.state, halted, fire, upkeep: b.state === "active" && !halted && spec ? spec.upkeep * b.level : 0 };
-    if (b.state === "construction") {
-      const total = spec.buildDays * b.nextLevel * TICKS_PER_DAY, left = Math.max(0, b.readyTick - g.tick);
-      row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
-      row.progress = total > 0 ? Math.min(1, Math.max(0, 1 - left / total)) : 1;
-    }
-    if (b.state === "queued") { // waiting for the city crew: the ready day is an explained estimate, not a promise
-      const est = constructionEstimate(g, cityId, plotId);
-      row.nextLevel = b.nextLevel; row.readyDay = est?.readyDay; row.queueAhead = est?.ahead ?? 0; row.progress = 0;
-    }
+    worksProgressRow(g, cityId, plotId, b, spec, row);
     if (b.state === "active" && !halted && PRODUCERS[b.type]) {
       const def = PRODUCERS[b.type];
       row.produced = b.produced ?? 0;
@@ -186,14 +193,21 @@ export function bldChipInner(t, r, lang, iconForGood) {
   return `<span class="bldchip${bad ? " bldchip-bad" : ""}">${icon}<span class="bldchip-name">${escBw(buildingLabel(t, r))}</span><span class="bldchip-state">${escBw(state)}</span></span>`;
 }
 
+/** State line of the summary card: works show level and ready day (exact when active, an
+ *  explained queue estimate when queued), halted/fire stand out, a bare plot reads "yours". */
+function bldCardStateLine(t, r, lang) {
+  if (r.state === "construction") return `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`;
+  if (r.state === "queued") return `${t.bldState.queued} ${r.nextLevel} · ${t.bldQueuedLong.replace("{n}", r.queueAhead + 1).replace("{d}", r.readyDay)}`;
+  if (r.halted) return r.fire ? t.bldState.fire : t.bldState.halted;
+  if (r.state === "plot") return lang === "es" ? "tuyo, sin construir" : "yours, nothing built"; // not "solar" again under the name and the window title
+  return t.bldState[r.state] ?? r.state;
+}
+
 export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
   const bw = BW[lang] ?? BW.es, bwl = BWL[lang] ?? BWL.es;
   const def = r.type ? PRODUCERS[r.type] : null;
   const cardIcon = def ? (iconForGood ? iconForGood(def.output, 40) : "") : bwSvg(BWI[r.type] ?? BWI.building, 40);
-  const state = r.state === "construction"
-    ? `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`
-    : r.state === "queued" ? `${t.bldState.queued} ${r.nextLevel} · ${t.bldQueuedLong.replace("{n}", r.queueAhead + 1).replace("{d}", r.readyDay)}`
-    : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : r.state === "plot" ? (lang === "es" ? "tuyo, sin construir" : "yours, nothing built") /* not "solar" again under the name and the window title */ : (t.bldState[r.state] ?? r.state);
+  const state = bldCardStateLine(t, r, lang);
   const cell = (glyph, label, val, short, bad = false) =>
     `<span class="bwc-stat${bad ? " bwc-bad" : ""}" role="img" aria-label="${escBw(label)}" title="${escBw(label)}"><span class="bwc-val">${bwSvg(glyph, 16)}<b>${val}</b></span><span class="bwc-lab">${escBw(short)}</span></span>`;
   const cells = [];
