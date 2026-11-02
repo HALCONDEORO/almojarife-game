@@ -10,22 +10,30 @@ export function saveFileName(day, now = new Date()) {
   return `almojarife-save-${stamp}${Number.isFinite(day) ? `-dia${day}` : ""}.json`;
 }
 
+function verifyWrite(store, key, text) {
+  if (store.getItem(key) !== text) throw new Error(`Save write verification failed: ${key}`);
+}
+
+function writeVerified(store, key, text) {
+  store.setItem(key, text);
+  verifyWrite(store, key, text);
+}
+
 /**
  * Pending-rotation recovery. A failed earlier rotation leaves the previous save parked in
  * TMP_KEY (live slot already holds the restored copy, backup slot not yet rotated). Completing
  * the pending rotation is what makes the next restore a true undo, and it must run before
  * anything reuses TMP_KEY. Throws if the parked copy cannot be rotated in: callers abort and
- * every copy stays where it is.
+ * the parked copy stays available, even if the backup write took effect.
  */
 export function finishPendingRotation(store, isValid = () => true) {
-  let parked;
-  try { parked = store.getItem(TMP_KEY); } catch { return; }
+  const parked = store.getItem(TMP_KEY);
   if (parked == null) return;
   if (!isValid(parked)) { // a corrupt parked copy must never replace a valid backup
     try { store.removeItem(TMP_KEY); } catch {}
     return;
   }
-  store.setItem(BACKUP_KEY, parked);
+  writeVerified(store, BACKUP_KEY, parked);
   try { store.removeItem(TMP_KEY); } catch {}
 }
 
@@ -33,21 +41,25 @@ export function finishPendingRotation(store, isValid = () => true) {
  * Restore/import rotation. Requires finishPendingRotation() first (no parked copy).
  * Parks the current save in TMP_KEY, writes the new content into the live slot, then rotates
  * the parked save into BACKUP_KEY. Both copies exist in storage before any overwrite, so a
- * quota failure mid-rotation never destroys either save. Throws on the two guarded writes so
- * the caller aborts with a message and the original state stays put; if the final rotation
- * fails the parked copy stays in TMP_KEY (recovered by the next finishPendingRotation).
+ * failed or unverified write never retires the only recoverable copy. Throws on parking or
+ * live-write failure so the caller aborts; a write may have taken effect despite the error.
+ * If the final rotation fails, TMP_KEY stays for the next finishPendingRotation.
  */
 export function restoreRotate(store, saveKey, cur, newLiveText) {
-  if (cur) store.setItem(TMP_KEY, cur);
+  if (cur) writeVerified(store, TMP_KEY, cur);
   try {
     store.setItem(saveKey, newLiveText);
   } catch (e) {
-    if (cur) try { store.removeItem(TMP_KEY); } catch {}
+    // A throwing write may still have changed live. Retire parking only if live is intact.
+    if (cur) try {
+      if (store.getItem(saveKey) === cur) store.removeItem(TMP_KEY);
+    } catch { /* Keep parking when live state or cleanup cannot be verified. */ }
     throw e;
   }
+  verifyWrite(store, saveKey, newLiveText);
   if (cur) {
     let rotated = true;
-    try { store.setItem(BACKUP_KEY, cur); } catch { rotated = false; }
+    try { writeVerified(store, BACKUP_KEY, cur); } catch { rotated = false; }
     if (rotated) try { store.removeItem(TMP_KEY); } catch {}
   } else {
     try { store.removeItem(BACKUP_KEY); } catch {}
