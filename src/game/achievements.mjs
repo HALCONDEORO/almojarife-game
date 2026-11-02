@@ -3,11 +3,11 @@
 // Conditions only read the state; the unlocked set rides along in the save with the rest of the game
 // (gamesave serializes it whole), so saves from before achievements gain the key on their first day tick.
 import { post } from "./ledger.mjs";
-import { heldRank, repOf, respectIndex, RESPECT, ensureRep } from "./rank.mjs";
+import { heldRank, repOf, respectIndex, RESPECT } from "./rank.mjs";
 import { bestVoyage } from "./voyages.mjs";
 
 export const ACHIEVEMENTS = [
-  { id: "first_sale", es: { name: "Primer trueque", desc: "Tu primera venta cerró en puerto." }, en: { name: "First trade", desc: "Your first sale closed in port." }, test: (game) => Object.values(ensureRep(game)).some((coins) => coins > 0) }, // respect coins are only ever minted by real sales (hold, warehouse or combined), with or without a voyage
+  { id: "first_sale", es: { name: "Primer trueque", desc: "Tu primera venta cerró en puerto." }, en: { name: "First trade", desc: "Your first sale closed in port." }, test: (game) => (game.salesMade ?? 0) > 0 }, // a counter stamped only by the three real sale paths (doSell/doSellStored/doSellCombined); respect alone - origins, works, contracts, campaign rewards - never counts
   { id: "profit_voyage", es: { name: "Viaje redondo", desc: "Un viaje tuyo volvió con ganancia." }, en: { name: "Round voyage", desc: "One of your voyages came home in profit." }, test: (game) => (bestVoyage(game)?.profit ?? 0) > 0 },
   { id: "second_ship", es: { name: "Más velas", desc: "Tu casa ya tiene dos barcos." }, en: { name: "More sails", desc: "Your house now owns two ships." }, test: (game) => (game.ships ?? []).length >= 2 },
   { id: "first_convoy", es: { name: "En buena compañía", desc: "Formaste tu primer convoy." }, en: { name: "In good company", desc: "You formed your first convoy." }, test: (game) => Object.keys(game.convoys ?? {}).length >= 1 },
