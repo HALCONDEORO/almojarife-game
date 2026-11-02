@@ -1190,10 +1190,10 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   // Pause/resume asks for the DESIRED state: a paused rule asks to resume (true), an active one asks to pause (false).
   P.querySelectorAll("[data-admtog]").forEach((el) => { el.onclick = () => act(() => setStewardRuleEnabled(g, s.at, el.dataset.admtog, Boolean(stewardOf(g, s.at)?.off?.[el.dataset.admtog]))); });
   P.querySelector("#adm-set")?.addEventListener("click", () => { const num = (id) => { const el = $(id); return el && el.value !== "" ? Number(el.value) : 0; };
-    const r = setStewardRule(g, s.at, $("adm-good").value, { buyBelow: num("adm-buy"), buyTo: num("adm-to"), sellAbove: num("adm-sell"), sellKeep: num("adm-keep"), buyBelowPct: num("adm-buypct"), sellAbovePct: num("adm-sellpct") }, warehouseCap(g, s.at));
-    if (!r.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });
-  P.querySelector("#adm-tplsave")?.addEventListener("click", () => { const r = saveGovTemplate(g, s.at, $("adm-tname")?.value ?? ""); if (!r.ok) { toast(r.reason); return; } act(() => r); });
-  P.querySelector("#adm-tplapply")?.addEventListener("click", () => { const r = applyGovTemplate(g, s.at, $("adm-tpl").value, warehouseCap(g, s.at)); if (!r.ok) { toast(r.reason); return; } act(() => r); });
+    const saved = setStewardRule(g, s.at, $("adm-good").value, { buyBelow: num("adm-buy"), buyTo: num("adm-to"), sellAbove: num("adm-sell"), sellKeep: num("adm-keep"), buyBelowPct: num("adm-buypct"), sellAbovePct: num("adm-sellpct") }, warehouseCap(g, s.at));
+    if (!saved.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });
+  P.querySelector("#adm-tplsave")?.addEventListener("click", () => { const savedTemplate = saveGovTemplate(g, s.at, $("adm-tname")?.value ?? ""); if (!savedTemplate.ok) { toast(savedTemplate.reason); return; } act(() => savedTemplate); });
+  P.querySelector("#adm-tplapply")?.addEventListener("click", () => { const appliedTemplate = applyGovTemplate(g, s.at, $("adm-tpl").value, warehouseCap(g, s.at)); if (!appliedTemplate.ok) { toast(appliedTemplate.reason); return; } act(() => appliedTemplate); });
   P.querySelector("#adm-tpldel")?.addEventListener("click", () => act(() => deleteGovTemplate(g, $("adm-tpl").value)));
   P.querySelector("#adm-resset")?.addEventListener("click", () => act(() => setStewardReserve(g, s.at, Number($("adm-res").value) || 0)));
   P.querySelector("#adm-dismiss")?.addEventListener("click", () => act(() => dismissSteward(g, s.at)));
