@@ -27,7 +27,7 @@ test("hiring needs a warehouse, a valid level, the fee and no sitting governor",
   assert.equal(hired.ok, true);
   assert.equal(hired.cost, 100);
   assert.equal(game.cash, 50000 - 100);
-  assert.deepEqual(governorOf(game, "cadiz"), { level: 1, state: "active", hiredDay: 0, fee: 100, wage: 2 });
+  assert.deepEqual(governorOf(game, "cadiz"), { level: 1, state: "active", hiredDay: 0, budget: 0, goal: null, fee: 100, wage: 2 });
   assert.equal(hireGovernor(game, "cadiz", 2).reason, "governor hired"); // one at a time
 });
 
@@ -108,6 +108,6 @@ test("a hired governor survives the save round trip", () => {
   const game = houseWithWarehouse();
   hireGovernor(game, "cadiz", 2);
   const { g: loaded } = deserialize(serialize(game, "Prueba"), world);
-  assert.deepEqual(governorOf(loaded, "cadiz"), { level: 2, state: "active", hiredDay: 0, fee: 200, wage: 4 });
+  assert.deepEqual(governorOf(loaded, "cadiz"), { level: 2, state: "active", hiredDay: 0, budget: 0, goal: null, fee: 200, wage: 4 });
   assert.deepEqual(governorDay(loaded, "cadiz"), { paid: 4 });
 });
