@@ -16,7 +16,7 @@ function click(raw) {
 test('slots offer export only for valid stored games, including at the title screen',()=>{
  const slots=[{n:1,state:'ok',house:'Casa',day:4,cash:200},{n:2,state:'empty'},{n:3,state:'corrupt'}];
  const html=slotsHtml(slots,{lang:'es',inGame:false});
- assert.match(html,/data-sl-export="1" >Exportar copia/);assert.match(html,/data-sl-export="2" disabled/);assert.match(html,/data-sl-export="3" disabled/);
+ assert.match(html,/data-sl-export="1" aria-label="Exportar copia: Ranura 1" >Exportar copia/);assert.match(html,/data-sl-export="2" aria-label="Exportar copia: Ranura 2" disabled/);assert.match(html,/data-sl-export="3" aria-label="Exportar copia: Ranura 3" disabled/);
  assert.match(slotsHtml(slots,{lang:'en',inGame:false}),/Export copy/);
 });
 test('real export binding downloads that slot verbatim with its own day, not the current game',()=>{

@@ -18,12 +18,12 @@ export function slotsHtml(slots, { lang, inGame, fmt = String, defCo = "" }) {
     const meta = s.state === "empty" ? `<span class="sl-meta sl-none">${x.empty}</span>` : s.state === "corrupt" ? `<span class="sl-meta sl-bad">${x.corrupt}</span>`
       : `<span class="sl-house">${esc(s.house || defCo)}</span><span class="sl-meta">${x.day} ${esc(s.day)} · ${esc(fmt(s.cash))} ${x.coins}</span>`;
     return `<div class="sl-row sl-${s.state}" data-slot="${s.n}"><div class="sl-info"><b class="sl-num">${x.slot} ${s.n}</b>${meta}</div><div class="sl-btns">` +
-      `<button data-sl-save="${s.n}" ${inGame ? "" : "disabled"}>${x.save}</button>` +
-      `<button data-sl-load="${s.n}" ${s.state === "ok" ? "" : "disabled"}>${x.load}</button>` +
-      `<button data-sl-export="${s.n}" ${s.state === "ok" ? "" : "disabled"}>${x.export}</button>` +
-      `<button data-sl-del="${s.n}" ${s.state === "empty" ? "disabled" : ""}>${x.del}</button></div></div>`;
+      `<button data-sl-save="${s.n}" aria-label="${x.save}: ${x.slot} ${s.n}" ${inGame ? "" : "disabled"}>${x.save}</button>` +
+      `<button data-sl-load="${s.n}" aria-label="${x.load}: ${x.slot} ${s.n}" ${s.state === "ok" ? "" : "disabled"}>${x.load}</button>` +
+      `<button data-sl-export="${s.n}" aria-label="${x.export}: ${x.slot} ${s.n}" ${s.state === "ok" ? "" : "disabled"}>${x.export}</button>` +
+      `<button data-sl-del="${s.n}" aria-label="${x.del}: ${x.slot} ${s.n}" ${s.state === "empty" ? "disabled" : ""}>${x.del}</button></div></div>`;
   }).join("");
-  return `<div class="box pausemenu sl-win"><div class="pausemenu-handle"><h2>${x.title}</h2></div><div class="pausemenu-body sl-body"><div class="sl-grid">${cards}</div><p class="sl-hint">${x.hint}${inGame ? "" : " " + x.noGame}</p><p><span id="sl-msg" role="status"></span></p><p><button id="sl-back">${x.back}</button></p></div></div>`;
+  return `<div class="box pausemenu sl-win" role="dialog" aria-modal="true" aria-labelledby="slots-title"><div class="pausemenu-handle"><h2 id="slots-title">${x.title}</h2></div><div class="pausemenu-body sl-body"><div class="sl-grid">${cards}</div><p class="sl-hint">${x.hint}${inGame ? "" : ` ${x.noGame}`}</p><p><span id="sl-msg" role="status"></span></p><p><button id="sl-back">${x.back}</button></p></div></div>`;
 }
 
 export function slotError(error, lang = 'es') {
