@@ -160,6 +160,15 @@ function planBuy(g, s, good, room, budget, maxPrice) {
   return n;
 }
 
+/** Record one stop's journal day (newest first, bounded): what each rule planned and what actually happened. */
+function pushRouteDiary(g, s, r, entries) {
+  if (!entries.length) return;
+  const log = (r.log ??= []);
+  log.unshift({ day: g.day, city: s.at, stop: (r.idx % r.stops.length) + 1, entries });
+  if (log.length > ROUTE_DIARY_MAX) log.length = ROUTE_DIARY_MAX;
+}
+const ROUTE_DIARY_MAX = 12; // the panel shows the last days; older days drop off
+
 /** One docked day for a ship on an advanced route. */
 function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds the yard hold, extraction is out of scope
   const n = r.stops.length, stop = r.stops[r.idx % n];
@@ -168,28 +177,30 @@ function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing comp
   let traded = false, blocker = null;
   // Deterministic precedence: the first blocked sell, then the first blocked buy.
   const blocked = (action, good, cause) => { blocker ??= { action, good, cause: cause || "trade_failed" }; };
+  const diary = []; // the stop's journal: every rule's planned order and its actual result, with the concrete reason a rule did not fire
   for (const rule of stop.sell) { // sells first: they free the hold and fund the buys
     const q = s.cargo[rule.good] ?? 0;
-    if (q <= 0) continue;
-    if (rule.minPrice != null && quoteAt(rule.good) < rule.minPrice) { blocked("sell", rule.good, "min_price"); continue; } // below the limit: hold for a better day
+    if (q <= 0) { diary.push({ action: "sell", good: rule.good, skip: "no_cargo" }); continue; }
+    if (rule.minPrice != null && quoteAt(rule.good) < rule.minPrice) { blocked("sell", rule.good, "min_price"); diary.push({ action: "sell", good: rule.good, skip: "min_price" }); continue; } // below the limit: hold for a better day
     const res = ops.doSell(g, s, rule.good, q);
-    if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); }
-    else blocked("sell", rule.good, res.reason);
+    if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); diary.push({ action: "sell", good: rule.good, qty: res.qty, amt: res.revenue }); }
+    else { blocked("sell", rule.good, res.reason); diary.push({ action: "sell", good: rule.good, skip: res.reason }); }
   }
-  if (routeRepair(g, s, r, ops, r.minCash)) return; // repair before loading: the yard holds the ship
+  if (routeRepair(g, s, r, ops, r.minCash)) { pushRouteDiary(g, s, r, diary); return; } // repair before loading: the yard holds the ship
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
-    if (room <= 0) { blocked("buy", rule.good, "no_space"); break; }
+    if (room <= 0) { blocked("buy", rule.good, "no_space"); diary.push({ action: "buy", good: rule.good, skip: "no_space" }); break; }
     const qty = planBuy(g, s, rule.good, room, Math.max(0, g.cash - r.minCash), rule.maxPrice);
     if (qty <= 0) {
       const e = g.market[s.at]?.[rule.good];
       const cause = !e ? "no market" : e.stock <= 0 ? "no_stock" : rule.maxPrice != null && quoteAt(rule.good) > rule.maxPrice ? "max_price" : r.minCash > 0 ? "cash_brake" : "no cash";
-      blocked("buy", rule.good, cause); continue;
+      blocked("buy", rule.good, cause); diary.push({ action: "buy", good: rule.good, skip: cause }); continue;
     }
     const res = ops.doBuy(g, s, rule.good, qty);
-    if (res.ok) traded = true;
-    else blocked("buy", rule.good, res.reason);
+    if (res.ok) { traded = true; diary.push({ action: "buy", good: rule.good, qty: res.qty, amt: res.cost }); }
+    else { blocked("buy", rule.good, res.reason); diary.push({ action: "buy", good: rule.good, skip: res.reason }); }
   }
+  pushRouteDiary(g, s, r, diary);
   // Wait in port only when nothing traded and nothing aboard is wanted at a later stop.
   const holdsForLater = Object.keys(s.cargo).some((good) =>
     r.stops.some((st, i) => i !== r.idx % n && st.sell.some((x) => x.good === good)));
