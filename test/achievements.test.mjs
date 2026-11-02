@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, doBuy, doSell, doSail, waitUntilArrival, advanceTick } from "../src/game/game.mjs";
-import { ACHIEVEMENTS, achievementsTick, ensureAchievements } from "../src/game/achievements.mjs";
+import { achievementsTick, ensureAchievements } from "../src/game/achievements.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 const world = loadWorld();
 
@@ -30,10 +30,10 @@ test("the first sale and a profitable voyage unlock once and post in ES and EN",
 test("worth milestones need the caller's net worth and hold at their threshold", () => {
   const game = { day: 2 };
   achievementsTick(game, 9999);
-  assert.equal(game.achievements.unlocked.worth_10k, undefined);
+  assert.ok(!Object.hasOwn(game.achievements.unlocked, "worth_10k"));
   achievementsTick(game, 10000);
   assert.equal(game.achievements.unlocked.worth_10k, 2);
-  assert.equal(game.achievements.unlocked.worth_50k, undefined);
+  assert.ok(!Object.hasOwn(game.achievements.unlocked, "worth_50k"));
   achievementsTick(game, 50000);
   assert.equal(game.achievements.unlocked.worth_50k, 2);
 });
@@ -52,7 +52,7 @@ test("fleet, convoy, warehouse, office, building, rank and respect milestones re
   const unlocked = game.achievements.unlocked;
   for (const id of ["second_ship", "first_convoy", "first_warehouse", "first_office", "first_building", "first_rank", "honoured_port"])
     assert.equal(unlocked[id], 7, id);
-  assert.equal(unlocked.worth_10k, undefined); // worth 0 passed: worth milestones stay locked
+  assert.ok(!Object.hasOwn(unlocked, "worth_10k")); // worth 0 passed: worth milestones stay locked
 });
 
 test("unlocked achievements survive the save round trip and never re-post", () => {
@@ -85,7 +85,7 @@ test("a real first voyage unlocks the milestone in the day tick", () => {
   assert.equal(doSail(game, ship, to).ok, true);
   waitUntilArrival(game, ship);
   assert.equal(doSell(game, ship, good, 10).ok, true);
-  assert.equal(game.achievements?.unlocked?.first_sale, undefined); // not before the day turns
+  assert.ok(!Object.hasOwn(game.achievements?.unlocked ?? {}, "first_sale")); // not before the day turns
   const day = game.day; for (let tick = 0; tick < 500 && game.day === day && !game.over; tick++) advanceTick(game);
   assert.ok(game.day > day);
   assert.equal(typeof game.achievements.unlocked.first_sale, "number");
