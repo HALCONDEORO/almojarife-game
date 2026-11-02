@@ -1191,7 +1191,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   P.querySelectorAll("[data-admtog]").forEach((el) => { el.onclick = () => act(() => setStewardRuleEnabled(g, s.at, el.dataset.admtog, Boolean(stewardOf(g, s.at)?.off?.[el.dataset.admtog]))); });
   P.querySelector("#adm-set")?.addEventListener("click", () => { const num = (id) => { const el = $(id); return el && el.value !== "" ? Number(el.value) : 0; };
     const saved = setStewardRule(g, s.at, $("adm-good").value, { buyBelow: num("adm-buy"), buyTo: num("adm-to"), sellAbove: num("adm-sell"), sellKeep: num("adm-keep"), buyBelowPct: num("adm-buypct"), sellAbovePct: num("adm-sellpct") }, warehouseCap(g, s.at));
-    if (!saved.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => {}); });
+    if (!saved.ok) { $("adm-msg").textContent = t.admErr; return; } act(() => saved); });
   P.querySelector("#adm-tplsave")?.addEventListener("click", () => { const savedTemplate = saveGovTemplate(g, s.at, $("adm-tname")?.value ?? ""); if (!savedTemplate.ok) { toast(savedTemplate.reason); return; } act(() => savedTemplate); });
   P.querySelector("#adm-tplapply")?.addEventListener("click", () => { const appliedTemplate = applyGovTemplate(g, s.at, $("adm-tpl").value, warehouseCap(g, s.at)); if (!appliedTemplate.ok) { toast(appliedTemplate.reason); return; } act(() => appliedTemplate); });
   P.querySelector("#adm-tpldel")?.addEventListener("click", () => act(() => deleteGovTemplate(g, $("adm-tpl").value)));
