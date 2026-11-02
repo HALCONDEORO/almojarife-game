@@ -145,6 +145,18 @@ export function effectiveBounds(rule, histPrices, governorLevel) {
   return { buyBelow: buyBelow > 0 && sellAbove > 0 && buyBelow >= sellAbove ? 0 : buyBelow, sellAbove };
 }
 
+/** Level 3: the stockpile goal is watched on its own, with or without standing orders — stocking the warehouse by hand completes it too. One notice, once. */
+export function goalTick(g, city) {
+  const wh = g.warehouses?.[city];
+  if (!wh || g.over) return false;
+  const goal = (governorOf(g, city)?.level ?? 0) >= 3 ? wh.governor?.goal : null;
+  if (!goal || goal.done || (wh.goods[goal.good] ?? 0) < goal.qty) return false;
+  goal.done = true;
+  const goalCity = g.world.nodes[city]?.name ?? city, goalGood = GOOD_NAMES.es[goal.good] ?? goal.good, goalGoodEn = GOOD_NAMES.en[goal.good] ?? goal.good;
+  post(g, "info", { city, topic: "governor", txt: { es: `El gobernador de ${goalCity} avisa: la meta de acopio está cubierta (${goal.qty} de ${goalGood} en el almacén).`, en: `The governor of ${goalCity} reports: the stockpile goal is met (${goal.qty} of ${goalGoodEn} in the warehouse).` } });
+  return true;
+}
+
 export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   const wh = g.warehouses?.[city], adm = wh?.admin;
   if (!adm || g.over) return null;
@@ -215,12 +227,6 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
         }
       }
     }
-  }
-  const goal = governorLevel >= 3 ? governorRaw?.goal : null; // level 3: one notice the day the stockpile goal is reached
-  if (goal && !goal.done && (wh.goods[goal.good] ?? 0) >= goal.qty) {
-    goal.done = true;
-    const goalCity = g.world.nodes[city]?.name ?? city, goalGood = GOOD_NAMES.es[goal.good] ?? goal.good, goalGoodEn = GOOD_NAMES.en[goal.good] ?? goal.good;
-    post(g, "info", { city, topic: "governor", txt: { es: `El gobernador de ${goalCity} avisa: la meta de acopio está cubierta (${goal.qty} de ${goalGood} en el almacén).`, en: `The governor of ${goalCity} reports: the stockpile goal is met (${goal.qty} of ${goalGoodEn} in the warehouse).` } });
   }
   const cityName = g.world.nodes[city]?.name ?? city;
   for (const row of did) {

@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
-import { newGame, buyWarehouse } from "../src/game/game.mjs";
-import { setStewardRule, stewardTick } from "../src/game/steward.mjs";
+import { newGame, buyWarehouse, advanceDay } from "../src/game/game.mjs";
+import { setStewardRule, stewardTick, goalTick } from "../src/game/steward.mjs";
 import { price } from "../src/sim/market.mjs";
 import { governorOf, hireGovernor, upgradeGovernor, dismissGovernor, setGovernorBudget, setGovernorGoal, clearGovernorGoal, GOVERNOR_LEVELS } from "../src/game/governor.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -90,16 +90,44 @@ test("a stockpile goal posts one notice the day it is met and stays quiet after"
   assert.equal(setStewardRule(game, "cadiz", "grain", { buyBelow: today + 1, buyTo: 40, sellAbove: 0, sellKeep: 0 }).ok, true);
   const before = game.inbox.filter((m) => m.topic === "governor").length;
   stewardTick(game, "cadiz", 200); // buys to 40: the goal is met
+  goalTick(game, "cadiz");
   assert.equal(game.inbox.filter((m) => m.topic === "governor").length - before, 1);
   assert.match(game.inbox.find((m) => m.topic === "governor").txt.es, /meta de acopio/);
   assert.equal(governorOf(game, "cadiz").goal.done, true);
   stewardTick(game, "cadiz", 200); // already announced: no repeat
+  goalTick(game, "cadiz");
   assert.equal(game.inbox.filter((m) => m.topic === "governor").length - before, 1);
   assert.equal(setGovernorGoal(game, "cadiz", "grain", 50).ok, true); // a new goal resets the flag
   assert.equal(governorOf(game, "cadiz").goal.done, false);
   assert.equal(clearGovernorGoal(game, "cadiz").ok, true);
   assert.equal(governorOf(game, "cadiz").goal, null);
   assert.equal(clearGovernorGoal(game, "cadiz").reason, "no goal");
+});
+
+test("the stockpile goal is watched without steward orders: stocking by hand completes it", () => {
+  const game = withGovernor3(house()); // no setStewardRule: the warehouse has no standing orders at all
+  assert.equal(game.warehouses.cadiz.admin, undefined);
+  assert.equal(setGovernorGoal(game, "cadiz", "grain", 30).ok, true);
+  game.warehouses.cadiz.goods.grain = 50; // unloaded by hand, not by any order
+  const before = game.inbox.filter((mail) => mail.topic === "governor").length;
+  assert.equal(goalTick(game, "cadiz"), true); // the monitor runs even where stewardTick would stop
+  assert.equal(game.inbox.filter((mail) => mail.topic === "governor").length - before, 1);
+  assert.equal(governorOf(game, "cadiz").goal.done, true);
+  assert.equal(goalTick(game, "cadiz"), false); // one notice, once
+  assert.equal(game.inbox.filter((mail) => mail.topic === "governor").length - before, 1);
+});
+
+test("the daily loop reaches the goal monitor without steward orders", () => {
+  const game = withGovernor3(house());
+  assert.equal(game.warehouses.cadiz.admin, undefined);
+  assert.equal(setGovernorGoal(game, "cadiz", "grain", 30).ok, true);
+  game.warehouses.cadiz.goods.grain = 50;
+  const before = game.inbox.filter((mail) => mail.topic === "governor").length;
+  advanceDay(game);
+  assert.equal(game.inbox.filter((mail) => mail.topic === "governor").length - before, 1);
+  assert.equal(governorOf(game, "cadiz").goal.done, true);
+  advanceDay(game); // stays quiet on the following days
+  assert.equal(game.inbox.filter((mail) => mail.topic === "governor").length - before, 1);
 });
 
 test("budget and goal survive the save round trip and junk never leaks through the read model", () => {
