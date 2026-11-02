@@ -9,6 +9,7 @@ import { chronicleWeek, chronicleTick } from "./chronicle.mjs";
 import { buyCannon as buyCannonShip, buyWeapon as buyWeaponShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
 export const buyCannon = buyCannonShip, buyWeapon = buyWeaponShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
 import { openVoyage, recordSale } from "./voyages.mjs";
+import { achievementsTick } from "./achievements.mjs";
 import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
@@ -278,6 +279,7 @@ function dayTick(g) {
   const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
   if (hc && g.reports?.[0]?.day === g.day) { g.reports[0].household = hc; g.reports[0].cashAfter = g.cash; } // the weekly line shows the tribute, so its cash-after figure must include it
   updateRank(g, netWorth(g), post);
+  achievementsTick(g, netWorth(g)); // house milestones unlock once, right after the day's rank check
   if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
   expireContracts(g); // a council contract past its due day lapses
   if (g.day % 7 === 0) rollContracts(g); // town councils post their weekly offers
