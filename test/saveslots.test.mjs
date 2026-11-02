@@ -56,10 +56,10 @@ test("the window shows each slot, disables save outside a game and load on empty
   assert.equal((inGame.match(/class="sl-row /g) || []).length, 9);
   assert.match(inGame, /<div class="sl-grid">/); assert.match(inGame, /Hasta nueve ranuras/);
   assert.match(inGame, /Casa A<\/span><span class="sl-meta">Día 3 · 99 monedas/);
-  assert.match(inGame, /data-sl-load="1" >/); assert.match(inGame, /data-sl-load="2" disabled/);
-  assert.match(inGame, /data-sl-save="1" >/);
+  assert.match(inGame, /data-sl-load="1" aria-label="Cargar: Ranura 1" >/); assert.match(inGame, /data-sl-load="2" aria-label="Cargar: Ranura 2" disabled/);
+  assert.match(inGame, /data-sl-save="1" aria-label="Guardar aquí: Ranura 1" >/);
   const title = slotsHtml(sl, { lang: "en", inGame: false });
-  assert.match(title, /data-sl-save="1" disabled/); assert.match(title, new RegExp(SLOT_TEXT.en.noGame));
+  assert.match(title, /data-sl-save="1" aria-label="Save here: Slot 1" disabled/); assert.match(title, new RegExp(SLOT_TEXT.en.noGame));
 });
 
 test("main wires slots to the pause menu and the title with the same safe rotation as Import", () => {
