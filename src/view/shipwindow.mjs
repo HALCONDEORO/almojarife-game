@@ -95,7 +95,7 @@ function swCard(g, s, lang, t, hp) {
 
 /** helpers: { fmt, fmtM, cityName, types, goods, eta } — eta(ship) renders the arrival estimate; fmtM is the money format (cents), fmt the count format. */
 export function shipWindowHtml(g, s, lang, tab, hp) {
-  const t = SW[lang] ?? SW.es, fmt = hp.fmt, fmtM = hp.fmtM, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k;
+  const t = SW[lang] ?? SW.es, cn = hp.cityName, gn = (k) => hp.goods[k] ?? k; // fmt/fmtM live in hp; tabs that need them read them there
   const tabs = [["cargo", t.tabCargo], ["crew", t.tabCrew], ["data", t.tabData]]
     .map(([k, l]) => `<button data-swtab="${k}" ${tab === k ? "disabled" : ""}>${l}</button>`).join("");
   return `${swCard(g, s, lang, t, hp)}${shipNameForm(s, lang)}<div class="tabs">${tabs}</div>${tab === "crew" ? crewTab(g, s, lang, t, hp) : tab === "data" ? dataTab(g, s, t, hp) : cargoTab(g, s, t, hp, gn, cn)}`;
