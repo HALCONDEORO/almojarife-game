@@ -1560,6 +1560,9 @@ function showSlots() {
     const existing = readSlot(localStorage, n);
     if (existing === undefined) { showSlots(); say(x.readError); return; }
     if (existing !== null && !await confirmDialog(el, n2(x.confirmOver, n), lang)) { showSlots(); return; }
+    const currentSlot = readSlot(localStorage, n);
+    if (currentSlot === undefined) { showSlots(); say(x.readError); return; }
+    if (currentSlot !== existing) { showSlots(); say(x.err); return; }
     try { writeSlot(localStorage, n, JSON.stringify(packGame(g, company)), isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     showSlots(); say(n2(x.saved, n));
   }; });
@@ -1572,8 +1575,12 @@ function showSlots() {
  }; });
   el.querySelectorAll("[data-sl-del]").forEach((b) => { b.onclick = async () => {
     const n = Number(b.dataset.slDel);
-    if (readSlot(localStorage, n) === undefined) { showSlots(); say(x.readError); return; }
+    const existing = readSlot(localStorage, n);
+    if (existing === undefined) { showSlots(); say(x.readError); return; }
     if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
+    const currentSlot = readSlot(localStorage, n);
+    if (currentSlot === undefined) { showSlots(); say(x.readError); return; }
+    if (currentSlot !== existing) { showSlots(); say(x.err); return; }
     const deleted = clearSlot(localStorage, n);
     if (deleted !== true) { showSlots(); say(deleted === null ? x.deleteUnverified : x.err); return; }
     showSlots(); say(n2(x.deleted, n));
