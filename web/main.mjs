@@ -58,6 +58,7 @@ import {CT,assignedCaptainHtml,tavernCaptainsHtml} from "../src/view/captainview
 import {tavernGovernorHtml} from "../src/view/governorview.mjs";
 import {hireGovernor,dismissGovernor,upgradeGovernor,governorOf} from "../src/game/governor.mjs";
 import {saveGovTemplate,applyGovTemplate,deleteGovTemplate} from "../src/game/govtemplates.mjs";
+import {esc} from "../src/view/esc.mjs";
 import { shipWindowHtml, SW } from "../src/view/shipwindow.mjs";
 import { premises } from "../src/view/premises.mjs";
 import { clampWindow } from "../src/view/floating.mjs";
@@ -127,7 +128,7 @@ import { setLiveText } from "./livetext.mjs"; // live regions: write only on cha
 import { tutorialStoryNotice, acknowledgeTutorialStory } from "../src/game/tutorialstory.mjs";
 import { tutorialLine, tutorialActive, tutorialNote, skipTutorial, restartTutorial, tutorialStep, reviewTutorialHull } from "../src/game/tutorial.mjs"; // progressive tutorial hint (opt-in per game); it gates the mission arc
 
-const esc = (txt) => String(txt ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
 let mapMode = "geographic";
 const [historicalRealms,historicalLeagues] = HISTORICAL_MAPS_ENABLED ? await Promise.all([optionalJson(fetch,"../data/realms.json"),optionalJson(fetch,"../data/leagues.json")]) : [null,null];
 const T = {
@@ -1050,7 +1051,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         h += admRules.length ? `<table>${admRules.map(([gd, r], idx) => `<tr${adm?.off?.[gd] ? ' style="opacity:.55"' : ""}><td><button data-admtog="${gd}" title="${adm?.off?.[gd] ? t.admResume : t.admPause}">${adm?.off?.[gd] ? "▶" : "⏸"}</button>${goodIcon(gd)}${t.goods[gd]}</td><td><small>${t.admRule.replace("{b}", r.buyBelow || "-").replace("{n}", r.buyTo || "-").replace("{v}", r.sellAbove || "-").replace("{k}", r.sellKeep || 0)}</small>${(r.buyBelowPct ?? 0) > 0 || (r.sellAbovePct ?? 0) > 0 ? ` <small>${t.admPct.replace("{b}", r.buyBelowPct || "-").replace("{v}", r.sellAbovePct || "-")}</small>` : ""}</td><td>${admRules.length > 1 ? `<button data-admup="${gd}" title="${t.admUp}"${idx ? "" : " disabled"}>▲</button><button data-admdown="${gd}" title="${t.admDown}"${idx + 1 < admRules.length ? "" : " disabled"}>▼</button>` : ""}<button data-admclr="${gd}">${t.admClear}</button></td></tr>`).join("")}</table>${admRules.length > 1 ? `<p><small>${t.admOrder}</small></p>` : ""}` : `<p><i>${t.admNoRules}</i></p>`;
         h += `<div class="rumor"><select id="adm-good">${Object.keys(g.world.goods).map((k) => `<option value="${k}">${t.goods[k]}</option>`).join("")}</select> <input id="adm-buy" type="number" min="0" placeholder="${t.admBuy}" size="6"> <input id="adm-to" type="number" min="0" placeholder="${t.admTo}" size="4"> <input id="adm-sell" type="number" min="0" placeholder="${t.admSell}" size="6"> <input id="adm-keep" type="number" min="0" placeholder="${t.admKeep}" size="4"> <input id="adm-buypct" type="number" min="0" max="1000" placeholder="${t.admBuyPct}" size="4"> <input id="adm-sellpct" type="number" min="0" max="1000" placeholder="${t.admSellPct}" size="4"> <button id="adm-set">${t.admSet}</button> <small id="adm-msg" style="color:#a11"></small> <small>${t.admPctNote}</small></div>`;
         { const govHere = governorOf(g, s.at), tpls = Object.keys(g.govTemplates ?? {});
-          if (govHere && govHere.state === "active" && govHere.level >= 2) h += `<div class="rumor">${t.tplTitle}: <input id="adm-tname" placeholder="${t.tplName}" size="12" maxlength="40"> <button id="adm-tplsave">${t.tplSave}</button>${tpls.length ? ` <select id="adm-tpl">${tpls.map((tplName) => `<option value="${tplName}">${tplName}</option>`).join("")}</select> <button id="adm-tplapply">${t.tplApply}</button> <button id="adm-tpldel">${t.tplDel}</button>` : ""}</div>`;
+          if (govHere && govHere.state === "active" && govHere.level >= 2) h += `<div class="rumor">${t.tplTitle}: <input id="adm-tname" placeholder="${t.tplName}" size="12" maxlength="40"> <button id="adm-tplsave">${t.tplSave}</button>${tpls.length ? ` <select id="adm-tpl">${tpls.map((tplName) => `<option value="${esc(tplName)}">${esc(tplName)}</option>`).join("")}</select> <button id="adm-tplapply">${t.tplApply}</button> <button id="adm-tpldel">${t.tplDel}</button>` : ""}</div>`;
           else h += `<p><small>${t.tplNeed}</small></p>`; }
         h += `<div class="rumor">${t.admReserve}: <input id="adm-res" type="number" min="0" value="${adm?.reserve ?? 0}" size="6"> <button id="adm-resset">${t.admReserveSet}</button>${admRules.length || (adm?.reserve ?? 0) > 0 ? ` <button id="adm-dismiss">${t.admDismiss}</button>` : ""}</div>`;
         { const wat = watchOf(g, s.at), wmax = watchMaxFor(whCapNow), wkept = watchKept(g, s.at, whCapNow), wgrade = t.watchGrades[watchSecurity(g, s.at, whCapNow)];
