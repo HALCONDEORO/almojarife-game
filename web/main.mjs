@@ -1555,7 +1555,8 @@ function showSlots() {
  }; });
   el.querySelectorAll("[data-sl-del]").forEach((b) => b.onclick = async () => {
     const n = +b.dataset.slDel; if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
-    if (!clearSlot(localStorage, n)) { showSlots(); say(x.err); return; }
+    const deleted = clearSlot(localStorage, n);
+    if (deleted !== true) { showSlots(); say(deleted === null ? x.deleteUnverified : x.err); return; }
     showSlots(); say(n2(x.deleted, n));
   });
   el.querySelectorAll("[data-sl-load]").forEach((b) => b.onclick = async () => {
