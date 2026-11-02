@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { loadWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, setRouteAdv, doBuy } from "../src/game/game.mjs";
 import { price } from "../src/sim/market.mjs";
+import { shipCapacity } from "../src/sim/trade.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
 import { shipWindowHtml } from "../src/view/shipwindow.mjs";
 const world = loadWorld();
@@ -31,6 +32,37 @@ test("a stop's journal records the done trade and the concrete reason a rule did
   assert.equal(entries["buy:wine"].amt > 0, true);
   runDays(game, 40); // the journal stays bounded over long runs
   assert.ok(ship.route.log.length <= 12, String(ship.route.log.length));
+});
+
+test("a full hold logs every skipped buy rule, not just the first", () => {
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  ship.cargo = { grain: shipCapacity(ship) }; // hold completely full
+  setRouteAdv(game, ship, [
+    { city: portA, buy: [{ good: "grain" }, { good: "wine" }, { good: "salt" }] },
+    { city: portB },
+  ]);
+  runDays(game, 1);
+  const dayLog = ship.route.log?.[0];
+  assert.ok(dayLog, "a journal day was recorded");
+  const skips = dayLog.entries.filter((entry) => entry.action === "buy").map((entry) => `${entry.good}:${entry.skip}`);
+  assert.deepEqual(skips, ["grain:no_space", "wine:no_space", "salt:no_space"]); // all three rules named, in order
+  assert.equal(dayLog.entries.every((entry) => entry.qty == null), true); // and not a single unit moved
+  assert.equal(ship.cargo.grain, shipCapacity(ship));
+});
+
+test("a yard hold logs the planned buys that did not fire", () => {
+  const game = freshGame(), ship = game.ships[0], [portA, portB] = twoPorts(game);
+  ship.hull = 40; // under the route repair threshold: the yard takes the ship before loading
+  setRouteAdv(game, ship, [
+    { city: portA, buy: [{ good: "grain" }, { good: "wine" }] },
+    { city: portB },
+  ]);
+  runDays(game, 1);
+  const dayLog = ship.route.log?.[0];
+  assert.ok(dayLog, "a journal day was recorded");
+  const skips = dayLog.entries.map((entry) => `${entry.action}:${entry.good}:${entry.skip}`);
+  assert.deepEqual(skips, ["buy:grain:repair", "buy:wine:repair"]);
+  assert.equal(Object.keys(ship.cargo).length, 0); // nothing was loaded while the yard holds the ship
 });
 
 test("the journal survives the save round trip", () => {

@@ -187,10 +187,14 @@ function processRouteAdv(g, s, r, ops) { // skipcq: JS-R1005 - pre-existing comp
     if (res.ok) { traded = true; r.profit = (r.profit ?? 0) + (res.profit ?? 0); post(g, "routeLeg", { ship: s.id, city: s.at, good: rule.good, qty: res.qty, amt: res.revenue, profit: res.profit }); diary.push({ action: "sell", good: rule.good, qty: res.qty, amt: res.revenue }); }
     else { blocked("sell", rule.good, res.reason); diary.push({ action: "sell", good: rule.good, skip: res.reason }); }
   }
-  if (routeRepair(g, s, r, ops, r.minCash)) { pushRouteDiary(g, s, r, diary); return; } // repair before loading: the yard holds the ship
+  if (routeRepair(g, s, r, ops, r.minCash)) { // repair before loading: the yard holds the ship
+    for (const rule of stop.buy) diary.push({ action: "buy", good: rule.good, skip: "repair" }); // the planned buys do not fire: log them with their cause
+    pushRouteDiary(g, s, r, diary);
+    return;
+  }
   for (const rule of stop.buy) {
     const room = Math.max(0, shipCapacity(s) - cargoUsed(s));
-    if (room <= 0) { blocked("buy", rule.good, "no_space"); diary.push({ action: "buy", good: rule.good, skip: "no_space" }); break; }
+    if (room <= 0) { blocked("buy", rule.good, "no_space"); diary.push({ action: "buy", good: rule.good, skip: "no_space" }); continue; } // no room for the rest either: log them all, buy none
     const qty = planBuy(g, s, rule.good, room, Math.max(0, g.cash - r.minCash), rule.maxPrice);
     if (qty <= 0) {
       const e = g.market[s.at]?.[rule.good];
