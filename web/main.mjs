@@ -1542,7 +1542,7 @@ function showSlots() {
   });
   $("sl-back").focus();
   el.querySelectorAll("[data-sl-save]").forEach((b) => { b.onclick = async () => {
-    const n = +b.dataset.slSave;
+    const n = Number(b.dataset.slSave);
     const existing = readSlot(localStorage, n);
     if (existing === undefined) { showSlots(); say(x.readError); return; }
     if (existing !== null && !await confirmDialog(el, n2(x.confirmOver, n), lang)) { showSlots(); return; }
@@ -1557,7 +1557,7 @@ function showSlots() {
     catch (error) { say(slotError(error, lang)); }
  }; });
   el.querySelectorAll("[data-sl-del]").forEach((b) => { b.onclick = async () => {
-    const n = +b.dataset.slDel;
+    const n = Number(b.dataset.slDel);
     if (readSlot(localStorage, n) === undefined) { showSlots(); say(x.readError); return; }
     if (!await confirmDialog(el, n2(x.confirmDel, n), lang)) { showSlots(); return; }
     const deleted = clearSlot(localStorage, n);
@@ -1565,7 +1565,7 @@ function showSlots() {
     showSlots(); say(n2(x.deleted, n));
   }; });
   el.querySelectorAll("[data-sl-load]").forEach((b) => { b.onclick = async () => {
-    const n = +b.dataset.slLoad, raw = readSlot(localStorage, n);
+    const n = Number(b.dataset.slLoad), raw = readSlot(localStorage, n);
     if (raw === undefined) { showSlots(); say(x.readError); return; }
     if (raw === null) return;
     let r; try { r = unpackGame(JSON.parse(raw), world); } catch { say(x.err); return; }
