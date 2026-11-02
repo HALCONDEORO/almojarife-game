@@ -145,12 +145,27 @@ export function effectiveBounds(rule, histPrices, governorLevel) {
   return { buyBelow: buyBelow > 0 && sellAbove > 0 && buyBelow >= sellAbove ? 0 : buyBelow, sellAbove };
 }
 
+/** Level 3: the stockpile goal is watched on its own, with or without standing orders — stocking the warehouse by hand completes it too. One notice, once. */
+export function goalTick(g, city) {
+  const wh = g.warehouses?.[city];
+  if (!wh || g.over) return false;
+  const goal = (governorOf(g, city)?.level ?? 0) >= 3 ? wh.governor?.goal : null;
+  if (!goal || goal.done || (wh.goods[goal.good] ?? 0) < goal.qty) return false;
+  goal.done = true;
+  const goalCity = g.world.nodes[city]?.name ?? city, goalGood = GOOD_NAMES.es[goal.good] ?? goal.good, goalGoodEn = GOOD_NAMES.en[goal.good] ?? goal.good;
+  post(g, "info", { city, topic: "governor", txt: { es: `El gobernador de ${goalCity} avisa: la meta de acopio está cubierta (${goal.qty} de ${goalGood} en el almacén).`, en: `The governor of ${goalCity} reports: the stockpile goal is met (${goal.qty} of ${goalGoodEn} in the warehouse).` } });
+  return true;
+}
+
 export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing complexity; this PR adds one lock guard, extraction is out of scope
   const wh = g.warehouses?.[city], adm = wh?.admin;
   if (!adm || g.over) return null;
   if ((g.shocks ?? []).some((shock) => shock.type === "port_closed" && shock.city === city && shock.untilDay > g.day)) return null; // a closed port trades nothing (shocks.mjs state, read duck-typed)
   const did = [];
+  const governorRaw = wh.governor ?? null;
   const governorLevel = governorOf(g, city)?.level ?? 0; // the tick only runs with a working governor (game.mjs gate), level 0 when none
+  const dailyCap = governorLevel >= 3 && (governorRaw?.budget ?? 0) > 0 ? governorRaw.budget : 0; // level 3: the day's buy cap
+  let spentToday = dailyCap > 0 && governorRaw.spent?.day === g.day ? governorRaw.spent.coins : 0;
   for (const [good, rule] of Object.entries(adm.rules)) {
     if (adm.off?.[good]) continue; // adm paused order keeps its numbers but is not served
     const entry = g.market[city]?.[good];
@@ -186,7 +201,8 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
     }
     if (bounds.buyBelow > 0 && rule.buyTo > 0) {
       const room = cap - whUsed(wh), want = rule.buyTo - (wh.goods[good] ?? 0);
-      const budget = Math.floor(g.cash - (adm.reserve ?? 0));
+      let budget = Math.floor(g.cash - (adm.reserve ?? 0));
+      if (dailyCap > 0) budget = Math.min(budget, Math.max(0, Math.floor(dailyCap - spentToday))); // the governor never spends past his day's cap
       if (room > 0 && want > 0 && budget > 0) {
         const maxN = Math.min(want, room, entry.stock); // fixed before the loop: entry.stock shrinks as we buy
         let bought = 0, cost = 0, feeCents = 0;
@@ -200,6 +216,7 @@ export function stewardTick(g, city, cap) { // skipcq: JS-R1005 - pre-existing c
         if (bought > 0) {
           craftCount(g, city, good, bought); // the steward's standing orders ship goods out like any buyer
           g.cash -= cost;
+          if (dailyCap > 0) { spentToday += cost; governorRaw.spent = { day: g.day, coins: spentToday }; } // accounted per day: a lowered cap just stops further buys
           noteTrade(g, city);
           repOnBuy(g, city, scarcityOf(entry), cost); // post-buy scarcity, as in doBuy
           if (good === "grain" && scarcityOf(entry) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, city, "grievance", bought); // hauling grain out of a starving port is remembered too

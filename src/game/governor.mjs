@@ -8,7 +8,7 @@ import { post } from "./ledger.mjs";
 
 export const GOVERNOR_LEVELS = Object.freeze({ 1: { fee: 100, wage: 2 }, 2: { fee: 200, wage: 4 }, 3: { fee: 300, wage: 7 } });
 /** Highest level whose trades are actually delivered: hiring or promoting past it is refused (level 3 arrives with its own PR). */
-export const GOVERNOR_MAX_IMPLEMENTED = 2;
+export const GOVERNOR_MAX_IMPLEMENTED = 3;
 
 /** The port's governor, sanitized; null when the warehouse has none (level 0: the free administrator). */
 export function governorOf(g, city) {
@@ -17,7 +17,10 @@ export function governorOf(g, city) {
   const level = Number.isSafeInteger(governor.level) && GOVERNOR_LEVELS[governor.level] ? governor.level : 1;
   const state = governor.state === "suspended" ? "suspended" : "active";
   const hiredDay = Number.isSafeInteger(governor.hiredDay) ? governor.hiredDay : 0;
-  return { level, state, hiredDay, ...GOVERNOR_LEVELS[level] };
+  const budget = Number.isFinite(governor.budget) && governor.budget > 0 ? governor.budget : 0; // daily buy cap for standing orders; 0 means no cap
+  const goal = governor.goal && g.world?.goods?.[governor.goal.good] && Number.isSafeInteger(governor.goal.qty) && governor.goal.qty >= 1
+    ? { good: governor.goal.good, qty: governor.goal.qty, done: Boolean(governor.goal.done) } : null; // stockpile target with a one-shot notice
+  return { level, state, hiredDay, budget, goal, ...GOVERNOR_LEVELS[level] };
 }
 /** Whether the warehouse's standing orders run today: a suspended governor stops them. */
 export const governorWorks = (g, city) => governorOf(g, city)?.state !== "suspended";
@@ -52,6 +55,33 @@ export function upgradeGovernor(g, city, level) {
   g.warehouses[city].governor.level = level; // write through: governorOf hands out a sanitized copy
   post(g, "governor_upgrade", { city, level, fee: due });
   return { ok: true, level, fee: due };
+}
+
+/** Level 3: cap what the standing orders may spend on buys per day (0 lifts the cap; sales never count). */
+export function setGovernorBudget(g, city, coins) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const governor = governorOf(g, city);
+  if (!governor || governor.state !== "active" || governor.level < 3) return { ok: false, reason: "needs a working level 3 governor here" };
+  if (!Number.isFinite(coins) || coins < 0) return { ok: false, reason: "bad number" };
+  g.warehouses[city].governor.budget = coins;
+  return { ok: true, budget: coins };
+}
+
+/** Level 3: a stockpile goal the governor watches; he posts one notice the day the warehouse reaches it. */
+export function setGovernorGoal(g, city, good, qty) {
+  if (g.over) return { ok: false, reason: "game over" };
+  const governor = governorOf(g, city);
+  if (!governor || governor.state !== "active" || governor.level < 3) return { ok: false, reason: "needs a working level 3 governor here" };
+  if (!g.world.goods[good]) return { ok: false, reason: "unknown good" };
+  if (!Number.isSafeInteger(qty) || qty < 1) return { ok: false, reason: "bad number" };
+  g.warehouses[city].governor.goal = { good, qty, done: false };
+  return { ok: true };
+}
+
+export function clearGovernorGoal(g, city) {
+  if (!governorOf(g, city)?.goal) return { ok: false, reason: "no goal" };
+  delete g.warehouses[city].governor.goal;
+  return { ok: true };
 }
 
 export function dismissGovernor(g, city) {
