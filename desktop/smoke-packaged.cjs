@@ -4,6 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const {spawn} = require('node:child_process');
 const assert = require('node:assert/strict');
+const { waitForMenuSnapshot } = require('./smoke-readiness.cjs');
 (async () => {
   const dist = path.join(__dirname, 'dist');
   const walk = p => fs.readdirSync(p, {withFileTypes:true}).flatMap(e => e.isDirectory() ? walk(path.join(p,e.name)) : [path.join(p,e.name)]);
@@ -28,11 +29,10 @@ const assert = require('node:assert/strict');
     let seq=0; const pending=new Map();
     socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){const {r,j}=pending.get(m.id);pending.delete(m.id);m.error?j(Error(JSON.stringify(m.error))):r(m.result)}};
     const call=(method,params={})=>new Promise((r,j)=>{const id=++seq;pending.set(id,{r,j});socket.send(JSON.stringify({id,method,params}));});
-    let result;
-    for(let i=0;i<90;i++) {
-      const x=await call('Runtime.evaluate',{expression:'JSON.stringify({title:document.title,start:!!document.querySelector("#t-start"),text:document.body.innerText.slice(0,300)})',returnByValue:true});
-      result=JSON.parse(x.result.value); if(result.start)break; await new Promise(r=>setTimeout(r,1000));
-    }
+    const result = await waitForMenuSnapshot(() => call('Runtime.evaluate', {
+      expression: 'JSON.stringify({title:document.title,start:!!document.querySelector("#t-start"),text:document.body.innerText.slice(0,300)})',
+      returnByValue: true,
+    }));
     assert.ok(result.start,'real packaged title menu loaded');
     const shot=await call('Page.captureScreenshot',{format:'png'});
     fs.mkdirSync(path.join(dist,'smoke'),{recursive:true});
