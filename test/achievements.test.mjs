@@ -15,7 +15,7 @@ test("an old save without achievements initializes on the first tick and does no
 });
 
 test("the first sale and a profitable voyage unlock once and post in ES and EN", () => {
-  const g = { day: 4, voyages: [{ ship: 1, sold: 3, revenue: 30, profit: 5 }] };
+  const g = { day: 4, repV: 2, rep: { cadiz: 30 }, voyages: [{ ship: 1, sold: 3, revenue: 30, profit: 5 }] };
   achievementsTick(g);
   assert.equal(g.achievements.unlocked.first_sale, 4);
   assert.equal(g.achievements.unlocked.profit_voyage, 4);
@@ -66,6 +66,16 @@ test("unlocked achievements survive the save round trip and never re-post", () =
   assert.deepEqual(Object.keys(g2.achievements.unlocked), ["first_sale"]);
 });
 
+test("a same-port sale without a voyage also unlocks First trade (audit probe)", () => {
+  const g = newGame(world); g.eventsOn = false; const s = g.ships[0];
+  const good = Object.keys(world.goods)[0];
+  assert.equal(doBuy(g, s, good, 10).ok, true);
+  assert.equal(doSell(g, s, good, 10).ok, true); // bought and sold in the home port: no voyage ever opened
+  assert.equal((g.voyages ?? []).some((v) => v.sold > 0), false); // voyage evidence alone would miss this sale
+  const day = g.day; for (let i = 0; i < 500 && g.day === day && !g.over; i++) advanceTick(g);
+  assert.ok(g.day > day);
+  assert.equal(g.achievements.unlocked.first_sale, g.day);
+});
 test("a real first voyage unlocks the milestone in the day tick", () => {
   const g = newGame(world); g.eventsOn = false; const s = g.ships[0];
   const good = Object.keys(world.goods)[0];
