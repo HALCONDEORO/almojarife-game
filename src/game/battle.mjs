@@ -62,6 +62,7 @@ export function resolveBattle(att, def, rolls, opts = {}) {
 /** Apply a report once. Moves loot between holds, sets hulls and crews, wears the guns, and marks sunk ships (ship.sunk = true);
  *  removing a sunk ship and changing the owner of a captured one stay with the caller. Returns the units of goods destroyed on both ships. */
 export function applyBattle(att, def, rep) {
+  if (rep.applied === true) throw Error("battle report already applied: closure is exactly once");
   att.hull = rep.hullA; def.hull = rep.hullD; att.crew = rep.crewA; def.crew = rep.crewD;
   wearGunsBy(att, GUN_WEAR_PER_ROUND * rep.rounds); wearGunsBy(def, GUN_WEAR_PER_ROUND * rep.rounds);
   if (rep.attackerShipSunk) att.sunk = true;
@@ -75,5 +76,6 @@ export function applyBattle(att, def, rep) {
   let destroyed = 0;
   const burn = (ship, lost) => { ship.cargo ??= {}; for (const [good, q] of Object.entries(lost ?? {})) { const d = Math.min(q, ship.cargo[good] ?? 0); destroyed += d; ship.cargo[good] -= d; if (!ship.cargo[good]) delete ship.cargo[good]; } };
   burn(def, rep.destroyed); burn(att, rep.destroyedAttacker);
+  rep.applied = true; // a closed report never applies twice: gun wear, hull and loot would stack
   return destroyed;
 }
