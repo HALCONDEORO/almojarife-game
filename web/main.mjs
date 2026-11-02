@@ -1570,7 +1570,13 @@ function showSlots() {
     if (raw === null) return;
     let r; try { r = unpackGame(JSON.parse(raw), world); } catch { say(x.err); return; }
     if (inGame && !await confirmDialog(el, n2(x.confirmLoad, n), lang)) { showSlots(); return; }
-    const curRaw = localStorage.getItem(SAVE_KEY), cur = curRaw && isValidSaveText(curRaw) ? curRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // same rotation as Import: the current save lands in the backup slot
+    // Confirmation yields: never load a slot replaced or removed while the player was deciding.
+    const currentSlot = readSlot(localStorage, n);
+    if (currentSlot === undefined) { showSlots(); say(x.readError); return; }
+    if (currentSlot !== raw) { showSlots(); say(x.err); return; }
+    let curRaw = null;
+    try { curRaw = localStorage.getItem(SAVE_KEY); } catch { showSlots(); say(x.readError); return; }
+    const cur = curRaw && isValidSaveText(curRaw) ? curRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // same rotation as Import: the current save lands in the backup slot
     try { finishPendingRotation(localStorage, isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; } }
     else try { localStorage.setItem(SAVE_KEY, packed); if (localStorage.getItem(SAVE_KEY) !== packed) throw new Error("Save write not verified"); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
