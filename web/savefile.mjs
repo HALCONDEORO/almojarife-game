@@ -53,7 +53,7 @@ export function restoreRotate(store, saveKey, cur, newLiveText) {
     // A throwing write may still have changed live. Retire parking only if live is intact.
     if (cur) try {
       if (store.getItem(saveKey) === cur) store.removeItem(TMP_KEY);
-    } catch {}
+    } catch { /* Keep parking when live state or cleanup cannot be verified. */ }
     throw e;
   }
   verifyWrite(store, saveKey, newLiveText);

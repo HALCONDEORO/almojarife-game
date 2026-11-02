@@ -94,7 +94,7 @@ test("live write that mutates then throws never discards the parked save", () =>
 
 test("a missing live save is verified before retiring its backup", () => {
   const { data, store } = fixture([[BACKUP_KEY, "B"]]);
-  store.setItem = () => {};
+  store.setItem = () => { /* Deliberate silent storage no-op. */ };
   assert.throws(() => restoreRotate(store, SAVE, null, "B"));
   assert.equal(data.get(BACKUP_KEY), "B");
 });
