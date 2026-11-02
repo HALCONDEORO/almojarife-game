@@ -1573,7 +1573,7 @@ function showSlots() {
     const curRaw = localStorage.getItem(SAVE_KEY), cur = curRaw && isValidSaveText(curRaw) ? curRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // same rotation as Import: the current save lands in the backup slot
     try { finishPendingRotation(localStorage, isValidSaveText); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     if (cur) { try { restoreRotate(localStorage, SAVE_KEY, cur, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; } }
-    else try { localStorage.setItem(SAVE_KEY, packed); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
+    else try { localStorage.setItem(SAVE_KEY, packed); if (localStorage.getItem(SAVE_KEY) !== packed) throw new Error("Save write not verified"); } catch (e) { showSlots(); say(slotError(e, lang)); return; }
     stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if (ship() && !ship().voyage) open3d(ship()); } catch { close3d(); render(); }
   }; });
@@ -1705,7 +1705,7 @@ function showTitle() {
     const prevRaw = localStorage.getItem(SAVE_KEY), prev = prevRaw && isValidSaveText(prevRaw) ? prevRaw : null, packed = JSON.stringify(packGame(r.g, r.company)); // a corrupt current is not worth parking; the old backup stays // skipcq: JS-0123 - pre-existing shadow in the import handler; the line only moved with this PR's additions
     if (!recoverRotations()) { $("t-msg").textContent = t.errB; return; } // never overwrite backup slots with a parked copy pending
     if (prev) { try { restoreRotate(localStorage, SAVE_KEY, prev, packed); } catch { $("t-msg").textContent = t.errB; return; } } // prev lands in the backup slot; the old backup survives until the new save is written
-    else try { localStorage.setItem(SAVE_KEY, packed); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
+    else try { localStorage.setItem(SAVE_KEY, packed); if (localStorage.getItem(SAVE_KEY) !== packed) throw new Error("Save write not verified"); } catch { $("t-msg").textContent = t.errB; return; } // no campaign to protect: still verify the write
     music.leaveTitle(); stopFollow(follow); g = r.g; company = r.company; sel = 0; playing = false; pauseNote = null; progress = 0; tickAcc = 0; inTitle = false; render(); el.hidden = true;
     try { if(ship()&&!ship().voyage)open3d(ship()); } catch { close3d(); render(); } // A scene failure is not an invalid imported save.
   };
