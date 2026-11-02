@@ -22,7 +22,7 @@ test('real load binding rejects a replaced or deleted slot after confirmation wi
  }
 });
 test('real load binding reports a read failure after confirmation before touching saves',async()=>{
- const view=fixture(undefined);await view.run();assert.equal(view.writes(),0);assert.equal(view.rendered(),0);assert.deepEqual(view.messages,[SLOT_TEXT.es.readError]);
+ const view=fixture();await view.run();assert.equal(view.writes(),0);assert.equal(view.rendered(),0);assert.deepEqual(view.messages,[SLOT_TEXT.es.readError]);
 });
 test('a failed current-save read aborts visibly rather than rejecting the click handler',async()=>{
  const view=fixture(true,true);await assert.doesNotReject(view.run());assert.equal(view.writes(),0);assert.equal(view.rendered(),0);assert.deepEqual(view.messages,[SLOT_TEXT.es.readError]);
