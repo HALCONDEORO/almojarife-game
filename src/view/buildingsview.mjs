@@ -1,6 +1,6 @@
 // Rows and offers for the "Buildings" tab: owned plots and buildings, free plots to buy,
 // build/upgrade quotes with live market prices. Pure data, no DOM (same pattern as cityview.mjs).
-import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_BY_TYPE, HOUSE_CLASS, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
+import { BUILDING_TYPES, CIVIC_BUILDINGS, buildingAt, plotPrice, quoteConstruction, constructionEstimate, sellQuote, housePopBonus, warehouseCapBonus, producerRate, PRODUCERS, WORKSHOP_BATCH_PATTERN, HOUSE_POP_BY_TYPE, HOUSE_CLASS, WAREHOUSE_CAP_PER_LEVEL, DOCK_TOLL_DISCOUNT, JOBS_PER_LEVEL, WAGE_PER_WORKER, jobsNeeded, freeLabor, staffingRatio } from "../game/buildings.mjs";
 import { quoteRecipe, RECIPES, OUTPUTS } from "../sim/recipes.mjs";
 import { SEASON_PEAK } from "../sim/market.mjs";
 import { assetKey } from "./city2d.mjs";
@@ -21,6 +21,10 @@ export function buildingsRows(g, cityId) {
       const total = spec.buildDays * b.nextLevel * TICKS_PER_DAY, left = Math.max(0, b.readyTick - g.tick);
       row.nextLevel = b.nextLevel; row.readyDay = Math.ceil(b.readyTick / TICKS_PER_DAY);
       row.progress = total > 0 ? Math.min(1, Math.max(0, 1 - left / total)) : 1;
+    }
+    if (b.state === "queued") { // waiting for the city crew: the ready day is an explained estimate, not a promise
+      const est = constructionEstimate(g, cityId, plotId);
+      row.nextLevel = b.nextLevel; row.readyDay = est?.readyDay; row.queueAhead = est?.ahead ?? 0; row.progress = 0;
     }
     if (b.state === "active" && !halted && PRODUCERS[b.type]) {
       const def = PRODUCERS[b.type];
@@ -97,7 +101,7 @@ export function parseBldAct(attr) {
 export function buildingLabel(t, row) {
   if (!row?.type) return t.bldState.plot;
   const name = t.bldTypes[row.type] ?? row.type;
-  if (row.state === "construction") return `${name} (${row.nextLevel ?? 1})`;
+  if (row.state === "construction" || row.state === "queued") return `${name} (${row.nextLevel ?? 1})`;
   const base = row.level > 1 ? `${name} ${row.level}` : name;
   return row.halted ? `${base} (${row.fire ? t.bldState.fire : t.bldState.halted})` : base;
 }
@@ -176,6 +180,7 @@ export function bldChipInner(t, r, lang, iconForGood) {
   const icon = def ? (iconForGood ? iconForGood(def.output, 20) : "") : bwSvg(BWI[r.type] ?? BWI.building, 20);
   const state = r.state === "construction"
     ? `${t.bldState.construction} ${Math.round(r.progress * 100)}%`
+    : r.state === "queued" ? `${t.bldState.queued} · ${t.bldReadyQueued.replace("{d}", r.readyDay)}`
     : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : (t.bldState[r.state] ?? r.state);
   const bad = r.halted || r.fire;
   return `<span class="bldchip${bad ? " bldchip-bad" : ""}">${icon}<span class="bldchip-name">${escBw(buildingLabel(t, r))}</span><span class="bldchip-state">${escBw(state)}</span></span>`;
@@ -187,6 +192,7 @@ export function bldSummaryCard(t, r, lang, fmt, iconForGood) {
   const cardIcon = def ? (iconForGood ? iconForGood(def.output, 40) : "") : bwSvg(BWI[r.type] ?? BWI.building, 40);
   const state = r.state === "construction"
     ? `${t.bldState.construction} ${r.nextLevel} · ${t.bldReady.replace("{d}", r.readyDay).replace("{p}", Math.round(r.progress * 100))}`
+    : r.state === "queued" ? `${t.bldState.queued} ${r.nextLevel} · ${t.bldQueuedLong.replace("{n}", r.queueAhead + 1).replace("{d}", r.readyDay)}`
     : r.halted ? (r.fire ? t.bldState.fire : t.bldState.halted) : r.state === "plot" ? (lang === "es" ? "tuyo, sin construir" : "yours, nothing built") /* not "solar" again under the name and the window title */ : (t.bldState[r.state] ?? r.state);
   const cell = (glyph, label, val, short, bad = false) =>
     `<span class="bwc-stat${bad ? " bwc-bad" : ""}" role="img" aria-label="${escBw(label)}" title="${escBw(label)}"><span class="bwc-val">${bwSvg(glyph, 16)}<b>${val}</b></span><span class="bwc-lab">${escBw(short)}</span></span>`;

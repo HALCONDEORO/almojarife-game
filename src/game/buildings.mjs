@@ -202,7 +202,7 @@ export function quoteConstruction(g, cityId, plotId, type) {
   if (PRODUCERS[type] && !cityAllowsProducer(g.world, cityId, type)) return { ok: false, reason: "good not producible in this city" };
   const b = buildingAt(g, cityId, plotId);
   if (!b) return { ok: false, reason: "plot not owned" };
-  if (b.state === "construction") return { ok: false, reason: "already building" };
+  if (b.state === "construction" || b.state === "queued") return { ok: false, reason: "already building" }; // a paid order waiting in the city queue also locks the plot
   const civicNo = b.level === 0 ? civicAllow(g, cityId, type) : null; // gates gate new works, not upgrades
   if (civicNo) return civicNo;
   const level = b.level + 1;
@@ -219,6 +219,34 @@ export function quoteConstruction(g, cityId, plotId, type) {
   if (!q.ok) return q;
   const fee = spec.fee * level, ticks = spec.buildDays * level * TICKS_PER_DAY;
   return { ok: true, type, level, cost: q.cost + fee, materials: q.cost, fee, ticks, inputs, fromStore, missing, imported: q.imported };
+}
+
+/** One construction crew per city (P3: a port runs one building work at a time): further paid
+ *  orders wait in a "queued" state and the crew takes the oldest one up when the active work
+ *  finishes. Works already "construction" in older saves finish as before (grandfathered). */
+export const cityActiveConstruction = (g, cityId) => Object.entries(g.buildings?.[cityId] ?? {}).find(([, b]) => b.state === "construction") ?? null;
+
+/** Queued orders of a city, oldest first; same-tick ties break by plotId for a stable order. */
+export const cityQueue = (g, cityId) => Object.entries(g.buildings?.[cityId] ?? {})
+  .filter(([, b]) => b.state === "queued")
+  .sort((x, y) => (x[1].orderedTick - y[1].orderedTick) || (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0));
+
+/** Explained estimate for one plot's order. An active work knows its exact ready day; a queued
+ *  one waits behind the active work and the orders ahead of it, so its day is a lower bound
+ *  (new orders can push it later) and the UI always labels it as an estimate. */
+export function constructionEstimate(g, cityId, plotId) {
+  const b = buildingAt(g, cityId, plotId);
+  if (b?.state === "construction") return { state: "construction", ahead: 0, readyDay: Math.ceil(b.readyTick / TICKS_PER_DAY) };
+  if (b?.state !== "queued") return null;
+  const active = cityActiveConstruction(g, cityId);
+  let waitTicks = active ? Math.max(0, active[1].readyTick - g.tick) : 0, ahead = 0;
+  for (const [otherId, other] of cityQueue(g, cityId)) {
+    if (otherId === plotId) break;
+    ahead++;
+    waitTicks += BUILDING_TYPES[other.type].buildDays * other.nextLevel * TICKS_PER_DAY;
+  }
+  const ownTicks = BUILDING_TYPES[b.type].buildDays * b.nextLevel * TICKS_PER_DAY;
+  return { state: "queued", ahead, startsInDays: Math.ceil(waitTicks / TICKS_PER_DAY), readyDay: Math.ceil((g.tick + waitTicks + ownTicks) / TICKS_PER_DAY) };
 }
 
 /** Pay and start construction; the building turns active exactly at readyTick (tickBuildings). */
@@ -241,7 +269,13 @@ export function startConstruction(g, cityId, plotId, type) {
   g.cash -= q.cost;
 
   const b = buildingAt(g, cityId, plotId);
-  Object.assign(b, { type, state: "construction", nextLevel: q.level, readyTick: g.tick + q.ticks, ...(CIVIC_BUILDINGS.includes(type) ? { invest: q.cost } : {}) });
+  Object.assign(b, { type, nextLevel: q.level, orderedTick: g.tick, ...(CIVIC_BUILDINGS.includes(type) ? { invest: q.cost } : {}) });
+  if (cityActiveConstruction(g, cityId)) { // the crew is busy: the paid order waits in the city queue
+    b.state = "queued";
+    post(g, "info", { txt: { es: `Obra encargada en ${cityId} (${type} nivel ${q.level}): en cola tras la obra actual`, en: `Work ordered in ${cityId} (${type} level ${q.level}): queued behind the current one` } });
+    return { ok: true, ...q, state: "queued", estimate: constructionEstimate(g, cityId, plotId) };
+  }
+  Object.assign(b, { state: "construction", readyTick: g.tick + q.ticks });
   post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${type} nivel ${q.level})`, en: `Construction started in ${cityId} (${type} level ${q.level})` } });
   return { ok: true, ...q, readyTick: b.readyTick };
 }
@@ -254,6 +288,17 @@ export function tickBuildings(g) {
       if (b.invest != null) { addRespect(g, cityId, b.invest); delete b.invest; } // the benefactor is remembered: funding public works earns the port's respect (P3 11.3)
       post(g, "info", { txt: { es: `Edificio listo en ${cityId} (${b.type} nivel ${b.level})`, en: `Building ready in ${cityId} (${b.type} level ${b.level})` } });
     }
+  }
+  // A freed crew takes its city's oldest queued order on the same tick (a queued order starts
+  // the very tick the previous work finishes, so its estimate day can be exact).
+  for (const cityId of Object.keys(g.buildings ?? {})) {
+    if (cityActiveConstruction(g, cityId)) continue;
+    const next = cityQueue(g, cityId)[0];
+    if (!next) continue;
+    const b = next[1];
+    b.state = "construction";
+    b.readyTick = g.tick + BUILDING_TYPES[b.type].buildDays * b.nextLevel * TICKS_PER_DAY;
+    post(g, "info", { txt: { es: `Obra iniciada en ${cityId} (${b.type} nivel ${b.nextLevel})`, en: `Construction started in ${cityId} (${b.type} level ${b.nextLevel})` } });
   }
 }
 
