@@ -23,7 +23,7 @@ export function slotsHtml(slots, { lang, inGame, fmt = String, defCo = "" }) {
       `<button data-sl-export="${s.n}" aria-label="${x.export}: ${x.slot} ${s.n}" ${s.state === "ok" ? "" : "disabled"}>${x.export}</button>` +
       `<button data-sl-del="${s.n}" aria-label="${x.del}: ${x.slot} ${s.n}" ${s.state === "empty" ? "disabled" : ""}>${x.del}</button></div></div>`;
   }).join("");
-  return `<div class="box pausemenu sl-win" role="dialog" aria-modal="true" aria-labelledby="slots-title"><div class="pausemenu-handle"><h2 id="slots-title">${x.title}</h2></div><div class="pausemenu-body sl-body"><div class="sl-grid">${cards}</div><p class="sl-hint">${x.hint}${inGame ? "" : " " + x.noGame}</p><p><span id="sl-msg" role="status"></span></p><p><button id="sl-back">${x.back}</button></p></div></div>`;
+  return `<div class="box pausemenu sl-win" role="dialog" aria-modal="true" aria-labelledby="slots-title"><div class="pausemenu-handle"><h2 id="slots-title">${x.title}</h2></div><div class="pausemenu-body sl-body"><div class="sl-grid">${cards}</div><p class="sl-hint">${x.hint}${inGame ? "" : ` ${x.noGame}`}</p><p><span id="sl-msg" role="status"></span></p><p><button id="sl-back">${x.back}</button></p></div></div>`;
 }
 
 export function slotError(error, lang = 'es') {
