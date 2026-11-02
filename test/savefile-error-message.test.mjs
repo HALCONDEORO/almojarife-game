@@ -23,7 +23,7 @@ test('real Restore binding reports uncertainty instead of restoration success af
  const source=readFileSync(new URL('../web/main.mjs',import.meta.url),'utf8');
  const start=source.indexOf('  $("t-rest").onclick =');
  const binding=source.slice(start,source.indexOf('  $("t-lang").onclick',start));
- const data=new Map([['live','A'],[BACKUP_KEY,'B']]);let written=false;
+ const data=new Map([['live','A'],[BACKUP_KEY,'"B"']]);let written=false;
  const store={setItem:(key,value)=>{data.set(key,value);if(key==='live')written=true;},
   getItem:key=>{if(key==='live'&&written)throw Error('unreadable');return data.get(key)??null;},removeItem:key=>data.delete(key)};
  const button={},message={textContent:''};
@@ -31,5 +31,5 @@ test('real Restore binding reports uncertainty instead of restoration success af
   unpackGame:()=>{},world:{},confirmDialog:()=>Promise.resolve(true),el:{},t:{restConfirm:'Restore?',restDone:'Restored',badSave:'Bad'},
   localStorage:store,SAVE_KEY:'live',isValidSaveText:()=>true,restoreRotate,showTitle:()=>{},slotError,lang:'en'});
  await button.onclick();assert.match(message.textContent,/could not be verified/);assert.notEqual(message.textContent,'Restored');
- assert.equal(data.get('live'),'B');assert.equal(data.get(TMP_KEY),'A');
+ assert.equal(data.get('live'),'"B"');assert.equal(data.get(TMP_KEY),'A');
 });
