@@ -10,7 +10,11 @@ import { setStewardRule } from "./steward.mjs";
 const RULE_KEYS = ["buyBelow", "buyTo", "sellAbove", "sellKeep", "buyBelowPct", "sellAbovePct"];
 const NAME_MAX = 40;
 
-function templateNameOk(name) { return typeof name === "string" && name.trim().length >= 1 && name.trim().length <= NAME_MAX; }
+/** Names that would fight the object prototype ("__proto__" would silently vanish from a save round trip). */
+const UNSAFE_NAMES = new Set(["__proto__", "constructor", "prototype"]);
+function templateNameOk(name) { const clean = typeof name === "string" ? name.trim() : ""; return clean.length >= 1 && clean.length <= NAME_MAX && !UNSAFE_NAMES.has(clean); }
+/** Own-key read: a name inherited from Object.prototype ("toString") is not a saved template. */
+function ownTemplate(g, name) { const templates = g.govTemplates; return templates && Object.prototype.hasOwnProperty.call(templates, name) ? templates[name] : null; }
 function needsLevelTwo(g, city) {
   const governor = governorOf(g, city);
   if (!governor || governor.state !== "active" || governor.level < 2) return { ok: false, reason: "needs a working level 2 governor here" };
@@ -32,7 +36,8 @@ export function saveGovTemplate(g, city, name) {
     snapshot[good] = copy;
   }
   const key = name.trim();
-  (g.govTemplates ??= {})[key] = snapshot; // g.govTemplates persists in the save like g.warehouses
+  if (!g.govTemplates) g.govTemplates = {};
+  Object.defineProperty(g.govTemplates, key, { value: snapshot, writable: true, enumerable: true, configurable: true }); // defineProperty: "__proto__" never reaches the setter; the name list already rejects it, this is the second lock
   return { ok: true, name: key, rules: Object.keys(snapshot).length };
 }
 
@@ -41,7 +46,7 @@ export function applyGovTemplate(g, city, name, cap) {
   if (g.over) return { ok: false, reason: "game over" };
   const block = needsLevelTwo(g, city);
   if (block) return block;
-  const template = g.govTemplates?.[name];
+  const template = ownTemplate(g, name);
   if (!template) return { ok: false, reason: "no such template" };
   const wh = g.warehouses?.[city];
   if (!wh) return { ok: false, reason: "no warehouse here" };
@@ -55,7 +60,7 @@ export function applyGovTemplate(g, city, name, cap) {
 }
 
 export function deleteGovTemplate(g, name) {
-  if (!g.govTemplates?.[name]) return { ok: false, reason: "no such template" };
+  if (!ownTemplate(g, name)) return { ok: false, reason: "no such template" };
   delete g.govTemplates[name];
   return { ok: true };
 }

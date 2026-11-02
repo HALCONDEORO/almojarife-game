@@ -113,6 +113,20 @@ test("level 3 is not for sale yet: hiring or promoting to it is refused", () => 
   assert.equal(governorOf(game, "cadiz").level, 2);
 });
 
+test("template names never fight the object prototype", () => {
+  const game = house();
+  hireGovernor(game, "cadiz", 2);
+  setStewardRule(game, "cadiz", "grain", { buyBelow: 5, buyTo: 20 });
+  for (const bad of ["__proto__", "constructor", "prototype"]) assert.equal(saveGovTemplate(game, "cadiz", bad).reason, "bad name");
+  assert.equal(applyGovTemplate(game, "cadiz", "toString", 100).reason, "no such template"); // inherited name is not a template
+  assert.equal(applyGovTemplate(game, "cadiz", "hasOwnProperty", 100).reason, "no such template");
+  assert.equal(deleteGovTemplate(game, "cadiz", "valueOf").reason, "no such template");
+  assert.equal(saveGovTemplate(game, "cadiz", "grano").ok, true);
+  const { g: round } = deserialize(serialize(game, "Prueba"), world);
+  assert.equal(applyGovTemplate(round, "cadiz", "grano", 100).ok, true); // a normal name survives the save round trip
+  assert.equal(applyGovTemplate(round, "cadiz", "toString", 100).reason, "no such template");
+});
+
 test("upgrading charges only the fee difference and needs a sitting governor", () => {
   const game = house();
   assert.equal(upgradeGovernor(game, "cadiz", 2).reason, "no governor hired");
