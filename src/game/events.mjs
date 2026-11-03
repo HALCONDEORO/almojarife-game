@@ -3,6 +3,7 @@
 import { TICKS_PER_DAY } from "../sim/clock.mjs";
 import { post } from "./ledger.mjs";
 import { shipCapacity } from "../sim/trade.mjs";
+import { shareVoyageDeltaWithPrize } from "./encounters.mjs";
 import { seeded } from "../view/cityscene.mjs";
 export const EVENT_CHANCE = 0.07; // per day, per player ship at sea, while nothing is pending
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -85,6 +86,7 @@ export function resolveEvent(g, choiceId) {
   if (fx.days && ship?.voyage) {
     const v = ship.voyage, old = v.ticksLeft, nd = clamp(v.ticksLeft + fx.days * TICKS_PER_DAY, 1, 99 * TICKS_PER_DAY);
     done.days = (nd - old) / TICKS_PER_DAY; v.ticksLeft = nd; if (v.totalTicks != null) v.totalTicks = Math.max(v.totalTicks + nd - old, nd);
+    shareVoyageDeltaWithPrize(g, ship, nd - old); // the escorted prize keeps station: it takes the same headwind or favour
   }
   const text = done.cash != null && out.text
     ? Object.fromEntries(Object.entries(out.text).map(([k, v]) => [k, String(v).replaceAll("{amt}", String(done.cash))]))
