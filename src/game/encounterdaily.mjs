@@ -104,7 +104,11 @@ export function claimPrize(g,keep){
   prize=makeShip(g.nextId++,report.prize.type,winner.at,g.ships);
   prize.hull=report.prize.hull;prize.prize=true;prize.crew=0; // no crew: it cannot sail again until hands are hired
   report.prize.shipId=prize.id; // the history entry names the fleet ship the prize became (identity through the transfer)
- if(winner.voyage){prize.voyage={...winner.voyage};prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; } // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
+ if(winner.voyage){
+  const releasedId=winner.voyage.escortedBy;
+  if(releasedId!==undefined){const released=g.ships.find(mate=>mate.id===releasedId);if(released?.voyage?.escorted)delete released.voyage.escorted;} // a new prize breaks the old pair: the released prize limps on alone and rolls its own sea again
+  prize.voyage={...winner.voyage};delete prize.voyage.escortedBy;prize.voyage.escorted=true;winner.voyage.escortedBy=prize.id; // it keeps station with the winner and arrives with it; the escorted pair limps together: hull drag is skipped for both legs of the shared voyage (docs/design/hull-wear-rebalance.md)
+ }
   g.ships.push(prize);
  }
  const txt=keep
