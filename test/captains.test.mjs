@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {captainRoster,hireCaptain,dismissCaptain,captainOf,captainSpeed,captainWage,captainPrice} from '../src/game/captains.mjs';
 import {serialize,deserialize} from '../src/game/gamesave.mjs';
-const setup=()=>({world:{cities:[{id:'cadiz'},{id:'lisboa'}]},day:0,tick:0,cash:2000,market:{},ships:[{id:1,at:'cadiz'}]});
+const setup=()=>({world:{cities:[{id:'cadiz'},{id:'lisboa'}]},day:0,tick:0,cash:2000,market:{},ships:[{id:1,at:'cadiz',type:'cog',cargo:{}}]});
 test('stable roster, one hire and assignment, fee once, no respawn after dismissal',()=>{
  const g=setup(),s=g.ships[0],before=JSON.stringify(g),r=captainRoster(g,'cadiz')[0];
  assert.equal(JSON.stringify(g),before);assert.deepEqual(captainRoster(g,'cadiz')[0],r);
@@ -19,7 +19,7 @@ test('rejected hire never mutates: wrong ship, sea, wrong port, no cash, game ov
  }
 });
 test('captain unique across ships, save restore, old and malformed states safe',()=>{
- const g=setup(),s=g.ships[0],id=captainRoster(g,'cadiz')[0].id;hireCaptain(g,s,id);g.ships.push({id:2,at:'cadiz'});
+ const g=setup(),s=g.ships[0],id=captainRoster(g,'cadiz')[0].id;hireCaptain(g,s,id);g.ships.push({id:2,at:'cadiz',type:'cog',cargo:{}});
  assert.equal(hireCaptain(g,g.ships[1],id).ok,false);
  g.profile??={home:'cadiz'};const r=deserialize(serialize(g,'House'),g.world).g;assert.deepEqual(captainOf(r.ships[0]),captainOf(s));assert.equal(captainRoster(r,'cadiz').length,0);
  assert.equal(captainOf({}),null);assert.equal(captainSpeed({}),1);assert.equal(captainWage({}),0);
