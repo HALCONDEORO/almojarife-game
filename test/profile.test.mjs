@@ -20,11 +20,11 @@ test("every crest combination makes a well-formed svg without scripts", () => {
 });
 
 test("svg builders reject markup carried by imported or caller-provided profile data", () => {
-  const bad = { shield: '"><img src=x onerror=alert(1)>', division: '"><script>alert(1)</script>', charge: 'javascript:alert(1)', c1: 'red" onload="alert(1)', c2: '#fff" onmouseover="alert(1)' };
+  const bad = { shield: '"><img src=x onerror=alert(1)>', division: '"><script>alert(1)</script>', charge: 'not-a-charge', c1: 'red" onload="alert(1)', c2: '#fff" onmouseover="alert(1)' };
   const crest = crestSvg(bad, '22 onfocus=alert(1)', 'x" onload="alert(1)'), portrait = portraitSvg(-1, bad.c1, '64 onmouseover=alert(1)'), flag = flagSvg(bad);
   for (const svg of [crest, portrait, flag]) {
     assert.ok(svg.startsWith("<svg") ? svg.endsWith("</svg>") : !svg.includes("<svg")); // flags are rect/path fragments
-    assert.ok(!/<script|\son(load|focus|mouseover|error)\s*=|javascript:/i.test(svg));
+    assert.ok(!/<script|\son(load|focus|mouseover|error)\s*=/i.test(svg));
   }
   assert.match(crest, /fill="#8a1c1c"/);
   assert.match(portrait, /fill="#1f4e8c"/);

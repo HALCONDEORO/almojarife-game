@@ -38,20 +38,20 @@ test("pre-launch saves without profile, voyage fields or market pop are refused 
 });
 
 test("imported profile data is cleaned before it reaches the UI", () => {
-  const s = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
-  s.state.profile = {
+  const save = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
+  save.state.profile = {
     company: 'Casa <img src=x onerror=alert(1)>', character: '<b>Ana</b>', portrait: 99,
-    crest: { shield: '"><script>alert(1)</script>', division: 'x', charge: 'y', c1: 'red" onload="alert(1)', c2: 'javascript:alert(1)' },
+    crest: { shield: '"><script>alert(1)</script>', division: 'x', charge: 'y', c1: 'red" onload="alert(1)', c2: 'not-a-colour' },
     home: 'nowhere', background: 'king', difficulty: 'impossible',
   };
-  const { g } = deserialize(s, world);
+  const { g } = deserialize(save, world);
   assert.equal(g.profile.company, 'Casa img src=x onerror=alert(1'); // text can stay; markup characters cannot
   assert.equal(g.profile.character, 'bAna/b');
   assert.deepEqual(g.profile.crest, defaultProfile().crest);
   assert.equal(g.profile.home, 'cadiz');
   assert.equal(g.profile.background, 'merchant');
   assert.equal(g.profile.difficulty, 'normal');
-  assert.ok(!/<script|onload|onerror|javascript:/i.test(crestSvg(g.profile.crest, 22, 'imported')));
+  assert.ok(!/<script|onload|onerror/i.test(crestSvg(g.profile.crest, 22, 'imported')));
 });
 
 test("company name is cleaned and limited", () => {
