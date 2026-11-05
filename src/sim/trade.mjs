@@ -45,6 +45,7 @@ export function cargoUsed(ship) {
 /** Start a voyage. speedMul covers crew and captain factors, wind the leg's weather. Returns {ok, ticks} or {ok:false, reason}. */
 export function sail(world, ship, to, opts = {}) {
   if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (ship.at === to) return { ok: false, reason: "already here" };
   const r = route(world, ship.at, to);
   if (!r) return { ok: false, reason: "no route" };
   const { speedMul = 1, wind = 1 } = opts;

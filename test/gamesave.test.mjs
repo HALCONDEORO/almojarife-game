@@ -153,10 +153,11 @@ test("voyages must resolve to known geography: from/to and path entries", () => 
   play(g3, 2);
 });
 
-test("engine-generated same-port voyages survive reload and complete", () => {
+test("legacy engine-generated same-port voyages survive reload and complete", () => {
   const game = newGame(world, "cadiz");
   const ship = game.ships[0];
-  assert.equal(doSail(game, ship, "cadiz").ok, true);
+  // Written by sail() before same-port departures were refused. Preserve compatibility with those saves.
+  ship.voyage = { from: "cadiz", to: "cadiz", ticksLeft: 1, totalTicks: 1, km: 0, path: ["cadiz"], wind: 1 };
   assert.deepEqual(ship.voyage.path, ["cadiz"]);
   const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Oro"))), world).g;
   assert.deepEqual(loaded.ships[0].voyage, ship.voyage);

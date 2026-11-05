@@ -25,3 +25,13 @@ test("the port menu offers sail only when possible, and always select", () => {
 test("number keys pick a ship only when it exists", () => {
   assert.equal(shipForKey(g, "1"), 0); assert.equal(shipForKey(g, "2"), null); assert.equal(shipForKey(g, "x"), null); assert.equal(shipForKey(g, "0"), null);
 });
+
+test("same-port orders cannot create voyage, diary or mission side effects", () => {
+  const game = newGame(world, "cadiz");
+  const before = JSON.stringify(game);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    assert.deepEqual(doSail(game, game.ships[0], "cadiz"), { ok: false, reason: "already here" });
+    assert.equal(JSON.stringify(game), before, "a refused order leaves all game state untouched");
+  }
+  assert.equal(doSail(game, game.ships[0], "lisboa").ok, true, "real departures still work");
+});
