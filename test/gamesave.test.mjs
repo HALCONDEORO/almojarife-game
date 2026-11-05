@@ -43,22 +43,31 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   assert.throws(() => deserialize(badStock, world), /damaged/);
   const badRow = fresh(); badRow.state.market.cadiz = "row";
   assert.throws(() => deserialize(badRow, world), /not kept|damaged/); // the existing pop check rejects it first
+  const nullRow = fresh(); nullRow.state.market.cadiz = null;
+  assert.throws(() => deserialize(nullRow, world), /damaged/); // a clear error, not a raw TypeError from Object.values
   const badShip = fresh(); badShip.state.ships[0].type = "galleon";
   assert.throws(() => deserialize(badShip, world), /damaged/);
+  for (const t of ["constructor", "__proto__", "toString"]) { // inherited Object properties are not ship classes
+    const inherited = fresh(); inherited.state.ships[0].type = t;
+    assert.throws(() => deserialize(inherited, world), /damaged/, t);
+  }
 
   const ledgers = fresh();
   ledgers.state.market.cadiz.grain.needsLedger = { days: 3, policyId: "legacy-telemetry-v1", totals: "x", byClass: { poor: 7 } };
   ledgers.state.market.malaga.grain.needsLedger = { days: 2, policyId: "legacy-telemetry-v1", totals: {}, byClass: { poor: { grain: true } } }; // one level deeper
   ledgers.state.market.almeria.grain.needsLedger = { days: 9, policyId: "older-policy", totals: {}, byClass: {} }; // a stale policy makes recordNeeds throw mid-tick
-  ledgers.state.market.sevilla.grain.commerce = "x";
-  ledgers.state.market.valencia.grain.commerce = { cash: 5, households: { poor: null }, inventoryBasis: 9 };
+  ledgers.state.market.huelva.grain.needsLedger = { days: 2, policyId: "legacy-telemetry-v1", byClass: {} }; // totals missing
+  ledgers.state.market.sevilla.grain.needsLedger = { days: 2, policyId: "legacy-telemetry-v1", totals: {} }; // byClass missing
+  ledgers.state.market.valencia.grain.needsLedger = { days: 2, policyId: "legacy-telemetry-v1", totals: null, byClass: {} }; // null totals
+  ledgers.state.market.barcelona.grain.commerce = "x";
+  ledgers.state.market.palma.grain.commerce = {}; // inventoryBasis missing: the first trade would crash procurement
+  ledgers.state.market.bilbao.grain.commerce = { cash: 5, inventoryBasis: null };
+  ledgers.state.market.tanger.grain.commerce = { cash: 5, inventoryBasis: {}, households: {} }; // empty households: settleHouseholdDay only rebuilds from null
+  ledgers.state.market.cartagena.grain.commerce = { cash: 5, inventoryBasis: {}, households: { poor: null } };
   const { g: gl } = deserialize(ledgers, world);
-  assert.equal(gl.market.cadiz.grain.needsLedger, undefined);
-  assert.equal(gl.market.malaga.grain.needsLedger, undefined);
-  assert.equal(gl.market.almeria.grain.needsLedger, undefined);
-  assert.ok(Number.isFinite(gl.market.sevilla.grain.commerce?.cash), "load reopens a dropped commerce account");
-  assert.ok(Number.isFinite(gl.market.valencia.grain.commerce?.cash), "load reopens a dropped commerce account");
-  play(gl, 2); // the tick lazily reopens the dropped needs ledger instead of throwing
+  for (const c of ["cadiz", "malaga", "almeria", "huelva", "sevilla", "valencia"]) assert.equal(gl.market[c].grain.needsLedger, undefined, c);
+  for (const c of ["barcelona", "palma", "bilbao", "tanger", "cartagena"]) assert.ok(Number.isFinite(gl.market[c].grain.commerce?.cash), `load reopens a dropped commerce account in ${c}`);
+  play(gl, 2); // the tick lazily reopens the dropped needs ledgers instead of throwing
   assert.equal(typeof gl.market.cadiz.grain.needsLedger, "object");
 
   const history = fresh();
@@ -73,8 +82,9 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   const bots = fresh();
   bots.state.ai[1] = "x";
   bots.state.ai[2] = { cash: 9, ship: { type: "ufo" } };
+  bots.state.ai[0].ship.type = "constructor"; // inherited property, not a ship class
   const { g: ga } = deserialize(bots, world);
-  assert.equal(ga.ai.length, 1);
+  assert.equal(ga.ai.length, 0, "all three malformed bots are dropped");
   play(ga, 2);
   const noBots = fresh(); noBots.state.ai = 7;
   assert.deepEqual(deserialize(noBots, world).g.ai, []);
