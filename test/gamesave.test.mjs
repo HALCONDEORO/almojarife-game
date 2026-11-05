@@ -113,6 +113,35 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   assert.deepEqual(deserialize(noBots, world).g.ai, []);
 });
 
+test("bots with half-built voyages are dropped instead of stalling at sea", () => {
+  const fresh = () => JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  const stalled = fresh();
+  stalled.state.ai[0].ship.voyage = {}; // ticksLeft undefined: sailTick never reaches 0 and trades refuse "at sea" forever
+  const { g: gs } = deserialize(stalled, world);
+  assert.equal(gs.ai.length, 2);
+  play(gs, 3);
+  const shapes = fresh();
+  const realVoyage = { from: "cadiz", to: "lisboa", path: ["cadiz", "lisboa"], totalTicks: 40, ticksLeft: 40, km: 300 };
+  shapes.state.ai[0].ship.voyage = { ...realVoyage, path: "x" };
+  shapes.state.ai[1].ship.voyage = { ...realVoyage, ticksLeft: "x" };
+  shapes.state.ai[2].ship.voyage = { ...realVoyage }; // a complete voyage keeps counting down
+  const { g: g2 } = deserialize(shapes, world);
+  assert.equal(g2.ai.length, 1, "only the bot with the complete voyage survives");
+  play(g2, 3);
+  assert.ok(!g2.ai[0].ship.voyage || Number.isFinite(g2.ai[0].ship.voyage.ticksLeft), "the surviving bot still advances");
+});
+
+test("a bot saved with a complete voyage arrives at its destination", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ai[0].ship.voyage = { from: "cadiz", to: "lisboa", path: ["cadiz", "lisboa"], totalTicks: 4, ticksLeft: 4, km: 300 };
+  const { g } = deserialize(data, world);
+  assert.equal(g.ai.length, 3);
+  play(g, 1); // 1 day >> 4 ticks: the bot must reach lisboa (docked or already re-sailed from it)
+  const sh = g.ai[0].ship;
+  assert.ok(sh.at === "lisboa" || sh.voyage?.from === "lisboa", "the saved voyage completed via lisboa");
+  play(g, 5);
+});
+
 test("imported profile data is cleaned before it reaches the UI", () => {
   const save = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
   save.state.profile = {
