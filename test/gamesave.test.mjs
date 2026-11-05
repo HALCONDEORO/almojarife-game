@@ -20,7 +20,7 @@ test("save and load gives the same game, and it keeps evolving the same way", ()
 });
 test("the save has a version and does not include the world", () => {
   const s = serialize(newGame(world), "X");
-  assert.equal(s.version, SAVE_VERSION); assert.equal(s.state.world, undefined);
+  assert.equal(s.version, SAVE_VERSION); assert.ok(s.state.world === undefined);
 });
 test("bad or newer saves are refused", () => {
   assert.throws(() => migrate(null)); assert.throws(() => migrate({ version: SAVE_VERSION + 1 }));
@@ -66,7 +66,7 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   ledgers.state.market.cartagena.grain.commerce = { cash: 5, inventoryBasis: {}, households: { poor: null } };
   const { g: gl } = deserialize(ledgers, world);
   for (const c of ["cadiz", "malaga", "almeria", "huelva", "sevilla", "valencia"]) assert.equal(gl.market[c].grain.needsLedger, undefined, c);
-  for (const c of ["barcelona", "palma", "bilbao", "tanger", "cartagena"]) assert.ok(Number.isFinite(gl.market[c].grain.commerce?.cash), `load reopens a dropped commerce account in ${c}`);
+  for (const city of ["barcelona", "palma", "bilbao", "tanger", "cartagena"]) assert.ok(Number.isFinite(gl.market[city].grain.commerce?.cash), `load reopens a dropped commerce account in ${city}`);
   play(gl, 2); // the tick lazily reopens the dropped needs ledgers instead of throwing
   assert.equal(typeof gl.market.cadiz.grain.needsLedger, "object");
 
@@ -74,14 +74,14 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   history.state.hist.cadiz = "x";
   history.state.hist.sevilla = { grain: 7 };
   const { g: gh } = deserialize(history, world);
-  assert.equal(gh.hist.cadiz, undefined);
-  assert.equal(gh.hist.sevilla.grain, undefined);
+  assert.ok(gh.hist.cadiz === undefined);
+  assert.ok(gh.hist.sevilla.grain === undefined);
   play(gh, 2);
   assert.ok(Array.isArray(gh.hist.cadiz.grain) && Array.isArray(gh.hist.sevilla.grain));
 
   for (const bad of [null, "x", 7, [], true]) { // player cargo must be a plain object of finite amounts
-    const c = fresh(); c.state.ships[0].cargo = bad;
-    assert.throws(() => deserialize(c, world), /damaged/, String(bad));
+    const corrupt = fresh(); corrupt.state.ships[0].cargo = bad;
+    assert.throws(() => deserialize(corrupt, world), /damaged/, String(bad));
   }
   const noCargo = fresh(); delete noCargo.state.ships[0].cargo;
   assert.throws(() => deserialize(noCargo, world), /damaged/);
