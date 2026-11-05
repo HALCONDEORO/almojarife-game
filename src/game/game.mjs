@@ -14,7 +14,7 @@ import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
-import { route } from "../sim/world.mjs";
+import { route, resetRouteCache } from "../sim/world.mjs";
 import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
@@ -97,23 +97,64 @@ export const TICKS_PER_DAY = CLOCK_TICKS_PER_DAY;
 /** A game seed is an integer 0..2^32-1; anything else (including none) means 0, so tests and simulations stay reproducible.
  *  The web client passes a fresh random seed for every new game; it is saved with the game and shown in the menu. */
 export const normalizeSeed = (n) => (Number.isSafeInteger(n) && n >= 0 && n <= 0xFFFFFFFF ? n : 0);
+const WARMUP_CACHE_LIMIT = 4; // a few recent seeds/options; about 3.4 MB serialized at the measured 0.86 MB per warm economy
+const warmupCache = new WeakMap(); // source world -> LRU Map(options -> cloned-on-use day-0 economy)
+const warmupWorlds = new WeakMap(); // source world -> last full JSON snapshot used to invalidate warm-up and route caches
+
+/** Warm the market once per source world/options snapshot, then clone it for each new game.
+ *  Repeated starts (tests, restarts and simulations) keep byte-for-byte state without paying
+ *  the 60-day AI warm-up again. The game still receives its own world clone when optional
+ *  goods are on, because callers are allowed to adjust g.world in play and tests.
+ *  The whole source world snapshot invalidates the cache: goods, cities, nodes, routes and
+ *  every other input used directly or by a downstream module. An LRU cap keeps fresh
+ *  per-game seeds from retaining one economy per restart. */
+function startingEconomy(world, opts, pottery, legumes) {
+  const seed = normalizeSeed(opts.seed);
+  const competition = opts.npcCompetition === "planned" ? "planned" : (opts.regionalRivals !== false && opts.regionalRivals !== 1 ? "houses" : "classic");
+  const source = JSON.stringify(world);
+  if (warmupWorlds.get(world) !== source) {
+    resetRouteCache(world); // route() caches per world; adj/nodes edits must not reuse old paths
+    warmupWorlds.set(world, source);
+    warmupCache.delete(world);
+  }
+  const key = JSON.stringify([pottery, legumes, seed, competition]);
+  let byKey = warmupCache.get(world);
+  if (!byKey) warmupCache.set(world, (byKey = new Map()));
+  let warm = byKey.get(key);
+  if (warm) {
+    byKey.delete(key); // refresh LRU recency
+    byKey.set(key, warm);
+  }
+  if (!warm) {
+    let warmWorld = world;
+    if (pottery) warmWorld = withPottery(warmWorld);
+    if (legumes) warmWorld = withLegumes(warmWorld);
+    const ids = warmWorld.cities.map((c) => c.id);
+    // Opt-in research option only. Production defaults stay exactly three traders.
+    const houses = competition === "houses" ? regionalHousePlan(warmWorld, seed) : null;
+    const origins = houses ? houses.map((h) => h.home) : competition === "planned" ? npcPlan(warmWorld).ports.flatMap((r) => Array(r.count).fill(r.city)) : Array.from({ length: 3 }, (_, i) => ids[(i * 3 + 1) % ids.length]);
+    const ai = origins.map((at, i) => ({ cash: 2000, home: at, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) })); // home: where the trader started; its realm decides if a letter of marque covers it
+    if (houses) ai.forEach((bot, i) => { bot.house = houses[i]; });
+    const market = makeMarket(warmWorld), hist = {};
+    for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, warmWorld); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if (houses) regionalRivalStep({ world: warmWorld, market, day: d - WARMUP_DAYS, tick: d * TICKS_PER_DAY, seed, regionalRivals: true }, t); else aiStep(warmWorld, market, t, t.ship); } recordPrices(warmWorld, market, hist); } // so prices differ from day 0
+    warm = { market, hist, ai, regionalRivals: !!houses };
+    byKey.set(key, warm);
+    while (byKey.size > WARMUP_CACHE_LIMIT) byKey.delete(byKey.keys().next().value);
+  }
+  return { ...warm, market: structuredClone(warm.market), hist: structuredClone(warm.hist), ai: structuredClone(warm.ai) };
+}
+
 export function newGame(world, start = "cadiz", opts = {}) {
-  if (opts.pottery === undefined || opts.pottery === true) world = withPottery(world); // optional processor good and kiln, default ON (owner order 23/10); pass false/1 to disable
-  if (opts.legumes === undefined || opts.legumes === true) world = withLegumes(world); // optional staple, default ON (owner order 23/10); pass false/1 to disable
-  const ids = world.cities.map((c) => c.id);
-  // Opt-in research option only. Production defaults stay exactly three traders.
-  const houses = opts.npcCompetition !== "planned" && opts.regionalRivals !== false && opts.regionalRivals !== 1 ? regionalHousePlan(world,normalizeSeed(opts.seed)) : null;
-  const origins = houses ? houses.map(h=>h.home) : opts.npcCompetition === "planned" ? npcPlan(world).ports.flatMap(r=>Array(r.count).fill(r.city)) : Array.from({length:3},(_,i)=>ids[(i*3+1)%ids.length]);
-  const ai = origins.map((at, i) => ({ cash: 2000, home: at, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) })); // home: where the trader started; its realm decides if a letter of marque covers it
-  if(houses)ai.forEach((bot,i)=>{bot.house=houses[i];});
-  const market = makeMarket(world), hist = {};
-  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if(houses)regionalRivalStep({world,market,day:d-WARMUP_DAYS,tick:d*TICKS_PER_DAY,seed:normalizeSeed(opts.seed),regionalRivals:true},t);else aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
-  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, noGoal: !!opts.noGoal, seed: normalizeSeed(opts.seed), startYear: START_YEAR, credit: opts.credit === undefined || opts.credit === true, ...(opts.foreclosure === undefined || opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes: opts.legumes === undefined || opts.legumes === true, pottery: opts.pottery === undefined || opts.pottery === true, pirateFight: opts.pirateFight === undefined || opts.pirateFight === true, marque: opts.marque === undefined || opts.marque === true, ...(opts.household !== false && opts.household !== 1 ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
+  const pottery = opts.pottery === undefined || opts.pottery === true, legumes = opts.legumes === undefined || opts.legumes === true;
+  const economy = startingEconomy(world, opts, pottery, legumes);
+  if (pottery) world = withPottery(world); // optional processor good and kiln, default ON (owner order 23/10); pass false/1 to disable
+  if (legumes) world = withLegumes(world); // optional staple, default ON (owner order 23/10); pass false/1 to disable
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market: economy.market, hist: economy.hist, ships: [makeShip(1, "cog", start)], ai: economy.ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, noGoal: !!opts.noGoal, seed: normalizeSeed(opts.seed), startYear: START_YEAR, credit: opts.credit === undefined || opts.credit === true, ...(opts.foreclosure === undefined || opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes, pottery, pirateFight: opts.pirateFight === undefined || opts.pirateFight === true, marque: opts.marque === undefined || opts.marque === true, ...(opts.household !== false && opts.household !== 1 ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
   if (opts.justice !== false) g.justice = true;
   if (opts.peace !== false) g.peace = true;
   if (opts.pardon !== false) g.pardon = true;
   if (opts.embargo !== false) g.embargo = true;
-  if(houses)g.regionalRivals=true;
+  if (economy.regionalRivals) g.regionalRivals = true;
   if (opts.citylife !== false && opts.citylife !== 1) g.citylife = initCitylife(world); // city-life flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.captainXp !== false && opts.captainXp !== 1) g.captainXp = true; // captain-experience flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
   if (opts.plague !== false && opts.plague !== 1) g.plague = initPlague(); // plague flag, ON by default (owner order 24/10 12:08: every flag ships ON); false/1 keeps an off game with no key (saves stay identical)
