@@ -1,4 +1,6 @@
 import {fillShipNames} from "../sim/shipnames.mjs";
+import { cleanProfile } from "./profile.mjs";
+import { cleanCompany, MAX_COMPANY } from "./clean-text.mjs";
 // Versioned save format. Pure functions (no DOM) so they can be tested.
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
 import { campaignShapeOk, newCampaign } from "./campaigns.mjs";
@@ -6,8 +8,7 @@ import { fillMissingMarketRows } from "../sim/market.mjs";
 import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
-export const MAX_COMPANY = 30;
-export const cleanCompany = (s) => String(s ?? "").replace(/[\u0000-\u001f<>&"]/g, "").trim().slice(0, MAX_COMPANY);
+export { cleanCompany, MAX_COMPANY };
 export function serialize(g, company, now = Date.now()) {
   const { world, ...state } = g;
   return JSON.parse(JSON.stringify({ version: SAVE_VERSION, savedAt: now, company: cleanCompany(company), state }));
@@ -55,6 +56,7 @@ export function deserialize(save, world) {
   for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
   for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
+  g.profile = cleanProfile(g.profile, world.cities.map((c) => c.id)); // imported saves cannot carry markup into profile SVGs or unknown rules into play
   if (g.pottery === true) g.world = withPottery(g.world);
   if (g.legumes === true) g.world = withLegumes(g.world);
   delete g.kidMeat; // the retired optional-goods flag rides along in old saves; drop it

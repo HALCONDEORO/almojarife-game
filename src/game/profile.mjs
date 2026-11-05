@@ -1,7 +1,7 @@
 // Player profile: character, house colours, coat of arms, home port and background.
 // Pure data and SVG-string builders (no DOM), so they can be tested. All art here is original work.
 import { DIFFICULTY_IDS, difficultyOpts } from "./difficulty.mjs";
-import { cleanCompany } from "./gamesave.mjs";
+import { cleanCompany } from "./clean-text.mjs";
 
 export const PALETTE = ["#8a1c1c", "#1f4e8c", "#2f6b3a", "#c9962a", "#4b2a6b", "#222222", "#e8e0cc", "#b4571e"];
 export const DIVISIONS = ["plain", "pale", "fess", "chevron", "cross"];
@@ -23,11 +23,15 @@ export const defaultProfile = (company = "") => ({
 });
 const pick = (v, list, d) => (list.includes(v) ? v : d);
 const color = (v, d) => (PALETTE.includes(v) ? v : d);
+export function cleanCrest(c) {
+  const d = defaultProfile().crest;
+  return { shield: pick(c?.shield, SHIELDS, d.shield), division: pick(c?.division, DIVISIONS, d.division), charge: pick(c?.charge, CHARGES, d.charge), c1: color(c?.c1, d.c1), c2: color(c?.c2, d.c2) };
+}
 export function cleanProfile(p, cityIds = ["cadiz"]) {
-  const d = defaultProfile(), c = p?.crest ?? {};
+  const d = defaultProfile();
   return {
     company: cleanCompany(p?.company), character: cleanCompany(p?.character), portrait: Number.isInteger(p?.portrait) && p.portrait >= 0 && p.portrait < PORTRAITS ? p.portrait : 0,
-    crest: { shield: pick(c.shield, SHIELDS, d.crest.shield), division: pick(c.division, DIVISIONS, d.crest.division), charge: pick(c.charge, CHARGES, d.crest.charge), c1: color(c.c1, d.crest.c1), c2: color(c.c2, d.crest.c2) },
+    crest: cleanCrest(p?.crest),
     home: pick(p?.home, cityIds, cityIds[0]), background: pick(p?.background, Object.keys(BACKGROUNDS), d.background), difficulty: pick(p?.difficulty, DIFFICULTY_IDS, d.difficulty),
   };
 }
@@ -51,8 +55,9 @@ const CHARGE_SVG = (kind, fill) => ({
   wheat: `<path d="M50 84V40" stroke="${fill}" stroke-width="3"/><g fill="${fill}">${[[50, 36, 0], [40, 46, -35], [60, 46, 35], [40, 62, -35], [60, 62, 35]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="4" ry="8" transform="rotate(${r} ${x} ${y})"/>`).join("")}</g>`,
 }[kind] ?? "");
 /** Coat of arms as an SVG string (viewBox 0 0 100 120). */
-export function crestSvg(crest, size = 48, id = "c") {
-  const { shield, division, charge, c1, c2 } = crest, path = SHIELD_PATH[shield] ?? SHIELD_PATH.heater, cid = `cl-${id}`;
+export function crestSvg(rawCrest, rawSize = 48, rawId = "c") {
+  const { shield, division, charge, c1, c2 } = cleanCrest(rawCrest), path = SHIELD_PATH[shield] ?? SHIELD_PATH.heater;
+  const size = Number.isFinite(rawSize) ? Math.min(512, Math.max(1, rawSize)) : 48, id = String(rawId).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || "c", cid = `cl-${id}`;
   const div = { plain: "", pale: `<rect x="50" y="0" width="50" height="120" fill="${c2}"/>`, fess: `<rect x="0" y="60" width="100" height="60" fill="${c2}"/>`,
     chevron: `<path d="M0 120L50 50l50 70v-30L50 20 0 90z" fill="${c2}"/>`, cross: `<path d="M42 0h16v120H42zM0 46h100v16H0z" fill="${c2}"/>` }[division] ?? "";
   const chargeFill = division === "plain" || division === "cross" || division === "chevron" ? (light(c1) ? "#222" : "#f4ead0") : light(c1) && light(c2) ? "#222" : "#f4ead0";
@@ -61,7 +66,8 @@ export function crestSvg(crest, size = 48, id = "c") {
 }
 const SKIN = ["#e3b98f", "#c68d5f", "#8d5a3a"], HAT = ["cap", "hood", "feather", "bare"];
 /** Portrait as an SVG string (viewBox 0 0 80 80). `cloth` is the house colour for the clothes. */
-export function portraitSvg(i, cloth = "#1f4e8c", size = 64) {
+export function portraitSvg(rawI, rawCloth = "#1f4e8c", rawSize = 64) {
+  const i = Number.isInteger(rawI) && rawI >= 0 ? rawI : 0, cloth = color(rawCloth, PALETTE[1]), size = Number.isFinite(rawSize) ? Math.min(512, Math.max(1, rawSize)) : 64;
   const skin = SKIN[i % 3], hat = HAT[Math.floor(i / 3) % 4] ?? "bare", hair = ["#3b2a1a", "#6b4a22", "#222", "#a9a9a9"][i % 4];
   const head = {
     cap: `<path d="M22 34c0-14 36-14 36 0z" fill="${cloth}"/><rect x="20" y="33" width="40" height="5" rx="2" fill="#0003"/>`,
@@ -74,4 +80,4 @@ export function portraitSvg(i, cloth = "#1f4e8c", size = 64) {
     `<circle cx="34.5" cy="40" r="1.6" fill="#222"/><circle cx="45.5" cy="40" r="1.6" fill="#222"/><path d="M35 46q5 3 10 0" stroke="#5a3a24" stroke-width="1.5" fill="none"/></svg>`;
 }
 /** Small flag (house colours) for ships on the map. */
-export const flagSvg = (crest) => `<rect x="0" y="-14" width="10" height="7" fill="${crest.c1}"/><rect x="5" y="-14" width="5" height="7" fill="${crest.c2}"/><path d="M0 -15V0" stroke="#3a2a14" stroke-width="1.2"/>`;
+export const flagSvg = (crest) => { const c = cleanCrest(crest); return `<rect x="0" y="-14" width="10" height="7" fill="${c.c1}"/><rect x="5" y="-14" width="5" height="7" fill="${c.c2}"/><path d="M0 -15V0" stroke="#3a2a14" stroke-width="1.2"/>`; };
