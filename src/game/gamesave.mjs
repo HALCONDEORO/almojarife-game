@@ -75,12 +75,15 @@ for (const row of Object.values(st.market)) {
 const isPlainObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const ownShipType = (t) => typeof t === "string" && Object.hasOwn(SHIP_TYPES, t); // hasOwn: "constructor"/"__proto__"/"toString" are inherited, not ship classes
 const cargoOk = (c) => isPlainObj(c) && Object.values(c).every((v) => Number.isFinite(v)); // netWorth and trades walk cargo with Object.entries/keys; non-numeric amounts poison prices with NaN
+// A half-built voyage never advances: sailTick decrements ticksLeft, so NaN <= 0 is forever false and the
+// ship is stuck "at sea" (trades refuse with "at sea"). Same fields the player-voyage check below enforces.
+const voyageOk = (v) => v == null || (isPlainObj(v) && Array.isArray(v.path) && Number.isFinite(v.totalTicks) && Number.isFinite(v.ticksLeft) && Number.isFinite(v.km));
 
 function sanitizeFleetAndBots(st) {
 for (const sh of st.ships) if (!isPlainObj(sh) || !ownShipType(sh.type) || !cargoOk(sh.cargo)) throw new Error("save is damaged");
-// ambient bots: a corrupt entry is dropped, not kept to crash a tick (sailTick, aiStep and bot intel all dereference these)
+// ambient bots: a corrupt entry is dropped, not kept to crash a tick or stall at sea (sailTick, aiStep and bot intel all dereference these)
 const botOk = (b) => isPlainObj(b) && isPlainObj(b.ship) && ownShipType(b.ship.type) && cargoOk(b.ship.cargo)
-  && (b.ship.voyage == null || isPlainObj(b.ship.voyage))
+  && voyageOk(b.ship.voyage)
   && (b.intel == null || isPlainObj(b.intel)) && (b.discovered == null || isPlainObj(b.discovered))
   && Number.isFinite(b.cash);
 if (st.ai != null) st.ai = Array.isArray(st.ai) ? st.ai.filter(botOk) : [];
