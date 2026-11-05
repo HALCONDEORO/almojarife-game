@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
 import { newGame, advanceDay, doBuy } from "../src/game/game.mjs";
 import { serialize, deserialize, migrate, cleanCompany, SAVE_VERSION } from "../src/game/gamesave.mjs";
+import { crestSvg, defaultProfile } from "../src/game/profile.mjs";
 
 const world = buildWorld(JSON.parse(fs.readFileSync(new URL("../data/world.json", import.meta.url))));
 const play = (g, n) => { for (let i = 0; i < n; i++) advanceDay(g); };
@@ -35,6 +36,24 @@ test("pre-launch saves without profile, voyage fields or market pop are refused 
   assert.throws(() => deserialize(noPop, world), /not kept/);
   assert.ok(deserialize(JSON.parse(JSON.stringify(s)), world).g.profile.home); // current saves still load
 });
+
+test("imported profile data is cleaned before it reaches the UI", () => {
+  const save = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
+  save.state.profile = {
+    company: 'Casa <img src=x onerror=alert(1)>', character: '<b>Ana</b>', portrait: 99,
+    crest: { shield: '"><script>alert(1)</script>', division: 'x', charge: 'y', c1: 'red" onload="alert(1)', c2: 'not-a-colour' },
+    home: 'nowhere', background: 'king', difficulty: 'impossible',
+  };
+  const { g } = deserialize(save, world);
+  assert.equal(g.profile.company, 'Casa img src=x onerror=alert(1'); // text can stay; markup characters cannot
+  assert.equal(g.profile.character, 'bAna/b');
+  assert.deepEqual(g.profile.crest, defaultProfile().crest);
+  assert.equal(g.profile.home, 'cadiz');
+  assert.equal(g.profile.background, 'merchant');
+  assert.equal(g.profile.difficulty, 'normal');
+  assert.ok(!/<script|onload|onerror/i.test(crestSvg(g.profile.crest, 22, 'imported')));
+});
+
 test("company name is cleaned and limited", () => {
   assert.equal(cleanCompany("  <b>Casa</b> \n"), "bCasa/b");
   assert.equal(cleanCompany("x".repeat(80)).length, 30);

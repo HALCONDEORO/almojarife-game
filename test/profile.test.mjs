@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { defaultProfile, cleanProfile, crestSvg, portraitSvg, startBonus, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS } from "../src/game/profile.mjs";
+import { defaultProfile, cleanProfile, crestSvg, portraitSvg, flagSvg, startBonus, PALETTE, DIVISIONS, CHARGES, SHIELDS, PORTRAITS } from "../src/game/profile.mjs";
 
 test("a bad profile is cleaned to safe values", () => {
   const p = cleanProfile({ company: "<x>Casa", character: "A".repeat(99), portrait: 99, crest: { shield: "nope", division: "x", charge: "y", c1: "javascript:", c2: "#fff" }, home: "mars", background: "king" }, ["cadiz", "lisboa"]);
@@ -18,6 +18,19 @@ test("every crest combination makes a well-formed svg without scripts", () => {
     assert.equal((s.match(/<g[ >]/g) ?? []).length, (s.match(/<\/g>/g) ?? []).length);
   }
 });
+
+test("svg builders reject markup carried by imported or caller-provided profile data", () => {
+  const bad = { shield: '"><img src=x onerror=alert(1)>', division: '"><script>alert(1)</script>', charge: 'not-a-charge', c1: 'red" onload="alert(1)', c2: '#fff" onmouseover="alert(1)' };
+  const crest = crestSvg(bad, '22 onfocus=alert(1)', 'x" onload="alert(1)'), portrait = portraitSvg(-1, bad.c1, '64 onmouseover=alert(1)'), flag = flagSvg(bad);
+  for (const svg of [crest, portrait, flag]) {
+    assert.ok(svg.startsWith("<svg") ? svg.endsWith("</svg>") : !svg.includes("<svg")); // flags are rect/path fragments
+    assert.ok(!/<script|\son(load|focus|mouseover|error)\s*=/i.test(svg));
+  }
+  assert.match(crest, /fill="#8a1c1c"/);
+  assert.match(portrait, /fill="#1f4e8c"/);
+  assert.match(flag, /fill="#8a1c1c"/);
+});
+
 test("every portrait is different and valid", () => {
   const all = Array.from({ length: PORTRAITS }, (_, i) => portraitSvg(i));
   assert.equal(new Set(all).size, PORTRAITS); all.forEach((s) => assert.ok(s.startsWith("<svg") && s.endsWith("</svg>")));
