@@ -79,6 +79,15 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   play(gh, 2);
   assert.ok(Array.isArray(gh.hist.cadiz.grain) && Array.isArray(gh.hist.sevilla.grain));
 
+  for (const bad of [null, "x", 7, [], true]) { // player cargo must be a plain object of finite amounts
+    const c = fresh(); c.state.ships[0].cargo = bad;
+    assert.throws(() => deserialize(c, world), /damaged/, String(bad));
+  }
+  const noCargo = fresh(); delete noCargo.state.ships[0].cargo;
+  assert.throws(() => deserialize(noCargo, world), /damaged/);
+  const badAmount = fresh(); badAmount.state.ships[0].cargo = { grain: "plenty" };
+  assert.throws(() => deserialize(badAmount, world), /damaged/);
+
   const bots = fresh();
   bots.state.ai[1] = "x";
   bots.state.ai[2] = { cash: 9, ship: { type: "ufo" } };
@@ -86,6 +95,20 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   const { g: ga } = deserialize(bots, world);
   assert.equal(ga.ai.length, 0, "all three malformed bots are dropped");
   play(ga, 2);
+  const botFields = fresh();
+  botFields.state.ai[0].ship.cargo = null;
+  botFields.state.ai[1].ship.voyage = "x"; // sailTick writes voyage.ticksLeft
+  botFields.state.ai[2].intel = "x"; // aiStep writes intel[city]
+  const { g: gb } = deserialize(botFields, world);
+  assert.equal(gb.ai.length, 0, "bots with corrupt cargo, voyage or intel are dropped");
+  play(gb, 2);
+  const botFields2 = fresh();
+  botFields2.state.ai[0].discovered = 7;
+  botFields2.state.ai[1].cash = "x";
+  delete botFields2.state.ai[2].ship.cargo;
+  const { g: gb2 } = deserialize(botFields2, world);
+  assert.equal(gb2.ai.length, 0, "bots with corrupt discovered, cash or cargo are dropped");
+  play(gb2, 2);
   const noBots = fresh(); noBots.state.ai = 7;
   assert.deepEqual(deserialize(noBots, world).g.ai, []);
 });

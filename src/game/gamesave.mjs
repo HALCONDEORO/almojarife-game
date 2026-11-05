@@ -80,8 +80,14 @@ export function deserialize(save, world) {
     }
   }
   const ownShipType = (t) => typeof t === "string" && Object.hasOwn(SHIP_TYPES, t); // hasOwn: "constructor"/"__proto__"/"toString" are inherited, not ship classes
-  for (const sh of st.ships) if (!isObj(sh) || !ownShipType(sh.type)) throw new Error("save is damaged");
-  if (st.ai != null) st.ai = Array.isArray(st.ai) ? st.ai.filter((b) => isObj(b) && isObj(b.ship) && ownShipType(b.ship.type)) : []; // ambient bots: a corrupt entry is dropped, not kept to crash a tick
+  const cargoOk = (c) => isObj(c) && Object.values(c).every((v) => Number.isFinite(v)); // netWorth and trades walk cargo with Object.entries/keys; non-numeric amounts poison prices with NaN
+  for (const sh of st.ships) if (!isObj(sh) || !ownShipType(sh.type) || !cargoOk(sh.cargo)) throw new Error("save is damaged");
+  // ambient bots: a corrupt entry is dropped, not kept to crash a tick (sailTick, aiStep and bot intel all dereference these)
+  const botOk = (b) => isObj(b) && isObj(b.ship) && ownShipType(b.ship.type) && cargoOk(b.ship.cargo)
+    && (b.ship.voyage == null || isObj(b.ship.voyage))
+    && (b.intel == null || isObj(b.intel)) && (b.discovered == null || isObj(b.discovered))
+    && Number.isFinite(b.cash);
+  if (st.ai != null) st.ai = Array.isArray(st.ai) ? st.ai.filter(botOk) : [];
   if (st.hist != null) { // price history re-records from the load day; wrong-typed nodes would crash recordPrices
     if (!isObj(st.hist)) st.hist = {};
     else for (const [c, goods] of Object.entries(st.hist)) {
