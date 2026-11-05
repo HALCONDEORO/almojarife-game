@@ -52,6 +52,8 @@ export function migrateRetired(g) {
 function sanitizeMarketStructures(st) {
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const objOfObjs = (v) => isObj(v) && Object.values(v).every((x) => isObj(x));
+const LEDGER_KEYS = ["need", "desired", "consumed", "spending", "balance"]; // recordNeeds accumulates each of these with +=; a missing one turns NaN
+const ledgerLeavesOk = (v) => objOfObjs(v) && Object.values(v).every((leaf) => LEDGER_KEYS.every((k) => Number.isFinite(leaf[k])));
 for (const row of Object.values(st.market)) if (!isObj(row)) throw new Error("save is damaged"); // before Object.values(row) below throws a raw TypeError on null
 for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
 for (const row of Object.values(st.market)) {
@@ -59,8 +61,9 @@ for (const row of Object.values(st.market)) {
     if (!isObj(e) || !Number.isFinite(e.stock) || !Number.isFinite(e.target) || !Number.isFinite(e.rate)) throw new Error("save is damaged");
     const nl = e.needsLedger;
     // telemetry only: the next tick reopens it. recordNeeds needs a complete current-policy ledger:
-    // a stale policyId throws mid-tick, and missing or half-built totals/byClass crash its accumulators.
-    const nlOk = isObj(nl) && nl.policyId === "legacy-telemetry-v1" && objOfObjs(nl.totals) && objOfObjs(nl.byClass) && Object.values(nl.byClass).every(objOfObjs);
+    // a stale policyId throws mid-tick, missing or half-built totals/byClass crash its accumulators,
+    // and non-numeric leaves or days poison every later reading (total[k] += d[k], prior.days + 1).
+    const nlOk = isObj(nl) && nl.policyId === "legacy-telemetry-v1" && Number.isFinite(nl.days) && ledgerLeavesOk(nl.totals) && objOfObjs(nl.byClass) && Object.values(nl.byClass).every(ledgerLeavesOk);
     if (nl != null && !nlOk) delete e.needsLedger;
     const co = e.commerce;
     // openCommerce reopens a dropped account on the first tick. inventoryBasis is written by every
@@ -79,11 +82,82 @@ const cargoOk = (c) => isPlainObj(c) && Object.values(c).every((v) => Number.isF
 // ship is stuck "at sea" (trades refuse with "at sea"). Same fields the player-voyage check below enforces.
 const voyageOk = (v) => v == null || (isPlainObj(v) && Array.isArray(v.path) && Number.isFinite(v.totalTicks) && Number.isFinite(v.ticksLeft) && Number.isFinite(v.km));
 
-function sanitizeFleetAndBots(st) {
-for (const sh of st.ships) if (!isPlainObj(sh) || !ownShipType(sh.type) || !cargoOk(sh.cargo)) throw new Error("save is damaged");
+// Negative cargo is impossible stock: it jams sells (the amount check never passes) and distorts
+// netWorth and price impact. Clamp it away instead of rejecting the save over a rounding relic.
+const clampCargo = (c) => { if (isPlainObj(c)) for (const k of Object.keys(c)) if (Number.isFinite(c[k]) && c[k] < 0) c[k] = 0; }; // only finite negatives: -Infinity stays for cargoOk to reject like NaN
+// NaN hull stays NaN through sea wear and shows as "NaN%" in the UI; out-of-range hull breaks repairs and auctions.
+const fixHull = (sh) => { sh.hull = Number.isFinite(sh.hull) ? Math.min(100, Math.max(0, sh.hull)) : 100; };
+
+// Fleet ops (rename, convoys, encounters, sales) find ships by id: a missing or duplicated id makes them hit the wrong ship.
+// Documented ceiling: reaching 1e9 ship ids takes ~1e9 purchases, unreachable in real play, so an id or
+// counter past it marks a corrupt save. Then the whole fleet renumbers dense (1..n, nextId = n + 1) and
+// every stored ship reference remaps. Below the ceiling only missing/duplicated ids reissue (smallest
+// free) and nextId moves ahead of the fleet; overflowing safe integers would then take ~1e9 more buys.
+const SHIP_ID_LIMIT = 1e9;
+const fleetOverLimit = (st) => st.ships.some((sh) => Number.isSafeInteger(sh?.id) && sh.id > SHIP_ID_LIMIT) || (Number.isSafeInteger(st.nextId) && st.nextId > SHIP_ID_LIMIT);
+
+function compactFleetIds(st) {
+  const remap = new Map();
+  // Duplicated old ids map to the FIRST ship that had one: every consumer resolves with find-first,
+  // so references must keep hitting the same hull the game would have picked before the renumber.
+  st.ships.forEach((sh, i) => { if (isPlainObj(sh)) { if (!remap.has(sh.id)) remap.set(sh.id, i + 1); sh.id = i + 1; } });
+  st.nextId = st.ships.length + 1;
+  remapShipReferences(st, remap);
+}
+
+// Every stored ship-id reference must follow the renumber (audited against each g.ships.find(s => s.id === ...) consumer).
+function remapShipReferences(st, remap) {
+  const remapId = (id) => remap.get(id) ?? id;
+  const remapList = (list) => (Array.isArray(list) ? list.map(remapId) : list);
+  const remapField = (o, field) => { if (isPlainObj(o) && remap.has(o[field])) o[field] = remap.get(o[field]); };
+  const remapKeys = (o) => (isPlainObj(o) ? Object.fromEntries(Object.entries(o).map(([k, v]) => [String(remap.get(Number(k)) ?? k), v])) : o);
+  const eachItem = (list, fn) => { if (Array.isArray(list)) for (const item of list) fn(item); };
+  remapField(st.pending, "ship"); // sea encounter awaiting a choice
+  remapField(st.encounterReport, "ship"); // resolved encounter awaiting the report screen
+  remapField(st.encounterReport?.prize, "shipId"); // history names the fleet ship the prize became
+  if (isPlainObj(st.convoys)) for (const cv of Object.values(st.convoys)) if (isPlainObj(cv)) cv.ships = remapList(cv.ships);
+  eachItem(st.repairs, (ord) => { if (isPlainObj(ord)) ord.ships = remapList(ord.ships); }); // a dangling id closes a paid yard order with the hull still damaged
+  eachItem(st.voyages, (v) => remapField(v, "ship")); // the voyage diary keeps its ship
+  eachItem(st.log, (entry) => remapField(entry, "ship")); // cosmetic: recordedShipName falls back to the snapshot anyway
+  eachItem(st.inbox, (msg) => { remapField(msg, "ship"); if (isPlainObj(msg)) msg.ships = remapList(msg.ships); }); // display only: shipName is baked at post time
+  if (isPlainObj(st.accrued)) for (const key of ["ships", "captains", "cannons", "wages"]) st.accrued[key] = remapKeys(st.accrued[key]); // the weekly settlement attributes upkeep by ship id (buildings key on plots)
+}
+
+function reissueFleetIds(st) {
+  let maxShipId = 0;
+  const seenIds = new Set();
+  for (const sh of st.ships) {
+    if (Number.isSafeInteger(sh.id) && sh.id > 0 && !seenIds.has(sh.id)) { seenIds.add(sh.id); if (sh.id > maxShipId) maxShipId = sh.id; continue; }
+    sh.id = null; // reissued below
+  }
+  let candidate = 0;
+  for (const sh of st.ships) {
+    if (sh.id !== null) continue;
+    do { candidate++; } while (seenIds.has(candidate)); // smallest free id keeps the fleet dense
+    sh.id = candidate; seenIds.add(candidate);
+    if (candidate > maxShipId) maxShipId = candidate;
+  }
+  // The counter must stay ahead of the fleet or new ships reuse live ids.
+  if (!Number.isSafeInteger(st.nextId) || st.nextId <= maxShipId) st.nextId = maxShipId + 1;
+}
+
+function sanitizeFleetAndBots(st, world) {
+const portOk = (at) => typeof at === "string" && Object.hasOwn(world.nodes ?? {}, at); // nodes covers cities and waypoints
+for (const sh of st.ships) {
+  clampCargo(sh?.cargo);
+  if (!isPlainObj(sh) || !ownShipType(sh.type) || !cargoOk(sh.cargo)) throw new Error("save is damaged");
+  fixHull(sh);
+  // A ship moored at a port the world does not know can never trade or sail again (route() finds nothing).
+  // The fallback home must itself be a known port; mirror cleanProfile, which snaps an unknown home to the first city.
+  const home = portOk(st.profile.home) ? st.profile.home : world.cities?.[0]?.id;
+  if (!portOk(sh.at)) sh.at = portOk(sh.voyage?.from) ? sh.voyage.from : home;
+}
+if (fleetOverLimit(st)) compactFleetIds(st); else reissueFleetIds(st);
 // ambient bots: a corrupt entry is dropped, not kept to crash a tick or stall at sea (sailTick, aiStep and bot intel all dereference these)
+for (const b of Array.isArray(st.ai) ? st.ai : []) { clampCargo(b?.ship?.cargo); if (isPlainObj(b?.ship)) fixHull(b.ship); }
 const botOk = (b) => isPlainObj(b) && isPlainObj(b.ship) && ownShipType(b.ship.type) && cargoOk(b.ship.cargo)
   && voyageOk(b.ship.voyage)
+  && portOk(b.ship.at) && (b.home == null || portOk(b.home))
   && (b.intel == null || isPlainObj(b.intel)) && (b.discovered == null || isPlainObj(b.discovered))
   && Number.isFinite(b.cash);
 if (st.ai != null) st.ai = Array.isArray(st.ai) ? st.ai.filter(botOk) : [];
@@ -98,9 +172,9 @@ for (const [city, goods] of Object.entries(st.hist)) {
 }
 }
 
-function sanitizeDeepStructures(st) {
+function sanitizeDeepStructures(st, world) {
   sanitizeMarketStructures(st);
-  sanitizeFleetAndBots(st);
+  sanitizeFleetAndBots(st, world);
   sanitizeHistory(st);
 }
 
@@ -114,7 +188,7 @@ export function deserialize(save, world) {
   if (st.campaign != null && !campaignShapeOk(st.campaign)) st.campaign = newCampaign();
   if (!Number.isFinite(st.tick)) throw new Error("save is from a test build and is not kept");
   for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
-  sanitizeDeepStructures(st);
+  sanitizeDeepStructures(st, world);
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
   const cityIds = Array.isArray(world.cities) && world.cities.length ? world.cities.map((city) => city.id) : [g.profile.home];
   g.profile = cleanProfile(g.profile, cityIds); // imported saves cannot carry markup into profile SVGs or unknown rules into play

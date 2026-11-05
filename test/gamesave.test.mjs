@@ -142,6 +142,186 @@ test("a bot saved with a complete voyage arrives at its destination", () => {
   play(g, 5);
 });
 
+test("negative cargo amounts are clamped away on load", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ships[0].cargo = { grain: -5, wine: 3 };
+  data.state.ai[0].ship.cargo = { grain: -2 };
+  const { g } = deserialize(data, world);
+  assert.equal(g.ships[0].cargo.grain, 0, "player cargo clamps to zero");
+  assert.equal(g.ships[0].cargo.wine, 3, "positive amounts are untouched");
+  assert.equal(g.ai.length, 3, "a bot with negative cargo is repaired, not dropped");
+  assert.equal(g.ai[0].ship.cargo.grain, 0);
+  play(g, 3);
+});
+
+test("a needs ledger with poisoned numerics is dropped, a sound one survives", () => {
+  const withLedger = () => {
+    const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+    const { g } = deserialize(data, world);
+    play(g, 2);
+    return JSON.parse(JSON.stringify(serialize(g, "Casa Oro")));
+  };
+  const good = withLedger();
+  const city = Object.keys(good.state.market)[0];
+  const ledger = good.state.market[city].grain.needsLedger;
+  assert.ok(ledger, "fixture carries a ledger after two days");
+  const okG = deserialize(good, world).g;
+  assert.ok(okG.market[city].grain.needsLedger, "a complete ledger survives the load");
+  play(okG, 2);
+  const badDays = withLedger();
+  badDays.state.market[city].grain.needsLedger.days = "x";
+  assert.equal(deserialize(badDays, world).g.market[city].grain.needsLedger, undefined, "non-numeric days drops the ledger");
+  const badLeaf = withLedger();
+  badLeaf.state.market[city].grain.needsLedger.totals.grain = { need: "x", desired: 0, consumed: 0, spending: 0, balance: 0 };
+  assert.equal(deserialize(badLeaf, world).g.market[city].grain.needsLedger, undefined, "a non-numeric leaf drops the ledger");
+  const badByClass = withLedger();
+  badByClass.state.market[city].grain.needsLedger.byClass[Object.keys(badByClass.state.market[city].grain.needsLedger.byClass)[0]].grain = { need: 1, desired: "x" };
+  assert.equal(deserialize(badByClass, world).g.market[city].grain.needsLedger, undefined, "a non-numeric byClass leaf drops the ledger");
+  for (const key of ["need", "desired", "consumed", "spending", "balance"]) {
+    const missing = withLedger();
+    delete missing.state.market[city].grain.needsLedger.totals.grain[key];
+    assert.equal(deserialize(missing, world).g.market[city].grain.needsLedger, undefined, `a totals leaf missing ${key} drops the ledger`);
+    const missingBc = withLedger();
+    const cls = Object.keys(missingBc.state.market[city].grain.needsLedger.byClass)[0];
+    delete missingBc.state.market[city].grain.needsLedger.byClass[cls].grain[key];
+    assert.equal(deserialize(missingBc, world).g.market[city].grain.needsLedger, undefined, `a byClass leaf missing ${key} drops the ledger`);
+  }
+  const empty = withLedger();
+  empty.state.market[city].grain.needsLedger.totals.grain = {};
+  assert.equal(deserialize(empty, world).g.market[city].grain.needsLedger, undefined, "an empty leaf drops the ledger");
+});
+
+test("ships moored at unknown ports are moved home; bots at unknown ports are dropped", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  const home = data.state.profile.home;
+  data.state.ships[0].at = "narnia";
+  data.state.ai[0].ship.at = "narnia";
+  data.state.ai[1].home = "narnia";
+  const { g } = deserialize(data, world);
+  assert.equal(g.ships[0].at, home, "a docked player ship with an unknown port returns home");
+  assert.equal(g.ai.length, 1, "bots with an unknown mooring or home are dropped");
+  play(g, 3);
+  const sailing = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  sailing.state.ships[0].at = "narnia";
+  sailing.state.ships[0].voyage = { from: "cadiz", to: "lisboa", path: ["cadiz", "lisboa"], totalTicks: 40, ticksLeft: 40, km: 300 };
+  const { g: g2 } = deserialize(sailing, world);
+  assert.equal(g2.ships[0].at, "cadiz", "a sailing ship resumes from its voyage origin");
+  play(g2, 2);
+  const badBoth = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  badBoth.state.profile.home = "narnia";
+  badBoth.state.ships[0].at = "narnia";
+  const { g: g3 } = deserialize(badBoth, world);
+  assert.ok(g3.world.cities.some((c) => c.id === g3.ships[0].at), "with both home and mooring unknown the ship still lands at a real port");
+  assert.ok(g3.world.cities.some((c) => c.id === g3.profile.home), "the cleaned profile home is a real port");
+  assert.equal(g3.ships[0].at, g3.profile.home, "ship and profile agree on the repaired home");
+  play(g3, 3);
+});
+
+test("ship hull and ids are repaired on load", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ships[0].hull = "x";
+  data.state.ai[0].ship.hull = 150;
+  const { g } = deserialize(data, world);
+  assert.equal(g.ships[0].hull, 100, "non-numeric hull becomes a sound hull");
+  assert.equal(g.ai[0].ship.hull, 100, "hull clamps to the 0-100 range");
+  const dup = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  dup.state.ships.push({ ...JSON.parse(JSON.stringify(dup.state.ships[0])) }); // same id as ships[0]
+  dup.state.nextId = 1; // behind the fleet: the next built ship would reuse a live id
+  const { g: g2 } = deserialize(dup, world);
+  const ids = g2.ships.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, "ship ids are unique after the load");
+  assert.ok(g2.nextId > Math.max(...ids), "nextId stays ahead of the fleet");
+  play(g2, 3);
+  // past the documented 1e9 ceiling the whole fleet renumbers dense and every stored reference remaps
+  for (const edgeId of [Number.MAX_SAFE_INTEGER - 1001, Number.MAX_SAFE_INTEGER - 1, Number.MAX_SAFE_INTEGER]) {
+    const edge = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+    for (let i = 0; i < 2; i++) edge.state.ships.push(JSON.parse(JSON.stringify(edge.state.ships[0])));
+    for (const s of edge.state.ships) s.id = edgeId;
+    const { g: g4 } = deserialize(edge, world);
+    assert.deepEqual(g4.ships.map((s) => s.id), [1, 2, 3], `id ${edgeId} renumbers the fleet dense`);
+    assert.equal(g4.nextId, 4, "nextId follows the dense fleet");
+    for (let i = 0; i < 1100; i++) g4.ships.push({ ...g4.ships[0], id: g4.nextId++ }); // far past any margin: constructions keep working
+    const ids4 = g4.ships.map((s) => s.id);
+    assert.equal(new Set(ids4).size, ids4.length, `constructions after id ${edgeId} stay unique`);
+    assert.ok(ids4.every((id) => Number.isSafeInteger(id)), "constructions stay safe integers");
+    play(g4, 3);
+  }
+  const giantCounter = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  giantCounter.state.ships[0].id = 1;
+  giantCounter.state.nextId = Number.MAX_SAFE_INTEGER; // a counter past the ceiling is corrupt even over a healthy fleet
+  const { g: g5 } = deserialize(giantCounter, world);
+  assert.equal(g5.nextId, 2, "a corrupt nextId resets behind the dense fleet");
+  for (let i = 0; i < 1100; i++) g5.ships.push({ ...g5.ships[0], id: g5.nextId++ });
+  const ids5 = g5.ships.map((s) => s.id);
+  assert.equal(new Set(ids5).size, ids5.length, "constructions after a giant nextId stay unique");
+});
+
+test("fleet renumbering maps duplicated ids to the first ship, like find-first did", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ships.push(JSON.parse(JSON.stringify(data.state.ships[0])));
+  data.state.ships[0].id = 42;
+  data.state.ships[0].hull = 50; // the damaged one every find-first consumer would have picked
+  data.state.ships[1].id = 42;
+  data.state.ships[1].hull = 100;
+  data.state.nextId = 1e9 + 1; // past the ceiling: compact
+  data.state.repairs = [{ id: 1, at: "cadiz", ships: [42], cost: 100, days: 2, total: 50, left: 50, day: 0 }];
+  data.state.pending = { event: "sea-pirates", ship: 42, day: 0, hour: 0, id: "sea-v2:0:42", escapeChance: 0.5 };
+  const { g } = deserialize(data, world);
+  assert.deepEqual(g.repairs[0].ships, [1], "a duplicated id maps to the first ship, not the last");
+  assert.equal(g.pending.ship, 1, "the pending encounter maps to the first ship");
+  g.pending = null;
+  play(g, 1);
+  assert.ok(g.ships[0].hull > 50, "the repair keeps working on the hull that owned it");
+});
+
+test("fleet renumbering remaps convoys, encounters and log references", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ships.push(JSON.parse(JSON.stringify(data.state.ships[0])));
+  const oldId = Number.MAX_SAFE_INTEGER;
+  data.state.ships[0].id = oldId;
+  data.state.ships[1].id = oldId + 1;
+  data.state.convoys = { cv1: { id: "cv1", name: "Convoy 1", ships: [oldId, oldId + 1], since: 0 } };
+  data.state.ships[0].convoy = "cv1";
+  data.state.ships[1].convoy = "cv1";
+  data.state.pending = { event: "sea-pirates", ship: oldId, day: 0, hour: 0, id: `sea-v2:0:${oldId}`, escapeChance: 0.5 };
+  data.state.log = [{ day: 0, key: "event", txt: { es: "x", en: "x" }, ship: oldId }];
+  data.state.ships[0].hull = 50;
+  data.state.repairs = [{ id: 1, at: "cadiz", ships: [oldId], cost: 100, days: 2, total: 50, left: 50, day: 0 }];
+  data.state.voyages = [{ ship: oldId, profit: 10 }];
+  data.state.accrued = { ships: { [oldId]: 12 }, captains: { [oldId]: 3 }, buildings: { "cadiz:7": 5 } };
+  data.state.inbox = [{ id: 1, day: 0, kind: "order", read: false, ship: oldId }, { id: 2, day: 0, kind: "order", read: false, ships: [oldId, oldId + 1] }];
+  data.state.encounterReport = { id: "r", day: 0, ship: oldId + 1, prize: { shipId: oldId } };
+  const { g } = deserialize(data, world);
+  assert.deepEqual(g.convoys.cv1.ships, [1, 2], "convoy membership follows the new ids");
+  assert.equal(g.pending.ship, 1, "the pending encounter follows its ship");
+  assert.equal(g.log[0].ship, 1, "log references follow the new ids");
+  assert.deepEqual(g.repairs[0].ships, [1], "the paid repair order follows its ship");
+  assert.equal(g.voyages[0].ship, 1, "the voyage diary keeps its ship");
+  assert.deepEqual(g.accrued.ships, { 1: 12 }, "accrued upkeep follows the new id");
+  assert.deepEqual(g.accrued.captains, { 1: 3 }, "accrued captain wages follow the new id");
+  assert.deepEqual(g.accrued.buildings, { "cadiz:7": 5 }, "plot keys are not ship ids and stay");
+  assert.equal(g.inbox[0].ship, 1, "inbox payloads follow the new ids");
+  assert.deepEqual(g.inbox[1].ships, [1, 2], "inbox ship lists follow the new ids");
+  assert.equal(g.encounterReport.ship, 2, "the encounter report follows its ship");
+  assert.equal(g.encounterReport.prize.shipId, 1, "the prize history entry follows its fleet ship");
+  g.pending = null; // an open encounter pauses the days; clear it so the yard can work
+  g.encounterReport = null;
+  play(g, 1);
+  assert.ok(g.ships[0].hull > 50, "the remapped repair order keeps working on the hull");
+  play(g, 2);
+});
+
+test("non-finite cargo is still rejected, only finite negatives clamp", () => {
+  const data = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  data.state.ships[0].cargo = { grain: -Infinity };
+  assert.throws(() => deserialize(data, world), /damaged/, "-Infinity rejects like NaN");
+  const bot = JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  bot.state.ai[0].ship.cargo = { grain: -Infinity };
+  const { g } = deserialize(bot, world);
+  assert.equal(g.ai.length, 2, "a bot with -Infinity cargo is dropped, not clamped");
+  play(g, 2);
+});
+
 test("imported profile data is cleaned before it reaches the UI", () => {
   const save = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
   save.state.profile = {
