@@ -5,6 +5,7 @@ import { cleanCompany, MAX_COMPANY } from "./clean-text.mjs";
 // A save is { version, savedAt, company, state } where state is the game without the (static) world.
 import { campaignShapeOk, newCampaign } from "./campaigns.mjs";
 import { fillMissingMarketRows } from "../sim/market.mjs";
+import { SHIP_TYPES } from "../sim/trade.mjs";
 import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
 
 export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
@@ -55,6 +56,31 @@ export function deserialize(save, world) {
   if (!Number.isFinite(st.tick)) throw new Error("save is from a test build and is not kept");
   for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
   for (const city of Object.values(st.market)) for (const e of Object.values(city)) if (!Number.isFinite(e?.pop)) throw new Error("save is from a test build and is not kept");
+  // Deep structures: a hand-edited or hostile import must fail here with a clear error, or be repaired,
+  // instead of throwing a TypeError inside a tick days later. Telemetry ledgers and the commerce
+  // account are rebuilt lazily, so a corrupt node is dropped; essentials (market rows, ships) reject.
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const objOfObjs = (v) => isObj(v) && Object.values(v).every((x) => isObj(x));
+  for (const row of Object.values(st.market)) {
+    if (!isObj(row)) throw new Error("save is damaged");
+    for (const e of Object.values(row)) {
+      if (!isObj(e) || !Number.isFinite(e.stock) || !Number.isFinite(e.target) || !Number.isFinite(e.rate)) throw new Error("save is damaged");
+      const nl = e.needsLedger;
+      // telemetry only: the next tick reopens it. A stale policyId makes recordNeeds throw mid-tick, so only the current policy survives.
+      if (nl != null && (!isObj(nl) || nl.policyId !== "legacy-telemetry-v1" || (nl.totals != null && !objOfObjs(nl.totals)) || (nl.byClass != null && !(objOfObjs(nl.byClass) && Object.values(nl.byClass).every(objOfObjs))))) delete e.needsLedger;
+      const co = e.commerce;
+      if (co != null && (!isObj(co) || (co.inventoryBasis != null && !isObj(co.inventoryBasis)) || (co.households != null && !objOfObjs(co.households)))) delete e.commerce; // openCommerce reopens it on the first tick
+    }
+  }
+  for (const sh of st.ships) if (!isObj(sh) || typeof sh.type !== "string" || !SHIP_TYPES[sh.type]) throw new Error("save is damaged");
+  if (st.ai != null) st.ai = Array.isArray(st.ai) ? st.ai.filter((b) => isObj(b) && isObj(b.ship) && typeof b.ship.type === "string" && SHIP_TYPES[b.ship.type]) : []; // ambient bots: a corrupt entry is dropped, not kept to crash a tick
+  if (st.hist != null) { // price history re-records from the load day; wrong-typed nodes would crash recordPrices
+    if (!isObj(st.hist)) st.hist = {};
+    else for (const [c, goods] of Object.entries(st.hist)) {
+      if (!isObj(goods)) { delete st.hist[c]; continue; }
+      for (const [k, v] of Object.entries(goods)) if (!Array.isArray(v)) delete goods[k];
+    }
+  }
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
   const cityIds = Array.isArray(world.cities) && world.cities.length ? world.cities.map((city) => city.id) : [g.profile.home];
   g.profile = cleanProfile(g.profile, cityIds); // imported saves cannot carry markup into profile SVGs or unknown rules into play

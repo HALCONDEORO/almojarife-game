@@ -37,6 +37,49 @@ test("pre-launch saves without profile, voyage fields or market pop are refused 
   assert.ok(deserialize(JSON.parse(JSON.stringify(s)), world).g.profile.home); // current saves still load
 });
 
+test("corrupt deep save structures are rejected or repaired at load instead of crashing a tick", () => {
+  const fresh = () => JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  const badStock = fresh(); badStock.state.market.cadiz.grain.stock = "plenty";
+  assert.throws(() => deserialize(badStock, world), /damaged/);
+  const badRow = fresh(); badRow.state.market.cadiz = "row";
+  assert.throws(() => deserialize(badRow, world), /not kept|damaged/); // the existing pop check rejects it first
+  const badShip = fresh(); badShip.state.ships[0].type = "galleon";
+  assert.throws(() => deserialize(badShip, world), /damaged/);
+
+  const ledgers = fresh();
+  ledgers.state.market.cadiz.grain.needsLedger = { days: 3, policyId: "legacy-telemetry-v1", totals: "x", byClass: { poor: 7 } };
+  ledgers.state.market.malaga.grain.needsLedger = { days: 2, policyId: "legacy-telemetry-v1", totals: {}, byClass: { poor: { grain: true } } }; // one level deeper
+  ledgers.state.market.almeria.grain.needsLedger = { days: 9, policyId: "older-policy", totals: {}, byClass: {} }; // a stale policy makes recordNeeds throw mid-tick
+  ledgers.state.market.sevilla.grain.commerce = "x";
+  ledgers.state.market.valencia.grain.commerce = { cash: 5, households: { poor: null }, inventoryBasis: 9 };
+  const { g: gl } = deserialize(ledgers, world);
+  assert.equal(gl.market.cadiz.grain.needsLedger, undefined);
+  assert.equal(gl.market.malaga.grain.needsLedger, undefined);
+  assert.equal(gl.market.almeria.grain.needsLedger, undefined);
+  assert.ok(Number.isFinite(gl.market.sevilla.grain.commerce?.cash), "load reopens a dropped commerce account");
+  assert.ok(Number.isFinite(gl.market.valencia.grain.commerce?.cash), "load reopens a dropped commerce account");
+  play(gl, 2); // the tick lazily reopens the dropped needs ledger instead of throwing
+  assert.equal(typeof gl.market.cadiz.grain.needsLedger, "object");
+
+  const history = fresh();
+  history.state.hist.cadiz = "x";
+  history.state.hist.sevilla = { grain: 7 };
+  const { g: gh } = deserialize(history, world);
+  assert.equal(gh.hist.cadiz, undefined);
+  assert.equal(gh.hist.sevilla.grain, undefined);
+  play(gh, 2);
+  assert.ok(Array.isArray(gh.hist.cadiz.grain) && Array.isArray(gh.hist.sevilla.grain));
+
+  const bots = fresh();
+  bots.state.ai[1] = "x";
+  bots.state.ai[2] = { cash: 9, ship: { type: "ufo" } };
+  const { g: ga } = deserialize(bots, world);
+  assert.equal(ga.ai.length, 1);
+  play(ga, 2);
+  const noBots = fresh(); noBots.state.ai = 7;
+  assert.deepEqual(deserialize(noBots, world).g.ai, []);
+});
+
 test("imported profile data is cleaned before it reaches the UI", () => {
   const save = JSON.parse(JSON.stringify(serialize(newGame(world), 'Casa <script>alert(1)</script>')));
   save.state.profile = {
