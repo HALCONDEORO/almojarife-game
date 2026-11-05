@@ -92,12 +92,18 @@ function nodeRefOk(world, pts, id) {
   if (knownNode(world, id)) return !Object.hasOwn(pts ?? {}, id); // pts must not shadow a real node's coordinates
   return isFreeId(id) && isPlainObj(pts) && Object.hasOwn(pts, id) && freePointOk(world, pts[id]);
 }
+const stationaryVoyageOk = (world, voyage) => !voyage.free && voyage.km === 0
+  && voyage.totalTicks === 1 && voyage.ticksLeft === 1
+  && world.cities?.some((city) => city.id === voyage.to);
 const voyageOk = (world, voyage) => {
   if (voyage == null) return true;
-  if (!isPlainObj(voyage) || !Array.isArray(voyage.path) || voyage.path.length < 2) return false;
+  if (!isPlainObj(voyage) || !Array.isArray(voyage.path) || voyage.path.length < 1) return false;
   if (![voyage.totalTicks, voyage.ticksLeft, voyage.km].every(Number.isFinite)) return false;
   if (voyage.pts != null && !isPlainObj(voyage.pts)) return false;
   if (voyage.from !== voyage.path[0] || voyage.to !== voyage.path.at(-1)) return false;
+  // sail(world, ship, ship.at) produces a one-tick, zero-distance city loop. Keep existing
+  // engine-generated saves loadable, but do not accept arbitrary singleton paths.
+  if (voyage.path.length === 1 && !stationaryVoyageOk(world, voyage)) return false;
   // sailTick docks non-free voyages at to, so only a city is a valid docking destination.
   if (!voyage.free && !world.cities?.some((city) => city.id === voyage.to)) return false;
   return Array.from(voyage.path).every((id) => nodeRefOk(world, voyage.pts, id));

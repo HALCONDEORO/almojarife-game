@@ -153,6 +153,26 @@ test("voyages must resolve to known geography: from/to and path entries", () => 
   play(g3, 2);
 });
 
+test("engine-generated same-port voyages survive reload and complete", () => {
+  const game = newGame(world, "cadiz");
+  const ship = game.ships[0];
+  assert.equal(doSail(game, ship, "cadiz").ok, true);
+  assert.deepEqual(ship.voyage.path, ["cadiz"]);
+  const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Oro"))), world).g;
+  assert.deepEqual(loaded.ships[0].voyage, ship.voyage);
+  advanceTick(loaded);
+  assert.equal(loaded.ships[0].voyage, null);
+  assert.equal(loaded.ships[0].at, "cadiz");
+  const botSave = JSON.parse(JSON.stringify(serialize(game, "Casa Oro")));
+  botSave.state.ai[0].ship.voyage = structuredClone(ship.voyage);
+  assert.equal(deserialize(botSave, world).g.ai.length, 3, "the same valid degenerate voyage is accepted for bots");
+  for (const patch of [{ km: 1 }, { totalTicks: 2 }, { ticksLeft: 0 }, { free: true }]) {
+    const data = JSON.parse(JSON.stringify(serialize(game, "Casa Oro")));
+    Object.assign(data.state.ships[0].voyage, patch);
+    assert.throws(() => deserialize(data, world), /test build/, "only the defined engine singleton is accepted");
+  }
+});
+
 test("real port, free, rerouted and anchored voyages survive JSON reloads", () => {
   const game = newGame(world, "cadiz", { freeNav: true });
   const ship = game.ships[0];
