@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadWorld } from "../src/sim/world.mjs";
+import { loadWorld, route } from "../src/sim/world.mjs";
 import { newGame, advanceTick } from "../src/game/game.mjs";
 import { automaticEncounter, resolvePirates } from "../src/game/encounterdaily.mjs";
 import { serialize, deserialize } from "../src/game/gamesave.mjs";
@@ -13,7 +13,7 @@ const seafarer = () => {
   game.noGoal = true;
   game.eventsOn = true; // encounters only roll with events on
   const ship = game.ships[0];
-  ship.voyage = { from: "cadiz", to: "porto", ticksLeft: 500, totalTicks: 500, km: 100, path: [] }; // the full voyage shape: a save round-trip validates every field
+  ship.voyage = { from: "cadiz", to: "porto", ticksLeft: 500, totalTicks: 500, km: 100, path: route(world, "cadiz", "porto").path }; // use real geography so the save round-trip validates the voyage
   return { game, ship };
 };
 // Walk the deterministic tick stream until the seeded roll produces a pirates decision.

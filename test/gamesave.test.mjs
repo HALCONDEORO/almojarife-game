@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { buildWorld } from "../src/sim/world.mjs";
-import { newGame, advanceDay, doBuy } from "../src/game/game.mjs";
+import { newGame, advanceDay, advanceTick, doBuy, doSail, doGoTo } from "../src/game/game.mjs";
 import { serialize, deserialize, migrate, cleanCompany, SAVE_VERSION } from "../src/game/gamesave.mjs";
 import { crestSvg, defaultProfile } from "../src/game/profile.mjs";
 
@@ -111,6 +111,91 @@ test("corrupt deep save structures are rejected or repaired at load instead of c
   play(gb2, 2);
   const noBots = fresh(); noBots.state.ai = 7;
   assert.deepEqual(deserialize(noBots, world).g.ai, []);
+});
+
+test("voyages must resolve to known geography: from/to and path entries", () => {
+  const fresh = () => JSON.parse(JSON.stringify(serialize(newGame(world), "Casa Oro")));
+  const realVoyage = { from: "cadiz", to: "lisboa", path: ["cadiz", "lisboa"], totalTicks: 40, ticksLeft: 40, km: 300 };
+  const badTo = fresh();
+  badTo.state.ships[0].voyage = { ...realVoyage, to: "narnia", path: ["cadiz", "narnia"] };
+  assert.throws(() => deserialize(badTo, world), /test build/, "a player voyage to an unknown port rejects");
+  const badFrom = fresh();
+  badFrom.state.ships[0].voyage = { ...realVoyage, from: "narnia", path: ["narnia", "lisboa"] };
+  assert.throws(() => deserialize(badFrom, world), /test build/, "an unknown origin rejects");
+  for (const path of [[], ["cadiz"], ["cadiz", null, "lisboa"], ["cadiz", {}, "lisboa"]]) {
+    const data = fresh();
+    data.state.ships[0].voyage = { ...realVoyage, path };
+    assert.throws(() => deserialize(data, world), /test build/);
+    const bot = fresh();
+    bot.state.ai[0].ship.voyage = { ...realVoyage, path };
+    assert.equal(deserialize(bot, world).g.ai.length, 2);
+  }
+  const badEntry = fresh();
+  badEntry.state.ships[0].voyage = { ...realVoyage, path: ["cadiz", "w_nowhere", "lisboa"] };
+  assert.throws(() => deserialize(badEntry, world), /test build/, "a path entry the world does not know rejects");
+  const mismatch = fresh();
+  mismatch.state.ships[0].voyage = { ...realVoyage, to: "lisboa", path: ["cadiz", "huelva"] };
+  assert.throws(() => deserialize(mismatch, world), /test build/, "a to that is not the path end rejects");
+  const botBad = fresh();
+  botBad.state.ai[0].ship.voyage = { ...realVoyage, to: "narnia", path: ["cadiz", "narnia"] };
+  botBad.state.ai[1].ship.voyage = { ...realVoyage };
+  const { g } = deserialize(botBad, world);
+  assert.equal(g.ai.length, 2, "a bot sailing to an unknown port is dropped");
+  play(g, 2);
+  const botFreeNoPts = fresh();
+  botFreeNoPts.state.ai[0].ship.voyage = { from: "pt:36.000,-6.300", to: "lisboa", path: ["pt:36.000,-6.300", "lisboa"], totalTicks: 40, ticksLeft: 40, km: 300 }; // free point without its pts coordinates
+  const { g: g2 } = deserialize(botFreeNoPts, world);
+  assert.equal(g2.ai.length, 2, "a free point without pts coordinates drops the bot");
+  const freeOk = fresh();
+  freeOk.state.ships[0].voyage = { from: "cadiz", to: "pt:36.100,-6.400", path: ["cadiz", "pt:36.100,-6.400"], pts: { "pt:36.100,-6.400": { lat: 36.1, lon: -6.4, a: world.lanes[0][0], b: world.lanes[0][1] } }, totalTicks: 40, ticksLeft: 40, km: 50, free: true };
+  const { g: g3 } = deserialize(freeOk, world);
+  assert.equal(g3.ships.length, 1, "a free-navigation voyage with its pts coordinates survives");
+  play(g3, 2);
+});
+
+test("real port, free, rerouted and anchored voyages survive JSON reloads", () => {
+  const game = newGame(world, "cadiz", { freeNav: true });
+  const ship = game.ships[0];
+  const reload = () => {
+    const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Oro"))), world).g;
+    assert.deepEqual(loaded.ships[0].voyage, ship.voyage);
+    return loaded;
+  };
+  assert.equal(doSail(game, ship, "lisboa").ok, true);
+  reload();
+  advanceTick(game);
+  const waypoint = Object.values(world.waypoints)[3];
+  assert.equal(doGoTo(game, ship, waypoint.lat, waypoint.lon).ok, true);
+  reload(); // mid-voyage reroute starts at a synthetic free point
+  ship.voyage.ticksLeft = 1;
+  advanceTick(game);
+  assert.equal(ship.voyage.anchored, true);
+  reload();
+  const port = world.nodes.lisboa;
+  assert.equal(doGoTo(game, ship, port.lat, port.lon).ok, true);
+  const loaded = reload(); // free point to port, without the free flag
+  play(loaded, 1);
+});
+
+test("malformed free-point coordinates and attachments reject before navigation", () => {
+  const game = newGame(world, "cadiz", { freeNav: true });
+  const waypoint = Object.values(world.waypoints)[3];
+  assert.equal(doGoTo(game, game.ships[0], waypoint.lat, waypoint.lon).ok, true);
+  const base = JSON.parse(JSON.stringify(serialize(game, "Casa Oro")));
+  const pointId = game.ships[0].voyage.to;
+  for (const patch of [{ lat: 91 }, { lon: -181 }, { lat: null }, { a: "narnia" }, { b: "narnia" }]) {
+    const data = structuredClone(base);
+    Object.assign(data.state.ships[0].voyage.pts[pointId], patch);
+    assert.throws(() => deserialize(data, world), /test build/);
+  }
+  for (const pts of [[], "x", null]) {
+    const data = structuredClone(base);
+    data.state.ships[0].voyage.pts = pts;
+    assert.throws(() => deserialize(data, world), /test build/);
+  }
+  const shadow = structuredClone(base);
+  shadow.state.ships[0].voyage.pts.cadiz = { lat: "x", lon: null };
+  assert.throws(() => deserialize(shadow, world), /test build/, "pts cannot shadow world coordinates");
 });
 
 test("bots with half-built voyages are dropped instead of stalling at sea", () => {

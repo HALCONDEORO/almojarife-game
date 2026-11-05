@@ -8,6 +8,7 @@ import { fillMissingMarketRows } from "../sim/market.mjs";
 import { SHIP_TYPES } from "../sim/trade.mjs";
 import { CLASSES } from "../sim/classes.mjs";
 import { withLegumes, withPottery } from "../sim/optional_goods.mjs";
+import { isFreeId } from "./freenav.mjs";
 
 export const SAVE_VERSION = 3; // v3: voyages run on ticks (ticksLeft/totalTicks); older test saves are not kept
 export { cleanCompany, MAX_COMPANY };
@@ -78,9 +79,29 @@ for (const row of Object.values(st.market)) {
 const isPlainObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const ownShipType = (t) => typeof t === "string" && Object.hasOwn(SHIP_TYPES, t); // hasOwn: "constructor"/"__proto__"/"toString" are inherited, not ship classes
 const cargoOk = (c) => isPlainObj(c) && Object.values(c).every((v) => Number.isFinite(v)); // netWorth and trades walk cargo with Object.entries/keys; non-numeric amounts poison prices with NaN
-// A half-built voyage never advances: sailTick decrements ticksLeft, so NaN <= 0 is forever false and the
-// ship is stuck "at sea" (trades refuse with "at sea"). Same fields the player-voyage check below enforces.
-const voyageOk = (v) => v == null || (isPlainObj(v) && Array.isArray(v.path) && Number.isFinite(v.totalTicks) && Number.isFinite(v.ticksLeft) && Number.isFinite(v.km));
+// Resolve every saved path reference before position/locate consume it. Free navigation stores
+// synthetic pt: ids in pts with coordinates and a real lane attachment; ordinary nodes need no pts.
+const knownNode = (world, id) => typeof id === "string" && Object.hasOwn(world.nodes ?? {}, id);
+function freePointOk(world, point) {
+  if (!isPlainObj(point) || !Number.isFinite(point.lat) || !Number.isFinite(point.lon)) return false;
+  if (Math.abs(point.lat) > 90 || Math.abs(point.lon) > 180) return false;
+  return knownNode(world, point.a) && knownNode(world, point.b)
+    && (world.lanes ?? []).some(([from, to]) => (from === point.a && to === point.b) || (from === point.b && to === point.a));
+}
+function nodeRefOk(world, pts, id) {
+  if (knownNode(world, id)) return !Object.hasOwn(pts ?? {}, id); // pts must not shadow a real node's coordinates
+  return isFreeId(id) && isPlainObj(pts) && Object.hasOwn(pts, id) && freePointOk(world, pts[id]);
+}
+const voyageOk = (world, voyage) => {
+  if (voyage == null) return true;
+  if (!isPlainObj(voyage) || !Array.isArray(voyage.path) || voyage.path.length < 2) return false;
+  if (![voyage.totalTicks, voyage.ticksLeft, voyage.km].every(Number.isFinite)) return false;
+  if (voyage.pts != null && !isPlainObj(voyage.pts)) return false;
+  if (voyage.from !== voyage.path[0] || voyage.to !== voyage.path.at(-1)) return false;
+  // sailTick docks non-free voyages at to, so only a city is a valid docking destination.
+  if (!voyage.free && !world.cities?.some((city) => city.id === voyage.to)) return false;
+  return Array.from(voyage.path).every((id) => nodeRefOk(world, voyage.pts, id));
+};
 
 // Negative cargo is impossible stock: it jams sells (the amount check never passes) and distorts
 // netWorth and price impact. Clamp it away instead of rejecting the save over a rounding relic.
@@ -156,7 +177,7 @@ if (fleetOverLimit(st)) compactFleetIds(st); else reissueFleetIds(st);
 // ambient bots: a corrupt entry is dropped, not kept to crash a tick or stall at sea (sailTick, aiStep and bot intel all dereference these)
 for (const b of Array.isArray(st.ai) ? st.ai : []) { clampCargo(b?.ship?.cargo); if (isPlainObj(b?.ship)) fixHull(b.ship); }
 const botOk = (b) => isPlainObj(b) && isPlainObj(b.ship) && ownShipType(b.ship.type) && cargoOk(b.ship.cargo)
-  && voyageOk(b.ship.voyage)
+  && voyageOk(world, b.ship.voyage)
   && portOk(b.ship.at) && (b.home == null || portOk(b.home))
   && (b.intel == null || isPlainObj(b.intel)) && (b.discovered == null || isPlainObj(b.discovered))
   && Number.isFinite(b.cash);
@@ -187,7 +208,7 @@ export function deserialize(save, world) {
   // Pre-engine campaign saves (flat {id,bought,sailed,...}) predate the mission data model: restart the arc cleanly instead of crashing campaignTick/campaignEvent later.
   if (st.campaign != null && !campaignShapeOk(st.campaign)) st.campaign = newCampaign();
   if (!Number.isFinite(st.tick)) throw new Error("save is from a test build and is not kept");
-  for (const sh of st.ships) if (sh?.voyage && (!Array.isArray(sh.voyage.path) || !Number.isFinite(sh.voyage.totalTicks) || !Number.isFinite(sh.voyage.ticksLeft) || !Number.isFinite(sh.voyage.km))) throw new Error("save is from a test build and is not kept");
+  for (const sh of st.ships) if (!voyageOk(world, sh?.voyage)) throw new Error("save is from a test build and is not kept");
   sanitizeDeepStructures(st, world);
   const g = { world, ...JSON.parse(JSON.stringify(st)) };
   const cityIds = Array.isArray(world.cities) && world.cities.length ? world.cities.map((city) => city.id) : [g.profile.home];
