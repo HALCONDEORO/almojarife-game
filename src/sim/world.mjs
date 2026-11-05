@@ -19,11 +19,12 @@ export function buildWorld(w) {
   return { ...w, nodes, adj };
 }
 /** Dijkstra over the sea-lane graph. Returns {km, path} or null. */
-// The lane graph never changes after buildWorld, so each source's search tree is
-// cached per world. Same distances and paths as a fresh run: with non-negative
-// weights a node's dist/prev are final once popped, and nodes on the path to `to`
-// pop before `to`, so skipping the early break changes nothing.
+// Search trees are cached per world until a caller reports a source-world snapshot
+// change through resetRouteCache(). Same distances and paths as a fresh run: with
+// non-negative weights a node's dist/prev are final once popped, and nodes on the
+// path to `to` pop before `to`, so skipping the early break changes nothing.
 const routeCache = new WeakMap(); // world -> Map(from -> {dist, prev})
+export function resetRouteCache(world) { routeCache.delete(world); }
 function searchTree(world, from) {
   let byFrom = routeCache.get(world);
   if (!byFrom) routeCache.set(world, (byFrom = new Map()));

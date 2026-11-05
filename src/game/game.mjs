@@ -14,7 +14,7 @@ import { chargeToll, tollsDue } from "./tolls.mjs";
 import { processLoans } from "./bank.mjs";
 const r2d = (x) => Math.round(x * 100) / 100;
 import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
-import { route } from "../sim/world.mjs";
+import { route, resetRouteCache } from "../sim/world.mjs";
 import { freeId, locate, planTrip } from "./freenav.mjs";
 import { ticksForKm } from "../sim/clock.mjs";
 import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
@@ -97,20 +97,34 @@ export const TICKS_PER_DAY = CLOCK_TICKS_PER_DAY;
 /** A game seed is an integer 0..2^32-1; anything else (including none) means 0, so tests and simulations stay reproducible.
  *  The web client passes a fresh random seed for every new game; it is saved with the game and shown in the menu. */
 export const normalizeSeed = (n) => (Number.isSafeInteger(n) && n >= 0 && n <= 0xFFFFFFFF ? n : 0);
-const warmupCache = new WeakMap(); // source world -> signature/options -> cloned-on-use day-0 economy
+const WARMUP_CACHE_LIMIT = 4; // a few recent seeds/options; about 3.4 MB serialized at the measured 0.86 MB per warm economy
+const warmupCache = new WeakMap(); // source world -> LRU Map(options -> cloned-on-use day-0 economy)
+const warmupWorlds = new WeakMap(); // source world -> last full JSON snapshot used to invalidate warm-up and route caches
 
 /** Warm the market once per source world/options snapshot, then clone it for each new game.
  *  Repeated starts (tests, restarts and simulations) keep byte-for-byte state without paying
  *  the 60-day AI warm-up again. The game still receives its own world clone when optional
- *  goods are on, because callers are allowed to adjust g.world in play and tests. */
+ *  goods are on, because callers are allowed to adjust g.world in play and tests.
+ *  The whole source world snapshot invalidates the cache: goods, cities, nodes, routes and
+ *  every other input used directly or by a downstream module. An LRU cap keeps fresh
+ *  per-game seeds from retaining one economy per restart. */
 function startingEconomy(world, opts, pottery, legumes) {
   const seed = normalizeSeed(opts.seed);
   const competition = opts.npcCompetition === "planned" ? "planned" : (opts.regionalRivals !== false && opts.regionalRivals !== 1 ? "houses" : "classic");
-  const source = JSON.stringify({ goods: world.goods, cities: world.cities, waypoints: world.waypoints, lanes: world.lanes });
-  const key = JSON.stringify([source, pottery, legumes, seed, competition]);
+  const source = JSON.stringify(world);
+  if (warmupWorlds.get(world) !== source) {
+    resetRouteCache(world); // route() caches per world; adj/nodes edits must not reuse old paths
+    warmupWorlds.set(world, source);
+    warmupCache.delete(world);
+  }
+  const key = JSON.stringify([pottery, legumes, seed, competition]);
   let byKey = warmupCache.get(world);
   if (!byKey) warmupCache.set(world, (byKey = new Map()));
   let warm = byKey.get(key);
+  if (warm) {
+    byKey.delete(key); // refresh LRU recency
+    byKey.set(key, warm);
+  }
   if (!warm) {
     let warmWorld = world;
     if (pottery) warmWorld = withPottery(warmWorld);
@@ -125,6 +139,7 @@ function startingEconomy(world, opts, pottery, legumes) {
     for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, warmWorld); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if (houses) regionalRivalStep({ world: warmWorld, market, day: d - WARMUP_DAYS, tick: d * TICKS_PER_DAY, seed, regionalRivals: true }, t); else aiStep(warmWorld, market, t, t.ship); } recordPrices(warmWorld, market, hist); } // so prices differ from day 0
     warm = { market, hist, ai, regionalRivals: !!houses };
     byKey.set(key, warm);
+    while (byKey.size > WARMUP_CACHE_LIMIT) byKey.delete(byKey.keys().next().value);
   }
   return { ...warm, market: structuredClone(warm.market), hist: structuredClone(warm.hist), ai: structuredClone(warm.ai) };
 }

@@ -50,3 +50,42 @@ test("a changed source world gets a fresh warm-up instead of stale cached state"
     delete changed.goods.grain.npcTrade;
   }
 });
+
+test("adj changes invalidate planned warm-up routing like a fresh world", () => {
+  const changed = loadWorld();
+  const opts = { seed: 13, freePlay: true, pottery: false, legumes: false, npcCompetition: "planned" };
+  const before = newGame(changed, "cadiz", opts);
+  const cadizAdj = changed.adj.cadiz;
+  try {
+    changed.adj.cadiz = [];
+    const after = newGame(changed, "cadiz", opts);
+    const fresh = loadWorld();
+    fresh.adj.cadiz = [];
+    const expected = newGame(fresh, "cadiz", opts);
+    assert.notDeepEqual(after.ai, before.ai);
+    assert.deepEqual(after.ai, expected.ai);
+    assert.deepEqual(after.market, expected.market);
+    assert.deepEqual(after.hist, expected.hist);
+  } finally {
+    changed.adj.cadiz = cadizAdj;
+  }
+});
+
+test("node changes invalidate the warm-up like a fresh world", () => {
+  const changed = loadWorld();
+  const opts = { seed: 17, freePlay: true };
+  newGame(changed, "cadiz", opts);
+  const pop = changed.nodes.cadiz.pop;
+  try {
+    changed.nodes.cadiz.pop = 1;
+    const after = newGame(changed, "cadiz", opts);
+    const fresh = loadWorld();
+    fresh.nodes.cadiz.pop = 1;
+    const expected = newGame(fresh, "cadiz", opts);
+    assert.deepEqual(after.market, expected.market);
+    assert.deepEqual(after.ai, expected.ai);
+    assert.deepEqual(after.hist, expected.hist);
+  } finally {
+    changed.nodes.cadiz.pop = pop;
+  }
+});
