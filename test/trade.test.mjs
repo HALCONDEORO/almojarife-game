@@ -138,3 +138,14 @@ test("an empty port sells nothing, changes nothing, and the price stays inside i
   e.stock = 1e9;
   assert.equal(price(world, e, good), Math.round(base * 0.4), "a glut pins the price at the 0.4x floor, never lower");
 });
+
+test("same-port departures refuse without changing the ship; at-sea refusal still wins", () => {
+  const ship = makeShip(1, "cog", A);
+  const before = structuredClone(ship);
+  assert.deepEqual(sail(world, ship, A), { ok: false, reason: "already here" });
+  assert.deepEqual(ship, before);
+  assert.equal(sail(world, ship, B).ok, true);
+  const sailing = structuredClone(ship);
+  assert.deepEqual(sail(world, ship, A), { ok: false, reason: "at sea" });
+  assert.deepEqual(ship, sailing);
+});
