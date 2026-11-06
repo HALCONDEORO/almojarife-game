@@ -124,3 +124,19 @@ test('overlapping shocks on one market entry unwind exactly in any expiry order'
  clearShock(g,h);clearShock(g,h2);
  assert.equal(e.rate,rate0);assert.equal(e.target,target0);
 });
+test('a port closure names the city as the player knows it, not the raw id',()=>{
+ const g=mk();
+ const closes=[];
+ for(let d=SHOCK_MIN_DAY;d<SHOCK_MIN_DAY+6000&&closes.length<20;d++){g.day=d;const s=rollShock(g);if(s&&s.type==='port_closed')closes.push(s);}
+ assert.ok(closes.length>0,'a port closure rolls within the scan window');
+ assert.ok(closes.some((s)=>(world.nodes[s.city]?.name??'')!==s.city),'the scan reaches a city whose display name differs from its id');
+ for(const sh of closes){
+  const name=world.nodes[sh.city]?.name;
+  assert.ok(name,sh.city+' has a display name');
+  const esc=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  assert.match(shockText(sh,'es'),new RegExp(esc),'ES text names '+name+': '+shockText(sh,'es'));
+  assert.match(shockText(sh,'en'),new RegExp(esc),'EN text names '+name+': '+shockText(sh,'en'));
+ }
+ // hand-built or old-save shocks without the stored name keep rendering
+ assert.match(shockText({type:'port_closed',city:'ceuta'},'es'),/ceuta/i);
+});

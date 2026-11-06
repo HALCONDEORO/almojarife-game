@@ -38,7 +38,8 @@ export function shockText(sh, lang, end = false) {
   const es = lang === "es", reg = REGION_NAMES[lang]?.[sh.region] ?? sh.region, good = (es ? GOOD_NAMES.es[sh.good] : GOOD_EN[sh.good]) ?? sh.good;
   if (sh.type === "poor_harvest") return es ? `Mala cosecha ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": la producción vuelve a la normalidad" : ": la producción cae durante unas semanas"}.` : `Poor ${good} harvest in ${reg}${end ? ": production is back to normal" : ": output falls for a few weeks"}.`;
   if (sh.type === "new_demand") return es ? `Nueva demanda ${DE_GOOD[sh.good] ?? `de ${sh.good}`} en ${reg}${end ? ": el mercado se calma" : ": los precios tiran hacia arriba durante unas semanas"}.` : `New demand for ${good} in ${reg}${end ? ": the market settles" : ": prices pull up for a few weeks"}.`;
-  return es ? `${sh.city} cierra su puerto unos días por un susto de peste${end ? "; ya se puede comerciar otra vez" : ""}.` : `${sh.city} closes its port for a few days over a plague scare${end ? "; trading is open again" : ""}.`;
+  const city = sh.cityName ?? sh.city; // the display name stored at roll time; hand-built or old-save shocks fall back to the id
+  return es ? `${city} cierra su puerto unos días por un susto de peste${end ? "; ya se puede comerciar otra vez" : ""}.` : `${city} closes its port for a few days over a plague scare${end ? "; trading is open again" : ""}.`;
 }
 
 /** Exported for tests; the game only calls it from tickShocks. */
@@ -82,7 +83,7 @@ export function rollShock(g) {
   const sh = { id: `shock:${g.day}`, type: type.id, region, untilDay: g.day + days, fromDay: g.day };
   if (type.id === "poor_harvest") sh.good = HARVEST_GOODS[Math.floor(r() * HARVEST_GOODS.length)];
   else if (type.id === "new_demand") { const goods = Object.keys(g.world.goods); sh.good = goods[Math.floor(r() * goods.length)]; }
-  else { const cities = REGIONS[region]; sh.city = cities[Math.floor(r() * cities.length)]; delete sh.region; }
+  else { const cities = REGIONS[region]; sh.city = cities[Math.floor(r() * cities.length)]; sh.cityName = g.world?.nodes?.[sh.city]?.name ?? sh.city; delete sh.region; } // the log names the city as the player knows it (A Coruña, not coruna)
   if (sh.type === "port_closed" && g.household === true && r() < healthShield(cityHealth(g, sh.city))) return null; // city works turn some scares away (flag off: no extra draw)
   if (sh.type === "port_closed") { if (active.some((a) => a.type === "port_closed" && a.city === sh.city)) return null; } // a port never closes twice over
   else if (active.some((a) => a.type === sh.type && a.region === sh.region && a.good === sh.good)) return null; // no exact duplicates running
