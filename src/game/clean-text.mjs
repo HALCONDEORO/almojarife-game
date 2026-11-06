@@ -6,5 +6,5 @@ export const cleanCompany = (value) => {
     const code = char.codePointAt(0);
     if (code >= 32 && !'<>&"'.includes(char)) text += char;
   }
-  return text.trim().slice(0, MAX_COMPANY);
+  return [...text.trim()].slice(0, MAX_COMPANY).join(''); // cap by code points, not UTF-16 units: an astral character (emoji, rare letters) is never cut into a lone surrogate
 };
