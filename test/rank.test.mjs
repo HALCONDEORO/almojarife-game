@@ -74,3 +74,14 @@ test("respect: tiny sales add up and non-finite sales add nothing", () => {
   addRespect(g, "cadiz", Infinity); addRespect(g, "cadiz", NaN); addRespect(g, "cadiz", -Infinity);
   assert.ok(Math.abs(g.rep.cadiz - 4) < 1e-6);
 });
+
+test("a damaged rank index heals instead of blocking promotions", () => {
+  const g = game(), msgs = []; const post = (_g, k, p) => msgs.push({ k, ...p });
+  g.rankIdx = 99; // damaged save: heldRank documents that a damaged value counts as 0
+  assert.equal(updateRank(g, 0), null);
+  assert.equal(g.rankIdx, 0, "clamped to the valid range");
+  g.rankIdx = 99;
+  assert.equal(updateRank(g, 300000, post).id, "patrician");
+  assert.equal(g.rankIdx, 6);
+  assert.equal(msgs.length, 1); assert.equal(msgs[0].rank, "patrician");
+});

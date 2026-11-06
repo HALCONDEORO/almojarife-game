@@ -39,8 +39,8 @@ export function addRespect(g, city, revenue) {
 }
 /** Update the rank from net worth. It only goes up (a bad week does not take a title away). Returns the new rank if it rose. */
 export function updateRank(g, worth, post = () => {}) {
-  const i = rankIndex(worth), had = g.rankIdx ?? 0;
+  const i = rankIndex(worth), had = heldRank(g); // heldRank policy: a damaged stored index counts as 0
   if (i > had) { g.rankIdx = i; post(g, "rank", { rank: RANKS[i].id, loanCap: loanCapFor(g, LOAN_MAX_BASE) }); return RANKS[i]; }
-  g.rankIdx ??= had;
+  g.rankIdx = had; // clamp a damaged value to the valid range so later promotions are not blocked
   return null;
 }
