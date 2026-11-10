@@ -22,6 +22,21 @@ export function encounterOutcome(ship,kind,roll,extraDefence=0){
  throw Error('unknown encounter');
 }
 /** Apply once to a live owned ship at sea. Caller must prevent duplicate event ids before calling. */
+/** The escorted prize of this ship (the voyage it stands in for), or null. */
+export function escortedPrizeOf(g,ship){
+ const escortedId=ship?.voyage?.escortedBy;
+ if(escortedId===undefined)return null;
+ const prizeShip=g.ships.find((mate)=>mate.id===escortedId);
+ return prizeShip?.voyage?.escorted?prizeShip:null;
+}
+/** Shift the escorted prize's voyage by the same delta the winner just took (a storm delay, a
+ * favourable wind): the pair keeps station, so both legs move together and arrive on one tick. */
+export function shareVoyageDeltaWithPrize(g,ship,deltaTicks){
+ if(!deltaTicks)return;
+ const prizeShip=escortedPrizeOf(g,ship);
+ if(!prizeShip)return;
+ prizeShip.voyage.ticksLeft+=deltaTicks;prizeShip.voyage.totalTicks=Math.max((prizeShip.voyage.totalTicks??prizeShip.voyage.ticksLeft-deltaTicks)+deltaTicks,prizeShip.voyage.ticksLeft);
+}
 export function applyEncounter(g,ship,outcome){
  if(g.over||!g.ships?.includes(ship)||!ship.voyage)return {ok:false,reason:'no active owned voyage'};
  if(!outcome||!['pirates','storm'].includes(outcome.kind)||!Number.isFinite(outcome.hullLoss)||outcome.hullLoss<0||outcome.hullLoss>100||!Number.isFinite(outcome.cargoLossPct)||outcome.cargoLossPct<0||outcome.cargoLossPct>100||!Number.isSafeInteger(outcome.delay)||outcome.delay<0||outcome.delay>2)return {ok:false,reason:'bad outcome'};
@@ -38,6 +53,13 @@ export function applyEncounter(g,ship,outcome){
  ship.voyage.ticksLeft+=outcome.delay*TICKS_PER_DAY;ship.voyage.totalTicks=Math.max((ship.voyage.totalTicks??ship.voyage.ticksLeft-outcome.delay*TICKS_PER_DAY)+outcome.delay*TICKS_PER_DAY,ship.voyage.ticksLeft);
  // Display-only attribution stays with this voyage; a new departure creates a fresh object.
  if(outcome.kind==='storm'&&outcome.delay>0){const old=ship.voyage.stormDelayDays;ship.voyage.stormDelayDays=(Number.isSafeInteger(old)&&old>=0?old:0)+outcome.delay;}
+ // The escorted prize shares every delay of the shared voyage: it keeps station in the winner's
+ // wake, so a storm or a detour holds the pair together and they still arrive on the same tick.
+ shareVoyageDeltaWithPrize(g,ship,outcome.delay*TICKS_PER_DAY);
+ if(outcome.kind==='storm'&&outcome.delay>0){
+  const prizeShip=escortedPrizeOf(g,ship);
+  if(prizeShip){const oldPrize=prizeShip.voyage.stormDelayDays;prizeShip.voyage.stormDelayDays=(Number.isSafeInteger(oldPrize)&&oldPrize>=0?oldPrize:0)+outcome.delay;}
+ }
  xpOfEncounter(g,ship,outcome); // flag off: nothing
  return {ok:true,...outcome,hullLost:before-ship.hull,cargoLost};
 }
