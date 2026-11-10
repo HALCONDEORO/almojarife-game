@@ -7,10 +7,12 @@ export function loadWorld(path = new URL("../../data/world.json", import.meta.ur
 }
 /** Build the world graph from parsed world.json (works in the browser too). */
 export function buildWorld(w) {
-  const nodes = {};
+  // Node IDs are world data, not object properties (for example "constructor"):
+  // null-prototype tables keep data keys from colliding with Object.prototype.
+  const nodes = Object.create(null);
   for (const c of w.cities) nodes[c.id] = c;
   for (const [id, p] of Object.entries(w.waypoints)) nodes[id] = { id, ...p };
-  const adj = {};
+  const adj = Object.create(null);
   for (const [a, b] of w.lanes) {
     const d = haversineKm(nodes[a], nodes[b]);
     (adj[a] ??= []).push({ to: b, km: d });
@@ -30,7 +32,8 @@ function searchTree(world, from) {
   if (!byFrom) routeCache.set(world, (byFrom = new Map()));
   let run = byFrom.get(from);
   if (!run) {
-    const dist = { [from]: 0 }, prev = {}, todo = new Set([from]);
+    const dist = Object.create(null), prev = Object.create(null), todo = new Set([from]);
+    dist[from] = 0;
     while (todo.size) {
       let u = null;
       for (const n of todo) if (u === null || dist[n] < dist[u]) u = n;
