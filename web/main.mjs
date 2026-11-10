@@ -556,7 +556,7 @@ function renderRightTabs() {
   const top = led.scrollTop;
   if (rightTab === "port" || rightTab === "mkt") {
     let d = null;
-    if (at) { if (!nearCache.has(at)) nearCache.set(at, nearestPorts(world, at)); d = portData(g, at, { feeMul: feeMul(g, at), neighbours: nearCache.get(at) }); }
+    if (at) { if (!nearCache.has(at)) nearCache.set(at, nearestPorts(world, at)); d = portData(g, at, { feeMul: feeMul(g, at), neighbours: nearCache.get(at), ship: ship() }); }
     const o = { lang, cityName, goodName: (k) => T[lang].goods[k] ?? k };
     led.innerHTML = rightTab === "port" ? portHtml(d, o) : tradesHtml(d, o);
   } else if (rightTab === "city") {
