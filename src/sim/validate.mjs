@@ -31,7 +31,8 @@ export function validateWorld(w, buildingMade = []) {
   }
   // Every city must be reachable from the first one over the lanes.
   if (!errs.length && w.cities.length) {
-    const adj = {}; for (const [a, b] of w.lanes) (adj[a] ??= []).push(b), (adj[b] ??= []).push(a);
+    // Node IDs are data, not object properties (for example "constructor").
+    const adj = Object.create(null); for (const [a, b] of w.lanes) (adj[a] ??= []).push(b), (adj[b] ??= []).push(a);
     const seen = new Set([w.cities[0].id]), q = [w.cities[0].id];
     while (q.length) for (const n of adj[q.pop()] ?? []) if (!seen.has(n)) { seen.add(n); q.push(n); }
     for (const c of w.cities) if (!seen.has(c.id)) errs.push(`city ${c.id}: no sea route from ${w.cities[0].id}`);
