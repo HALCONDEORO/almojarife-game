@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadWorld } from '../src/sim/world.mjs';
@@ -117,6 +118,6 @@ test('bot state survives a save without re-seeding the human chart into it', () 
   const {g, bot} = privateGame();
   refreshBotKnowledge(g, bot);
   const restored = JSON.parse(JSON.stringify(bot));
-  assert.deepEqual(botIntelView(g, restored).discovered, bot.discovered);
+  assert.deepEqual(canonical(botIntelView(g, restored).discovered), canonical(bot.discovered));
   assert.deepEqual(botIntelHooks(g, restored).planningMarket(), botIntelHooks(g, bot).planningMarket());
 });
