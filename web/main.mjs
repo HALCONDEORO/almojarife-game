@@ -1,4 +1,5 @@
-import { moveRouteStop, routeOrderButtons } from "../src/view/routeorder.mjs";
+import { routeFieldLabel } from "../src/view/routefieldlabels.mjs";
+import { moveRouteStop, routeOrderButtons, routeOrderLabel } from "../src/view/routeorder.mjs";
 import { repairCancelHtml } from '../src/view/repaircancel.mjs';
 import {marketLabels,marketActionLabel} from '../src/view/marketlabels.mjs';
 import { originChoiceHtml, originTavernHtml } from "../src/view/originview.mjs";
@@ -839,9 +840,9 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         d.stops.map((st, i) => {
           const cityOpts = routePorts.map((c) => `<option value="${c.id}" ${st.city === c.id ? "selected" : ""}>${cityName(c.id)}</option>`).join("");
           const goodOpts = (sel) => `<option value="">${t.routeAny}</option>` + goods.map((k) => `<option value="${k}" ${sel === k ? "selected" : ""}>${gnTxt(k)}</option>`).join(""); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
-          return `<tr><td>${i + 1}<span class="route-order">${routeOrderButtons(i, d.stops.length, cityName(st.city), lang)}</span></td><td><select id="rts-city-${i}">${cityOpts}</select></td><td><select id="rts-bg-${i}">${goodOpts(st.buyGood)}</select></td><td><input id="rts-bp-${i}" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"></td><td><select id="rts-sg-${i}">${goodOpts(st.sellGood)}</select></td><td><input id="rts-sp-${i}" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"></td><td><button id="rts-del-${i}" title="${t.routeDelStop}" aria-label="${t.routeDelStop}" class="rt-x">✕</button></td></tr>`;
+          return `<tr><td>${i + 1}<span class="route-order">${routeOrderButtons(i, d.stops.length, cityName(st.city), lang)}</span></td><td><select id="rts-city-${i}" aria-label="${routeFieldLabel("city", i, lang)}">${cityOpts}</select></td><td><select id="rts-bg-${i}" aria-label="${routeFieldLabel("buyGood", i, lang)}">${goodOpts(st.buyGood)}</select></td><td><input id="rts-bp-${i}" aria-label="${routeFieldLabel("buyMax", i, lang)}" aria-describedby="rts-price-hint" type="number" min="0" step="1" size="5" placeholder="≤" value="${st.buyMax}"></td><td><select id="rts-sg-${i}" aria-label="${routeFieldLabel("sellGood", i, lang)}">${goodOpts(st.sellGood)}</select></td><td><input id="rts-sp-${i}" aria-label="${routeFieldLabel("sellMin", i, lang)}" aria-describedby="rts-price-hint" type="number" min="0" step="1" size="5" placeholder="≥" value="${st.sellMin}"></td><td><button id="rts-del-${i}" title="${t.routeDelStop}" aria-label="${routeFieldLabel("remove", i, lang)}" class="rt-x">✕</button></td></tr>`;
         }).join("") + `</tbody></table>`;
-      h += `<div class="rumor"><button id="rts-add">${t.routeAddStop}</button> ${t.routeMinCash}: <input id="rts-mincash" type="number" min="0" step="1" size="6" value="${d.minCash}"> <button id="rts-set2">${t.routeSetAdv}</button> <small id="rts-msg" style="color:#a11"></small></div>`;
+      h += `<p id="rts-price-hint"><small>${routeFieldLabel("limitHint", 0, lang)}</small></p><div class="rumor"><button id="rts-add">${t.routeAddStop}</button> ${t.routeMinCash}: <input id="rts-mincash" aria-label="${routeFieldLabel("cash", 0, lang)}" type="number" min="0" step="1" size="6" value="${d.minCash}"> <button id="rts-set2">${t.routeSetAdv}</button> <small id="rts-msg" style="color:#a11"></small></div>`;
       h += `<div class="card rpath-card rpath-preview" id="rts-preview">${rpathLoop(d.stops.map((st) => ({ city: st.city, io: rpathDraftIo(st) })))}</div>`; // live preview of the draft, same visual language as the active route
       h += rt && rt.v !== 2 ? `<div class="card rpath-card">${rpathChain(rt.a, [{ city: rt.b, io: rpathIo(rt.back ? [{ good: rt.back }] : [], [{ good: rt.out }]) }, { city: rt.a, io: rpathIo([{ good: rt.out }], rt.back ? [{ good: rt.back }] : []) }])}<button id="rt-cancel">${t.routeCancel}</button></div>` : rt ? "" : `<p><i>${t.routeNone}</i></p>`; // chip A buys out/sells back, chip B sells out/buys back
       h += `<div class="rumor">${t.routeTo}: <select id="rt-to">${others.map((c) => `<option value="${c.id}">${cityName(c.id)}</option>`).join("")}</select> ${t.routeOut}: <select id="rt-out">${goods.map((k) => `<option value="${k}">${gnTxt(k)}</option>`).join("")}</select> ${t.routeBack}: <select id="rt-back"><option value="">${t.routeNoBack}</option>${goods.map((k) => `<option value="${k}">${gnTxt(k)}</option>`).join("")}</select> <button id="rt-set">${t.routeSet}</button></div>`;
@@ -1156,7 +1157,15 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
   if ($("rts-add")) { // advanced-route editor
     const d = routeDrafts[s.id], ids = world.cities.filter((c) => c.id !== s.at).map((c) => c.id);
     d.stops.forEach((st, i) => {
-      $("rts-city-" + i).onchange = (e) => { st.city = e.target.value; rpathUpdatePreview(s); };
+      $("rts-city-" + i).onchange = (e) => {
+        st.city = e.target.value;
+        for (const direction of [-1, 1]) {
+          const button = $("rts-" + (direction < 0 ? "up-" : "down-") + i);
+          const label = routeOrderLabel(i, cityName(st.city), direction, lang);
+          button.setAttribute("aria-label", label); button.title = label;
+        }
+        rpathUpdatePreview(s);
+      };
       $("rts-bg-" + i).onchange = (e) => { st.buyGood = e.target.value; rpathUpdatePreview(s); };
       $("rts-sg-" + i).onchange = (e) => { st.sellGood = e.target.value; rpathUpdatePreview(s); };
       $("rts-bp-" + i).oninput = (e) => { st.buyMax = e.target.value; rpathUpdatePreview(s); };
