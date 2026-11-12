@@ -3,7 +3,20 @@
 const fs = typeof process !== "undefined" && process.versions?.node ? await import("node:fs") : null;
 const readFileSync = (...a) => fs.readFileSync(...a);
 export function loadLand(path = new URL("../data/ne_50m_land.geojson", import.meta.url)) {
-  const gj = JSON.parse(readFileSync(path, "utf8"));
+  let raw;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    if (err && err.code === "ENOENT") {
+      throw new Error(
+        `Natural Earth land dataset not found at ${path}. ` +
+        "Run `sh tools/fetch_data.sh` once to download it (see CONTRIBUTING.md).",
+        { cause: err }
+      );
+    }
+    throw err;
+  }
+  const gj = JSON.parse(raw);
   const polys = [];
   for (const f of gj.features) {
     const g = f.geometry;
