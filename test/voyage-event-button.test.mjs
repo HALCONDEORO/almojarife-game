@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 const main = readFileSync(new URL("../web/main.mjs", import.meta.url), "utf8");
 
 test("every voyage-card render in render() carries eventPending, so the resolve button cannot be wiped", () => {
-  const calls = [...main.matchAll(/\$\("voyage-card"\)\.innerHTML=voyageCardHtml\(ship\(\),\{[^;]+\}\);/g)].map((m) => m[0]);
+  const block = main.slice(main.indexOf('  $("voyage-card").innerHTML=voyageCardHtml'), main.indexOf('  $("cash-card").innerHTML'));
+  const calls = block.split('\n').filter(line=>line.includes('$("voyage-card").innerHTML=voyageCardHtml'));
   assert.ok(calls.length >= 1, "the voyage card renders at least once");
   for (const c of calls) assert.match(c, /eventPending:!!pendingEvent\(g\)/, `render call misses eventPending: ${c.slice(0, 80)}…`);
 });
