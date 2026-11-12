@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 // Preventive contracts for Almojarife's own repair refund and build-delivery rules.
 // No external game's phase, material, cancellation or refund policy is imported.
 import test from 'node:test';
@@ -30,7 +31,7 @@ test('cancel after reload refunds undelivered work once, retains hull progress a
   assert.deepEqual(cancelRepair(loaded, order.id), { ok: true, refund });
   assert.equal(loaded.cash, cash + refund, 'only the undelivered share returns');
   assert.equal(hull.hull, progress, 'cancellation does not undo delivered work');
-  assert.deepEqual(hull.cargo, cargo, 'repair does not consume trading cargo');
+  assert.deepEqual(canonical(hull.cargo), canonical(cargo), 'repair does not consume trading cargo');
   const closed = restored(loaded), before = JSON.stringify(closed);
   assert.equal(cancelRepair(closed, order.id).reason, 'no order', 'closed order does not return with the save');
   processRepairs(closed);

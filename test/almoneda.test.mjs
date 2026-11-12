@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { newGame, advanceDay } from "../src/game/game.mjs";
@@ -416,7 +417,7 @@ describe("save fidelity", () => {
     bidAuction(g, "cadiz", 0); // a sale happens: townSales and possibly hallAlmoneda persist
     const raw = JSON.stringify(serialize(g, "Casa Prueba"));
     const { g: g2 } = deserialize(JSON.parse(raw), world);
-    assert.deepEqual(g2, g); // plain objects, no null-prototype drift (walls.mjs convention)
+    assert.deepEqual(canonical(g2), canonical(g)); // full runtime state; ID-map prototypes intentionally differ after JSON
   });
 });
 

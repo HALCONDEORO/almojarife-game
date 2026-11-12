@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -51,9 +52,9 @@ test("saves are version 3 and keep the tick through a round trip, mid-day future
   const s = serialize(g, "Casa Reloj");
   assert.equal(s.version, 3); assert.equal(SAVE_VERSION, 3); assert.equal(s.state.tick, 517);
   const { g: r } = deserialize(JSON.parse(JSON.stringify(s)), world);
-  assert.deepEqual(r, g);
+  assert.deepEqual(canonical(r), canonical(g));
   for (let i = 0; i < 300; i++) { advanceTick(g); advanceTick(r); }
-  assert.deepEqual(r, g); // a mid-day save replays the same future
+  assert.deepEqual(canonical(r), canonical(g)); // a mid-day save replays the same future
 });
 
 test("version 1 saves are refused clearly", () => {

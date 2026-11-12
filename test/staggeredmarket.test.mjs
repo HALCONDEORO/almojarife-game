@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -52,6 +53,6 @@ test("mid-day save/load keeps the staggered schedule identical", () => {
   for (let i = 0; i < 517; i++) advanceTick(g);
   const { g: r } = deserialize(JSON.parse(JSON.stringify(serialize(g, "Casa Pulso"))), world);
   for (let i = 0; i < 500; i++) { advanceTick(g); advanceTick(r); }
-  assert.deepEqual(r.market, g.market);
-  assert.deepEqual(r.hist, g.hist);
+  assert.deepEqual(canonical(r.market), canonical(g.market));
+  assert.deepEqual(canonical(r.hist), canonical(g.hist));
 });
