@@ -21,7 +21,7 @@ export function clearRoute(ship) {
   const had = !!ship.route;
   if (had) {
     const keep = { ...ship.route };
-    for (const key of ["legs", "stuck", "stuckKey", "sailBlockKey", "since", "profit", "idx"]) delete keep[key];
+    for (const key of ["legs", "stuck", "stuckKey", "sailBlockKey", "convoyPauseKey", "since", "profit", "idx"]) delete keep[key];
     ship.lastRoute = keep;
   } // remembered so "repeat route" can bring it back
   delete ship.route; return had;
@@ -75,6 +75,15 @@ export function processRoutes(g, ops) { // skipcq: JS-R1005 - pre-existing compl
   for (const s of g.ships) {
     const r = s.route;
     if (!r || s.voyage || g.over) continue;
+    // A route belongs to one hull, not the convoy. Do not trade, advance a stop
+    // or send its companions away until a group-route policy exists.
+    const convoy = s.convoy && g.convoys?.[s.convoy];
+    if (convoy) {
+      if (r.convoyPauseKey !== convoy.id) post(g, "routeStuck", { ship: s.id, city: s.at, action: "convoy", cause: "convoy", convoy: convoy.id });
+      r.convoyPauseKey = convoy.id;
+      continue;
+    }
+    delete r.convoyPauseKey;
     if (ops.inRepair?.(s)) continue; // the yard holds the ship: the route waits and resumes when the order closes
     if (r.v === 2) { processRouteAdv(g, s, r, ops); continue; } // advanced circuit; legacy A⇄B routes follow the original rules below
     if (s.at !== r.a && s.at !== r.b) { routeSail(g, s, r.a, ops); continue; } // not on the route yet: go to A

@@ -24,6 +24,9 @@ const ROUTE_CAUSES = {
 };
 function routeStuckTemplate(m, lang) {
   const es = lang === "es";
+  if (m.action === "convoy") return es
+    ? "Barco {ship}: su autorruta está en pausa mientras forma parte de un convoy. Puedes navegar con el convoy manualmente. La ruta se reanuda al salir del convoy o disolverlo."
+    : "Ship {ship}: its automatic route is paused while it belongs to a convoy. You can sail the convoy manually. The route resumes after leaving or disbanding the convoy.";
   if (m.action === "sail") {
     const reasons = es
       ? { crew: "falta tripulación mínima; un capitán no la sustituye", held: "el tribunal retiene el barco", "in repair": "el astillero retiene el barco", blockade: "un bloqueo impide zarpar o entrar", boycott: "un boicot impide entrar", "port closed": "el puerto está cerrado" }
