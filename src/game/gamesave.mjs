@@ -205,6 +205,28 @@ function sanitizeDeepStructures(st, world) {
   sanitizeHistory(st);
 }
 
+// JSON restores every dictionary with Object.prototype. Only known ID-keyed
+// dictionaries are rebuilt here: record objects and arrays keep their shape.
+function normalizeSavedIdMaps(g) {
+  const dictionary = (value) => isPlainObj(value) ? Object.assign(Object.create(null), value) : value;
+  const field = (owner, key) => { if (isPlainObj(owner) && isPlainObj(owner[key])) owner[key] = dictionary(owner[key]); };
+  const citiesAndGoods = (owner, key) => {
+    field(owner, key);
+    for (const [id, city] of Object.entries(owner?.[key] ?? {})) if (isPlainObj(city)) owner[key][id] = dictionary(city);
+  };
+  citiesAndGoods(g, "market");
+  citiesAndGoods(g, "hist");
+  const ownerMaps = (owner) => {
+    for (const key of ["discovered", "intel", "warehouses"]) field(owner, key);
+    for (const snapshot of Object.values(owner?.intel ?? {})) field(snapshot, "cells");
+    for (const warehouse of Object.values(owner?.warehouses ?? {})) for (const key of ["goods", "basis"]) field(warehouse, key);
+  };
+  ownerMaps(g);
+  const shipMaps = (ship) => { field(ship, "cargo"); field(ship?.voyage, "pts"); };
+  for (const ship of g.ships ?? []) shipMaps(ship);
+  for (const bot of g.ai ?? []) { ownerMaps(bot); shipMaps(bot.ship); }
+}
+
 export function deserialize(save, world) {
   const s = migrate(save);
   const st = s.state;
@@ -222,8 +244,10 @@ export function deserialize(save, world) {
   if (g.pottery === true) g.world = withPottery(g.world);
   if (g.legumes === true) g.world = withLegumes(g.world);
   delete g.kidMeat; // the retired optional-goods flag rides along in old saves; drop it
+  normalizeSavedIdMaps(g); // before any inherited-key lookup in migration/backfill
   fillShipNames(g.ships);
   migrateRetired(g);
   fillMissingMarketRows(g.world, g.market); // goods or ports added since the save was written get a fresh market row, so old saves keep loading
+  normalizeSavedIdMaps(g); // include rows added by catalogue backfill
   return { g, company: cleanCompany(s.company) };
 }

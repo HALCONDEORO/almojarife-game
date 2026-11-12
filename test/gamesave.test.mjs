@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,9 +15,9 @@ test("save and load gives the same game, and it keeps evolving the same way", ()
   const raw = JSON.stringify(serialize(a, "Casa Prueba"));
   const { g: b, company } = deserialize(JSON.parse(raw), world);
   assert.equal(company, "Casa Prueba");
-  assert.deepEqual(b, a);
+  assert.deepEqual(canonical(b), canonical(a));
   play(a, 9); play(b, 9);
-  assert.deepEqual(b, a);
+  assert.deepEqual(canonical(b), canonical(a));
 });
 test("the save has a version and does not include the world", () => {
   const s = serialize(newGame(world), "X");
@@ -160,7 +161,7 @@ test("legacy engine-generated same-port voyages survive reload and complete", ()
   ship.voyage = { from: "cadiz", to: "cadiz", ticksLeft: 1, totalTicks: 1, km: 0, path: ["cadiz"], wind: 1 };
   assert.deepEqual(ship.voyage.path, ["cadiz"]);
   const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Oro"))), world).g;
-  assert.deepEqual(loaded.ships[0].voyage, ship.voyage);
+  assert.deepEqual(canonical(loaded.ships[0].voyage), canonical(ship.voyage));
   advanceTick(loaded);
   assert.equal(loaded.ships[0].voyage, null);
   assert.equal(loaded.ships[0].at, "cadiz");
@@ -179,7 +180,7 @@ test("real port, free, rerouted and anchored voyages survive JSON reloads", () =
   const ship = game.ships[0];
   const reload = () => {
     const loaded = deserialize(JSON.parse(JSON.stringify(serialize(game, "Casa Oro"))), world).g;
-    assert.deepEqual(loaded.ships[0].voyage, ship.voyage);
+    assert.deepEqual(canonical(loaded.ships[0].voyage), canonical(ship.voyage));
     return loaded;
   };
   assert.equal(doSail(game, ship, "lisboa").ok, true);
