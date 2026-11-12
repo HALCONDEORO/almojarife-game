@@ -9,6 +9,9 @@
     "serve": "python3 -m http.server 8080",
     "map": "node tools/render_map.mjs",
     "sim1000": "node tools/sim_1000y.mjs",
-    "simeco": "node tools/sim_economy.mjs"
+    "simeco": "node tools/sim_economy.mjs",
+    "test:fast": "node tools/test_runner.mjs --timeout 120 --skip ai.test,balance-report,balance-seeds",
+    "test:slow": "node tools/test_runner.mjs --jobs 1 --timeout 600 ai.test,balance-report,balance-seeds",
+    "test:all": "node tools/test_runner.mjs --timeout 600"
   }
 }
