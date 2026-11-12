@@ -21,7 +21,7 @@ no game code was read.
 | Plunder and prizes | Sid Meier's Pirates! | Winning lets you take cargo, add the ship as a prize, recruit crew. The crew's share when plunder is divided depends on difficulty and on how long the voyage was. | https://gamefaqs.gamespot.com/pc/915017-sid-meiers-pirates/faqs/34143 |
 | Plunder and prizes | Patrician 3 | After winning you can capture, plunder, sink, let flee or let go. A pirate hired by the player keeps a loot share. | https://patrician3.fandom.com/wiki/Piracy |
 | Reputation and law | Port Royale 3 | Attacking a trader or convoy without a letter: -8% to -10% with the attacked nation and allies, -5% to -6% with everyone else. With a letter: same loss with the victim, +10% with the nation that sold the letter, 0% with the rest. Looting a town: -10%. | https://portroyale3-fansite.de/en/politicscharacter/piracyprivateering/ |
-| Reputation and law | Patrician 3 | Raising the flag and attacking can bring a fine. The game sends "indictment" letters: witnesses swear they recognised your ship with the pirate flag firing on, plundering, sinking or capturing Hanse ships. Hunting pirates raises reputation Hanse-wide. | https://patrician3.fandom.com/wiki/Piracy ; https://p3modding.github.io/letters/19-indictment.html ; https://patrician3.fandom.com/wiki/Reputation |
+| Reputation and law | Patrician 3 | Raising the flag and attacking can bring a fine. Hunting pirates raises reputation Hanse-wide. | https://patrician3.fandom.com/wiki/Piracy ; https://patrician3.fandom.com/wiki/Reputation |
 | Hostile ports | Patrician 3 | Every town has a harbour bombard; town raids are sea battles with defences; towns hold a coffer that pirates can plunder. | https://patrician3.fandom.com/wiki/Piracy |
 | Hostile ports | Anno 1404 | War must be declared first; military budget caps how many fighting units a population supports; control comes from capturing warehouses. | https://anno1404.fandom.com/wiki/Combat |
 | Fame | Uncharted Waters | The player gains fame from battling, trading and discovering; there are national and pirate NPC fleets. | https://en.wikipedia.org/wiki/Uncharted_Waters:_New_Horizons |
@@ -89,8 +89,8 @@ player and the bots use it with no difference. No UI, no state in the function.
   home port and 5 in the ports of the same region (copying the shape of Port Royale 3: a large loss with the victim, a smaller one with
   the rest). Looting a port's ship in its own harbour is not allowed in v1.
 - Witnesses: if the victim survives or another ship was within sight, the pirate's identity becomes known (infamy counts in full); if
-  the victim is sunk with no witnesses, infamy rises only by half. This is the trade-off of Pirates! (sinking leaves no loot) and of
-  Patrician 3 (witnesses swear to the flag).
+  the victim is sunk with no witnesses, infamy rises only by half. The no-loot consequence is documented for Pirates!; the witness-based identification and half-infamy rule
+  are Almojarife design proposals, not verified Patrician 3 behavior.
 - Infamy tiers (proposal): below 20 nothing; 20 to 49 "watched": port fees +25%; 50 to 79 "hostile": the harbour fires on entry (hull loss)
   and refuses market access in ports where reputation is below neutral; 80 or more "wanted": a bounty of infamy x 50 coins is posted;
   armed escorts of ports hunt the ship and killing or capturing it pays the bounty.
