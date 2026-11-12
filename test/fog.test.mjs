@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadWorld, buildWorld } from "../src/sim/world.mjs";
@@ -79,7 +80,7 @@ test("the chart survives saving; a pre-fog save is seeded from intel and routes"
   const g = game(), s = g.ships[0];
   setRoute(g, s, s.at, "sevilla", "grain");
   const back = deserialize(serialize(g, "X"), world).g;
-  assert.deepEqual(back.discovered, g.discovered);
+  assert.deepEqual(canonical(back.discovered), canonical(g.discovered));
   // Legacy save: no discovered field at all.
   const raw = JSON.parse(JSON.stringify(serialize(g, "X")));
   delete raw.state.discovered;
@@ -96,5 +97,5 @@ test("a complete chart is a no-op and discovery survives a save round-trip", () 
   const raw = JSON.parse(JSON.stringify(serialize(g, "Casa Prueba")));
   assert.ok(raw.state.discovered && typeof raw.state.discovered === "object"); // serialize keeps g.discovered
   const { g: back } = deserialize(raw, world);
-  assert.deepEqual(back.discovered, g.discovered);
+  assert.deepEqual(canonical(back.discovered), canonical(g.discovered));
 });
