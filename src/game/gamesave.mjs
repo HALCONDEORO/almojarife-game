@@ -33,6 +33,13 @@ export const RETIRED_BUILDINGS = Object.freeze({ smokehouse: "fishery" });
 export function migrateRetired(g) {
   const addInto = (a, b) => (typeof a === "number" && typeof b === "number" ? a + b : a && b && typeof a === "object" && typeof b === "object" ? Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, addInto(a[k], b[k])])) : a ?? b);
   for (const [city, row] of Object.entries(g.market ?? {})) for (const [from, to] of Object.entries(RETIRED_GOODS)) if (row && from in row) { if (!row[to]) row[to] = row[from]; delete row[from]; }
+  // Price series are observations, not stock counters: never sum arrays.
+  // Keep the current good's series when both names exist; otherwise rename the old one.
+  for (const row of Object.values(g.hist ?? {})) if (row && typeof row === "object" && !Array.isArray(row))
+    for (const [from, to] of Object.entries(RETIRED_GOODS)) if (Object.hasOwn(row, from)) {
+      if (!Object.hasOwn(row, to)) row[to] = row[from];
+      delete row[from];
+    }
   const walk = (o, inMarket) => {
     if (Array.isArray(o)) { o.forEach((v, i) => { if (typeof v === "string") o[i] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v); }); return; }
     if (!o || typeof o !== "object") return;
@@ -43,7 +50,7 @@ export function migrateRetired(g) {
       if (typeof v === "string") o[k] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v);
     }
   };
-  for (const k of Object.keys(g)) if (k !== "market" && k !== "world") { const v = g[k]; if (typeof v === "string") g[k] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v); }
+  for (const k of Object.keys(g)) if (k !== "market" && k !== "world" && k !== "hist") { const v = g[k]; if (typeof v === "string") g[k] = RETIRED_GOODS[v] ?? RETIRED_BUILDINGS[v] ?? v; else walk(v); }
   return g;
 }
 

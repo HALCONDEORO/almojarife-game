@@ -521,6 +521,9 @@ export function doGoTo(g, ship, lat, lon) {
   if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
   // A refused course change leaves its reason on the ship (the voyage card shows it until a new order succeeds).
   const refuse = (reason) => { ship.navError = reason; return { ok: false, reason }; };
+  // A kept prize shares this voyage. Replacing either leg would orphan the
+  // crewless prize and discard the escort binding, so finish the pair first.
+  if (ship.voyage && (ship.voyage.escorted || ship.voyage.escortedBy !== undefined)) return refuse("escort");
   const convoy = ship.convoy && g.convoys?.[ship.convoy];
   if (convoy && ship.voyage) return refuse("convoy"); // no mid-leg convoy course changes
   if (speedFactor(ship) <= 0) return refuse("crew");
