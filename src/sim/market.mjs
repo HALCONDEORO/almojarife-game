@@ -46,7 +46,7 @@ export const SEASON_PEAK = { grain: 225, wine: 270, olive_oil: 330, sugar: 100, 
 export const SEASON_AMPLITUDE = 0.35;
 /** Production multiplier for a good on a day: 1 on average over the year, 1.35 at peak, 0.65 at the low. */
 export function seasonMul(good, day) {
-  const peak = SEASON_PEAK[good];
+  const peak = Object.hasOwn(SEASON_PEAK, good) ? SEASON_PEAK[good] : undefined;
   if (peak === undefined || day === undefined) return 1;
   return 1 + SEASON_AMPLITUDE * Math.cos(2 * Math.PI * (day - peak) / 365);
 }
@@ -79,7 +79,7 @@ export function tickMarket(market, day, world, options = {}) {
 /** One day for ONE city (market[cityId]): the same formulas and quantities as a full tickMarket day. */
 export function tickMarketCity(city, day, world, {needsLedger=NEEDS_LEDGER_ENABLED, commerceLedger=COMMERCE_LEDGER_ENABLED} = {}) {
   const commerce = commerceLedger && world?.goods && city?.grain ? openCommerce(world, city) : null; // lazy open: an account-less market (old save, bare fixture) gets its account on its first tick
-  const actual={},desired={},retailValues={};
+  const actual=Object.create(null),desired=Object.create(null),retailValues=Object.create(null);
   const track = needsLedger || commerce;
   // Purses limit discretionary spending, never food (docs/design/household-purses-limit.md): food is
   // processed first and measured as before; every other good is then capped by what each class purse

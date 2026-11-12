@@ -7,7 +7,7 @@ export const NEEDS_LEDGER_ENABLED=true; // default ON (Marco 23/10); telemetry o
  * per-class purse. Never label spending or affordability as observed here. */
 export function recordLegacyConsumption(city,day,actual,desired,multiplierOf){
  const counts=classCounts(Object.values(city)[0].pop),need=physicalNeeds(counts,legacyNeedsPolicy(Object.keys(city)),multiplierOf);
- const receipt={byClass:Object.fromEntries(CLASSES.map(c=>[c,{units:{},spending:{},desired:{}}]))};
+ const receipt={byClass:Object.fromEntries(CLASSES.map(c=>[c,{units:Object.create(null),spending:Object.create(null),desired:Object.create(null)}]))};
  for(const[g,n]of Object.entries(actual)){
   const d=desired[g],total=CLASSES.reduce((s,c)=>s+d[c],0);let left=n;
   const ranked=CLASSES.map(c=>({c,raw:total?n*d[c]/total:0}));
