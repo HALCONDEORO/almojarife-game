@@ -122,3 +122,6 @@ body.in-city-3d .city-window,body.in-city-3d .city-window.ui2d-market-window{max
 .mkt-qtybar button.on{outline:2px solid #183d59;outline-offset:1px;font-weight:bold}
 .mkt-pill:focus-visible,.mkt-qtybar button:focus-visible{outline:3px solid #183d59;outline-offset:2px}
 .mkt-row:focus-within{box-shadow:inset 3px 0 #183d59}
+
+.route-order{display:flex;gap:2px}
+.route-order button{padding:2px 5px}
