@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadWorld } from '../src/sim/world.mjs';
@@ -23,12 +24,12 @@ function verifyIsolation(game) {
  assert.notEqual(snapshot.grain.commerce.households, live.households);
  assert.notEqual(snapshot.grain.commerce.inventoryBasis, live.inventoryBasis);
  live.cash += 17; live.inventoryBasis.grain += 3; live.households.poor.cash += 11;
- assert.deepEqual(snapshot, original, 'later public accounts cannot rewrite a dated report');
+ assert.deepEqual(canonical(snapshot), canonical(original), 'later public accounts cannot rewrite a dated report');
  const publicAccounts = structuredClone(game.market.cadiz);
  snapshot.grain.commerce.cash += 19;
  snapshot.grain.commerce.inventoryBasis.grain += 5;
  snapshot.grain.commerce.households.poor.cash += 7;
- assert.deepEqual(game.market.cadiz, publicAccounts, 'intel edits cannot mutate actual public accounts');
+ assert.deepEqual(canonical(game.market.cadiz), canonical(publicAccounts), 'intel edits cannot mutate actual public accounts');
 }
 
 test('contact report delivered through advanceDay owns its nested commerce records', () => {
@@ -40,12 +41,12 @@ test('report date and nested snapshot survive real days and reload without anoth
  const loaded = deserialize(serialize(game, 'Contact snapshot', 0), world).g;
  assert.equal(loaded.cash, cash);
  assert.deepEqual(loaded.contacts, game.contacts);
- assert.deepEqual(loaded.intel.cadiz, snapshot);
+ assert.deepEqual(canonical(loaded.intel.cadiz), canonical(snapshot));
  for (let day = 0; day < 3; day++) advanceDay(loaded);
  assert.equal(loaded.contacts[0].reports, 1);
- assert.deepEqual(loaded.intel.cadiz, snapshot, 'no weekly report means no refreshed commerce or date');
+ assert.deepEqual(canonical(loaded.intel.cadiz), canonical(snapshot), 'no weekly report means no refreshed commerce or date');
  const reopened = deserialize(serialize(loaded, 'Dated report', 0), world).g;
- assert.deepEqual(reopened.intel.cadiz, snapshot);
+ assert.deepEqual(canonical(reopened.intel.cadiz), canonical(snapshot));
  assert.equal(reopened.cash, loaded.cash);
  verifyIsolation(reopened);
 });

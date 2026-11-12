@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadWorld } from '../src/sim/world.mjs';
@@ -56,12 +57,12 @@ for (const kind of ['route', 'scholar']) {
   const { game, city } = make(kind), original = structuredClone(game.intel[city]);
   const loaded = deserialize(serialize(game, 'Dated observation', 0), world).g;
   assert.equal(loaded.cash, game.cash);
-  assert.deepEqual(loaded.intel[city], original);
+  assert.deepEqual(canonical(loaded.intel[city]), canonical(original));
   for (let day = 0; day < 3; day++) advanceDay(loaded);
-  assert.deepEqual(loaded.intel[city], original);
+  assert.deepEqual(canonical(loaded.intel[city]), canonical(original));
   const reopened = deserialize(serialize(loaded, 'Old observation', 0), world).g;
   assert.equal(reopened.cash, loaded.cash);
-  assert.deepEqual(reopened.intel[city], original);
+  assert.deepEqual(canonical(reopened.intel[city]), canonical(original));
   const before = serialize(reopened, 'No replay', 0);
   if (kind === 'scholar') assert.equal(initOrigin(reopened), false);
   assert.deepEqual(serialize(reopened, 'No replay', 0), before);

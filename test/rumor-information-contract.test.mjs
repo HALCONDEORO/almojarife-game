@@ -1,3 +1,4 @@
+import {canonicalDictionaries as canonical} from "./helpers/canonical-dictionaries.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadWorld } from '../src/sim/world.mjs';
@@ -43,14 +44,14 @@ test('paid information remains dated and stale through real days and reload with
  const snapshot = structuredClone(game.intel[city]), cash = game.cash;
  const loaded = deserialize(serialize(game, 'Paid information', 0), world).g;
  assert.equal(loaded.cash, cash);
- assert.deepEqual(loaded.intel[city], snapshot);
+ assert.deepEqual(canonical(loaded.intel[city]), canonical(snapshot));
  assert.equal(loaded.log.filter(row => row.key === 'rumor').length, 1);
  for (let day = 0; day < 3; day++) advanceDay(loaded);
- assert.deepEqual(loaded.intel[city], snapshot, 'today\'s market does not replace the paid observation');
+ assert.deepEqual(canonical(loaded.intel[city]), canonical(snapshot), 'today\'s market does not replace the paid observation');
  assert.deepEqual(knownMarket(loaded).age[city], { days: 3, exact: false });
  assert.equal(loaded.log.filter(row => row.key === 'rumor').length, 1, 'clock and reload do not buy another rumour');
  const final = deserialize(serialize(loaded, 'Stale information', 0), world).g;
- assert.deepEqual(final.intel[city], snapshot);
+ assert.deepEqual(canonical(final.intel[city]), canonical(snapshot));
  assert.deepEqual(knownMarket(final).age[city], { days: 3, exact: false });
  assert.equal(final.cash, loaded.cash, 'reload adds no extra charge');
 });
