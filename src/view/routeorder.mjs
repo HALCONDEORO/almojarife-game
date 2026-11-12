@@ -7,11 +7,14 @@ export function moveRouteStop(stops, index, direction) {
   return next;
 }
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function routeOrderLabel(index, city, direction, lang = 'es') {
+  const verb = lang === 'en' ? (direction < 0 ? 'Move up' : 'Move down') : (direction < 0 ? 'Subir' : 'Bajar');
+  return `${verb}: ${index + 1}. ${city}`;
+}
 export function routeOrderButtons(index, count, city, lang = 'es') {
   return [-1, 1].map(direction => {
     const key = direction < 0 ? 'up' : 'down';
-    const verb = lang === 'en' ? (direction < 0 ? 'Move up' : 'Move down') : (direction < 0 ? 'Subir' : 'Bajar');
-    const label = escapeHtml(`${verb}: ${index + 1}. ${city}`);
+    const label = escapeHtml(routeOrderLabel(index, city, direction, lang));
     return `<button type="button" id="rts-${key}-${index}" data-route-move="${index}:${direction}" title="${label}" aria-label="${label}"${index + direction < 0 || index + direction >= count ? ' disabled' : ''}>${direction < 0 ? '↑' : '↓'}</button>`;
   }).join('');
 }
