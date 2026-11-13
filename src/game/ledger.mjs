@@ -1,3 +1,4 @@
+import { msgClass } from "./msgclass.mjs";
 // Weekly settlement of running costs, reports and the message inbox. Pure game logic: no DOM.
 // Ship upkeep is no longer taken every day. It builds up as "accrued" and is paid once a week (every SETTLE_EVERY days),
 // so the player can plan prices against a known weekly cost. What cash cannot cover makes it negative (an overdraft) and costs interest every week; too deep means bankruptcy.
@@ -31,7 +32,18 @@ export const dueNow = (g) => r2(accruedTotal(g) + tollsDue(g) + overdraftInteres
 export function post(g, kind, p = {}) {
   const box = (g.inbox ??= []);
   box.unshift({ id: (g.nextMsg = (g.nextMsg ?? 0) + 1), day: g.day, kind, read: false, ...(g.ships?.find(s=>s.id===p.ship)?.name?{shipName:g.ships.find(s=>s.id===p.ship).name}:{}), ...p });
-  if (box.length > MAX_INBOX) box.pop();
+  if (g.protectUnreadActions === false) {
+    if (box.length > MAX_INBOX) box.pop(); // exact legacy path for rollback
+  } else {
+    // Keep the hard cap. Discard oldest replaceable traffic first, including a
+    // newly posted notice if every older entry is an unread action. When the
+    // whole box is protected, retain the newest actions (no unbounded history).
+    while (box.length > MAX_INBOX) {
+      let drop = box.length - 1;
+      while (drop >= 0 && !box[drop].read && msgClass(box[drop]) === "action") drop--;
+      box.splice(drop < 0 ? box.length - 1 : drop, 1);
+    }
+  }
 }
 export const unread = (g) => (g.inbox ?? []).filter((m) => !m.read).length;
 export function markRead(g, id) { const m = (g.inbox ?? []).find((x) => x.id === id); if (m) m.read = true; return !!m; }
