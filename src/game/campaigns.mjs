@@ -4,6 +4,7 @@
 // Step kinds: events (buy/sell/sail/arrive/readReport, fired by the game) and conditions
 // (respect/worth/fleet/build/warehouse, checked every day). Historical context is separate
 // from fictional gameplay goals.
+import { addRep } from "./reputation.mjs";
 import { tutorialActive } from "./tutorial.mjs"; // the tutorial gates the mission arc (see below)
 
 export const MISSIONS = Object.freeze([
@@ -47,9 +48,54 @@ export const MISSIONS = Object.freeze([
       Object.freeze({ kind: 'worth', atLeast: 10000, label: { es: 'Patrimonio de {n}', en: 'Net worth of {n}' } }),
     ]),
     reward: Object.freeze({ respect: { home: 5 } }) }),
+  Object.freeze({ id: 's3-long-name', chain: 'side', requires: ['m1-oficio'], optional: true,
+    feature: 'longMissions', duration: 730, failure: Object.freeze({ reputation: -2, cooldown: 14 }),
+    title: { es: 'Una palabra duradera', en: 'A lasting word' },
+    intro: { es: 'Gana respeto 30 en tu puerto de origen durante los próximos 730 días de campaña. Si vence el plazo, se revoca solo este encargo: reputación local −2 y 14 días sin nuevos encargos opcionales.', en: 'Reach respect 30 in your home port within the next 730 campaign days. Expiry revokes only this mission: local reputation −2 and 14 days without new optional offers.' },
+    done: { es: 'Tu palabra perdura. La casa sigue su camino.', en: 'Your word endures. The house continues its journey.' },
+    failedShort: { es: 'Revocado: reputación local −2', en: 'Revoked: local reputation −2' },
+    failed: { es: 'Encargo revocado: reputación local −2, una sola vez. Los nuevos encargos opcionales vuelven tras 14 días de campaña; los ya aceptados y la cadena principal continúan.', en: 'Mission revoked: local reputation −2, once only. New optional offers return after 14 campaign days; accepted missions and the main chain continue.' },
+    steps: Object.freeze([Object.freeze({ kind: 'respect', city: 'home', atLeast: 30,
+      label: { es: 'Respeto {n} en tu puerto de origen', en: 'Respect {n} in your home port' } })]) }),
+  Object.freeze({ id: 's4-next-word', chain: 'side', requires: [], resolved: 's3-long-name', optional: true, feature: 'longMissions',
+    title: { es: 'Volver a las cuentas', en: 'Back to the books' },
+    intro: { es: 'El gremio vuelve a ofrecer un encargo: lee tu informe semanal.', en: 'The guild offers another mission: read your weekly report.' },
+    done: { es: 'Las cuentas están claras.', en: 'The accounts are clear.' },
+    failed: { es: '', en: '' },
+    steps: Object.freeze([Object.freeze({ kind: 'readReport', label: { es: 'Lee tu informe semanal', en: 'Read your weekly report' } })]) }),
+
 ]);
 export const CAMPAIGNS = MISSIONS; // backwards-compatible name for older imports
 export function campaignById(id) { return MISSIONS.find((m) => m.id === id) ?? null; }
+
+// Multi-year content belongs only to open-ended campaigns: the standard game
+// still ends after 365 days. Never extend that limit to make this opt-in work.
+const longEnabled = (g) => g.longMissions === true && g.noGoal === true;
+const enabled = (g, m) => !m.feature || (g[m.feature] === true && g.noGoal === true);
+const clockDay = (g) => g.campaign.longClock?.day ?? 0;
+// Optional clock is lazy: no new keys in games that never opt in. Daily tutorial ticks
+// advance only the observation, so neither deadlines nor cooldowns consume tutorial time.
+function observeClock(g) {
+  if (!longEnabled(g)) return;
+  const c = g.campaign;
+  c.longClock ??= { day: 0, lastDay: g.day };
+  if (!tutorialActive(g)) c.longClock.day += Math.max(0, g.day - c.longClock.lastDay);
+  c.longClock.lastDay = g.day;
+}
+function expireOptional(g, h) {
+  if (!longEnabled(g)) return;
+  for (const id of g.campaign.active) {
+    const m = campaignById(id), st = g.campaign.missions[id];
+    if (!m?.duration || !enabled(g, m) || !st || st.done || st.failed) continue;
+    // Missing timing in a partial old save gets a full relative window.
+    if (!Number.isFinite(st.deadlineDay)) st.deadlineDay = clockDay(g) + m.duration;
+    if (clockDay(g) <= st.deadlineDay) continue;
+    st.failed = true; // persisted guard: repeat ticks/events/reloads cannot apply twice
+    addRep(g, g.profile?.home, m.failure.reputation);
+    g.campaign.optionalUntil = Math.max(g.campaign.optionalUntil ?? 0, clockDay(g) + m.failure.cooldown);
+    h.post(g, 'mission', { txt: m.failed });
+  }
+}
 
 const EVENT_KINDS = new Set(['buy', 'sell', 'sail', 'arrive', 'readReport']);
 const NO_HELPERS = Object.freeze({ post: () => {}, addRespect: () => {}, repOf: () => 0, netWorth: () => 0 });
@@ -66,9 +112,12 @@ export function newCampaign(id = 'm1-oficio') {
 function activate(g, post) {
   const c = g.campaign; if (!campaignShapeOk(c)) return;
   for (const m of MISSIONS) {
-    if (c.missions[m.id]) continue;
+    if (c.missions[m.id] || !enabled(g, m)) continue;
+    if (m.resolved && !c.missions[m.resolved]?.done && !c.missions[m.resolved]?.failed) continue;
+    if (longEnabled(g) && m.optional && clockDay(g) < (c.optionalUntil ?? 0)) continue;
     if (m.requires.every((r) => c.missions[r]?.done)) {
       c.missions[m.id] = { step: 0, count: 0, done: false, failed: false };
+      if (m.duration) c.missions[m.id].deadlineDay = clockDay(g) + m.duration;
       c.active.push(m.id);
       post(g, 'mission', { txt: m.intro });
     }
@@ -82,14 +131,16 @@ function complete(g, m, h) {
   activate(g, h.post);
 }
 
-/** Explicit successful player-action events only; no parsing translated logs. No general game side effects. */
+/** Explicit successful player-action events only; optional expiry is checked before progress. */
 export function campaignEvent(g, event, h = NO_HELPERS) {
   const c = g.campaign; if (!campaignShapeOk(c) || !event || typeof event.kind !== 'string') return false;
+  observeClock(g);
   if (tutorialActive(g)) return false; // missions stay frozen until the tutorial is done or skipped (owner decision, 25 Oct 2026)
+  expireOptional(g, h);
   let changed = false;
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
-    if (!m || !st || st.done || st.failed) continue;
+    if (!m || !enabled(g, m) || !st || st.done || st.failed) continue;
     const step = m.steps[st.step];
     if (!step || !EVENT_KINDS.has(step.kind) || step.kind !== event.kind) continue;
     if (step.good && step.good !== event.good) continue;
@@ -118,11 +169,13 @@ function portsWithRespect(g, step, h) {
 /** Daily: deadlines fail missions, condition steps complete themselves, new missions activate. */
 export function campaignTick(g, h = NO_HELPERS) {
   const c = g.campaign; if (!campaignShapeOk(c)) return;
+  observeClock(g);
   if (tutorialActive(g)) return; // no activation, progress or deadlines while the tutorial runs
+  expireOptional(g, h);
   activate(g, h.post);
   for (const id of [...c.active]) {
     const m = campaignById(id), st = c.missions[id];
-    if (!m || !st || st.done || st.failed) continue;
+    if (!m || !enabled(g, m) || !st || st.done || st.failed) continue;
     if (m.deadline && g.day > m.deadline) { st.failed = true; h.post(g, 'mission', { txt: m.failed }); continue; }
     const step = m.steps[st.step];
     if (step && !EVENT_KINDS.has(step.kind) && conditionMet(g, step, h)) { st.step++; if (st.step >= m.steps.length) complete(g, m, h); }
@@ -138,15 +191,15 @@ export function campaignSteps(g, id = g.campaign?.active?.[0]) {
 export function missionView(g, lang, h = NO_HELPERS) {
   const c = g.campaign; if (!c) return [];
   if (tutorialActive(g)) return []; // the arc appears once the tutorial is done or skipped
-  return c.active.map((id) => {
+  return c.active.filter((id) => { const m = campaignById(id); return m && c.missions[id] && enabled(g, m); }).map((id) => {
     const m = campaignById(id), st = c.missions[id];
     const step = m.steps[Math.min(st.step, m.steps.length - 1)];
     return { id, optional: m.optional, title: m.title[lang] ?? m.title.es,
-      stepLabel: st.done ? '' : (step.label[lang] ?? step.label.es).replace('{qty}', step.qty ?? '').replace('{n}', step.atLeast ?? '').replace('{ports}', step.ports ?? ''),
-      progress: step.qty && !st.done ? Math.min(st.count ?? 0, step.qty) + '/' + step.qty
+      stepLabel: st.failed && m.feature ? (m.failedShort?.[lang] ?? m.failedShort?.es ?? m.failed[lang] ?? m.failed.es) : st.done ? '' : (step.label[lang] ?? step.label.es).replace('{qty}', step.qty ?? '').replace('{n}', step.atLeast ?? '').replace('{ports}', step.ports ?? ''),
+      progress: st.failed ? '' : step.qty && !st.done ? Math.min(st.count ?? 0, step.qty) + '/' + step.qty
         : step.kind === 'respectPorts' && !st.done ? portsWithRespect(g, step, h) + '/' + step.ports
         : step.kind === 'respect' && !st.done ? Math.min(Math.floor(h.repOf(g, step.city === 'home' ? g.profile?.home : step.city)), step.atLeast) + '/' + step.atLeast : '',
-      daysLeft: m.deadline && !st.done && !st.failed ? m.deadline - g.day : null,
+      daysLeft: m.duration && !st.done && !st.failed ? Math.max(0, st.deadlineDay - clockDay(g)) : m.deadline && !st.done && !st.failed ? m.deadline - g.day : null,
       done: st.done, failed: st.failed };
   });
 }

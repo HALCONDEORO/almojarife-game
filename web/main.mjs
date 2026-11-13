@@ -450,7 +450,7 @@ function armFailNote(reason) { // an armory rejection names its cause on the hin
 }
 
 function activeMissionLine() {
-  const missions = missionView(g, lang, MISSION_HOOKS).filter((m) => !m.done && !m.failed);
+  const missions = missionView(g, lang, MISSION_HOOKS).filter((m) => !m.done && (!m.failed || (g.longMissions === true && m.id === "s3-long-name")));
   return missions.length ? "⚑ " + missions.map((m) => `${m.title}: ${m.stepLabel}${m.progress ? " (" + m.progress + ")" : ""}${m.daysLeft !== null ? " · " + (lang === "es" ? "quedan" : "left") + " " + m.daysLeft + " " + (lang === "es" ? "días" : "days") : ""}`).join(" · ") : null;
 }
 // The mission arc stays hidden while the tutorial runs (owner decision, 25 Oct 2026):
