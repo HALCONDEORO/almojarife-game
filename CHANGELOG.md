@@ -1,13 +1,19 @@
 # Changelog
 
-## Unreleased
+## v0.5.0-beta.5 (13 November 2026)
 
-The next candidate is `v0.5.0-beta.5`, a source-only GitHub pre-release. beta.1 through beta.4 already exist; their tags and assets remain unchanged. This section prepares a batch and does not claim publication or deployment. The final commit, CI, screenshots and open-work status must be reconciled before cutting the release. See [release notes](docs/RELEASE-NOTES-BETA5.md).
+Source-only GitHub pre-release, tagged from the final integrated commit. beta.1 through beta.4 remain untouched. This source-only cut does not update the hosted game or desktop packages. Release publication follows exact-head CI and independent notes review. See [release notes](docs/RELEASE-NOTES-BETA5.md).
 
-### Candidate additions, 13 November 2026
-- Reviewed clean-room P3/P4 research notes, with current-code boundaries separated from competitor behavior and untested design questions.
-- Weekly city consumption planning and long optional missions are awaiting their own integration checks. They must not be described as shipped until their PRs merge. Both remain explicit opt-ins; planning is a baseline projection, not observed consumption, and long missions require an open-ended campaign.
-- Minor table readability, mobile mission overlap and message-retention work remains separately tracked. The release does not certify these fixes merely because an issue exists.
+### Integrated in this batch
+- Opt-in long optional missions for open-ended campaigns (#962): explicit flag plus open-ended campaign, soft-failure ladder (bounded local respect loss and cooldown), ordinary goal unchanged.
+- Opt-in weekly city-consumption planner (#963): baseline projection from present population, classes and modifiers; not observed consumption; behind its view flag.
+- Weekly-planner table context and mobile width fix (#967).
+- Reviewed clean-room P3/P4 research notes (#958-#961): current-code boundaries separated from competitor behavior and untested design questions.
+- Version and source-only release notes preparation (#966).
+
+### Left out of this release
+- Message retention (#968) and the mobile mission overlap test (#969): CI and independent review not verified at cut time; they remain open.
+- Minor table readability and other separately tracked fixes are not certified by this release.
 
 Earlier sections below are dated source notes, not a complete manifest of later main or release binaries.
 
