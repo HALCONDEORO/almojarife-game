@@ -76,7 +76,7 @@ export const HISTORY_DAYS = 30;
 export function recordPrices(world, market, hist) {
   for (const [city, goods] of Object.entries(market))
     for (const [good, e] of Object.entries(goods)) {
-      const a = ((hist[city] ??= {})[good] ??= []);
+      const a = ((hist[city] ??= Object.create(null))[good] ??= []);
       a.push(price(world, e, good));
       if (a.length > HISTORY_DAYS) a.shift();
     }
@@ -383,9 +383,9 @@ function marketTick(g) {
     workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
     governorDay(g, c.id); // a hired governor draws his daily wage first; short cash suspends him with a notice, never a debt
     if (governorWorks(g, c.id)) { stewardTick(g, c.id, warehouseCap(g, c.id)); goalTick(g, c.id); } // standing orders run on the fresh prices; the stockpile goal is watched even without them
-    const hist = (g.hist ??= {});
+    const hist = (g.hist ??= Object.create(null));
     for (const [good, e] of Object.entries(g.market[c.id])) {
-      const a = ((hist[c.id] ??= {})[good] ??= []);
+      const a = ((hist[c.id] ??= Object.create(null))[good] ??= []);
       a.push(price(g.world, e, good));
       if (a.length > HISTORY_DAYS) a.shift();
     }

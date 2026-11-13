@@ -17,7 +17,7 @@ export const isDiscovered = (g, city) => (g.discovered ??= seedDiscovery(g))[cit
 /** First chart for a game or save that predates the fog: every port the trader has
  * price data on, owns a warehouse in, has a ship moored at or runs a route through. */
 function seedDiscovery(g) {
-  const d = {};
+  const d = Object.create(null);
   for (const c of Object.keys(g.intel ?? {})) d[c] = g.intel[c].day ?? g.day;
   for (const c of Object.keys(g.warehouses ?? {})) d[c] ??= g.day;
   for (const s of g.ships ?? []) {
@@ -31,7 +31,7 @@ function seedDiscovery(g) {
 
 /** Put a port on the chart. Returns true only the first time, so the caller can log the news. */
 export function discover(g, city) {
-  if (!g.world.nodes[city]) return false;
+  if (!Object.hasOwn(g.world.nodes, city)) return false;
   const d = (g.discovered ??= seedDiscovery(g));
   if (d[city] !== undefined) return false;
   d[city] = g.day;

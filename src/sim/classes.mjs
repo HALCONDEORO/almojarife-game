@@ -57,14 +57,14 @@ export function affordMul(cls, ratio) {
  *  ratio. Typed town houses shelter residents of one known class; the market adds their demand this
  *  way instead of re-splitting them by the town's shares. */
 export function demandOf(counts, good, ratio = 1) {
-  const row = PER_1000[good] ?? OPTIONAL_PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
+  const row = (Object.hasOwn(PER_1000, good) ? PER_1000[good] : undefined) ?? (Object.hasOwn(OPTIONAL_PER_1000, good) ? OPTIONAL_PER_1000[good] : undefined) ?? { poor: 0, middle: 0, rich: 0 }, out = {};
   for (const c of CLASSES) out[c] = (counts?.[c] ?? 0) / 1000 * row[c] * affordMul(c, ratio);
   return out;
 }
 
 /** Daily demand of a city for a good, per class, at a price ratio. Fractions are kept; the market rounds the total. */
 export function demandBy(pop, good, ratio = 1) {
-  const n = classCounts(pop), row = PER_1000[good] ?? OPTIONAL_PER_1000[good] ?? { poor: 0, middle: 0, rich: 0 }, out = {};
+  const n = classCounts(pop), row = (Object.hasOwn(PER_1000, good) ? PER_1000[good] : undefined) ?? (Object.hasOwn(OPTIONAL_PER_1000, good) ? OPTIONAL_PER_1000[good] : undefined) ?? { poor: 0, middle: 0, rich: 0 }, out = {};
   for (const c of CLASSES) out[c] = n[c] / 1000 * row[c] * affordMul(c, ratio);
   return out;
 }

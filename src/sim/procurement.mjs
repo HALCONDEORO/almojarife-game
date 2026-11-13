@@ -15,6 +15,9 @@ export const COMMERCE_LEDGER_ENABLED = true; // telemetry only: gates account cr
  *  bookkeeping stay exactly as in phase 0. */
 export const WHOLESALE_PURSE_BINDING = true;
 
+// Saved and fresh basis dictionaries may contain arbitrary good IDs.
+const ownBasis = (map, good) => Object.hasOwn(map, good) ? map[good] : 0;
+const setBasis = (map, good, value) => Object.defineProperty(map, good, {value, writable:true, enumerable:true, configurable:true});
 const round2 = (x) => Math.round(x * 100) / 100; // ledger money settles to cents like the trades it records
 
 /** The port's commerce account, or null on markets built without one (bare fixtures stay untouched). */
@@ -31,7 +34,7 @@ export function openCommerce(world, city) {
   for (const [good, e] of Object.entries(city)) {
     const base = world?.goods?.[good]?.base;
     if (!(base > 0) || !Number.isFinite(e?.stock)) continue;
-    inventoryBasis[good] = round2(e.stock * base);
+    setBasis(inventoryBasis, good, round2(e.stock * base));
     openingCapital += inventoryBasis[good];
   }
   const account = {
@@ -61,9 +64,10 @@ export function openMarketLedgers(world, market) {
 export function recordWholesaleSale(city, good, qty, revenue) {
   const a = commerceOf(city);
   if (!a || !(qty > 0) || !(revenue >= 0)) return;
+  const basis = a.inventoryBasis;
   a.cash = round2(a.cash - revenue);
   a.paid = round2(a.paid + revenue);
-  a.inventoryBasis[good] = round2((a.inventoryBasis[good] ?? 0) + revenue);
+  setBasis(basis, good, round2(ownBasis(basis, good) + revenue));
 }
 
 /** Goods taken FROM the market by a buyer: the purse receives the payment and releases book value
@@ -71,9 +75,10 @@ export function recordWholesaleSale(city, good, qty, revenue) {
 export function recordMarketPurchase(city, good, qty, cost, stockBefore) {
   const a = commerceOf(city);
   if (!a || !(qty > 0) || !(cost >= 0)) return;
-  const basis = a.inventoryBasis[good] ?? 0;
+  const inventory = a.inventoryBasis;
+  const basis = ownBasis(inventory, good);
   const released = qty >= stockBefore ? basis : round2((basis * qty) / Math.max(1, stockBefore));
-  a.inventoryBasis[good] = round2(basis - released);
+  setBasis(inventory, good, round2(basis - released));
   a.releasedBasis = round2(a.releasedBasis + released);
   a.cash = round2(a.cash + cost);
   a.received = round2(a.received + cost);
@@ -83,8 +88,9 @@ export function recordMarketPurchase(city, good, qty, cost, stockBefore) {
 export function recordLocalSupply(city, good, qty, base) {
   const a = commerceOf(city);
   if (!a || !(qty > 0) || !(base > 0)) return;
+  const basis = a.inventoryBasis;
   const value = round2(qty * base);
-  a.inventoryBasis[good] = round2((a.inventoryBasis[good] ?? 0) + value);
+  setBasis(basis, good, round2(ownBasis(basis, good) + value));
   a.localSupplyValue = round2(a.localSupplyValue + value);
 }
 
@@ -94,9 +100,10 @@ export function recordRetailSale(city, good, units, unitPrice, stockBefore) {
   const a = commerceOf(city);
   if (!a || !(units > 0) || !(unitPrice >= 0)) return 0;
   const value = round2(units * unitPrice);
-  const basis = a.inventoryBasis[good] ?? 0;
+  const inventory = a.inventoryBasis;
+  const basis = ownBasis(inventory, good);
   const removed = units >= stockBefore ? basis : round2((basis * units) / Math.max(1, stockBefore));
-  a.inventoryBasis[good] = round2(basis - removed);
+  setBasis(inventory, good, round2(basis - removed));
   a.consumedBasis = round2(a.consumedBasis + removed);
   a.cash = round2(a.cash + value);
   a.retail = round2(a.retail + value);
