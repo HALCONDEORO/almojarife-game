@@ -1,3 +1,4 @@
+import { focusRouteDraft } from "../src/view/routedraftfocus.mjs";
 import { showRouteValidationError } from "../src/view/routevalidation.mjs";
 import { routeFieldLabel } from "../src/view/routefieldlabels.mjs";
 import { moveRouteStop, routeOrderButtons, routeOrderLabel } from "../src/view/routeorder.mjs";
@@ -1171,7 +1172,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       $("rts-sg-" + i).onchange = (e) => { st.sellGood = e.target.value; rpathUpdatePreview(s); };
       $("rts-bp-" + i).oninput = (e) => { st.buyMax = e.target.value; rpathUpdatePreview(s); };
       $("rts-sp-" + i).oninput = (e) => { st.sellMin = e.target.value; rpathUpdatePreview(s); };
-      $("rts-del-" + i).onclick = () => act(() => { d.stops.splice(i, 1); });
+      $("rts-del-" + i).onclick = () => { act(() => { d.stops.splice(i, 1); }); focusRouteDraft($, "remove", i, d.stops.length); };
     });
     P.querySelectorAll("[data-route-move]").forEach(button => button.onclick = () => {
       const [index, direction] = button.dataset.routeMove.split(":").map(Number);
@@ -1183,7 +1184,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
       (primary && !primary.disabled ? primary : fallback)?.focus();
     });
     $("rts-mincash").oninput = (e) => { d.minCash = e.target.value; };
-    $("rts-add").onclick = () => act(() => { d.stops.push({ city: ids[0] ?? s.at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }); });
+    $("rts-add").onclick = () => { act(() => { d.stops.push({ city: ids[0] ?? s.at, buyGood: "", buyMax: "", sellGood: "", sellMin: "" }); }); focusRouteDraft($, "add", 0, d.stops.length); };
     $("rts-set2").onclick = () => {
       let r = null;
       act(() => {
