@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-The next proposed batch is `v0.5.0-beta.3`; it has not been tagged or published by this section. beta.1 and beta.2 already exist. See [release gates](docs/RELEASE.md) and the [current candidate checkpoint](docs/BETA3-CHECKPOINT.md). Historical entries below are source notes, not a complete manifest of the existing release binaries.
+The next candidate is `v0.5.0-beta.5`, a source-only GitHub pre-release. beta.1 through beta.4 already exist; their tags and assets remain unchanged. This section prepares a batch and does not claim publication or deployment. The final commit, CI, screenshots and open-work status must be reconciled before cutting the release. See [release notes](docs/RELEASE-NOTES-BETA5.md).
+
+### Candidate additions, 13 November 2026
+- Reviewed clean-room P3/P4 research notes, with current-code boundaries separated from competitor behavior and untested design questions.
+- Weekly city consumption planning and long optional missions are awaiting their own integration checks. They must not be described as shipped until their PRs merge. Both remain explicit opt-ins; planning is a baseline projection, not observed consumption, and long missions require an open-ended campaign.
+- Minor table readability, mobile mission overlap and message-retention work remains separately tracked. The release does not certify these fixes merely because an issue exists.
+
+Earlier sections below are dated source notes, not a complete manifest of later main or release binaries.
 
 ### Integrated source, 28 October 2026
 - Bounded optional justice/peace data loading with retry/unavailable states (#638).
