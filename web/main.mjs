@@ -54,6 +54,7 @@ import { fleetHtml } from "../src/view/fleet.mjs";
 import { dayDurationMs, nextTimeSpeed, arrivalNeedsDecision } from "../src/view/timepolicy.mjs";
 import {HISTORICAL_MAPS_ENABLED,mapModeControls,historicalLayer} from "../src/view/historicalmap.mjs";
 import { chartOrnamentSvg } from "../src/view/chartornament.mjs";
+import { weeklyPlanningHtml } from "../src/view/weekly-planning.mjs";
 import { needsHtml } from "../src/view/needsview.mjs";
 import {resolvePirates,dismissEncounterReport,claimPrize} from '../src/game/encounterdaily.mjs';
 import {encountersHtml,encounterDialogHtml} from "../src/view/encounterview.mjs";
@@ -870,6 +871,7 @@ function render() { // skipcq: JS-R1005 - pre-existing complexity; this PR edits
         if (cto) h += `<div class="card"><b>${t.ctOffer.replace("{q}", fmt(cto.qty)).replace("{g}", goodIcon(cto.good, 16) + (t.goods[cto.good] ?? cto.good)).replace("{d}", cto.dueDay).replace("{l}", Math.max(0, cto.dueDay - g.day)).replace("{r}", fmt(cto.reward))}</b><br><button data-contract-accept="${s.at}" ${cta.length >= contractMaxFor(g) ? "disabled" : ""}>${t.ctAccept}</button>${cta.length >= contractMaxFor(g) ? ` <small>${t.ctFull.replace("{n}", contractMaxFor(g))}</small>` : ""}</div>`;
         else if (!cta.some((x) => x.city === s.at)) h += `<p><i>${t.ctNone}</i></p>`;
         if (cta.length) h += `<p>` + cta.map((x) => t.ctActive.replace("{g}", goodIcon(x.good, 16) + (t.goods[x.good] ?? x.good)).replace("{n}", fmt(x.delivered)).replace("{q}", fmt(x.qty)).replace("{d}", x.dueDay).replace("{l}", Math.max(0, x.dueDay - g.day)).replace("{r}", fmt(x.reward))).join("<br>") + `</p>`; }
+      h += weeklyPlanningHtml(g, s.at, t.goods, lang, location.search);
       if (localStorage.getItem("devMode") === "1") h += needsHtml(ent.grain,t.goods,lang); // hidden developer mode only; players never see telemetry
     } else if (tab === "hall") {
       const hv = hallView(g, s.at); // skipcq: JS-0123 - pre-existing shadow; the line only moved with this PR's additions
