@@ -7,7 +7,7 @@ Rules: ideas and mechanics in our own words only; no copied text, tables or data
 ## Findings and what they mean for Almojarife
 
 ### 1. Wall expansion as the growth gate: petition vs execution split
-The source: every town starts fully walled; outside the wall only businesses (no houses, no protection) can be built, so a full inner city stops growing until the wall expands - twice per town maximum. Petitioning needs a mid-high rank in that town and a council vote (approval is near-certain once businesses already stand outside); execution is always the mayor's job, taking months scaled by available building materials; the expansion counts as official once the new wall exists as a complete construction site.
+The source: every town starts fully walled; outside the wall only businesses (no houses, no protection) can be built, so a full inner city stops growing until the wall expands - a small fixed number of times per town. Petitioning needs a mid-high rank in that town and a council vote (approval is near-certain once businesses already stand outside); execution is always the mayor's job, taking months scaled by available building materials; the expansion counts as official once the new wall exists as a complete construction site.
 Our state (verified: src/game/walls.mjs - three wall levels per port as COUNCIL works: the concejo votes, pays from the town chest and pays the watch; the player only petitions with respect "Conocido" (WALL_MIN_RESPECT, walls.mjs:31,99); kept walls add effective market population, the wall-growth role).
 Verified parallel with a different ownership contract: in the source the player-mayor builds the wall; in ours the council owns it end to end and walls already gate growth. Deliberate divergence, not a gap. Flagged.
 
