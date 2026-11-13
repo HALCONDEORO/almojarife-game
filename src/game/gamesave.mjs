@@ -242,6 +242,14 @@ export function deserialize(save, world) {
   if (!st.profile || typeof st.profile.home !== "string") throw new Error("save is from a test build and is not kept");
   // Pre-engine campaign saves (flat {id,bought,sailed,...}) predate the mission data model: restart the arc cleanly instead of crashing campaignTick/campaignEvent later.
   if (st.campaign != null && !campaignShapeOk(st.campaign)) st.campaign = newCampaign();
+  // Optional timing is persisted as finite campaign-day counters, never reconstructed
+  // from absolute world day. Reject damaged new fields rather than silently extending them.
+  const clock = st.campaign?.longClock;
+  const counter = (n) => Number.isSafeInteger(n) && n >= 0;
+  if (clock != null && (!isPlainObj(clock) || !counter(clock.day) || !counter(clock.lastDay))) throw new Error("save is damaged");
+  if (st.campaign?.optionalUntil != null && !counter(st.campaign.optionalUntil)) throw new Error("save is damaged");
+  const deadline = st.campaign?.missions?.['s3-long-name']?.deadlineDay;
+  if (deadline != null && !counter(deadline)) throw new Error("save is damaged");
   if (!Number.isFinite(st.tick)) throw new Error("save is from a test build and is not kept");
   for (const sh of st.ships) if (!voyageOk(world, sh?.voyage)) throw new Error("save is from a test build and is not kept");
   sanitizeDeepStructures(st, world);
