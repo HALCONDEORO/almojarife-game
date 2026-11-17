@@ -37,9 +37,12 @@ export function shareVoyageDeltaWithPrize(g,ship,deltaTicks){
  if(!prizeShip)return;
  prizeShip.voyage.ticksLeft+=deltaTicks;prizeShip.voyage.totalTicks=Math.max((prizeShip.voyage.totalTicks??prizeShip.voyage.ticksLeft-deltaTicks)+deltaTicks,prizeShip.voyage.ticksLeft);
 }
+function validEncounterOutcome(outcome){
+ return !!outcome&&['pirates','storm'].includes(outcome.kind)&&Number.isFinite(outcome.hullLoss)&&outcome.hullLoss>=0&&outcome.hullLoss<=100&&Number.isFinite(outcome.cargoLossPct)&&outcome.cargoLossPct>=0&&outcome.cargoLossPct<=100&&Number.isSafeInteger(outcome.delay)&&outcome.delay>=0&&outcome.delay<=2;
+}
 export function applyEncounter(g,ship,outcome){
  if(g.over||!g.ships?.includes(ship)||!ship.voyage)return {ok:false,reason:'no active owned voyage'};
- if(!outcome||!['pirates','storm'].includes(outcome.kind)||!Number.isFinite(outcome.hullLoss)||outcome.hullLoss<0||outcome.hullLoss>100||!Number.isFinite(outcome.cargoLossPct)||outcome.cargoLossPct<0||outcome.cargoLossPct>100||!Number.isSafeInteger(outcome.delay)||outcome.delay<0||outcome.delay>2)return {ok:false,reason:'bad outcome'};
+ if(!validEncounterOutcome(outcome))return {ok:false,reason:'bad outcome'};
  const before=ship.hull??100;ship.hull=Math.max(10,before-outcome.hullLoss);
  let cargoLost=0;
  for(const [good,q] of Object.entries(ship.cargo??{})){
