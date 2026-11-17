@@ -20,19 +20,20 @@ test('title-hosted game dialogs isolate the background and wrap Tab in capture p
 const source=readFileSync(new URL('../web/modalfocus.mjs',import.meta.url),'utf8').replace('export function','function');
 function fixture(){
  const effects=[],observers=[],listeners=[];
+ const document={};
  const button=name=>({name,focus(){document.activeElement=this;effects.push(name);},getClientRects:()=>[{}],closest:()=>null});
  const first=button('first'),last=button('last'),menu=button('menu'),resume=button('resume');
  const background={tagName:'MAIN',inert:false},alreadyInert={tagName:'ASIDE',inert:true},script={tagName:'SCRIPT',inert:false},style={tagName:'STYLE',inert:false};
  let active=true,controls=[first,last];
  const host={hidden:true,querySelectorAll:selector=>{assert.equal(selector,'button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]');return controls;},contains:element=>controls.includes(element)};
- const document={body:{children:[host,background,alreadyInert,script,style]},activeElement:null,querySelector:()=>menu,getElementById:id=>{assert.equal(id,'new');return resume;},addEventListener:(kind,handler,capture)=>{assert.equal(kind,'keydown');assert.equal(capture,true);listeners.push(handler);}};
+ Object.assign(document,{body:{children:[host,background,alreadyInert,script,style]},activeElement:null,querySelector:()=>menu,getElementById:id=>{assert.equal(id,'new');return resume;},addEventListener:(kind,handler,capture)=>{assert.equal(kind,'keydown');assert.equal(capture,true);listeners.push(handler);}});
  class Observer{constructor(callback){this.callback=callback;observers.push(this);}observe(target,options){this.target=target;this.options=options;}}
- vm.runInNewContext(source+'\ninstallModalFocus(host,active);',{host,active:()=>active,document,MutationObserver:Observer});
+ vm.runInNewContext(`${source}\ninstallModalFocus(host,active);`,{host,active:()=>active,document,MutationObserver:Observer});
  return {host,document,background,alreadyInert,script,style,first,last,effects,observers,setActive:value=>{active=value;},setControls:value=>{controls=value;},setMenu:value=>{document.querySelector=()=>value;},button,
   sync:()=>observers[0].callback(),press(key='Tab',shiftKey=false){let prevented=false;listeners[0]({key,shiftKey,preventDefault:()=>{prevented=true;}});return prevented;}};
 }
 test('opening isolates existing and newly added background siblings without touching host or scripts',()=>{
- const view=fixture();view.host.hidden=false;view.sync();assert.equal(view.background.inert,true);assert.equal(view.alreadyInert.inert,true);assert.equal(view.host.inert,undefined);assert.equal(view.script.inert,false);assert.equal(view.style.inert,false);
+ const view=fixture();view.host.hidden=false;view.sync();assert.equal(view.background.inert,true);assert.equal(view.alreadyInert.inert,true);assert.ok(!Object.hasOwn(view.host,'inert'));assert.equal(view.script.inert,false);assert.equal(view.style.inert,false);
  const added={tagName:'DIV',inert:false};view.document.body.children.push(added);view.observers[1].callback();assert.equal(added.inert,true);
 });
 test('closing restores each original inert state and returns focus to the city menu once',()=>{
