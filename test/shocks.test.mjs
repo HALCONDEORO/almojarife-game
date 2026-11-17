@@ -85,15 +85,19 @@ test('texts render in both languages and harvest goods are the grown ones',()=>{
 });
 test('economy gate: a campaign year with shocks on keeps prices off the clamps and stocks sane',()=>{
  const g=mk(3);let pinned=0,samples=0;
+ // Notices need not remain in the bounded inbox until year end. Observe the
+ // actual shock lifecycle instead of treating retained messages as an event log.
+ const startedIds=new Set();
  for(let d=0;d<340&&!g.over;d++){ // inside the 365-day campaign deadline
   advanceDay(g);
+  for(const shock of g.shocks??[])startedIds.add(shock.id);
   if(g.day%30===0)for(const c of g.world.cities)for(const[good,e]of Object.entries(g.market[c.id])){
    assert.ok(Number.isFinite(e.stock)&&e.stock>=0,`${c.id}/${good} stock ${e.stock}`);
    const p=(e.target/Math.max(1,e.stock))**0.6;samples++;if(p>=3||p<=0.4)pinned++;
   }
  }
  assert.ok(pinned/samples<0.3,`pinned ${(100*pinned/samples).toFixed(1)}% of samples`);
- const started=(g.inbox??[]).filter((m)=>m.kind==='shock').length;
+ const started=startedIds.size;
  assert.ok(g.day>300&&started>0,`ran ${g.day} days, ${started} shock messages`);
 });
 
