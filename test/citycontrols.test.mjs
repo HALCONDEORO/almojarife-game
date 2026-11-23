@@ -28,7 +28,7 @@ test('city view controls live in the top bar; no floating bar over the city map 
   // The top bar keeps the same controls as outside the city (play/speed/reports/messages + fullscreen/lang/menu).
   assert.ok(!css.includes('body.in-city-3d #ctl button'), 'header buttons no longer hidden in city');
   // The city-only view buttons ride the header, visible only in city view, and drive the iframe via the cmd bridge.
-  for (const c of ['fit', 'zoom-in', 'zoom-out', 'motion', 'construct'])
+  for (const c of ['fit', 'zoom-in', 'zoom-out', 'motion'])
     assert.ok(css.includes(`data-corner="${c}"`), c);
   assert.ok(css.includes('<span id="cityview-ctl">'), 'header group');
   assert.match(css, /#cityview-ctl\{display:none\}body\.in-city-3d #cityview-ctl\{display:inline\}/, 'group only in city view');
@@ -40,7 +40,7 @@ test('city view controls live in the top bar; no floating bar over the city map 
   assert.ok(scene.includes("q.get('chrome')==='0'"), 'scene reads chrome');
   assert.ok(scene.includes("e.data?.kind!=='city2d-cmd'"), 'scene cmd guard');
   const frame = readFileSync('web/city2d/index.html', 'utf8');
-  assert.ok(frame.includes('nav.corner>div:not(#bm){display:none}'), 'iframe toolbar hidden, build sub-panel kept');
+  assert.ok(frame.includes('nav.corner{display:none}'), 'all prototype chrome stays hidden in the embedded game');
 });
 
 test('panel labels stay live from the same values as the header', () => {
@@ -173,4 +173,16 @@ test('city windows show the ship card only where the ship operates', () => {
   assert.ok(js.includes('if (shipCtx) {'), 'summary wrapped');
   assert.ok(js.includes('if (!inCity) h += `<div title="${t.holdValue}">${t.holdValue}: '), 'hold value stays out of city windows');
   assert.ok(js.includes('if (!inCity || tab === "market" || tab === "route") {'), 'best-ports box stays with market and route');
+});
+
+
+test('prototype construction preview is not a player control; real building actions remain', () => {
+  assert.ok(!html.includes('data-corner="construct"'), 'no prototype construction button in the player header');
+  assert.ok(!js.includes('cornerCmd("toggle-construct")'), 'no player handler for the prototype preview');
+  const scene = readFileSync('web/city2d/scene.mjs', 'utf8');
+  assert.ok(scene.includes("c==='toggle-construct'&&q.get('chrome')!=='0'"), 'embedded command bridge does not open the preview');
+  assert.ok(nav.includes('data-city-tab="buildings"'), 'real construction menu remains');
+  assert.ok(js.includes('openCityPanel("plot")'), 'real plot selection remains');
+  const frame = readFileSync('web/city2d/index.html', 'utf8');
+  assert.ok(frame.includes('id="construct"') && frame.includes('id="build"'), 'standalone development preview is retained');
 });
